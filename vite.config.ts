@@ -11,6 +11,8 @@ export default defineConfig({
 			include: ['src/lib/**/*.ts'],
 			exclude: [
 				'src/lib/**/*.svelte.ts',
+				// Framework-generated transport wrappers contain no application logic; their server callback is covered directly.
+				'src/lib/**/*.remote.ts',
 				'src/lib/assets/**',
 				'src/lib/generated/**',
 				'src/lib/server/docs-registry.ts'

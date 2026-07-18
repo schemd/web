@@ -49,7 +49,12 @@ describe('documentation parser', () => {
 	it('builds a typed document, stable toc, plain-text index, and escaped HTML', () => {
 		const ast = parseDocumentation(completeDocument, 'fixture.md');
 		expect(ast.metadata).toEqual({
-			id: 'sample', label: 'Sample', title: 'Sample document', summary: 'A parser fixture.', category: 'Test', order: 2
+			id: 'sample',
+			label: 'Sample',
+			title: 'Sample document',
+			summary: 'A parser fixture.',
+			category: 'Test',
+			order: 2
 		});
 		expect(ast.sections).toHaveLength(1);
 		expect(documentationToc(ast)).toEqual([
@@ -62,7 +67,9 @@ describe('documentation parser', () => {
 		expect(plain).toContain('Resistor 10 kΩ');
 		expect(plain).toContain('port:IN');
 
-		const html = renderDocumentation(ast, { renderSchemd: (block) => `<svg data-id="${block.id}"></svg>` });
+		const html = renderDocumentation(ast, {
+			renderSchemd: (block) => `<svg data-id="${block.id}"></svg>`
+		});
 		expect(html).toContain('&lt;unsafe&gt; &amp; text');
 		expect(html).toContain('<strong>strong</strong>');
 		expect(html).toContain('<em>emphasis</em>');
@@ -92,13 +99,31 @@ describe('documentation parser', () => {
 		['malformed metadata', '<!-- schemd-doc: id -->', 'Malformed metadata field'],
 		['empty metadata value', '<!-- schemd-doc: id= -->', 'requires a value'],
 		['duplicate metadata', '<!-- schemd-doc: id=a; id=b -->', 'Duplicate metadata'],
-		['missing field', '<!-- schemd-doc: id=a; label=A; title=A; summary=A; order=0 -->', 'Missing required metadata field "category"'],
-		['bad order', '<!-- schemd-doc: id=a; label=A; title=A; summary=A; category=A; order=-1 -->', 'non-negative integer'],
-		['expected section', '<!-- schemd-doc: id=a; label=A; title=A; summary=A; category=A; order=0 -->\ntext', 'Expected a schemd-section'],
-		['no sections', '<!-- schemd-doc: id=a; label=A; title=A; summary=A; category=A; order=0 -->', 'at least one section']
+		[
+			'missing field',
+			'<!-- schemd-doc: id=a; label=A; title=A; summary=A; order=0 -->',
+			'Missing required metadata field "category"'
+		],
+		[
+			'bad order',
+			'<!-- schemd-doc: id=a; label=A; title=A; summary=A; category=A; order=-1 -->',
+			'non-negative integer'
+		],
+		[
+			'expected section',
+			'<!-- schemd-doc: id=a; label=A; title=A; summary=A; category=A; order=0 -->\ntext',
+			'Expected a schemd-section'
+		],
+		[
+			'no sections',
+			'<!-- schemd-doc: id=a; label=A; title=A; summary=A; category=A; order=0 -->',
+			'at least one section'
+		]
 	])('reports %s with a source position', (_name, source, message) => {
 		expect(() => parseDocumentation(source, 'broken.md')).toThrowError(message);
-		try { parseDocumentation(source, 'broken.md'); } catch (error) {
+		try {
+			parseDocumentation(source, 'broken.md');
+		} catch (error) {
 			expect(error).toBeInstanceOf(DocumentationSyntaxError);
 			if (error instanceof DocumentationSyntaxError) {
 				expect(error.sourceName).toBe('broken.md');
@@ -120,24 +145,46 @@ describe('documentation parser', () => {
 
 	it('rejects duplicate, unclosed, empty, and malformed sections', () => {
 		const prefix = '<!-- schemd-doc: id=a; label=A; title=A; summary=A; category=A; order=0 -->\n';
-		expect(() => parseDocumentation(`${prefix}<!-- schemd-section: id=s; eyebrow=A; title=A -->\nText\n<!-- /schemd-section -->\n<!-- schemd-section: id=s; eyebrow=B; title=B -->\nText\n<!-- /schemd-section -->`)).toThrowError('Duplicate section id');
-		expect(() => parseDocumentation(`${prefix}<!-- schemd-section: id=s; eyebrow=A; title=A -->\nText`)).toThrowError('missing its closing comment');
-		expect(() => parseDocumentation(`${prefix}<!-- schemd-section: id=s; eyebrow=A; title=A -->\n\n<!-- /schemd-section -->`)).toThrowError('must contain content');
-		expect(() => parseDocumentation(`${prefix}<!-- schemd-section: id=s; title=A -->\nText\n<!-- /schemd-section -->`)).toThrowError('Missing required metadata field "eyebrow"');
+		expect(() =>
+			parseDocumentation(
+				`${prefix}<!-- schemd-section: id=s; eyebrow=A; title=A -->\nText\n<!-- /schemd-section -->\n<!-- schemd-section: id=s; eyebrow=B; title=B -->\nText\n<!-- /schemd-section -->`
+			)
+		).toThrowError('Duplicate section id');
+		expect(() =>
+			parseDocumentation(`${prefix}<!-- schemd-section: id=s; eyebrow=A; title=A -->\nText`)
+		).toThrowError('missing its closing comment');
+		expect(() =>
+			parseDocumentation(
+				`${prefix}<!-- schemd-section: id=s; eyebrow=A; title=A -->\n\n<!-- /schemd-section -->`
+			)
+		).toThrowError('must contain content');
+		expect(() =>
+			parseDocumentation(
+				`${prefix}<!-- schemd-section: id=s; title=A -->\nText\n<!-- /schemd-section -->`
+			)
+		).toThrowError('Missing required metadata field "eyebrow"');
 	});
 
 	it('rejects raw HTML, empty-language and unclosed code fences', () => {
-		const wrap = (body: string) => `<!-- schemd-doc: id=a; label=A; title=A; summary=A; category=A; order=0 -->\n<!-- schemd-section: id=s; eyebrow=A; title=A -->\n${body}\n<!-- /schemd-section -->`;
+		const wrap = (body: string) =>
+			`<!-- schemd-doc: id=a; label=A; title=A; summary=A; category=A; order=0 -->\n<!-- schemd-section: id=s; eyebrow=A; title=A -->\n${body}\n<!-- /schemd-section -->`;
 		expect(() => parseDocumentation(wrap('<script>alert(1)</script>'))).toThrowError('Raw HTML');
-		expect(() => parseDocumentation(wrap('Text\n<script>alert(1)</script>'))).toThrowError('Raw HTML');
+		expect(() => parseDocumentation(wrap('Text\n<script>alert(1)</script>'))).toThrowError(
+			'Raw HTML'
+		);
 		expect(() => parseDocumentation(wrap('```\nvalue\n```'))).toThrowError('language identifier');
 		expect(() => parseDocumentation(wrap('```ts\nvalue'))).toThrowError('Unclosed code fence');
 	});
 
 	it('rejects malformed tables', () => {
-		const wrap = (body: string) => `<!-- schemd-doc: id=a; label=A; title=A; summary=A; category=A; order=0 -->\n<!-- schemd-section: id=s; eyebrow=A; title=A -->\n${body}\n<!-- /schemd-section -->`;
-		expect(() => parseDocumentation(wrap('| A | B |\n| --- |\n| x | y |'))).toThrowError('divider must match');
-		expect(() => parseDocumentation(wrap('| A | B |\n| --- | --- |\n| x |'))).toThrowError('row must match');
+		const wrap = (body: string) =>
+			`<!-- schemd-doc: id=a; label=A; title=A; summary=A; category=A; order=0 -->\n<!-- schemd-section: id=s; eyebrow=A; title=A -->\n${body}\n<!-- /schemd-section -->`;
+		expect(() => parseDocumentation(wrap('| A | B |\n| --- |\n| x | y |'))).toThrowError(
+			'divider must match'
+		);
+		expect(() => parseDocumentation(wrap('| A | B |\n| --- | --- |\n| x |'))).toThrowError(
+			'row must match'
+		);
 		const prose = parseDocumentation(wrap('| A |\n| === |'));
 		expect(documentationPlainText(prose)).toContain('| === |');
 	});
@@ -160,7 +207,9 @@ x | y
 		const html = renderDocumentation(ast);
 		expect(html).toContain('<ul><li>unordered</li></ul><ol><li>ordered</li></ol>');
 		expect(html).toContain('<th scope="col">A</th>');
-		const trailing = parseDocumentation(`<!-- schemd-doc: id=b; label=B; title=B; summary=B; category=B; order=0 -->\n<!-- schemd-section: id=t; eyebrow=T; title=T -->\n[loose trailing | pipe\n<!-- /schemd-section -->`);
+		const trailing = parseDocumentation(
+			`<!-- schemd-doc: id=b; label=B; title=B; summary=B; category=B; order=0 -->\n<!-- schemd-section: id=t; eyebrow=T; title=T -->\n[loose trailing | pipe\n<!-- /schemd-section -->`
+		);
 		expect(documentationPlainText(trailing)).toContain('[loose trailing | pipe');
 	});
 
@@ -175,7 +224,9 @@ x | y
 		expect(tokens.map((token) => token.kind)).toContain('number');
 		expect(tokens.filter((token) => token.kind === 'comment')).toHaveLength(2);
 		expect(tokens.map((token) => token.kind)).toContain('punctuation');
-		expect(tokens.map((token) => token.value).join('')).toBe(`const value = "a\\"b"; 12.5 // note\n# comment\nplain @`);
+		expect(tokens.map((token) => token.value).join('')).toBe(
+			`const value = "a\\"b"; 12.5 // note\n# comment\nplain @`
+		);
 		expect(tokenizeCode('"unterminated')).toEqual([{ kind: 'string', value: '"unterminated' }]);
 		expect(tokenizeCode('// trailing')).toEqual([{ kind: 'comment', value: '// trailing' }]);
 	});

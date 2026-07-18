@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { mkdir } from 'node:fs/promises';
 
 const pages = [
 	{ name: 'landing', path: '/' },
@@ -9,9 +10,16 @@ const pages = [
 
 for (const target of pages) {
 	test(`${target.name} visual at desktop and mobile`, async ({ page }) => {
+		await mkdir('artifacts/screenshots', { recursive: true });
+		await page.emulateMedia({ reducedMotion: 'reduce' });
 		await page.setViewportSize({ width: 1440, height: 1000 });
 		await page.goto(target.path);
 		await expect(page).toHaveScreenshot(`${target.name}-desktop.png`, {
+			animations: 'disabled',
+			fullPage: true
+		});
+		await page.screenshot({
+			path: `artifacts/screenshots/${target.name}-desktop.png`,
 			animations: 'disabled',
 			fullPage: true
 		});
@@ -19,6 +27,11 @@ for (const target of pages) {
 		await page.setViewportSize({ width: 320, height: 760 });
 		await page.goto(target.path);
 		await expect(page).toHaveScreenshot(`${target.name}-mobile.png`, {
+			animations: 'disabled',
+			fullPage: true
+		});
+		await page.screenshot({
+			path: `artifacts/screenshots/${target.name}-mobile.png`,
 			animations: 'disabled',
 			fullPage: true
 		});

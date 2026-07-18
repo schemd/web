@@ -1,5 +1,6 @@
 <script lang="ts">
 	import '../app.css';
+	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
 
 	let { children } = $props();
@@ -13,6 +14,7 @@
 
 <a class="skip-link" href="#main-content">Skip to content</a>
 <SiteHeader />
+<CommandPalette />
 
 <main id="main-content" tabindex="-1">
 	{@render children()}
@@ -21,7 +23,12 @@
 <footer class="site-footer">
 	<div class="site-footer__inner">
 		<a class="site-footer__brand" href="/" aria-label="Schemd home">
-			<img src="/brand/schemd-logo.svg" alt="Schemd — engineering vectors" width="360" height="100" />
+			<img
+				src="/brand/schemd-logo.svg"
+				alt="Schemd — engineering vectors"
+				width="360"
+				height="100"
+			/>
 		</a>
 		<div class="site-footer__links">
 			<div>

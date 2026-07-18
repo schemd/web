@@ -34,20 +34,32 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 }
 
 export function isCompilerWorkerRequest(value: unknown): value is CompilerWorkerRequest {
-	return isRecord(value) && value.kind === 'compile' && typeof value.id === 'number' &&
-		typeof value.version === 'string' && isVersionId(value.version) && typeof value.source === 'string' &&
-		typeof value.fence === 'string';
+	return (
+		isRecord(value) &&
+		value.kind === 'compile' &&
+		typeof value.id === 'number' &&
+		typeof value.version === 'string' &&
+		isVersionId(value.version) &&
+		typeof value.source === 'string' &&
+		typeof value.fence === 'string'
+	);
 }
 
 export function isCompilerWorkerResponse(value: unknown): value is CompilerWorkerResponse {
 	if (!isRecord(value) || typeof value.kind !== 'string') return false;
 	if (value.kind === 'ready') return true;
-	if ((value.kind !== 'success' && value.kind !== 'error') || typeof value.id !== 'number') return false;
+	if ((value.kind !== 'success' && value.kind !== 'error') || typeof value.id !== 'number')
+		return false;
 	if (value.kind === 'success') {
 		if (typeof value.svg !== 'string' || !isRecord(value.metrics)) return false;
 		const metrics = value.metrics;
-		return ['sourceCharacters', 'components', 'connections', 'svgBytes'].every((key) => typeof metrics[key] === 'number');
+		return ['sourceCharacters', 'components', 'connections', 'svgBytes'].every(
+			(key) => typeof metrics[key] === 'number'
+		);
 	}
-	return isRecord(value.diagnostic) && typeof value.diagnostic.message === 'string' &&
-		(value.diagnostic.line === undefined || typeof value.diagnostic.line === 'number');
+	return (
+		isRecord(value.diagnostic) &&
+		typeof value.diagnostic.message === 'string' &&
+		(value.diagnostic.line === undefined || typeof value.diagnostic.line === 'number')
+	);
 }

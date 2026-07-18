@@ -21,13 +21,20 @@ for (const versionDirectory of versionDirectories) {
 			for (const block of section.blocks) {
 				if (block.kind !== 'code' || block.language !== 'schemd') continue;
 				const fence = parseSchematicFence(`schemd ${block.metadata}`, ast.metadata.title);
-				if (!fence) throw new Error(`${path}:${block.position.line}: invalid Schemd fence metadata.`);
-				compileSchematic(block.value, { ...fence, idPrefix: `ci-${versionDirectory.name}-${ast.metadata.id}-${block.id}` });
+				if (!fence)
+					throw new Error(`${path}:${block.position.line}: invalid Schemd fence metadata.`);
+				compileSchematic(block.value, {
+					...fence,
+					idPrefix: `ci-${versionDirectory.name}-${ast.metadata.id}-${block.id}`
+				});
 				exampleCount += 1;
 			}
 		}
 	}
 }
 
-if (documentCount === 0 || exampleCount === 0) throw new Error('Documentation validation found no documents or Schemd examples.');
-console.log(`Compiled ${exampleCount} Schemd examples across ${documentCount} versioned documents.`);
+if (documentCount === 0 || exampleCount === 0)
+	throw new Error('Documentation validation found no documents or Schemd examples.');
+console.log(
+	`Compiled ${exampleCount} Schemd examples across ${documentCount} versioned documents.`
+);

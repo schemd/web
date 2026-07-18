@@ -22,9 +22,13 @@ test('published internal links resolve without errors', async ({ page, request, 
 
 	for (const seed of seeds) {
 		await page.goto(seed);
-		for (const href of await page.locator('a[href]').evaluateAll((anchors) =>
-			anchors.map((anchor) => anchor.getAttribute('href')).filter((href): href is string => href !== null)
-		)) {
+		for (const href of await page
+			.locator('a[href]')
+			.evaluateAll((anchors) =>
+				anchors
+					.map((anchor) => anchor.getAttribute('href'))
+					.filter((href): href is string => href !== null)
+			)) {
 			const url = new URL(href, origin);
 			if (url.origin === origin) paths.add(`${url.pathname}${url.search}`);
 		}

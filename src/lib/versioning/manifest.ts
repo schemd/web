@@ -1,5 +1,6 @@
 export const SITE_ORIGIN = 'https://schemd.johnowolabiidogun.dev';
 export const CORE_REPOSITORY = 'https://github.com/schemd/core';
+export const NPM_PACKAGE_URL = 'https://www.npmjs.com/package/@schemd/core';
 
 export interface SchemdVersion {
 	readonly id: `v${string}`;
@@ -38,6 +39,9 @@ export function getVersion(value: string): (typeof VERSIONS)[number] | undefined
 	return VERSIONS.find((version) => version.id === value);
 }
 
-export function versionedPath(area: 'docs' | 'playground' | 'simulations', version: VersionId): string {
+export function versionedPath(
+	area: 'docs' | 'playground' | 'simulations',
+	version: VersionId
+): string {
 	return `/${area}/${version}`;
 }

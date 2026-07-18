@@ -27,7 +27,8 @@ export function searchDocuments(
 	query: string,
 	limit = 20
 ): readonly SearchResult[] {
-	if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw new RangeError('limit must be an integer from 1 through 100.');
+	if (!Number.isInteger(limit) || limit < 1 || limit > 100)
+		throw new RangeError('limit must be an integer from 1 through 100.');
 	const tokens = normalizeSearchQuery(query);
 	if (tokens.length === 0) return [];
 	const results: SearchResult[] = [];
@@ -43,9 +44,14 @@ export function searchDocuments(
 			else if (title.includes(token)) score += 7;
 			else if (summary.includes(token)) score += 4;
 			else if (text.includes(token)) score += 1;
-			else { matchesAll = false; break; }
+			else {
+				matchesAll = false;
+				break;
+			}
 		}
 		if (matchesAll) results.push({ ...document, score });
 	}
-	return results.sort((left, right) => right.score - left.score || left.title.localeCompare(right.title)).slice(0, limit);
+	return results
+		.sort((left, right) => right.score - left.score || left.title.localeCompare(right.title))
+		.slice(0, limit);
 }

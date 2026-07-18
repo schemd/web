@@ -46,11 +46,11 @@ Set `--schematic-surface` to the host background so hollow UML markers and conne
 
 The geometry is identical in every output mode. Only styling and interaction metadata change.
 
-| Mode | Adds | Good fit |
-| --- | --- | --- |
-| `default` | Minimal static SVG | Articles, email, PDF, export |
-| `embedded-css` | Built-in focus and hover styles | Responsive documentation |
-| `full` | CSS, data hooks, and focus targets | Editors and simulations |
+| Mode           | Adds                               | Good fit                     |
+| -------------- | ---------------------------------- | ---------------------------- |
+| `default`      | Minimal static SVG                 | Articles, email, PDF, export |
+| `embedded-css` | Built-in focus and hover styles    | Responsive documentation     |
+| `full`         | CSS, data hooks, and focus targets | Editors and simulations      |
 
 ```ts
 compileSchematic(source, {

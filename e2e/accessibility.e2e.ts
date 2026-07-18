@@ -12,7 +12,7 @@ for (const route of routes) {
 	test(`${route} has no WCAG A or AA violations`, async ({ page }) => {
 		await page.goto(route);
 		if (route.startsWith('/playground/')) {
-			await expect(page.getByTitle('SVG preview: Sensor input')).toBeVisible();
+			await expect(page.getByTitle('SVG preview: Sensor input filter')).toBeVisible();
 		}
 		const results = await new AxeBuilder({ page })
 			.withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])

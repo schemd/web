@@ -9,9 +9,11 @@ globalThis.addEventListener('message', (event: MessageEvent<unknown>) => {
 	const request = event.data;
 	if (!isCompilerWorkerRequest(request)) return;
 	const result = compileVersion(request.source, request.fence);
-	post(result.ok
-		? { kind: 'success', id: request.id, svg: result.svg, metrics: result.metrics }
-		: { kind: 'error', id: request.id, diagnostic: result.diagnostic });
+	post(
+		result.ok
+			? { kind: 'success', id: request.id, svg: result.svg, metrics: result.metrics }
+			: { kind: 'error', id: request.id, diagnostic: result.diagnostic }
+	);
 });
 
 post({ kind: 'ready' });

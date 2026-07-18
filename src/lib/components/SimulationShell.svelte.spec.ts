@@ -6,7 +6,9 @@ import SimulationShell from './SimulationShell.svelte';
 
 describe('SimulationShell', () => {
 	it('renders the teaching boundary, controls, diagram, and related links', async () => {
-		const children = createRawSnippet(() => ({ render: () => '<button type="button">Run model</button>' }));
+		const children = createRawSnippet(() => ({
+			render: () => '<button type="button">Run model</button>'
+		}));
 		render(SimulationShell, {
 			version: 'v0.2.1',
 			slug: 'fixture',
@@ -19,9 +21,13 @@ describe('SimulationShell', () => {
 			children
 		});
 
-		await expect.element(page.getByRole('heading', { level: 1, name: 'Test instrument' })).toBeInTheDocument();
+		await expect
+			.element(page.getByRole('heading', { level: 1, name: 'Test instrument' }))
+			.toBeInTheDocument();
 		await expect.element(page.getByRole('button', { name: 'Run model' })).toBeInTheDocument();
 		await expect.element(page.getByRole('img', { name: 'Fixture' })).toBeInTheDocument();
-		await expect.element(page.getByRole('link', { name: 'Relevant documentation →' })).toHaveAttribute('href', '/docs/v0.2.1/overview');
+		await expect
+			.element(page.getByRole('link', { name: 'Relevant documentation →' }))
+			.toHaveAttribute('href', '/docs/v0.2.1/overview');
 	});
 });

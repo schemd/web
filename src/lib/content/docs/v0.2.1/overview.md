@@ -10,12 +10,12 @@ bun add @schemd/core
 
 The published package requires Node.js 24 or newer. It has no runtime dependencies and does not require a DOM.
 
-| Package manager | Command |
-| --- | --- |
-| Bun | `bun add @schemd/core` |
-| npm | `npm install @schemd/core` |
-| pnpm | `pnpm add @schemd/core` |
-| Yarn | `yarn add @schemd/core` |
+| Package manager | Command                    |
+| --------------- | -------------------------- |
+| Bun             | `bun add @schemd/core`     |
+| npm             | `npm install @schemd/core` |
+| pnpm            | `pnpm add @schemd/core`    |
+| Yarn            | `yarn add @schemd/core`    |
 
 <!-- /schemd-section -->
 
@@ -26,9 +26,7 @@ Import the compiler and fence parser from the package entry point. A fence defin
 ```ts
 import { compileSchematic, parseSchematicFence } from '@schemd/core';
 
-const fence = parseSchematicFence(
-	'schemd bounds="720x300" title="Sensor input"'
-);
+const fence = parseSchematicFence('schemd bounds="720x300" title="Sensor input"');
 
 const { svg, document, metrics } = compileSchematic(source, fence);
 ```

@@ -55,8 +55,8 @@
 		--danger: #ff8f7b;
 		--blue: #86bfff;
 		--purple: #c6a3ff;
-		--font-sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-		--font-mono: "SFMono-Regular", Consolas, "Liberation Mono", ui-monospace, monospace;
+		--font-sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+		--font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', ui-monospace, monospace;
 		--step--1: clamp(0.78rem, 0.75rem + 0.1vw, 0.84rem);
 		--step-0: clamp(0.94rem, 0.9rem + 0.16vw, 1.04rem);
 		--step-1: clamp(1.08rem, 1rem + 0.35vw, 1.28rem);
@@ -217,7 +217,7 @@
 		inline-size: clamp(4rem, 12vw, 11rem);
 		block-size: 1px;
 		background: var(--signal);
-		content: "";
+		content: '';
 	}
 
 	.site-header__inner {
@@ -274,13 +274,13 @@
 		text-decoration: none;
 	}
 
-	.desktop-nav a[aria-current="page"]::after {
+	.desktop-nav a[aria-current='page']::after {
 		position: absolute;
 		inset-block-end: 0;
 		inset-inline: 0.7rem;
 		block-size: 2px;
 		background: var(--signal);
-		content: "";
+		content: '';
 	}
 
 	.header-search {
@@ -440,7 +440,7 @@
 	.breadcrumbs li:not(:last-child)::after {
 		margin-inline-start: 0.4rem;
 		color: var(--line-strong);
-		content: "/";
+		content: '/';
 	}
 
 	.schematic-host {
@@ -546,7 +546,7 @@
 			text-decoration: none;
 		}
 
-		.mobile-nav nav > a[aria-current="page"] {
+		.mobile-nav nav > a[aria-current='page'] {
 			color: var(--signal);
 		}
 

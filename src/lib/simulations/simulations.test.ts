@@ -17,7 +17,14 @@ describe('digital ripple carry', () => {
 		expect(rippleCarry8(0, 0, 1).sum).toBe(1);
 	});
 
-	it.each([[-1, 0, 0], [256, 0, 0], [1.2, 0, 0], [0, -1, 0], [0, 256, 0], [0, 0, 2]])('rejects invalid input %#', (a, b, carry) => {
+	it.each([
+		[-1, 0, 0],
+		[256, 0, 0],
+		[1.2, 0, 0],
+		[0, -1, 0],
+		[0, 256, 0],
+		[0, 0, 2]
+	])('rejects invalid input %#', (a, b, carry) => {
 		expect(() => rippleCarry8(a, b, carry)).toThrowError(RangeError);
 	});
 
@@ -56,7 +63,13 @@ describe('RC low pass', () => {
 		expect(logarithmicFrequency(1)).toBe(100_000);
 	});
 
-	it.each([[0, 1, 1, 1], [1, 0, 1, 1], [1, 1, 0, 1], [1, 1, 1, 0], [Number.NaN, 1, 1, 1]])('rejects invalid physical input %#', (f, r, c, v) => {
+	it.each([
+		[0, 1, 1, 1],
+		[1, 0, 1, 1],
+		[1, 1, 0, 1],
+		[1, 1, 1, 0],
+		[Number.NaN, 1, 1, 1]
+	])('rejects invalid physical input %#', (f, r, c, v) => {
 		expect(() => rcLowPass(f, r, c, v)).toThrowError(RangeError);
 	});
 
@@ -78,7 +91,12 @@ describe('NE555 astable timing', () => {
 		expect(timing.dutyCycle).toBeGreaterThan(0.5);
 	});
 
-	it.each([[0, 1, 1], [1, 0, 1], [1, 1, 0], [Number.NaN, 1, 1]])('rejects invalid timing input %#', (r1, r2, c) => {
+	it.each([
+		[0, 1, 1],
+		[1, 0, 1],
+		[1, 1, 0],
+		[Number.NaN, 1, 1]
+	])('rejects invalid timing input %#', (r1, r2, c) => {
 		expect(() => astableTiming(r1, r2, c)).toThrowError(RangeError);
 	});
 });
@@ -87,11 +105,12 @@ describe('quantum teleportation', () => {
 	it('creates normalized real qubits and recovers every measurement branch', () => {
 		expect(qubitFromDegrees(0)).toEqual({ alpha: 1, beta: 0 });
 		expect(qubitFromDegrees(180).beta).toBeCloseTo(1, 12);
-		for (const z of [0, 1] as const) for (const x of [0, 1] as const) {
-			const result = teleport({ alpha: 3, beta: 4 }, z, x);
-			expect(result.fidelity).toBeCloseTo(1, 12);
-			expect(result.outcomeProbability).toBe(0.25);
-		}
+		for (const z of [0, 1] as const)
+			for (const x of [0, 1] as const) {
+				const result = teleport({ alpha: 3, beta: 4 }, z, x);
+				expect(result.fidelity).toBeCloseTo(1, 12);
+				expect(result.outcomeProbability).toBe(0.25);
+			}
 	});
 
 	it('rejects invalid angles, amplitudes, and measurement bits', () => {
@@ -100,7 +119,9 @@ describe('quantum teleportation', () => {
 		expect(() => qubitFromDegrees(Number.NaN)).toThrowError(RangeError);
 		expect(() => teleport({ alpha: 0, beta: 0 }, 0, 0)).toThrowError(RangeError);
 		expect(() => teleport({ alpha: Number.NaN, beta: 1 }, 0, 0)).toThrowError(RangeError);
-		expect(() => teleport({ alpha: 1, beta: Number.POSITIVE_INFINITY }, 0, 0)).toThrowError(RangeError);
+		expect(() => teleport({ alpha: 1, beta: Number.POSITIVE_INFINITY }, 0, 0)).toThrowError(
+			RangeError
+		);
 		expect(() => teleport({ alpha: 1, beta: 0 }, 2, 0)).toThrowError(RangeError);
 		expect(() => teleport({ alpha: 1, beta: 0 }, 0, 2)).toThrowError(RangeError);
 	});
@@ -110,7 +131,12 @@ describe('simulation manifest', () => {
 	it('exposes five bounded, documented routes', () => {
 		expect(SIMULATIONS).toHaveLength(5);
 		expect(new Set(SIMULATIONS.map((simulation) => simulation.id)).size).toBe(5);
-		expect(SIMULATIONS.every((simulation) => simulation.source.length > 0 && simulation.docsPath.startsWith('/docs/v0.2.1/'))).toBe(true);
+		expect(
+			SIMULATIONS.every(
+				(simulation) =>
+					simulation.source.length > 0 && simulation.docsPath.startsWith('/docs/v0.2.1/')
+			)
+		).toBe(true);
 		expect(getSimulation('rc-low-pass')?.domain).toBe('Analog circuits');
 		expect(getSimulation('missing')).toBeUndefined();
 	});

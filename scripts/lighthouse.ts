@@ -30,11 +30,14 @@ async function waitForServer(): Promise<void> {
 	throw new Error(`Preview did not start at ${origin}.`);
 }
 
-const preview = Bun.spawn(['bun', 'run', 'preview', '--', '--host', host, '--port', String(port), '--strictPort'], {
-	cwd: process.cwd(),
-	stdout: 'inherit',
-	stderr: 'inherit'
-});
+const preview = Bun.spawn(
+	['bun', 'run', 'preview', '--', '--host', host, '--port', String(port), '--strictPort'],
+	{
+		cwd: process.cwd(),
+		stdout: 'inherit',
+		stderr: 'inherit'
+	}
+);
 
 let chrome: Awaited<ReturnType<typeof launch>> | undefined;
 
@@ -66,7 +69,8 @@ try {
 		const scores = Object.fromEntries(
 			scoreCategories.map((category) => {
 				const value = result.lhr.categories[category]?.score;
-				if (value === null || value === undefined) throw new Error(`${category} did not return a score.`);
+				if (value === null || value === undefined)
+					throw new Error(`${category} did not return a score.`);
 				return [category, Math.round(value * 100)];
 			})
 		);
@@ -82,15 +86,21 @@ try {
 		console.log(JSON.stringify(measurement));
 		await writeFile(`artifacts/lighthouse/${route.name}.json`, JSON.stringify(result.lhr, null, 2));
 
-		if (scores.performance < 95) throw new Error(`${route.path} performance was ${scores.performance}, below 95.`);
+		if (scores.performance < 95)
+			throw new Error(`${route.path} performance was ${scores.performance}, below 95.`);
 		for (const category of scoreCategories.slice(1)) {
-			if (scores[category] !== 100) throw new Error(`${route.path} ${category} was ${scores[category]}, below 100.`);
+			if (scores[category] !== 100)
+				throw new Error(`${route.path} ${category} was ${scores[category]}, below 100.`);
 		}
 		if (largestContentfulPaint === undefined || largestContentfulPaint >= 1_800) {
-			throw new Error(`${route.path} LCP was ${largestContentfulPaint ?? 'unavailable'} ms, budget is below 1800 ms.`);
+			throw new Error(
+				`${route.path} LCP was ${largestContentfulPaint ?? 'unavailable'} ms, budget is below 1800 ms.`
+			);
 		}
 		if (cumulativeLayoutShift === undefined || cumulativeLayoutShift >= 0.05) {
-			throw new Error(`${route.path} CLS was ${cumulativeLayoutShift ?? 'unavailable'}, budget is below 0.05.`);
+			throw new Error(
+				`${route.path} CLS was ${cumulativeLayoutShift ?? 'unavailable'}, budget is below 0.05.`
+			);
 		}
 	}
 } finally {

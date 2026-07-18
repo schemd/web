@@ -21,12 +21,12 @@ Send every other fence back to the host parser. Emit only compiler-produced SVG 
 
 The UI component receives a finished SVG string. It should not own parsing, routing, or layout.
 
-| Framework | Reviewed output boundary |
-| --- | --- |
-| React | `dangerouslySetInnerHTML={{ __html: svg }}` |
-| Vue | `v-html="svg"` |
-| Angular | A reviewed `SafeHtml` value |
-| Svelte | `{@html svg}` |
+| Framework | Reviewed output boundary                    |
+| --------- | ------------------------------------------- |
+| React     | `dangerouslySetInnerHTML={{ __html: svg }}` |
+| Vue       | `v-html="svg"`                              |
+| Angular   | A reviewed `SafeHtml` value                 |
+| Svelte    | `{@html svg}`                               |
 
 Only pass output produced by Schemd through that boundary. Do not reuse it for arbitrary HTML. For untrusted author input, compile in an isolated worker and present the result in a sandboxed frame, as the playground does.
 

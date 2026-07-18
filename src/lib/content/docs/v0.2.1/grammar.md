@@ -50,16 +50,16 @@ G1.out -> Y.in #emerald [line marker-end=arrow]
 
 UML relationships are connection options. Schemd derives the conventional marker and dash pattern, while explicit marker and stroke options can override the default.
 
-| Relation | Default style |
-| --- | --- |
-| `association` | Solid line |
-| `dependency` | Dashed open arrow |
-| `generalization` | Hollow triangle at target |
-| `realization` | Dashed hollow triangle at target |
-| `aggregation` | Hollow diamond at source |
-| `composition` | Filled diamond at source |
-| `message`, `transition` | Open arrow |
-| `include`, `extend` | Dashed open arrow with label |
+| Relation                | Default style                    |
+| ----------------------- | -------------------------------- |
+| `association`           | Solid line                       |
+| `dependency`            | Dashed open arrow                |
+| `generalization`        | Hollow triangle at target        |
+| `realization`           | Dashed hollow triangle at target |
+| `aggregation`           | Hollow diamond at source         |
+| `composition`           | Filled diamond at source         |
+| `message`, `transition` | Open arrow                       |
+| `include`, `extend`     | Dashed open arrow with label     |
 
 ```schemd bounds="860x420" title="Class relationships"
 class:Account "Account" at (220, 150) #slate [attributes="- id: UUID" operations="+ close(): void"]

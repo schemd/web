@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { acceptsCompilation, createCoordinatorState, nextCompilation } from './coordinator';
 import { fenceInfo, getPlaygroundExample, PLAYGROUND_EXAMPLES } from './examples';
-import { isCompilerWorkerRequest, isCompilerWorkerResponse, type CompilerWorkerResponse } from './protocol';
+import {
+	isCompilerWorkerRequest,
+	isCompilerWorkerResponse,
+	type CompilerWorkerResponse
+} from './protocol';
 import { decodeSharedSource, encodeSharedSource, svgFileName } from './share';
 
 describe('playground state and protocol', () => {
@@ -14,7 +18,12 @@ describe('playground state and protocol', () => {
 		const second = nextCompilation(first.state, 'b');
 		if (!second) throw new Error('Expected second request.');
 		const stale: CompilerWorkerResponse = { kind: 'error', id: 1, diagnostic: { message: 'old' } };
-		const current: CompilerWorkerResponse = { kind: 'success', id: 2, svg: '<svg/>', metrics: { sourceCharacters: 1, components: 1, connections: 0, svgBytes: 6 } };
+		const current: CompilerWorkerResponse = {
+			kind: 'success',
+			id: 2,
+			svg: '<svg/>',
+			metrics: { sourceCharacters: 1, components: 1, connections: 0, svgBytes: 6 }
+		};
 		expect(acceptsCompilation(second.state, stale)).toBe(false);
 		expect(acceptsCompilation(second.state, current)).toBe(true);
 		expect(acceptsCompilation(second.state, { kind: 'ready' })).toBe(false);
@@ -22,10 +31,21 @@ describe('playground state and protocol', () => {
 
 	it.each([
 		[{ kind: 'ready' }, true],
-		[{ kind: 'success', id: 1, svg: '<svg/>', metrics: { sourceCharacters: 1, components: 1, connections: 0, svgBytes: 6 } }, true],
+		[
+			{
+				kind: 'success',
+				id: 1,
+				svg: '<svg/>',
+				metrics: { sourceCharacters: 1, components: 1, connections: 0, svgBytes: 6 }
+			},
+			true
+		],
 		[{ kind: 'error', id: 1, diagnostic: { message: 'bad', line: 2 } }, true],
 		[{ kind: 'error', id: 1, diagnostic: { message: 'bad' } }, true],
-		[null, false], [{}, false], [{ kind: 2 }, false], [{ kind: 'other', id: 1 }, false],
+		[null, false],
+		[{}, false],
+		[{ kind: 2 }, false],
+		[{ kind: 'other', id: 1 }, false],
 		[{ kind: 'success', id: '1', svg: '', metrics: {} }, false],
 		[{ kind: 'success', id: 1, svg: 2, metrics: {} }, false],
 		[{ kind: 'success', id: 1, svg: '', metrics: { sourceCharacters: 1 } }, false],
@@ -39,7 +59,15 @@ describe('playground state and protocol', () => {
 	it('validates worker compile requests', () => {
 		const valid = { kind: 'compile', id: 1, version: 'v0.2.1', source: 'x', fence: 'schemd' };
 		expect(isCompilerWorkerRequest(valid)).toBe(true);
-		for (const invalid of [null, {}, { ...valid, kind: 'other' }, { ...valid, id: '1' }, { ...valid, version: 'v9' }, { ...valid, source: 1 }, { ...valid, fence: 1 }]) {
+		for (const invalid of [
+			null,
+			{},
+			{ ...valid, kind: 'other' },
+			{ ...valid, id: '1' },
+			{ ...valid, version: 'v9' },
+			{ ...valid, source: 1 },
+			{ ...valid, fence: 1 }
+		]) {
 			expect(isCompilerWorkerRequest(invalid)).toBe(false);
 		}
 	});
@@ -48,7 +76,10 @@ describe('playground state and protocol', () => {
 		const source = 'port:A "µ" at (1, 2) #blue';
 		const hash = encodeSharedSource(source);
 		expect(decodeSharedSource(hash, 100)).toBe(source);
-		expect(decodeSharedSource('#other=x', 100)).toBeUndefined();
+		expect(decodeSharedSource('?other=x', 100)).toBeUndefined();
+		expect(decodeSharedSource('plain source', 100)).toBeUndefined();
+		expect(decodeSharedSource('?code=', 100)).toBe('');
+		expect(decodeSharedSource(`#source=${encodeURIComponent(source)}`, 100)).toBe(source);
 		expect(decodeSharedSource('#source=%E0%A4%A', 100)).toBeUndefined();
 		expect(decodeSharedSource(hash, 2)).toBeUndefined();
 		expect(() => decodeSharedSource(hash, 0)).toThrowError('positive integer');

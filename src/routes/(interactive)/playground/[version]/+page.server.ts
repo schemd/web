@@ -11,7 +11,11 @@ export const load: PageServerLoad = ({ params }) => {
 	const example = PLAYGROUND_EXAMPLES[0];
 	const fence = parseSchematicFence(fenceInfo(example), example.title);
 	if (!fence) error(500, 'The default playground fence is invalid.');
-	const compiled = compileSchematic(example.source, { ...fence, mode: 'embedded-css', idPrefix: 'playground-initial' });
+	const compiled = compileSchematic(example.source, {
+		...fence,
+		mode: 'embedded-css',
+		idPrefix: 'playground-initial'
+	});
 	return {
 		version,
 		versions: VERSIONS,

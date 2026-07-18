@@ -1,4 +1,5 @@
-export type SimulationId = 'digital-adder' | 'bell-state' | 'rc-low-pass' | '555-astable' | 'quantum-teleportation';
+export type SimulationId =
+	'digital-adder' | 'bell-state' | 'rc-low-pass' | '555-astable' | 'quantum-teleportation';
 
 export interface SimulationDefinition {
 	readonly id: SimulationId;
@@ -13,10 +14,13 @@ export interface SimulationDefinition {
 
 export const SIMULATIONS = Object.freeze([
 	Object.freeze({
-		id: 'digital-adder', domain: 'Digital logic', title: 'Ripple-carry adder',
+		id: 'digital-adder',
+		domain: 'Digital logic',
+		title: 'Ripple-carry adder',
 		summary: 'Follow one carry bit as two unsigned bytes pass through eight full-adder stages.',
 		idea: 'A ripple-carry adder is locally simple: each bit consumes A, B, and carry-in, then produces sum and carry-out.',
-		bounds: { width: 960, height: 420 }, docsPath: '/docs/v0.2.1/components#logic-quantum',
+		bounds: { width: 960, height: 420 },
+		docsPath: '/docs/v0.2.1/components#logic-quantum',
 		source: `port:A "A_i" at (70, 100) #blue
 port:B "B_i" at (70, 310) #blue
 xor:X1 "A_i xor B_i" at (310, 160) #cyan [inputs=2 outputs=1]
@@ -36,10 +40,14 @@ CIN.out -> CARRY.in2 #purple [ortho]
 CARRY.out -> COUT.in #amber [line marker-end=arrow]`
 	}),
 	Object.freeze({
-		id: 'bell-state', domain: 'Quantum circuits', title: 'Bell-state preparation',
-		summary: 'Step from |00⟩ through superposition to a correlated Bell pair, then sample a valid measurement.',
+		id: 'bell-state',
+		domain: 'Quantum circuits',
+		title: 'Bell-state preparation',
+		summary:
+			'Step from |00⟩ through superposition to a correlated Bell pair, then sample a valid measurement.',
 		idea: 'A Hadamard creates two amplitudes; CNOT correlates the target so only 00 and 11 remain possible.',
-		bounds: { width: 980, height: 420 }, docsPath: '/docs/v0.2.1/components#logic-quantum',
+		bounds: { width: 980, height: 420 },
+		docsPath: '/docs/v0.2.1/components#logic-quantum',
 		source: `port:Q0 "|0〉_{q0}" at (80, 110) #blue
 port:Q1 "|0〉_{q1}" at (80, 310) #blue
 hadamard:H1 "H" at (330, 110) #purple
@@ -54,10 +62,14 @@ CX.control -> M0.in #emerald [bezier]
 CX.target -> M1.in #emerald [bezier]`
 	}),
 	Object.freeze({
-		id: 'rc-low-pass', domain: 'Analog circuits', title: 'RC low-pass response',
-		summary: 'Sweep five decades of frequency and inspect ideal gain, phase, output voltage, and cutoff.',
+		id: 'rc-low-pass',
+		domain: 'Analog circuits',
+		title: 'RC low-pass response',
+		summary:
+			'Sweep five decades of frequency and inspect ideal gain, phase, output voltage, and cutoff.',
 		idea: 'A first-order RC low-pass attenuates increasingly above fc = 1 / (2πRC) and approaches −90° phase.',
-		bounds: { width: 920, height: 420 }, docsPath: '/docs/v0.2.1/components#circuit',
+		bounds: { width: 920, height: 420 },
+		docsPath: '/docs/v0.2.1/components#circuit',
 		source: `port:VIN "V_{in}" at (80, 130) #blue
 resistor:R1 "R = 10 k\\Omega" at (320, 130) #amber
 capacitor:C1 "C = 100 nF" at (560, 285) #cyan
@@ -70,34 +82,46 @@ R1.out -> C1.in #amber [ortho]
 C1.out -> GND.in #slate [ortho]`
 	}),
 	Object.freeze({
-		id: '555-astable', domain: 'Mixed signal', title: 'NE555 astable timing',
-		summary: 'Change the two resistors and timing capacitor, then inspect frequency, charge time, and duty cycle.',
+		id: '555-astable',
+		domain: 'Mixed signal',
+		title: 'NE555 astable timing',
+		summary:
+			'Change the two resistors and timing capacitor, then inspect frequency, charge time, and duty cycle.',
 		idea: 'The capacitor charges through R1 + R2 and discharges through R2, so the high interval is always longer in this basic topology.',
-		bounds: { width: 1120, height: 590 }, docsPath: '/docs/v0.2.1/components#integrated-circuits',
-		source: `port:VCC "+5 V" at (80, 90) #blue
-resistor:R1 "R_1" at (300, 90) #amber
-resistor:R2 "R_2" at (470, 230) #amber
-capacitor:C1 "C" at (470, 440) #cyan
-ic:U1 "NE555" at (760, 270) #cyan [left="TRIG,THRESH,CTRL,GND" right="VCC,DISCH,OUT,RESET"]
-port:OUT "Pulse" at (1040, 340) #emerald
-ground:GND "Ground" at (760, 510) #slate
+		bounds: { width: 1200, height: 660 },
+		docsPath: '/docs/v0.2.1/components#integrated-circuits',
+		source: `port:VCC "+5V rail" at (100, 100) #blue
+resistor:R1 "R_1 = 10 k\\Omega" at (310, 100) #amber
+resistor:R2 "R_2 = 47 k\\Omega" at (510, 240) #amber
+capacitor:C1 "C_1 = 10 \\muF" at (510, 480) #cyan
+ic:U1 "NE555" at (760, 280) #purple [left="GND,TRIG,THRESH,CTRL" right="VCC,DISCH,OUT,RESET"]
+resistor:ROUT "R_{LED} = 330 \\Omega" at (980, 360) #amber
+diode:LED1 "Pulse LED" at (1110, 360) #emerald [type=led]
+ground:GND "Signal ground" at (760, 560) #slate [style=signal]
 
 VCC.out -> R1.in #blue [ortho]
 VCC.out -> U1.VCC #blue [ortho]
-R1.out -> R2.in #amber [ortho]
+VCC.out -> U1.RESET #blue [ortho]
 R1.out -> U1.DISCH #amber [ortho]
+R1.out -> R2.in #amber [ortho]
 R2.out -> U1.TRIG #cyan [ortho]
 R2.out -> U1.THRESH #cyan [ortho]
 R2.out -> C1.in #cyan [ortho]
 C1.out -> GND.in #slate [ortho]
 U1.GND -> GND.in #slate [ortho]
-U1.OUT -> OUT.in #emerald [line marker-end=arrow]`
+U1.OUT -> ROUT.in #emerald [line]
+ROUT.out -> LED1.anode #emerald [line]
+LED1.cathode -> GND.in #slate [ortho]`
 	}),
 	Object.freeze({
-		id: 'quantum-teleportation', domain: 'Quantum protocols', title: 'Quantum state teleportation',
-		summary: 'Trace a real-amplitude message qubit through Bell encoding, measurement, and Pauli recovery.',
+		id: 'quantum-teleportation',
+		domain: 'Quantum protocols',
+		title: 'Quantum state teleportation',
+		summary:
+			'Trace a real-amplitude message qubit through Bell encoding, measurement, and Pauli recovery.',
 		idea: 'Teleportation transfers a state using prior entanglement and two classical bits; it does not transmit matter or exceed light speed.',
-		bounds: { width: 1500, height: 600 }, docsPath: '/docs/v0.2.1/components#logic-quantum',
+		bounds: { width: 1500, height: 600 },
+		docsPath: '/docs/v0.2.1/components#logic-quantum',
 		source: `port:PSI "|\\psi〉_A" at (70, 100) #purple
 port:ANC0 "|0〉_A" at (70, 300) #blue
 port:ANC1 "|0〉_B" at (70, 500) #blue

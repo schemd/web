@@ -2,13 +2,13 @@
 
 <!-- schemd-section: id=circuit; eyebrow=01 / Circuit; title=Use passives, semiconductors, boundaries, and ground -->
 
-| Kind | Primary ports | Options |
-| --- | --- | --- |
-| `resistor`, `capacitor`, `inductor` | `in`, `out` with left and right aliases | None |
-| `diode` | `anode`, `cathode` | `type=standard`, `schottky`, `zener`, `led` |
-| `transistor` | `base`, `collector`, `emitter` with FET aliases | `type=npn`, `pnp`, `nmos`, `pmos` |
-| `port` | `in`, `out` | None |
-| `ground` | `in` | `style=signal`, `earth`, `chassis` |
+| Kind                                | Primary ports                                   | Options                                     |
+| ----------------------------------- | ----------------------------------------------- | ------------------------------------------- |
+| `resistor`, `capacitor`, `inductor` | `in`, `out` with left and right aliases         | None                                        |
+| `diode`                             | `anode`, `cathode`                              | `type=standard`, `schottky`, `zener`, `led` |
+| `transistor`                        | `base`, `collector`, `emitter` with FET aliases | `type=npn`, `pnp`, `nmos`, `pmos`           |
+| `port`                              | `in`, `out`                                     | None                                        |
+| `ground`                            | `in`                                            | `style=signal`, `earth`, `chassis`          |
 
 ```schemd bounds="860x400" title="NMOS protected switch"
 port:CTRL "Gate" at (70, 190) #blue

@@ -23,6 +23,7 @@ export const load: PageServerLoad = ({ params }) => {
 		metadata: ast.metadata,
 		html: rendered.html,
 		toc: rendered.toc,
+		examples: rendered.examples,
 		navigation,
 		previous: currentIndex > 0 ? pages[currentIndex - 1] : undefined,
 		next: currentIndex >= 0 && currentIndex < pages.length - 1 ? pages[currentIndex + 1] : undefined

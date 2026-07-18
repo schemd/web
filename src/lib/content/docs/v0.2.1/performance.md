@@ -4,13 +4,13 @@
 
 Every compilation is bounded. These are exported from `@schemd/core` and enforced by the parser or renderer.
 
-| Resource | Limit |
-| --- | --- |
-| Source text | 131,072 characters |
-| Components | 512 |
-| Connections | 2,048 |
-| Wire crossings | 32,768 |
-| SVG output | 2,097,152 bytes |
+| Resource       | Limit              |
+| -------------- | ------------------ |
+| Source text    | 131,072 characters |
+| Components     | 512                |
+| Connections    | 2,048              |
+| Wire crossings | 32,768             |
+| SVG output     | 2,097,152 bytes    |
 
 The orthogonal router also has a bounded search. A blocked route reports an error instead of hanging or drawing through a component.
 

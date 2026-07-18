@@ -24,6 +24,13 @@ export interface DocumentationNavigationGroup {
 	readonly pages: readonly DocumentationNavigationPage[];
 }
 
+export interface DocumentationExample {
+	readonly id: string;
+	readonly title: string;
+	readonly source: string;
+	readonly svg: string;
+}
+
 interface RegisteredDocument {
 	readonly version: VersionId;
 	readonly ast: DocumentationAst;
@@ -42,14 +49,23 @@ function versionFromPath(path: string): VersionId {
 	const end = rest.indexOf('/');
 	const value = end < 0 ? '' : rest.slice(0, end);
 	const version = getVersion(value);
-	if (!version) throw new Error(`Documentation source ${path} uses unsupported version ${value || '(missing)'}.`);
+	if (!version)
+		throw new Error(
+			`Documentation source ${path} uses unsupported version ${value || '(missing)'}.`
+		);
 	return version.id;
 }
 
-const documents = Object.entries(rawModules).map(([path, source]) => ({
-	version: versionFromPath(path),
-	ast: parseDocumentation(source, path)
-})).sort((left, right) => left.ast.metadata.order - right.ast.metadata.order || left.ast.metadata.id.localeCompare(right.ast.metadata.id));
+const documents = Object.entries(rawModules)
+	.map(([path, source]) => ({
+		version: versionFromPath(path),
+		ast: parseDocumentation(source, path)
+	}))
+	.sort(
+		(left, right) =>
+			left.ast.metadata.order - right.ast.metadata.order ||
+			left.ast.metadata.id.localeCompare(right.ast.metadata.id)
+	);
 
 const documentKeys = new Set<string>();
 for (const document of documents) {
@@ -63,17 +79,24 @@ function versionDocuments(version: VersionId): readonly RegisteredDocument[] {
 }
 
 export function getDocumentationAst(version: VersionId, id: string): DocumentationAst | undefined {
-	return documents.find((document) => document.version === version && document.ast.metadata.id === id)?.ast;
+	return documents.find(
+		(document) => document.version === version && document.ast.metadata.id === id
+	)?.ast;
 }
 
-export function getDocumentationNavigation(version: VersionId): readonly DocumentationNavigationGroup[] {
+export function getDocumentationNavigation(
+	version: VersionId
+): readonly DocumentationNavigationGroup[] {
 	const pages = versionDocuments(version).map(({ ast }) => ({
 		id: ast.metadata.id,
 		label: ast.metadata.label,
 		title: ast.metadata.title,
 		category: ast.metadata.category,
 		order: ast.metadata.order,
-		sections: ast.sections.map((section) => ({ id: section.metadata.id, title: section.metadata.title }))
+		sections: ast.sections.map((section) => ({
+			id: section.metadata.id,
+			title: section.metadata.title
+		}))
 	}));
 	const groups = new Map<string, DocumentationNavigationPage[]>();
 	for (const page of pages) {
@@ -84,22 +107,53 @@ export function getDocumentationNavigation(version: VersionId): readonly Documen
 	return [...groups.entries()].map(([label, groupPages]) => ({ label, pages: groupPages }));
 }
 
-export function renderDocumentationPage(version: VersionId, id: string): { readonly html: string; readonly toc: readonly TocEntry[] } | undefined {
+export function renderDocumentationPage(
+	version: VersionId,
+	id: string
+):
+	| {
+			readonly html: string;
+			readonly toc: readonly TocEntry[];
+			readonly examples: readonly DocumentationExample[];
+	  }
+	| undefined {
 	const ast = getDocumentationAst(version, id);
 	if (!ast) return undefined;
+	const examples: DocumentationExample[] = [];
+	const compiledById = new Map<string, string>();
+	for (const section of ast.sections) {
+		for (const block of section.blocks) {
+			if (block.kind !== 'code' || block.language !== 'schemd') continue;
+			const fence = parseSchematicFence(`schemd ${block.metadata}`, ast.metadata.title);
+			if (!fence)
+				throw new Error(`${ast.sourceName}:${block.position.line}: invalid Schemd fence metadata.`);
+			const svg = compileSchematic(block.value, {
+				...fence,
+				mode: 'embedded-css',
+				idPrefix: `docs-${version}-${id}-${block.id}`
+			}).svg;
+			compiledById.set(block.id, svg);
+			examples.push({
+				id: block.id,
+				title: fence.title ?? ast.metadata.title,
+				source: block.value,
+				svg
+			});
+		}
+	}
 	return {
 		html: renderDocumentation(ast, {
 			renderSchemd(block) {
-				const fence = parseSchematicFence(`schemd ${block.metadata}`, ast.metadata.title);
-				if (!fence) throw new Error(`${ast.sourceName}:${block.position.line}: invalid Schemd fence metadata.`);
-				return compileSchematic(block.value, {
-					...fence,
-					mode: 'embedded-css',
-					idPrefix: `docs-${version}-${id}-${block.id}`
-				}).svg;
+				const svg = compiledById.get(block.id);
+				if (svg === undefined)
+					throw new Error(
+						`${ast.sourceName}:${block.position.line}: missing compiled Schemd example.`
+					);
+				return svg;
 			}
 		}),
-		toc: documentationToc(ast)
+		toc: documentationToc(ast),
+		examples
 	};
 }
 

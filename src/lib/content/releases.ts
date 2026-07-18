@@ -30,7 +30,8 @@ export const RELEASES = Object.freeze([
 		version: 'v0.1.2',
 		date: '2026-07-16',
 		title: 'Parser and math fixes',
-		summary: 'Recorded fixes across line rendering, math labels, and the former Markdown integration.',
+		summary:
+			'Recorded fixes across line rendering, math labels, and the former Markdown integration.',
 		documentationAvailable: false,
 		tagUrl: 'https://github.com/schemd/core/releases/tag/v0.1.2'
 	}),

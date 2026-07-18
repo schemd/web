@@ -94,10 +94,48 @@ const MAX_DOCUMENT_CHARACTERS = 131_072;
 const IDENTIFIER_CHARACTERS = 'abcdefghijklmnopqrstuvwxyz0123456789-';
 const SAFE_LINK_PREFIXES = ['/', '#', 'https://', 'mailto:'] as const;
 const CODE_KEYWORDS = new Set([
-	'import', 'export', 'from', 'const', 'let', 'function', 'return', 'if', 'else', 'type', 'interface',
-	'new', 'throw', 'true', 'false', 'undefined', 'class', 'resistor', 'capacitor', 'inductor',
-	'diode', 'transistor', 'port', 'ground', 'and', 'nand', 'or', 'nor', 'xor', 'not', 'hadamard',
-	'cnot', 'qgate', 'ic', 'actor', 'usecase', 'state', 'lifeline', 'note', 'package', 'initial', 'final'
+	'import',
+	'export',
+	'from',
+	'const',
+	'let',
+	'function',
+	'return',
+	'if',
+	'else',
+	'type',
+	'interface',
+	'new',
+	'throw',
+	'true',
+	'false',
+	'undefined',
+	'class',
+	'resistor',
+	'capacitor',
+	'inductor',
+	'diode',
+	'transistor',
+	'port',
+	'ground',
+	'and',
+	'nand',
+	'or',
+	'nor',
+	'xor',
+	'not',
+	'hadamard',
+	'cnot',
+	'qgate',
+	'ic',
+	'actor',
+	'usecase',
+	'state',
+	'lifeline',
+	'note',
+	'package',
+	'initial',
+	'final'
 ]);
 
 function position(line: number, column = 1): SourcePosition {
@@ -114,7 +152,11 @@ function isIdentifier(value: string): boolean {
 	return true;
 }
 
-function parseMetadataFields(value: string, line: number, sourceName: string): ReadonlyMap<string, string> {
+function parseMetadataFields(
+	value: string,
+	line: number,
+	sourceName: string
+): ReadonlyMap<string, string> {
 	const fields = new Map<string, string>();
 	let start = 0;
 	for (let index = 0; index <= value.length; index += 1) {
@@ -126,22 +168,34 @@ function parseMetadataFields(value: string, line: number, sourceName: string): R
 		if (separator < 1) fail(`Malformed metadata field "${field}".`, line, sourceName);
 		const key = field.slice(0, separator).trim().toLowerCase();
 		const fieldValue = field.slice(separator + 1).trim();
-		if (fieldValue.length === 0) fail(`Metadata field "${key}" requires a value.`, line, sourceName);
+		if (fieldValue.length === 0)
+			fail(`Metadata field "${key}" requires a value.`, line, sourceName);
 		if (fields.has(key)) fail(`Duplicate metadata field "${key}".`, line, sourceName);
 		fields.set(key, fieldValue);
 	}
 	return fields;
 }
 
-function requiredField(fields: ReadonlyMap<string, string>, key: string, line: number, sourceName: string): string {
+function requiredField(
+	fields: ReadonlyMap<string, string>,
+	key: string,
+	line: number,
+	sourceName: string
+): string {
 	const value = fields.get(key);
 	if (value === undefined) fail(`Missing required metadata field "${key}".`, line, sourceName);
 	return value;
 }
 
-function identifierField(fields: ReadonlyMap<string, string>, key: string, line: number, sourceName: string): string {
+function identifierField(
+	fields: ReadonlyMap<string, string>,
+	key: string,
+	line: number,
+	sourceName: string
+): string {
 	const value = requiredField(fields, key, line, sourceName);
-	if (!isIdentifier(value)) fail(`Metadata field "${key}" must be lowercase kebab-case.`, line, sourceName);
+	if (!isIdentifier(value))
+		fail(`Metadata field "${key}" must be lowercase kebab-case.`, line, sourceName);
 	return value;
 }
 
@@ -226,7 +280,9 @@ function slugify(value: string): string {
 
 function inlineText(nodes: readonly InlineNode[]): string {
 	return nodes
-		.map((node) => (node.kind === 'text' || node.kind === 'code' ? node.value : inlineText(node.children)))
+		.map((node) =>
+			node.kind === 'text' || node.kind === 'code' ? node.value : inlineText(node.children)
+		)
 		.join('');
 }
 
@@ -264,9 +320,15 @@ function isTableDivider(line: string): boolean {
 
 function isBlockStart(lines: readonly string[], index: number): boolean {
 	const line = lines[index];
-	return line.length === 0 || line.startsWith('```') || line.startsWith('### ') || line.startsWith('> ') ||
-		isListLine(line) || (line.includes('|') && isTableDivider(lines[index + 1] ?? '')) ||
-		line.startsWith('<!-- schemd-section:');
+	return (
+		line.length === 0 ||
+		line.startsWith('```') ||
+		line.startsWith('### ') ||
+		line.startsWith('> ') ||
+		isListLine(line) ||
+		(line.includes('|') && isTableDivider(lines[index + 1] ?? '')) ||
+		line.startsWith('<!-- schemd-section:')
+	);
 }
 
 function parseBlocks(
@@ -287,13 +349,15 @@ function parseBlocks(
 			index += 1;
 			continue;
 		}
-		if (line.startsWith('<')) fail('Raw HTML is not supported in documentation prose.', lineNumber, sourceName);
+		if (line.startsWith('<'))
+			fail('Raw HTML is not supported in documentation prose.', lineNumber, sourceName);
 		if (line.startsWith('```')) {
 			const info = line.slice(3).trim();
 			const space = info.indexOf(' ');
 			const language = (space < 0 ? info : info.slice(0, space)).toLowerCase();
 			const metadata = space < 0 ? '' : info.slice(space + 1).trim();
-			if (language.length === 0) fail('Code fences require a language identifier.', lineNumber, sourceName);
+			if (language.length === 0)
+				fail('Code fences require a language identifier.', lineNumber, sourceName);
 			const codeLines: string[] = [];
 			index += 1;
 			while (index < lines.length && lines[index] !== '```') {
@@ -303,8 +367,12 @@ function parseBlocks(
 			if (index >= lines.length) fail('Unclosed code fence.', lineNumber, sourceName);
 			codeIndex += 1;
 			blocks.push({
-				kind: 'code', position: position(lineNumber), id: `${sectionId}-example-${codeIndex}`,
-				language, metadata, value: codeLines.join('\n')
+				kind: 'code',
+				position: position(lineNumber),
+				id: `${sectionId}-example-${codeIndex}`,
+				language,
+				metadata,
+				value: codeLines.join('\n')
 			});
 			index += 1;
 			continue;
@@ -315,8 +383,11 @@ function parseBlocks(
 			const count = (headingCounts.get(baseId) ?? 0) + 1;
 			headingCounts.set(baseId, count);
 			blocks.push({
-				kind: 'heading', level: 3, id: count === 1 ? baseId : `${baseId}-${count}`,
-				position: position(lineNumber), children
+				kind: 'heading',
+				level: 3,
+				id: count === 1 ? baseId : `${baseId}-${count}`,
+				position: position(lineNumber),
+				children
 			});
 			index += 1;
 			continue;
@@ -327,7 +398,11 @@ function parseBlocks(
 				values.push(lines[index].slice(2));
 				index += 1;
 			}
-			blocks.push({ kind: 'callout', position: position(lineNumber), children: parseInline(values.join(' ')) });
+			blocks.push({
+				kind: 'callout',
+				position: position(lineNumber),
+				children: parseInline(values.join(' '))
+			});
 			continue;
 		}
 		if (isListLine(line)) {
@@ -347,12 +422,14 @@ function parseBlocks(
 		if (line.includes('|') && isTableDivider(lines[index + 1] ?? '')) {
 			const headers = tableCells(line).map(parseInline);
 			const dividerCells = tableCells(lines[index + 1]);
-			if (headers.length !== dividerCells.length) fail('Table divider must match its header width.', lineNumber + 1, sourceName);
+			if (headers.length !== dividerCells.length)
+				fail('Table divider must match its header width.', lineNumber + 1, sourceName);
 			index += 2;
 			const rows: (readonly (readonly InlineNode[])[])[] = [];
 			while (index < lines.length && lines[index].includes('|') && lines[index].trim().length > 0) {
 				const cells = tableCells(lines[index]);
-				if (cells.length !== headers.length) fail('Table row must match its header width.', startLine + index, sourceName);
+				if (cells.length !== headers.length)
+					fail('Table row must match its header width.', startLine + index, sourceName);
 				rows.push(cells.map(parseInline));
 				index += 1;
 			}
@@ -363,27 +440,38 @@ function parseBlocks(
 		const paragraph: string[] = [];
 		while (index < lines.length && !isBlockStart(lines, index)) {
 			const current = lines[index];
-			if (current.startsWith('<')) fail('Raw HTML is not supported in documentation prose.', startLine + index, sourceName);
+			if (current.startsWith('<'))
+				fail('Raw HTML is not supported in documentation prose.', startLine + index, sourceName);
 			paragraph.push(current.trim());
 			index += 1;
 		}
-		blocks.push({ kind: 'paragraph', position: position(lineNumber), children: parseInline(paragraph.join(' ')) });
+		blocks.push({
+			kind: 'paragraph',
+			position: position(lineNumber),
+			children: parseInline(paragraph.join(' '))
+		});
 	}
 	return blocks;
 }
 
-export function parseDocumentation(source: string, sourceName = 'documentation.md'): DocumentationAst {
+export function parseDocumentation(
+	source: string,
+	sourceName = 'documentation.md'
+): DocumentationAst {
 	const normalized = source.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
-	if (normalized.length > MAX_DOCUMENT_CHARACTERS) fail(`Document exceeds ${MAX_DOCUMENT_CHARACTERS} characters.`, 1, sourceName);
+	if (normalized.length > MAX_DOCUMENT_CHARACTERS)
+		fail(`Document exceeds ${MAX_DOCUMENT_CHARACTERS} characters.`, 1, sourceName);
 	const lines = normalized.split('\n');
 	let cursor = 0;
 	while (cursor < lines.length && lines[cursor].trim().length === 0) cursor += 1;
 	const firstLine = lines[cursor] ?? '';
 	const documentMetadataSource = metadataComment(firstLine, 'schemd-doc');
-	if (documentMetadataSource === undefined) fail('Document must begin with a schemd-doc metadata comment.', cursor + 1, sourceName);
+	if (documentMetadataSource === undefined)
+		fail('Document must begin with a schemd-doc metadata comment.', cursor + 1, sourceName);
 	const documentFields = parseMetadataFields(documentMetadataSource, cursor + 1, sourceName);
 	const orderValue = Number(requiredField(documentFields, 'order', cursor + 1, sourceName));
-	if (!Number.isSafeInteger(orderValue) || orderValue < 0) fail('Metadata field "order" must be a non-negative integer.', cursor + 1, sourceName);
+	if (!Number.isSafeInteger(orderValue) || orderValue < 0)
+		fail('Metadata field "order" must be a non-negative integer.', cursor + 1, sourceName);
 	const metadata: DocumentationMetadata = {
 		id: identifierField(documentFields, 'id', cursor + 1, sourceName),
 		label: requiredField(documentFields, 'label', cursor + 1, sourceName),
@@ -403,7 +491,8 @@ export function parseDocumentation(source: string, sourceName = 'documentation.m
 			continue;
 		}
 		const sectionMetadataSource = metadataComment(line, 'schemd-section');
-		if (sectionMetadataSource === undefined) fail('Expected a schemd-section metadata comment.', cursor + 1, sourceName);
+		if (sectionMetadataSource === undefined)
+			fail('Expected a schemd-section metadata comment.', cursor + 1, sourceName);
 		const sectionLine = cursor + 1;
 		const fields = parseMetadataFields(sectionMetadataSource, sectionLine, sourceName);
 		const id = identifierField(fields, 'id', sectionLine, sourceName);
@@ -411,8 +500,10 @@ export function parseDocumentation(source: string, sourceName = 'documentation.m
 		sectionIds.add(id);
 		cursor += 1;
 		const blockStart = cursor;
-		while (cursor < lines.length && lines[cursor].trim() !== '<!-- /schemd-section -->') cursor += 1;
-		if (cursor >= lines.length) fail(`Section "${id}" is missing its closing comment.`, sectionLine, sourceName);
+		while (cursor < lines.length && lines[cursor].trim() !== '<!-- /schemd-section -->')
+			cursor += 1;
+		if (cursor >= lines.length)
+			fail(`Section "${id}" is missing its closing comment.`, sectionLine, sourceName);
 		const blocks = parseBlocks(lines.slice(blockStart, cursor), blockStart + 1, id, sourceName);
 		if (blocks.length === 0) fail(`Section "${id}" must contain content.`, sectionLine, sourceName);
 		sections.push({
@@ -431,7 +522,12 @@ export function parseDocumentation(source: string, sourceName = 'documentation.m
 }
 
 export function escapeHtml(value: string): string {
-	return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+	return value
+		.replaceAll('&', '&amp;')
+		.replaceAll('<', '&lt;')
+		.replaceAll('>', '&gt;')
+		.replaceAll('"', '&quot;')
+		.replaceAll("'", '&#39;');
 }
 
 function isSafeHref(href: string): boolean {
@@ -439,28 +535,43 @@ function isSafeHref(href: string): boolean {
 }
 
 function renderInline(nodes: readonly InlineNode[]): string {
-	return nodes.map((node) => {
-		switch (node.kind) {
-			case 'text': return escapeHtml(node.value);
-			case 'code': return `<code>${escapeHtml(node.value)}</code>`;
-			case 'strong': return `<strong>${renderInline(node.children)}</strong>`;
-			case 'emphasis': return `<em>${renderInline(node.children)}</em>`;
-			case 'link': {
-				const label = renderInline(node.children);
-				if (!isSafeHref(node.href)) return `${label} <span class="unsafe-link">[unsafe link removed]</span>`;
-				const external = node.href.startsWith('https://');
-				return `<a href="${escapeHtml(node.href)}"${external ? ' rel="noreferrer"' : ''}>${label}</a>`;
+	return nodes
+		.map((node) => {
+			switch (node.kind) {
+				case 'text':
+					return escapeHtml(node.value);
+				case 'code':
+					return `<code>${escapeHtml(node.value)}</code>`;
+				case 'strong':
+					return `<strong>${renderInline(node.children)}</strong>`;
+				case 'emphasis':
+					return `<em>${renderInline(node.children)}</em>`;
+				case 'link': {
+					const label = renderInline(node.children);
+					if (!isSafeHref(node.href))
+						return `${label} <span class="unsafe-link">[unsafe link removed]</span>`;
+					const external = node.href.startsWith('https://');
+					return `<a href="${escapeHtml(node.href)}"${external ? ' rel="noreferrer"' : ''}>${label}</a>`;
+				}
 			}
-		}
-	}).join('');
+		})
+		.join('');
 }
 
 type CodeTokenKind = 'plain' | 'keyword' | 'string' | 'number' | 'comment' | 'punctuation';
-interface CodeToken { readonly kind: CodeTokenKind; readonly value: string }
+interface CodeToken {
+	readonly kind: CodeTokenKind;
+	readonly value: string;
+}
 
 function isWordCharacter(character: string): boolean {
-	return (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') ||
-		(character >= '0' && character <= '9') || character === '_' || character === '-';
+	return (
+		(character >= 'a' && character <= 'z') ||
+		(character >= 'A' && character <= 'Z') ||
+		(character >= '0' && character <= '9') ||
+		character === '_' ||
+		character === '-'
+	);
 }
 
 export function tokenizeCode(value: string): readonly CodeToken[] {
@@ -468,7 +579,10 @@ export function tokenizeCode(value: string): readonly CodeToken[] {
 	let index = 0;
 	while (index < value.length) {
 		const character = value[index];
-		if ((character === '/' && value[index + 1] === '/') || (character === '#' && value[index + 1] === ' ')) {
+		if (
+			(character === '/' && value[index + 1] === '/') ||
+			(character === '#' && value[index + 1] === ' ')
+		) {
 			const end = value.indexOf('\n', index);
 			const boundary = end < 0 ? value.length : end;
 			tokens.push({ kind: 'comment', value: value.slice(index, boundary) });
@@ -478,7 +592,10 @@ export function tokenizeCode(value: string): readonly CodeToken[] {
 		if (character === '"' || character === "'") {
 			let end = index + 1;
 			while (end < value.length) {
-				if (value[end] === character && value[end - 1] !== '\\') { end += 1; break; }
+				if (value[end] === character && value[end - 1] !== '\\') {
+					end += 1;
+					break;
+				}
 				end += 1;
 			}
 			tokens.push({ kind: 'string', value: value.slice(index, end) });
@@ -487,7 +604,8 @@ export function tokenizeCode(value: string): readonly CodeToken[] {
 		}
 		if (character >= '0' && character <= '9') {
 			let end = index + 1;
-			while (end < value.length && ((value[end] >= '0' && value[end] <= '9') || value[end] === '.')) end += 1;
+			while (end < value.length && ((value[end] >= '0' && value[end] <= '9') || value[end] === '.'))
+				end += 1;
 			tokens.push({ kind: 'number', value: value.slice(index, end) });
 			index = end;
 			continue;
@@ -500,7 +618,8 @@ export function tokenizeCode(value: string): readonly CodeToken[] {
 			index = end;
 			continue;
 		}
-		if ('{}[]():;,.=<>+-*'.includes(character)) tokens.push({ kind: 'punctuation', value: character });
+		if ('{}[]():;,.=<>+-*'.includes(character))
+			tokens.push({ kind: 'punctuation', value: character });
 		else tokens.push({ kind: 'plain', value: character });
 		index += 1;
 	}
@@ -508,42 +627,69 @@ export function tokenizeCode(value: string): readonly CodeToken[] {
 }
 
 function renderCode(value: string): string {
-	return tokenizeCode(value).map((token) => token.kind === 'plain' ? escapeHtml(token.value) : `<span class="tok-${token.kind}">${escapeHtml(token.value)}</span>`).join('');
+	return tokenizeCode(value)
+		.map((token) =>
+			token.kind === 'plain'
+				? escapeHtml(token.value)
+				: `<span class="tok-${token.kind}">${escapeHtml(token.value)}</span>`
+		)
+		.join('');
 }
 
 function renderBlock(block: DocumentationBlock, options: RenderDocumentationOptions): string {
 	switch (block.kind) {
-		case 'paragraph': return `<p>${renderInline(block.children)}</p>`;
-		case 'heading': return `<h3 id="${escapeHtml(block.id)}">${renderInline(block.children)}</h3>`;
+		case 'paragraph':
+			return `<p>${renderInline(block.children)}</p>`;
+		case 'heading':
+			return `<h3 id="${escapeHtml(block.id)}">${renderInline(block.children)}</h3>`;
 		case 'list': {
 			const tag = block.ordered ? 'ol' : 'ul';
 			return `<${tag}>${block.items.map((item) => `<li>${renderInline(item)}</li>`).join('')}</${tag}>`;
 		}
-		case 'callout': return `<aside class="doc-callout">${renderInline(block.children)}</aside>`;
-		case 'table': return `<div class="table-scroll" role="region" aria-label="Scrollable data table" tabindex="0"><table><thead><tr>${block.headers.map((cell) => `<th scope="col">${renderInline(cell)}</th>`).join('')}</tr></thead><tbody>${block.rows.map((row) => `<tr>${row.map((cell) => `<td>${renderInline(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+		case 'callout':
+			return `<aside class="doc-callout">${renderInline(block.children)}</aside>`;
+		case 'table':
+			return `<div class="table-scroll" role="region" aria-label="Scrollable data table" tabindex="0"><table><thead><tr>${block.headers.map((cell) => `<th scope="col">${renderInline(cell)}</th>`).join('')}</tr></thead><tbody>${block.rows.map((row) => `<tr>${row.map((cell) => `<td>${renderInline(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 		case 'code': {
-			const source = `<div class="doc-code"><div class="doc-code__bar"><span>${escapeHtml(block.language)}</span><span>${escapeHtml(block.id)}</span></div><pre tabindex="0" role="region" aria-label="${escapeHtml(block.language)} code example"><code class="language-${escapeHtml(block.language)}">${renderCode(block.value)}</code></pre></div>`;
+			const exampleAttribute =
+				block.language === 'schemd' ? ` data-doc-example="${escapeHtml(block.id)}"` : '';
+			const source = `<div class="doc-code"${exampleAttribute}><div class="doc-code__bar"><span>${escapeHtml(block.language)}</span><span>${escapeHtml(block.id)}</span></div><pre tabindex="0" role="region" aria-label="${escapeHtml(block.language)} code example"><code class="language-${escapeHtml(block.language)}">${renderCode(block.value)}</code></pre></div>`;
 			if (block.language !== 'schemd' || !options.renderSchemd) return source;
-			return `${source}<figure class="doc-diagram"><div class="schematic-host">${options.renderSchemd(block)}</div><figcaption>Compiled by the selected @schemd/core release during server rendering.</figcaption></figure>`;
+			return `${source}<figure class="doc-diagram" data-doc-diagram="${escapeHtml(block.id)}"><div class="schematic-host">${options.renderSchemd(block)}</div><figcaption>Compiled by the selected @schemd/core release during server rendering.</figcaption></figure>`;
 		}
 	}
 }
 
-export function renderDocumentation(ast: DocumentationAst, options: RenderDocumentationOptions = {}): string {
-	return ast.sections.map((section) => `<section class="doc-section" id="${escapeHtml(section.metadata.id)}"><p class="eyebrow">${escapeHtml(section.metadata.eyebrow)}</p><h2>${escapeHtml(section.metadata.title)}</h2><div class="doc-prose">${section.blocks.map((block) => renderBlock(block, options)).join('')}</div></section>`).join('');
+export function renderDocumentation(
+	ast: DocumentationAst,
+	options: RenderDocumentationOptions = {}
+): string {
+	return ast.sections
+		.map(
+			(section) =>
+				`<section class="doc-section" id="${escapeHtml(section.metadata.id)}"><p class="eyebrow">${escapeHtml(section.metadata.eyebrow)}</p><h2>${escapeHtml(section.metadata.title)}</h2><div class="doc-prose">${section.blocks.map((block) => renderBlock(block, options)).join('')}</div></section>`
+		)
+		.join('');
 }
 
 export function documentationToc(ast: DocumentationAst): readonly TocEntry[] {
 	const entries: TocEntry[] = [];
 	for (const section of ast.sections) {
 		entries.push({ id: section.metadata.id, title: section.metadata.title, depth: 2 });
-		for (const block of section.blocks) if (block.kind === 'heading') entries.push({ id: block.id, title: inlineText(block.children), depth: 3 });
+		for (const block of section.blocks)
+			if (block.kind === 'heading')
+				entries.push({ id: block.id, title: inlineText(block.children), depth: 3 });
 	}
 	return entries;
 }
 
 export function documentationPlainText(ast: DocumentationAst): string {
-	const values = [ast.metadata.label, ast.metadata.title, ast.metadata.summary, ast.metadata.category];
+	const values = [
+		ast.metadata.label,
+		ast.metadata.title,
+		ast.metadata.summary,
+		ast.metadata.category
+	];
 	for (const section of ast.sections) {
 		values.push(section.metadata.eyebrow, section.metadata.title);
 		for (const block of section.blocks) {
@@ -551,7 +697,8 @@ export function documentationPlainText(ast: DocumentationAst): string {
 			else if (block.kind === 'table') {
 				for (const cell of block.headers) values.push(inlineText(cell));
 				for (const row of block.rows) for (const cell of row) values.push(inlineText(cell));
-			} else if (block.kind === 'list') for (const item of block.items) values.push(inlineText(item));
+			} else if (block.kind === 'list')
+				for (const item of block.items) values.push(inlineText(item));
 			else values.push(inlineText(block.children));
 		}
 	}

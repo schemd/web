@@ -30,5 +30,7 @@
 	<meta name="twitter:description" content={description} />
 	<meta name="twitter:image" content={absoluteUrl('/og.png')} />
 	{#if noindex}<meta name="robots" content="noindex,follow" />{/if}
-	{#if structuredData}<svelte:element this={'script'} type="application/ld+json">{json}</svelte:element>{/if}
+	{#if structuredData}<svelte:element this={"script"} type="application/ld+json"
+			>{json}</svelte:element
+		>{/if}
 </svelte:head>

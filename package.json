@@ -5,7 +5,7 @@
 		"@axe-core/playwright": "^4.12.1",
 		"@eslint/js": "^10.0.1",
 		"@playwright/test": "^1.61.1",
-		"@sveltejs/adapter-auto": "^7.0.1",
+		"@sveltejs/adapter-node": "^5.5.7",
 		"@sveltejs/kit": "^2.70.0",
 		"@sveltejs/vite-plugin-svelte": "^7.2.0",
 		"@types/node": "^26",
