@@ -34,8 +34,11 @@ export default defineConfig(
 		}
 	},
 	{
-		// Override or add rule settings here, such as:
-		// 'svelte/button-has-type': 'error'
-		rules: {}
+		rules: {
+			// Canonical URLs are rooted deliberately; the site is not served from a configurable base path.
+			'svelte/no-navigation-without-resolve': 'off',
+			// Content lists are immutable SSR data. Interactive lists use stable values rather than identity.
+			'svelte/require-each-key': 'off'
+		}
 	}
 );

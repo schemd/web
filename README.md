@@ -1,44 +1,40 @@
-# sv
+# Schemd website
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+The official SvelteKit website for [`@schemd/core`](https://github.com/schemd/core): landing page, versioned documentation, worker-based playground, focused simulations, public implementation timeline, changelog, and server search.
 
-## Creating a project
+## Local development
 
-If you're seeing this, you've probably already done this step. Congrats!
+The repository uses Bun only.
 
 ```sh
-# create a new project
-npx sv create my-app
+bun ci
+bun run dev
 ```
 
-To recreate this project with the same configuration:
+The development server prints the local URL. Production verification:
 
 ```sh
-# recreate this project
-bun x sv@0.16.3 create --template minimal --types ts --add prettier eslint vitest="usages:unit,component" playwright sveltekit-adapter="adapter:auto" --install bun schemd-web
+bun run format:check
+bun run lint
+bun run check
+bun run test:coverage
+bun run test:docs
+bun run build
+bun run check:budget
+bun run test:e2e
 ```
 
-## Developing
+## Deployment
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
+The project intentionally uses `@sveltejs/adapter-auto`. Connect the repository to a supported SvelteKit host, set the production domain to `schemd.johnowolabiidogun.dev`, and use:
 
 ```sh
+bun ci
 bun run build
 ```
 
-You can preview the production build with `npm run preview`.
+No runtime environment variables are required. Change to a platform-specific adapter only after the deployment target is selected.
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+## Content and releases
 
-# web
+`src/lib/versioning/manifest.ts` is the website release source of truth. Versioned documentation is build-bundled under `src/lib/content/docs/<version>`. The generated metrics and timeline files record their core commit provenance; update the core sources first, then regenerate the website snapshots.
