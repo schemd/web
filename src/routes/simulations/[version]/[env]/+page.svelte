@@ -45,7 +45,7 @@
 <div class="lab-page grid-backdrop">
 	<header class="lab-head">
 		<div class="lab-crumbs">
-			<a href={`/simulate/${data.version}`} class="back">← all environments</a>
+			<a href={`/simulations/${data.version}`} class="back">← all environments</a>
 			<span class="microlabel">{sim.index} · {sim.domain} · v{data.version}</span>
 		</div>
 		<h1>{sim.title}</h1>
@@ -58,7 +58,7 @@
 		<nav class="env-tabs" aria-label="Simulation environments">
 			{#each data.environments as environment (environment.id)}
 				<a
-					href={`/simulate/${data.version}/${environment.id}`}
+					href={`/simulations/${data.version}/${environment.id}`}
 					aria-current={environment.id === sim.id ? 'page' : undefined}
 				>
 					{environment.index} · {environment.title}

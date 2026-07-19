@@ -7,7 +7,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	const registry = await getRegistry();
 	const version = resolveVersion(registry, params.version);
 	if (version === undefined || params.version === 'latest') {
-		redirect(307, `/simulate/${version ?? registry.latest}`);
+		redirect(307, `/simulations/${version ?? registry.latest}`);
 	}
 	return { version, environments: listSimulationEnvironments() };
 };

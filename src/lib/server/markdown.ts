@@ -1,18 +1,17 @@
 /**
- * Zero-dependency server-side Markdown pipeline.
+ * Documentation Markdown pipeline for the `content/schemd` corpus.
  *
- * A deliberately small, deterministic renderer for the documentation corpus:
- * headings, paragraphs, lists, tables, inline marks, admonition blocks, and
- * fenced code. ` ```schemd ` fences are the interesting part — their bodies
- * are compiled through the real `@schemd/core` compiler at load time, so every
- * vector on the documentation site is engine output, not an illustration.
+ * The corpus is authored with HTML-comment directives rather than `##`
+ * headings: a `schemd-doc` header carries page metadata, and each
+ * `schemd-section … /schemd-section` block is one scroll-synced unit with an
+ * anchored `h2`, prose (rendered by `marked` + KaTeX), and an optional
+ * ` ```schemd ` fence that is compiled by the real `@schemd/core` and surfaced
+ * in the right rail. Every vector on the docs site is engine output.
  */
-import {
-	compileSchematic,
-	parseSchematicFence,
-	SchematicSyntaxError
-} from '@schemd/core';
+import { Marked } from 'marked';
+import { compileSchematic, parseSchematicFence, SchematicSyntaxError } from '@schemd/core';
 import { highlightSourceHtml } from '$lib/tokenizer';
+import mathExtension from './math-extension';
 
 /** One `h2` navigation section extracted while rendering. */
 export interface DocSection {
@@ -28,6 +27,16 @@ export interface DocExample {
 	readonly source: string;
 	readonly sourceHtml: string;
 	readonly svg: string;
+}
+
+/** Page-level metadata parsed from the `schemd-doc` directive. */
+export interface DocFrontmatter {
+	readonly slug: string;
+	readonly title: string;
+	readonly label: string;
+	readonly summary: string;
+	readonly group: string;
+	readonly order: number;
 }
 
 /** Fully rendered document ready for the three-column shell. */
@@ -48,179 +57,156 @@ function escapeHtml(value: string): string {
 	return value.replace(/[&<>"]/g, (char) => ESCAPES[char] ?? char);
 }
 
-/** Deterministic, collision-suffixed heading slugs. */
-function slugger(): (title: string) => string {
-	const seen = new Map<string, number>();
-	return (title: string): string => {
-		const base =
-			title
-				.toLowerCase()
-				.replace(/[^a-z0-9\s-]/g, '')
-				.trim()
-				.replace(/\s+/g, '-') || 'section';
-		const count = seen.get(base) ?? 0;
-		seen.set(base, count + 1);
-		return count === 0 ? base : `${base}-${count}`;
+/** Marked instance: GFM + KaTeX, with non-schemd code blocks themed inline. */
+const marked = new Marked({ gfm: true });
+marked.use(mathExtension());
+marked.use({
+	renderer: {
+		code({ text, lang }) {
+			const attr = lang ? ` data-lang="${escapeHtml(lang)}"` : '';
+			return `<pre class="codeblock"${attr}><code>${escapeHtml(text)}</code></pre>`;
+		}
+	}
+});
+
+const DOC_META = /<!--\s*schemd-doc:\s*([\s\S]*?)-->/;
+const SECTION = /<!--\s*schemd-section:\s*([\s\S]*?)-->([\s\S]*?)<!--\s*\/schemd-section\s*-->/g;
+const SCHEMD_FENCE = /```(schemd[^\n]*)\n([\s\S]*?)\n```/g;
+
+/** Parse a `k=v; k=v` directive body into a lookup. */
+function parseAttrs(raw: string): Record<string, string> {
+	const attrs: Record<string, string> = {};
+	for (const part of raw.split(';')) {
+		const eq = part.indexOf('=');
+		if (eq === -1) continue;
+		const key = part.slice(0, eq).trim();
+		if (key) attrs[key] = part.slice(eq + 1).trim();
+	}
+	return attrs;
+}
+
+/** Page metadata from the `schemd-doc` header, or undefined when absent. */
+export function parseDocFrontmatter(source: string, slug: string): DocFrontmatter | undefined {
+	const match = DOC_META.exec(source);
+	if (!match) return undefined;
+	const attrs = parseAttrs(match[1]!);
+	return {
+		slug: attrs.id ?? slug,
+		title: attrs.title ?? slug,
+		label: attrs.label ?? attrs.title ?? slug,
+		summary: attrs.summary ?? '',
+		group: attrs.category ?? 'Documentation',
+		order: Number(attrs.order ?? 999)
 	};
 }
 
-/** Inline marks: code, bold, italic, links. Escapes first, marks second. */
-function renderInline(source: string): string {
-	let html = escapeHtml(source);
-	html = html.replace(/`([^`]+)`/g, (_, code: string) => `<code>${code}</code>`);
-	html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-	html = html.replace(/(^|[\s(])_([^_]+)_(?=[\s).,;:!?]|$)/g, '$1<em>$2</em>');
-	html = html.replace(/\*([^*\s][^*]*)\*/g, '<em>$1</em>');
-	html = html.replace(
-		/\[([^\]]+)\]\(([^)\s]+)\)/g,
-		(_, text: string, href: string) =>
-			`<a href="${href}"${href.startsWith('http') ? ' rel="noopener" target="_blank"' : ''}>${text}</a>`
-	);
-	return html;
-}
-
-function renderTable(rows: readonly string[]): string {
-	const parse = (row: string): string[] =>
-		row
-			.replace(/^\||\|$/g, '')
-			.split('|')
-			.map((cell) => cell.trim());
-	const header = parse(rows[0]!);
-	const body = rows.slice(2).map(parse);
-	const head = header.map((cell) => `<th>${renderInline(cell)}</th>`).join('');
-	const cells = body
-		.map((row) => `<tr>${row.map((cell) => `<td>${renderInline(cell)}</td>`).join('')}</tr>`)
-		.join('');
-	return `<table><thead><tr>${head}</tr></thead><tbody>${cells}</tbody></table>`;
+interface FenceExtraction {
+	readonly markdown: string;
+	readonly examples: DocExample[];
+	readonly figures: Map<string, string>;
 }
 
 /**
- * Render one Markdown document, compiling every `schemd` fence.
+ * Pull `schemd` fences out of a section body: compile each to SVG for the rail,
+ * replace it in the prose with a placeholder that later becomes a source
+ * figure. Non-schemd fences (` ```sh `, ` ```ts `) are left for `marked`.
  *
- * @param source - Raw Markdown.
+ * @throws {SchematicSyntaxError} A broken example must fail the build.
+ */
+function extractSchemdFences(
+	body: string,
+	docSlug: string,
+	sectionId: string,
+	exampleTitle: string,
+	counter: { value: number }
+): FenceExtraction {
+	const examples: DocExample[] = [];
+	const figures = new Map<string, string>();
+	const markdown = body.replace(SCHEMD_FENCE, (whole, info: string, code: string) => {
+		const fence = parseSchematicFence(info.trim());
+		if (!fence) return whole;
+		counter.value += 1;
+		const id = `${docSlug}-example-${counter.value}`;
+		const source = code.trim();
+		const compiled = compileSchematic(source, { ...fence, mode: 'embedded-css', idPrefix: id });
+		const sourceHtml = highlightSourceHtml(source);
+		examples.push({ id, sectionId, title: exampleTitle || fence.title, source, sourceHtml, svg: compiled.svg });
+		const placeholder = `%%SCHEMD_FENCE_${counter.value}%%`;
+		figures.set(
+			placeholder,
+			`<figure class="doc-example" data-example="${id}">` +
+				`<pre class="codeblock" data-lang="schemd"><code>${sourceHtml}</code></pre>` +
+				`<figcaption class="microlabel">compiled by @schemd/core → shown in the rail</figcaption>` +
+				`</figure>`
+		);
+		return `\n\n${placeholder}\n\n`;
+	});
+	return { markdown, examples, figures };
+}
+
+/** Render prose to HTML, then swap fence placeholders for their figures. */
+function renderProse(markdown: string, figures: Map<string, string>): string {
+	let html = marked.parse(markdown, { async: false });
+	for (const [placeholder, figure] of figures) {
+		html = html.split(`<p>${placeholder}</p>`).join(figure).split(placeholder).join(figure);
+	}
+	return html;
+}
+
+/**
+ * Render one `content/schemd` document.
+ *
+ * @param source - Raw Markdown with `schemd-doc`/`schemd-section` directives.
  * @param docSlug - Stable prefix for example and SVG definition IDs.
- * @throws {SchematicSyntaxError} When an embedded fence fails to compile —
- *   documentation with a broken example must fail the build, not ship it.
  */
 export function renderMarkdownDoc(source: string, docSlug: string): RenderedDoc {
-	const slug = slugger();
-	const lines = source.replace(/\r\n?/g, '\n').split('\n');
-	const out: string[] = [];
+	const normalized = source.replace(/\r\n?/g, '\n');
 	const sections: DocSection[] = [];
 	const examples: DocExample[] = [];
-	let currentSection = 'intro';
-	let exampleIndex = 0;
-	let index = 0;
+	const out: string[] = [];
+	const counter = { value: 0 };
 
-	while (index < lines.length) {
-		const line = lines[index]!;
+	/* Preamble: any prose between the header and the first section is intro. */
+	const firstSection = normalized.search(/<!--\s*schemd-section:/);
+	const headerEnd = normalized.search(/-->/);
+	const preambleStart = headerEnd === -1 ? 0 : headerEnd + 3;
+	const preamble = normalized
+		.slice(preambleStart, firstSection === -1 ? undefined : firstSection)
+		.trim();
+	if (preamble) {
+		const { markdown, examples: exs, figures } = extractSchemdFences(
+			preamble,
+			docSlug,
+			'intro',
+			'',
+			counter
+		);
+		examples.push(...exs);
+		out.push(renderProse(markdown, figures));
+	}
 
-		/* Fenced code */
-		const fence = line.match(/^```(.*)$/);
-		if (fence) {
-			const info = fence[1]!.trim();
-			const body: string[] = [];
-			index += 1;
-			while (index < lines.length && !/^```\s*$/.test(lines[index]!)) {
-				body.push(lines[index]!);
-				index += 1;
-			}
-			index += 1;
-			const code = body.join('\n');
-			const schemdFence = parseSchematicFence(info);
-			if (schemdFence) {
-				exampleIndex += 1;
-				const id = `${docSlug}-example-${exampleIndex}`;
-				const compiled = compileSchematic(code.trim(), {
-					...schemdFence,
-					mode: 'embedded-css',
-					idPrefix: id
-				});
-				examples.push({
-					id,
-					sectionId: currentSection,
-					title: schemdFence.title,
-					source: code.trim(),
-					sourceHtml: highlightSourceHtml(code.trim()),
-					svg: compiled.svg
-				});
-				out.push(
-					`<figure class="doc-example" data-example="${id}">` +
-						`<pre class="codeblock" data-lang="schemd"><code>${highlightSourceHtml(code.trim())}</code></pre>` +
-						`<figcaption class="microlabel">compiled by @schemd/core → shown in the rail</figcaption>` +
-						`</figure>`
-				);
-			} else if (info === 'schemd-source' || info === 'text' || info === '') {
-				out.push(
-					`<pre class="codeblock"><code>${info === 'schemd-source' ? highlightSourceHtml(code) : escapeHtml(code)}</code></pre>`
-				);
-			} else {
-				out.push(`<pre class="codeblock" data-lang="${escapeHtml(info)}"><code>${escapeHtml(code)}</code></pre>`);
-			}
-			continue;
-		}
+	SECTION.lastIndex = 0;
+	let match: RegExpExecArray | null;
+	while ((match = SECTION.exec(normalized)) !== null) {
+		const attrs = parseAttrs(match[1]!);
+		const id = attrs.id ?? `section-${sections.length + 1}`;
+		const title = attrs.title ?? id;
+		const eyebrow = attrs.eyebrow ?? '';
+		sections.push({ id, title });
 
-		/* Raw HTML passthrough (admonitions authored inline) */
-		if (/^<\/?(div|span|p)\b/.test(line)) {
-			out.push(line);
-			index += 1;
-			continue;
-		}
+		const { markdown, examples: exs, figures } = extractSchemdFences(
+			match[2]!,
+			docSlug,
+			id,
+			attrs['example-title'] ?? title,
+			counter
+		);
+		examples.push(...exs);
 
-		/* Headings */
-		const heading = line.match(/^(#{1,3})\s+(.*)$/);
-		if (heading) {
-			const depth = heading[1]!.length;
-			const title = heading[2]!.trim();
-			const id = slug(title);
-			if (depth === 2) {
-				currentSection = id;
-				sections.push({ id, title });
-			}
-			out.push(`<h${depth} id="${id}">${renderInline(title)}</h${depth}>`);
-			index += 1;
-			continue;
-		}
-
-		/* Tables */
-		if (line.startsWith('|') && lines[index + 1]?.match(/^\|[\s:|-]+\|$/)) {
-			const rows: string[] = [];
-			while (index < lines.length && lines[index]!.startsWith('|')) {
-				rows.push(lines[index]!);
-				index += 1;
-			}
-			out.push(renderTable(rows));
-			continue;
-		}
-
-		/* Unordered lists */
-		if (/^-\s+/.test(line)) {
-			const items: string[] = [];
-			while (index < lines.length && /^-\s+/.test(lines[index]!)) {
-				items.push(lines[index]!.replace(/^-\s+/, ''));
-				index += 1;
-			}
-			out.push(`<ul>${items.map((item) => `<li>${renderInline(item)}</li>`).join('')}</ul>`);
-			continue;
-		}
-
-		/* Blank */
-		if (line.trim() === '') {
-			index += 1;
-			continue;
-		}
-
-		/* Paragraph */
-		const paragraph: string[] = [];
-		while (
-			index < lines.length &&
-			lines[index]!.trim() !== '' &&
-			!/^(#{1,3}\s|```|-\s|\||<\/?(?:div|span|p)\b)/.test(lines[index]!)
-		) {
-			paragraph.push(lines[index]!);
-			index += 1;
-		}
-		out.push(`<p>${renderInline(paragraph.join(' '))}</p>`);
+		out.push(
+			`<h2 id="${id}">${eyebrow ? `<span class="doc-eyebrow">${escapeHtml(eyebrow)}</span>` : ''}${escapeHtml(title)}</h2>`
+		);
+		out.push(renderProse(markdown, figures));
 	}
 
 	return { html: out.join('\n'), sections, examples };

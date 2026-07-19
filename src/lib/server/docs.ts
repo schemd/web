@@ -1,90 +1,79 @@
 /**
  * Documentation corpus loader.
  *
- * Markdown lives in `src/lib/content/docs`. Rendering — including compiling
- * every embedded `schemd` fence through `@schemd/core` — happens once per
- * process per page, then persists in an in-memory cache for the lifetime of
- * the `adapter-node` server.
+ * Markdown lives in `src/lib/content/schemd` and is authored with
+ * `schemd-doc`/`schemd-section` directives (see {@link renderMarkdownDoc}).
+ * The manifest is derived from each file's `schemd-doc` header — ordered by its
+ * `order`, grouped by its `category` — and rendered output (including every
+ * compiled `schemd` fence) is cached for the lifetime of the `adapter-node`
+ * server.
  */
-import { renderMarkdownDoc, type RenderedDoc } from './markdown';
+import { renderMarkdownDoc, parseDocFrontmatter, type RenderedDoc } from './markdown';
 
 /** Ordered navigation manifest for the left index tree. */
 export interface DocPageMeta {
 	readonly slug: string;
+	/** Long title for the page header and SEO. */
 	readonly title: string;
+	/** Short label for the navigation tree. */
+	readonly label: string;
 	readonly summary: string;
-	readonly group: 'Foundations' | 'The Language' | 'Compilation';
+	readonly group: string;
 }
 
-export const DOC_MANIFEST: readonly DocPageMeta[] = [
-	{
-		slug: 'overview',
-		title: 'Overview',
-		summary: 'What schemd is, how the compiler pipeline works, and a first schematic.',
-		group: 'Foundations'
-	},
-	{
-		slug: 'language',
-		title: 'The schemd Language',
-		summary: 'Fence grammar, declarations, comments, colors, and micro-math labels.',
-		group: 'The Language'
-	},
-	{
-		slug: 'components',
-		title: 'Component Primitives',
-		summary: 'Passives, analog devices, logic gates, quantum operators, and custom ICs.',
-		group: 'The Language'
-	},
-	{
-		slug: 'uml',
-		title: 'UML Nodes & Relations',
-		summary: 'Classes, actors, states, lifelines, and the ten relationship kinds.',
-		group: 'The Language'
-	},
-	{
-		slug: 'connections',
-		title: 'Connections & Routing',
-		summary: 'Ports, routing strategies, markers, and connection labels.',
-		group: 'The Language'
-	},
-	{
-		slug: 'output-modes',
-		title: 'Output Modes & Theming',
-		summary: 'default, embedded-css, and full — plus every CSS custom property hook.',
-		group: 'Compilation'
-	},
-	{
-		slug: 'limits',
-		title: 'Limits & Security Model',
-		summary: 'Hard compiler budgets and the immutable-AST provenance boundary.',
-		group: 'Compilation'
-	},
-	{
-		slug: 'api',
-		title: 'API Reference',
-		summary: 'Every stable export of @schemd/core, entry point by entry point.',
-		group: 'Compilation'
-	}
-];
-
-const sources = import.meta.glob<string>('$lib/content/docs/*.md', {
+/** Raw sources; the tone references are voice guides, not documentation. */
+const sources = import.meta.glob<string>('$lib/content/schemd/*.md', {
 	query: '?raw',
 	import: 'default',
 	eager: true
 });
+
+function slugFromPath(path: string): string {
+	return path.split('/').pop()!.replace(/\.md$/, '');
+}
+
+const EXCLUDED = new Set(['tone1', 'tone2']);
+
+/** Raw markdown keyed by slug, and the ordered manifest — built once. */
+const { rawBySlug, manifest } = ((): {
+	rawBySlug: Map<string, string>;
+	manifest: readonly DocPageMeta[];
+} => {
+	const rawBySlug = new Map<string, string>();
+	const entries: { meta: DocPageMeta; order: number }[] = [];
+	for (const [path, raw] of Object.entries(sources)) {
+		const slug = slugFromPath(path);
+		if (EXCLUDED.has(slug)) continue;
+		const front = parseDocFrontmatter(raw, slug);
+		if (!front) continue;
+		rawBySlug.set(front.slug, raw);
+		entries.push({
+			order: front.order,
+			meta: {
+				slug: front.slug,
+				title: front.title,
+				label: front.label,
+				summary: front.summary,
+				group: front.group
+			}
+		});
+	}
+	entries.sort((a, b) => a.order - b.order);
+	return { rawBySlug, manifest: entries.map((entry) => entry.meta) };
+})();
+
+export const DOC_MANIFEST: readonly DocPageMeta[] = manifest;
 
 /** Process-lifetime render cache. */
 const rendered = new Map<string, RenderedDoc>();
 
 /** Load one documentation page by slug, rendering and caching on first hit. */
 export function loadDoc(slug: string): RenderedDoc | undefined {
-	const meta = DOC_MANIFEST.find((page) => page.slug === slug);
-	if (!meta) return undefined;
 	const cached = rendered.get(slug);
 	if (cached) return cached;
-	const entry = Object.entries(sources).find(([path]) => path.endsWith(`/${slug}.md`));
-	if (!entry) return undefined;
-	const doc = renderMarkdownDoc(entry[1], slug);
+	const raw = rawBySlug.get(slug);
+	if (!raw) return undefined;
+	const doc = renderMarkdownDoc(raw, slug);
 	rendered.set(slug, doc);
 	return doc;
 }
@@ -96,11 +85,11 @@ export function docSearchIndex(
 	return DOC_MANIFEST.flatMap((page) => {
 		const doc = loadDoc(page.slug);
 		const base = `/docs/${version}/${page.slug}`;
-		const root = { title: page.title, hint: 'docs', href: base };
+		const root = { title: page.label, hint: 'docs', href: base };
 		const children =
 			doc?.sections.map((section) => ({
 				title: section.title,
-				hint: `docs · ${page.title}`,
+				hint: `docs · ${page.label}`,
 				href: `${base}#${section.id}`
 			})) ?? [];
 		return [root, ...children];

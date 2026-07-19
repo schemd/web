@@ -223,7 +223,36 @@
 		cursor: pointer;
 
 		:global(svg) {
-			min-inline-size: 1400px;
+			min-inline-size: 820px;
+		}
+
+		/* Inactive nets/nodes recede to a dim, desaturated wash… */
+		:global([data-wire-source]),
+		:global([data-node-id]) {
+			opacity: 0.26;
+			filter: grayscale(0.85);
+			transition:
+				opacity var(--dur-med) var(--ease-precise),
+				filter var(--dur-med) var(--ease-precise);
+		}
+
+		/* …while nets carrying a logic-1 (the live propagation) light up. */
+		:global([data-wire-source].is-active) {
+			opacity: 1;
+			filter: drop-shadow(0 0 4px var(--glow));
+		}
+
+		:global([data-node-id].is-active) {
+			opacity: 1;
+			filter: drop-shadow(0 0 5px var(--glow));
+		}
+
+		/* Keep the clickable input ports discoverable even at logic 0. */
+		:global([data-node-id^='A']:not(.is-active)),
+		:global([data-node-id^='B']:not(.is-active)),
+		:global([data-node-id='CIN']:not(.is-active)) {
+			opacity: 0.5;
+			filter: grayscale(0.5);
 		}
 	}
 </style>

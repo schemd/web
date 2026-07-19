@@ -141,7 +141,7 @@
 					<nav class="milestone-links" aria-label={`Version ${release.version} destinations`}>
 						<a href={`/docs/${release.version}/overview`}>docs</a>
 						<a href={`/playground/${release.version}`}>playground</a>
-						<a href={`/simulate/${release.version}`}>lab</a>
+						<a href={`/simulations/${release.version}`}>lab</a>
 					</nav>
 				</div>
 			</li>

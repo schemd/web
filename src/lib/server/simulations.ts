@@ -5,8 +5,8 @@
  * (`is-active`, `is-degraded`, `is-selected`) that `@schemd/core` styles.
  *
  * This module is the single source of truth for both the environment selector
- * (`/simulate/[version]`) and each standalone laboratory
- * (`/simulate/[version]/[env]`): the selector reads {@link SIM_ENVIRONMENTS}
+ * (`/simulations/[version]`) and each standalone laboratory
+ * (`/simulations/[version]/[env]`): the selector reads {@link SIM_ENVIRONMENTS}
  * metadata without paying for a compile, while a laboratory route resolves the
  * one compiled document it needs through {@link getSimulation}.
  */
@@ -43,26 +43,41 @@ export interface CompiledSimulation extends SimEnvironment {
 	readonly connections: number;
 }
 
-/** Generate the 8-bit ripple-carry adder DSL programmatically. */
+/**
+ * Generate the 8-bit ripple-carry adder DSL programmatically.
+ *
+ * Bits are stacked **vertically** — one full-adder cell per row, LSB (bit 0)
+ * at the top — so the carry ripples straight down from C_in to C_out. Every
+ * cell keeps identical column roles, so the client's logic pass can address
+ * nodes by `<role>_<bit>` regardless of geometry.
+ */
 function adderSource(): { source: string; width: number; height: number } {
-	const lines: string[] = ['// 8-bit ripple-carry adder — generated declarations'];
-	const columnWidth = 300;
+	const lines: string[] = ['// 8-bit ripple-carry adder — vertical stack, carry ripples downward'];
 	const bits = 8;
-	lines.push(`port:CIN "C_{in}" at (70, 340) #slate`);
+	const rowHeight = 180;
+	const top = 110;
+	/* Fixed column x-positions by gate role. */
+	const xInput = 70; /* A / B ports */
+	const xFirst = 250; /* X1 (sum XOR) + N1 (AND) */
+	const xSecond = 430; /* X2 (carry XOR) + N2 (AND) */
+	const xCarry = 610; /* O1 (carry OR) */
+	const xSum = 760; /* S output port */
+
+	lines.push(`port:CIN "C_{in}" at (${xSecond}, 50) #slate`);
 	for (let bit = 0; bit < bits; bit += 1) {
-		const x = 70 + bit * columnWidth;
+		const y = top + bit * rowHeight;
 		lines.push(
-			`port:A${bit} "A_${bit}" at (${x}, 60) #blue`,
-			`port:B${bit} "B_${bit}" at (${x}, 140) #blue`,
-			`xor:X1_${bit} "X" at (${x + 110}, 100) #cyan`,
-			`and:N1_${bit} "A" at (${x + 110}, 240) #amber`,
-			`xor:X2_${bit} "X" at (${x + 210}, 140) #cyan`,
-			`and:N2_${bit} "A" at (${x + 110}, 330) #amber`,
-			`or:O1_${bit} "O" at (${x + 210}, 285) #purple`,
-			`port:S${bit} "S_${bit}" at (${x + 290}, 60) #emerald`
+			`port:A${bit} "A_${bit}" at (${xInput}, ${y - 5}) #blue`,
+			`port:B${bit} "B_${bit}" at (${xInput}, ${y + 55}) #blue`,
+			`xor:X1_${bit} "X" at (${xFirst}, ${y}) #cyan`,
+			`and:N1_${bit} "A" at (${xFirst}, ${y + 85}) #amber`,
+			`xor:X2_${bit} "X" at (${xSecond}, ${y + 25}) #cyan`,
+			`and:N2_${bit} "A" at (${xSecond}, ${y + 105}) #amber`,
+			`or:O1_${bit} "O" at (${xCarry}, ${y + 90}) #purple`,
+			`port:S${bit} "S_${bit}" at (${xSum}, ${y + 10}) #emerald`
 		);
 	}
-	lines.push(`port:COUT "C_{out}" at (${70 + bits * columnWidth + 40}, 285) #emerald`);
+	lines.push(`port:COUT "C_{out}" at (${xCarry}, ${top + bits * rowHeight - 30}) #emerald`);
 	for (let bit = 0; bit < bits; bit += 1) {
 		const carry = bit === 0 ? 'CIN.out' : `O1_${bit - 1}.out`;
 		lines.push(
@@ -71,16 +86,16 @@ function adderSource(): { source: string; width: number; height: number } {
 			`A${bit}.out -> N1_${bit}.in1 #blue [line]`,
 			`B${bit}.out -> N1_${bit}.in2 #blue [line]`,
 			`X1_${bit}.out -> X2_${bit}.in1 #cyan [line]`,
-			`${carry} -> X2_${bit}.in2 #slate [line]`,
+			`${carry} -> X2_${bit}.in2 #slate [ortho]`,
 			`X1_${bit}.out -> N2_${bit}.in1 #cyan [line]`,
-			`${carry} -> N2_${bit}.in2 #slate [line]`,
+			`${carry} -> N2_${bit}.in2 #slate [ortho]`,
 			`N1_${bit}.out -> O1_${bit}.in1 #amber [line]`,
 			`N2_${bit}.out -> O1_${bit}.in2 #amber [line]`,
 			`X2_${bit}.out -> S${bit}.in #emerald [line]`
 		);
 	}
-	lines.push(`O1_${bits - 1}.out -> COUT.in #purple [line]`);
-	return { source: lines.join('\n'), width: 70 + bits * columnWidth + 110, height: 420 };
+	lines.push(`O1_${bits - 1}.out -> COUT.in #purple [ortho]`);
+	return { source: lines.join('\n'), width: 880, height: top + bits * rowHeight + 40 };
 }
 
 const RC_SOURCE = `// First-order RC low-pass filter

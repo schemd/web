@@ -2,6 +2,7 @@
 	import type { PageProps } from './$types';
 	import { page } from '$app/state';
 	import Pronounce from '$lib/components/Pronounce.svelte';
+	import 'katex/dist/katex.min.css';
 
 	let { data }: PageProps = $props();
 
@@ -119,7 +120,7 @@
 										href={`/docs/${data.version}/${pageMeta.slug}`}
 										aria-current={pageMeta.slug === data.meta.slug ? 'page' : undefined}
 									>
-										{pageMeta.title}
+										{pageMeta.label}
 									</a>
 									{#if pageMeta.slug === data.meta.slug && data.doc.sections.length > 0}
 										<ul class="section-tree">
@@ -148,6 +149,8 @@
 	<article class="doc-article" bind:this={prose}>
 		<header class="doc-header">
 			<p class="microlabel">v{data.version} · {data.meta.group}</p>
+			<h1>{data.meta.title}</h1>
+			<p class="doc-summary">{data.meta.summary}</p>
 		</header>
 		<div class="prose">
 			{@html data.doc.html}
@@ -313,7 +316,32 @@
 	}
 
 	.doc-header {
-		margin-block-end: var(--space-2);
+		margin-block-end: var(--space-6);
+
+		& h1 {
+			font-size: var(--text-xl);
+			letter-spacing: -0.02em;
+			margin-block: var(--space-2) var(--space-3);
+		}
+	}
+
+	.doc-summary {
+		margin: 0;
+		max-inline-size: 68ch;
+		color: var(--ink-mute);
+		font-size: var(--text-md);
+	}
+
+	/* Section eyebrow injected before each h2 by the markdown pipeline. */
+	.prose :global(h2 .doc-eyebrow) {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: var(--text-2xs);
+		font-weight: 500;
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+		color: var(--accent);
+		margin-block-end: var(--space-1);
 	}
 
 	/* ----- right rail: rigid sticky context ----- */

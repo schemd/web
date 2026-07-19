@@ -14,9 +14,9 @@ export const GET: RequestHandler = async ({ url }) => {
 	const origin = url.origin;
 	const urls: string[] = [`${origin}/`, `${origin}/changelog`];
 	for (const release of registry.releases) {
-		urls.push(`${origin}/playground/${release.version}`, `${origin}/simulate/${release.version}`);
+		urls.push(`${origin}/playground/${release.version}`, `${origin}/simulations/${release.version}`);
 		for (const environment of SIM_ENVIRONMENTS) {
-			urls.push(`${origin}/simulate/${release.version}/${environment.id}`);
+			urls.push(`${origin}/simulations/${release.version}/${environment.id}`);
 		}
 		for (const page of DOC_MANIFEST) {
 			urls.push(`${origin}/docs/${release.version}/${page.slug}`);

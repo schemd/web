@@ -17,7 +17,7 @@
 				'@type': 'ListItem',
 				position: index + 1,
 				name: environment.title,
-				url: `/simulate/${data.version}/${environment.id}`
+				url: `/simulations/${data.version}/${environment.id}`
 			}))
 		})
 	);
@@ -63,7 +63,7 @@
 		if (launching) return;
 		launching = id;
 		if (ui.audio) playSuccess();
-		setTimeout(() => goto(`/simulate/${data.version}/${id}`), 640);
+		setTimeout(() => goto(`/simulations/${data.version}/${id}`), 640);
 	}
 </script>
 
@@ -152,7 +152,7 @@
 	<ul class="grid" aria-label="Simulation environments">
 		{#each environments as environment, index (environment.id)}
 			<li class="card panel" class:featured={index === 0} style={`--i: ${index}`}>
-				<a class="card-open" href={`/simulate/${data.version}/${environment.id}`}>
+				<a class="card-open" href={`/simulations/${data.version}/${environment.id}`}>
 					<div class="card-head">
 						{@render miniIcon(environment.id)}
 						<div class="card-titles">

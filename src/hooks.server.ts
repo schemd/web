@@ -16,7 +16,7 @@ const LEGACY_PREFIXES: ReadonlyArray<readonly [string, string]> = [
 ];
 
 /** Sections whose bare (unversioned) paths resolve to the latest release. */
-const VERSIONED_SECTIONS = ['/docs', '/playground', '/simulate'] as const;
+const VERSIONED_SECTIONS = ['/docs', '/playground', '/simulations'] as const;
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const { pathname, search } = event.url;

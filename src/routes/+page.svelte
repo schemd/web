@@ -74,14 +74,16 @@
 				<Pronounce />
 			</p>
 			<p class="hero-lede animate-in">
-				Write electrical, logic, quantum, and UML diagrams as text. The compiler parses,
-				validates, routes, and emits deterministic, accessible SVG — on a server, with zero
-				dependencies. No canvas. No dragging. No pixels.
+				We treat a schematic the way a compiler treats source. Write electrical, logic, quantum,
+				and UML diagrams as plain text; the pipeline tokenizes each declaration, validates its
+				options against the component kind you named, routes traces around component bodies, and
+				emits deterministic, accessible SVG — on a server, with zero dependencies. No canvas. No
+				dragging. No pixels.
 			</p>
 			<div class="hero-actions animate-in">
 				<a class="btn btn-solid" href={`/playground/${data.latest}`}>Open the playground</a>
 				<a class="btn" href={`/docs/${data.latest}/overview`}>Read the docs</a>
-				<a class="btn" href={`/simulate/${data.latest}`}>Enter the lab</a>
+				<a class="btn" href={`/simulations/${data.latest}`}>Enter the lab</a>
 			</div>
 			<pre class="codeblock install animate-in"><code>npm i @schemd/core</code></pre>
 		</div>

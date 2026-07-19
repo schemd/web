@@ -13,7 +13,7 @@ export const load: LayoutServerLoad = async () => {
 		paletteEntries: [
 			{ title: 'Landing', hint: 'route', href: '/' },
 			{ title: 'Playground', hint: `route · v${latest}`, href: `/playground/${latest}` },
-			{ title: 'Simulation Lab', hint: `route · v${latest}`, href: `/simulate/${latest}` },
+			{ title: 'Simulation Lab', hint: `route · v${latest}`, href: `/simulations/${latest}` },
 			{ title: 'Changelog', hint: 'route', href: '/changelog' },
 			...docSearchIndex(latest)
 		]
