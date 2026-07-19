@@ -2,9 +2,9 @@
 
 <!-- schemd-section: id=scripts; eyebrow=01 / Scripts; title=Use subscripts and superscripts; example-title=Nested engineering labels; example-summary=Nested scripts return cleanly to the main baseline. -->
 
-Use `_x` or `^2` for one shifted character. Use braces for a group: `V_{out}`, `f^{2n}`, or `A_{x_{sub}}`.
+You will not find a TeX runtime anywhere in schemd — and yet the labels still read like engineering. Use `_x` or `^2` to shift a single character; reach for braces when the script is a group: `V_{out}`, `f^{2n}`, or the deliberately awkward `A_{x_{sub}}`.
 
-Scripts can nest. Each group has its own scale and baseline, and the next piece of text returns to the correct parent baseline.
+Scripts nest, and that is the whole trick worth understanding. Each group carries its own scale and baseline, so when a nested script ends, the next run of text drops back onto the parent baseline exactly where the eye expects it — no drift, no manual kerning.
 
 ```schemd bounds="920x320" title="Nested engineering labels"
 port:VIN "V_{in} = 1 V" at (80, 160) #blue
@@ -21,11 +21,11 @@ C1.out -> VOUT.in #emerald [line marker-end=arrow]
 
 <!-- schemd-section: id=symbols-and-escapes; eyebrow=02 / Symbols; title=Use the built-in commands or raw Unicode; example-title=Quantum notation; example-summary=Symbols and qgate metadata share the same small parser. -->
 
-Common commands include `\alpha`, `\beta`, `\Delta`, `\lambda`, `\mu`, `\Omega`, `\omega`, `\phi`, `\pi`, `\sigma`, `\theta`, `\cdot`, `\times`, `\pm`, `\le`, `\ge`, `\neq`, `\infty`, `\sqrt`, and `\rightarrow`. Raw Unicode works too.
+The common commands are all here — `\alpha`, `\beta`, `\Delta`, `\lambda`, `\mu`, `\Omega`, `\omega`, `\phi`, `\pi`, `\sigma`, `\theta`, `\cdot`, `\times`, `\pm`, `\le`, `\ge`, `\neq`, `\infty`, `\sqrt`, and `\rightarrow` — and raw Unicode works just as well when you would rather paste the glyph directly.
 
-Escape a literal backslash, brace, underscore, or caret with `\\`, `\{`, `\}`, `\_`, or `\^`. Unknown command names stay visible instead of becoming SVG markup. Labels are escaped before they reach the document.
+When you need the literal character, escape it: `\\`, `\{`, `\}`, `\_`, or `\^`. An unknown command name is a non-event by design — it stays visible as text rather than leaking into SVG markup — and every label is escaped before it reaches the document, so a stray `<` can never become a tag.
 
-Text width is estimated without loading a font. Wide Unicode receives a conservative allowance, but exact glyph metrics still depend on the font chosen by the browser.
+One honest caveat closes the loop: width is _estimated_, not measured, because no font is ever loaded. Wide Unicode receives a conservative allowance, but the exact glyph metrics still belong to whatever font the browser eventually paints with.
 
 ```schemd bounds="880x340" title="Quantum notation"
 port:QIN "|\psi_0〉 = |0〉" at (80, 170) #slate

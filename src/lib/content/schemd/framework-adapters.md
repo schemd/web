@@ -2,7 +2,7 @@
 
 <!-- schemd-section: id=framework-contract; eyebrow=01 / Host; title=Keep compilation outside the component; example-title=Framework-neutral signal chain; example-summary=One compiled SVG can be mounted by every major UI framework. -->
 
-Compile before the component renders. The component only receives the resulting SVG string.
+The contract is one sentence: compile before the component renders, and hand the component only the finished SVG string. Every framework already has a boundary for trusted HTML — find yours in the table and pass schemd's output through it.
 
 | Framework | Trusted HTML boundary                       |
 | --------- | ------------------------------------------- |
@@ -11,9 +11,7 @@ Compile before the component renders. The component only receives the resulting 
 | Angular   | A reviewed `SafeHtml` value                 |
 | Svelte    | `{@html svg}`                               |
 
-Only pass output produced by Schemd through that boundary. Do not use it for arbitrary user-supplied HTML.
-
-If the page is interactive, attach one delegated listener to the host. Clean it up when the component unmounts. The SVG itself stays framework-agnostic.
+That boundary is for schemd output and nothing else — never route arbitrary, user-supplied HTML through the same door. If the page is interactive, attach a single delegated listener to the host and clean it up on unmount; the SVG itself stays entirely framework-agnostic, which is rather the point.
 
 ```schemd bounds="720x300" title="Framework-neutral signal chain"
 port:IN "Input" at (60, 150) #blue

@@ -2,7 +2,7 @@
 
 <!-- schemd-section: id=intrinsic-sizing; eyebrow=01 / Sizing; title=Let the viewBox do the scaling; example-title=Responsive telemetry path; example-summary=One SVG works in a narrow card or a wide documentation rail. -->
 
-Do not recalculate diagram coordinates in the browser. Schemd emits a stable `viewBox`, so the host only needs to control width.
+Resist the urge to recompute coordinates in the browser — laying out is the browser's job, drawing is the compiler's. Schemd emits a stable `viewBox`, which leaves the host in charge of exactly one thing: width.
 
 ```css
 .schemd-host {
@@ -23,9 +23,9 @@ Do not recalculate diagram coordinates in the browser. Schemd emits a stable `vi
 }
 ```
 
-Set `--schematic-surface` to the host background. Hollow UML markers and connector-label halos use it to cover the wire beneath them.
+Set `--schematic-surface` to the host's own background; hollow UML markers and connector-label halos paint with it to cover the wire running beneath them. Reserve the aspect ratio while content loads and layout shift never gets a chance to begin.
 
-Keep the aspect ratio reserved while content loads to avoid layout shift. If a dense diagram becomes unreadable on a phone, offer horizontal scrolling or a larger view instead of shrinking labels indefinitely.
+And when a dense diagram simply will not fit a phone, be honest about it: offer horizontal scrolling or a larger view, rather than shrinking labels toward illegibility.
 
 ```schemd bounds="960x360" title="Responsive telemetry path"
 port:BUS "Sensor bus" at (70, 180) #blue

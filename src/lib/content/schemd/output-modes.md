@@ -2,7 +2,7 @@
 
 <!-- schemd-section: id=mode-selection; eyebrow=01 / Output; title=Pick a mode at the render boundary; example-title=Mode comparison; example-summary=The live preview recompiles one diagram in all three modes. -->
 
-The geometry is the same in every mode. Only styling and interaction metadata change.
+Here is the reassuring part: the geometry is identical in every mode. Same nodes, same routes, same coordinates — only the styling and interaction metadata change. So you can raise or lower the mode freely, and the drawing underneath never moves.
 
 | Mode           | Adds                                   | Good fit                           |
 | -------------- | -------------------------------------- | ---------------------------------- |
@@ -10,15 +10,13 @@ The geometry is the same in every mode. Only styling and interaction metadata ch
 | `embedded-css` | Built-in hover and focus styles        | Responsive documentation           |
 | `full`         | CSS, `data-*` hooks, and focus targets | Editors, diagnostics, simulations  |
 
-Choose the mode on the trusted server or build step:
+Choose the mode once, on the trusted server or build step:
 
 ```ts
 renderSchematic(document, { ...fence, mode: 'full' });
 ```
 
-Start with `default`. Move up only when the host actually uses the extra behavior.
-
-In `full` mode, trim unused metadata without changing the drawing:
+Start at `default` and earn your way up — move to a richer mode only when the host actually consumes the extra behavior. And in `full` mode, you can trim the metadata you do not use without touching a single line of the drawing:
 
 ```ts
 compileSchematic(source, {

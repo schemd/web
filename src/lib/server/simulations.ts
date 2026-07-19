@@ -54,30 +54,30 @@ export interface CompiledSimulation extends SimEnvironment {
 function adderSource(): { source: string; width: number; height: number } {
 	const lines: string[] = ['// 8-bit ripple-carry adder — vertical stack, carry ripples downward'];
 	const bits = 8;
-	const rowHeight = 180;
-	const top = 110;
-	/* Fixed column x-positions by gate role. */
-	const xInput = 70; /* A / B ports */
-	const xFirst = 250; /* X1 (sum XOR) + N1 (AND) */
-	const xSecond = 430; /* X2 (carry XOR) + N2 (AND) */
-	const xCarry = 610; /* O1 (carry OR) */
-	const xSum = 760; /* S output port */
+	const rowHeight = 250;
+	const top = 130;
+	/* Fixed column x-positions by gate role — generous gaps keep labels clear. */
+	const xInput = 80; /* A / B ports */
+	const xFirst = 320; /* X1 (sum XOR) + N1 (AND) */
+	const xSecond = 560; /* X2 (carry XOR) + N2 (AND) */
+	const xCarry = 790; /* O1 (carry OR) */
+	const xSum = 980; /* S output port */
 
-	lines.push(`port:CIN "C_{in}" at (${xSecond}, 50) #slate`);
+	lines.push(`port:CIN "C_{in}" at (${xSecond}, 55) #slate`);
 	for (let bit = 0; bit < bits; bit += 1) {
 		const y = top + bit * rowHeight;
 		lines.push(
-			`port:A${bit} "A_${bit}" at (${xInput}, ${y - 5}) #blue`,
-			`port:B${bit} "B_${bit}" at (${xInput}, ${y + 55}) #blue`,
-			`xor:X1_${bit} "X" at (${xFirst}, ${y}) #cyan`,
-			`and:N1_${bit} "A" at (${xFirst}, ${y + 85}) #amber`,
-			`xor:X2_${bit} "X" at (${xSecond}, ${y + 25}) #cyan`,
-			`and:N2_${bit} "A" at (${xSecond}, ${y + 105}) #amber`,
-			`or:O1_${bit} "O" at (${xCarry}, ${y + 90}) #purple`,
-			`port:S${bit} "S_${bit}" at (${xSum}, ${y + 10}) #emerald`
+			`port:A${bit} "A_${bit}" at (${xInput}, ${y}) #blue`,
+			`port:B${bit} "B_${bit}" at (${xInput}, ${y + 85}) #blue`,
+			`xor:X1_${bit} "X" at (${xFirst}, ${y + 5}) #cyan`,
+			`and:N1_${bit} "A" at (${xFirst}, ${y + 115}) #amber`,
+			`xor:X2_${bit} "X" at (${xSecond}, ${y + 40}) #cyan`,
+			`and:N2_${bit} "A" at (${xSecond}, ${y + 145}) #amber`,
+			`or:O1_${bit} "O" at (${xCarry}, ${y + 120}) #purple`,
+			`port:S${bit} "S_${bit}" at (${xSum}, ${y + 20}) #emerald`
 		);
 	}
-	lines.push(`port:COUT "C_{out}" at (${xCarry}, ${top + bits * rowHeight - 30}) #emerald`);
+	lines.push(`port:COUT "C_{out}" at (${xCarry}, ${top + bits * rowHeight - 10}) #emerald`);
 	for (let bit = 0; bit < bits; bit += 1) {
 		const carry = bit === 0 ? 'CIN.out' : `O1_${bit - 1}.out`;
 		lines.push(
@@ -98,17 +98,28 @@ function adderSource(): { source: string; width: number; height: number } {
 	return { source: lines.join('\n'), width: 880, height: top + bits * rowHeight + 40 };
 }
 
-const RC_SOURCE = `// First-order RC low-pass filter
-port:VIN "V_{in}" at (60, 110) #blue
-resistor:R1 "R" at (240, 110) #amber
-capacitor:C1 "C" at (420, 210) #cyan
-port:VOUT "V_{out}" at (620, 110) #emerald
-ground:G1 "0 V" at (420, 320) #slate
+const RC_SOURCE = `// First-order RC low-pass filter (two-port form).
+// Paired terminal arrows measure Vin and Vout against the shared return rail.
+initial:VIN_TOP "input high" at (70, 120) #slate
+initial:VIN_RETURN "input return" at (70, 340) #slate
+resistor:R1 "Resistor, R" at (270, 120) #blue
+initial:VOUT_NODE "output node" at (460, 120) #slate
+capacitor:C1 "Capacitor, C" at (460, 245) #cyan
+initial:RETURN_NODE "return node" at (460, 340) #slate
+initial:VOUT_TOP "output high" at (740, 120) #slate
+initial:VOUT_RETURN "output return" at (740, 340) #slate
+ground:GND "0 V" at (460, 420) #slate
 
-VIN.out -> R1.in #blue [ortho]
-R1.out -> VOUT.in #emerald [ortho]
-R1.out -> C1.in #cyan [ortho]
-C1.out -> G1.in #slate [ortho]`;
+VIN_TOP.right -> R1.in #slate [line]
+R1.out -> VOUT_NODE.left #slate [line marker-end=arrow label="I"]
+VOUT_NODE.right -> VOUT_TOP.left #slate [line]
+VOUT_NODE.bottom -> C1.in #cyan [ortho]
+C1.out -> RETURN_NODE.top #cyan [ortho]
+VIN_RETURN.right -> RETURN_NODE.left #slate [line]
+RETURN_NODE.right -> VOUT_RETURN.left #slate [line]
+RETURN_NODE.bottom -> GND.in #slate [line]
+VIN_RETURN.top -> VIN_TOP.bottom #blue [line marker-start=arrow marker-end=arrow label="V_{in}"]
+VOUT_RETURN.top -> VOUT_TOP.bottom #blue [line marker-start=arrow marker-end=arrow label="V_{out}"]`;
 
 const BELL_SOURCE = `// Bell-state preparation: H then CNOT
 port:Q0 "q_0 = |0⟩" at (80, 90) #blue
@@ -173,7 +184,7 @@ ZC.out -> OUT.in #emerald [line]`;
 /** Bounds + generated DSL keyed by environment id. */
 const SOURCES: Record<string, { source: string; width: number; height: number }> = {
 	adder: adderSource(),
-	rc: { source: RC_SOURCE, width: 720, height: 400 },
+	rc: { source: RC_SOURCE, width: 810, height: 500 },
 	bell: { source: BELL_SOURCE, width: 760, height: 300 },
 	timer: { source: TIMER_SOURCE, width: 700, height: 480 },
 	teleport: { source: TELEPORT_SOURCE, width: 1020, height: 400 }

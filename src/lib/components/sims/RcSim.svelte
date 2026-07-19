@@ -61,18 +61,22 @@
 		return `${value.toExponential(2)} ${unit}`;
 	}
 
-	/* Attenuation → vector treatment on the compiled output trace. */
+	/* Attenuation → vector treatment on the compiled output path + V_out probe. */
 	$effect(() => {
 		const root = host;
 		if (!root) return;
-		styleWiresFrom(root, 'R1.out', 'opacity', String(0.25 + 0.75 * magnitude));
-		styleWiresFrom(
-			root,
-			'R1.out',
-			'stroke-dasharray',
-			magnitude > 0.7 ? 'none' : `${(magnitude * 12 + 2).toFixed(1)} ${((1 - magnitude) * 8 + 1).toFixed(1)}`
-		);
-		styleWiresFrom(root, 'C1.in', 'opacity', faults.openCapacitor ? '0.2' : '1');
+		const opacity = String(0.25 + 0.75 * magnitude);
+		const dash =
+			magnitude > 0.7
+				? 'none'
+				: `${(magnitude * 12 + 2).toFixed(1)} ${((1 - magnitude) * 8 + 1).toFixed(1)}`;
+		for (const source of ['R1.out', 'VOUT_NODE.right', 'VOUT_RETURN.top']) {
+			styleWiresFrom(root, source, 'opacity', opacity);
+			styleWiresFrom(root, source, 'stroke-dasharray', dash);
+		}
+		const capacitorOpacity = faults.openCapacitor ? '0.2' : '1';
+		styleWiresFrom(root, 'VOUT_NODE.bottom', 'opacity', capacitorOpacity);
+		styleWiresFrom(root, 'C1.out', 'opacity', capacitorOpacity);
 	});
 
 	/* 60 FPS waveform: input sine reference vs. attenuated, phase-shifted output. */
@@ -98,12 +102,14 @@
 
 	function probe(element: Element): string | undefined {
 		const wire = delegatedWireSource(element);
-		if (wire === 'VIN.out') return `V_in = 1.000 V_pp @ ${formatSi(frequency, 'Hz')}`;
-		if (wire === 'R1.out') {
+		if (wire === 'VIN_TOP.right' || wire === 'VIN_RETURN.top') {
+			return `V_in = 1.000 V_pp @ ${formatSi(frequency, 'Hz')}`;
+		}
+		if (wire === 'R1.out' || wire === 'VOUT_NODE.right' || wire === 'VOUT_RETURN.top') {
 			return `V_out = ${magnitude.toFixed(3)} V_pp · ${attenuationDb.toFixed(1)} dB · φ ${(phaseShift * 57.2958).toFixed(1)}°`;
 		}
-		if (wire === 'C1.in' || wire === 'C1.out') {
-			return faults.openCapacitor ? 'C_T branch OPEN (fault)' : `I_C path · f_c = ${formatSi(cutoff, 'Hz')}`;
+		if (wire === 'VOUT_NODE.bottom' || wire === 'C1.out') {
+			return faults.openCapacitor ? 'C branch OPEN (fault)' : `I_C path · f_c = ${formatSi(cutoff, 'Hz')}`;
 		}
 		return undefined;
 	}

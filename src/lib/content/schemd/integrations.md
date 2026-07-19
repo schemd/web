@@ -2,9 +2,7 @@
 
 <!-- schemd-section: id=event-delegation; eyebrow=01 / Events; title=Listen once at the SVG host; example-title=Interactive parity network; example-summary=Full mode exposes stable node, port, and connection metadata. -->
 
-`full` mode adds stable attributes such as `data-node-id`, `data-node-kind`, `data-port-id`, `data-wire-source`, and `data-wire-target`.
-
-Use event delegation instead of adding a handler to every SVG element:
+`full` mode is where the SVG stops being a picture and becomes a surface you can query. It carries stable attributes — `data-node-id`, `data-node-kind`, `data-port-id`, `data-wire-source`, and `data-wire-target` — and the right way to use them is the boring, correct way: one listener at the host, delegation for everything below it.
 
 ```ts
 const host = document.querySelector('[data-schemd-host]');
@@ -19,7 +17,7 @@ host?.addEventListener('click', handleClick);
 // Later: host?.removeEventListener('click', handleClick);
 ```
 
-Keep application state outside the SVG. Recompiling the same source remains deterministic.
+Keep application state _outside_ the SVG. Recompiling the same source is deterministic, so the drawing is safe to treat as disposable — your state is the source of truth, and the DOM is only its most recent shadow.
 
 ```schemd bounds="760x320" title="Interactive parity network"
 port:A "A" at (60, 90) #blue
