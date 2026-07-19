@@ -13,6 +13,8 @@
 		value?: string;
 		/** 0-based line currently mapped from the vector preview, if any. */
 		mappedLine?: number | undefined;
+		/** 0-based line the compiler flagged as a diagnostic, if any. */
+		errorLine?: number | undefined;
 		/** Fired when the caret moves to a different 0-based line. */
 		oncaretline?: (line: number) => void;
 		ariaLabel?: string;
@@ -21,6 +23,7 @@
 	let {
 		value = $bindable(''),
 		mappedLine = undefined,
+		errorLine = undefined,
 		oncaretline,
 		ariaLabel = 'schemd source editor'
 	}: Props = $props();
@@ -127,7 +130,8 @@
 			<span
 				class="gutter-line"
 				class:caret={index === caretLine}
-				class:mapped={index === mappedLine}>{index + 1}</span
+				class:mapped={index === mappedLine}
+				class:error={index === errorLine}>{index + 1}</span
 			>
 		{/each}
 	</div>
@@ -182,6 +186,12 @@
 		&.mapped {
 			color: var(--accent-2);
 			background: var(--selection);
+		}
+
+		&.error {
+			color: var(--accent-ink);
+			background: var(--danger);
+			font-weight: 700;
 		}
 	}
 

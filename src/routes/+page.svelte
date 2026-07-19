@@ -233,6 +233,8 @@
 		<span class="microlabel">{data.releaseCount} releases tracked · registry-synced</span>
 		<span>
 			<a href="/changelog">Changelog</a> ·
+			<a href="/examples">Examples</a> ·
+			<a href="/coverage">Coverage</a> ·
 			<a href="https://github.com/schemd/core" rel="noopener" target="_blank">GitHub</a> ·
 			<a href="https://www.npmjs.com/package/@schemd/core" rel="noopener" target="_blank">npm</a>
 		</span>
