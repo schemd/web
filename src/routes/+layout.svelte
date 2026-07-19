@@ -3,7 +3,7 @@
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
 
-	let { children } = $props();
+	let { children, data } = $props();
 </script>
 
 <svelte:head>
@@ -13,7 +13,7 @@
 </svelte:head>
 
 <a class="skip-link" href="#main-content">Skip to content</a>
-<SiteHeader />
+<SiteHeader release={data.release} />
 <CommandPalette />
 
 <main id="main-content" tabindex="-1">

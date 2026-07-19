@@ -39,6 +39,7 @@ test('content routes return complete SSR HTML without compiler or worker payload
 		const html = await response.text();
 		expect(html, route).toContain('<main id="main-content"');
 		expect(html, route).toMatch(/<h1(?:\s|>)/);
+		expect(html, route).toContain('NODE ·');
 		expect(html, route).not.toContain('v0.2.1.worker');
 		expect(html, route).not.toContain('compileSchemd');
 	}
@@ -53,6 +54,22 @@ test('latest docs resolve permanently to the stable canonical version', async ({
 	expect(await canonical.text()).toContain(
 		'<link rel="canonical" href="https://schemd.johnowolabiidogun.dev/docs/v0.2.1/overview"'
 	);
+});
+
+test('global version selection preserves the current product context', async ({ request }) => {
+	const selection = await request.get(
+		'/version/select?version=v0.2.1&from=/simulations/v0.1.0/rc-low-pass',
+		{ maxRedirects: 0 }
+	);
+	expect(selection.status()).toBe(303);
+	expect(selection.headers().location).toBe('/simulations/v0.2.1/rc-low-pass');
+
+	const unsafe = await request.get(
+		'/version/select?version=not-real&from=https://malicious.example/',
+		{ maxRedirects: 0 }
+	);
+	expect(unsafe.status()).toBe(303);
+	expect(unsafe.headers().location).toBe('/docs/v0.2.1/overview');
 });
 
 test('unknown routes return a useful, non-indexable 404', async ({ request }) => {
@@ -101,7 +118,13 @@ test('playground supports native editor shortcuts and query-string sharing', asy
 	await editor.press('ControlOrMeta+Enter');
 	await expect(page.locator('#editor-diagnostic')).toContainText('No compiler diagnostics.');
 	await page.getByRole('button', { name: 'Share workspace' }).click();
-	await expect.poll(() => new URL(page.url()).searchParams.get('code')).toContain('port:SENSOR');
+	const previousCode = new URL(page.url()).searchParams.get('code');
+	const sharedSource = 'port:SHARED "Shared input" at (120, 100) #blue';
+	await editor.fill(sharedSource);
+	await expect.poll(() => new URL(page.url()).searchParams.get('code')).not.toBe(previousCode);
+	expect(new URL(page.url()).searchParams.get('code')).toMatch(/^z1\.[A-Za-z0-9_-]+$/u);
+	await page.reload();
+	await expect(editor).toHaveValue(sharedSource);
 });
 
 test('simulation controls expose the exact current model values', async ({ page }) => {

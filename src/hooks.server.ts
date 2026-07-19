@@ -1,4 +1,5 @@
 import type { Handle } from '@sveltejs/kit';
+import { compressServerResponse } from '$lib/server/response-compression';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const response = await resolve(event);
@@ -9,5 +10,5 @@ export const handle: Handle = async ({ event, resolve }) => {
 		'camera=(), microphone=(), geolocation=(), payment=()'
 	);
 	response.headers.set('X-Frame-Options', 'DENY');
-	return response;
+	return compressServerResponse(event.request, response);
 };

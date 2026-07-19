@@ -30,7 +30,10 @@
 	let diagnostic = $state<{ message: string; line?: number } | undefined>();
 	let workerFailed = $state(false);
 	let announcement = $state('Initial diagram compiled.');
-	let sharing = $state(false);
+	let shareHydrated = $state(false);
+	let shareTracking = $state(false);
+	let shareRevision = 0;
+	let shareTimer: ReturnType<typeof setTimeout> | undefined;
 	let editorScrollTop = $state(0);
 	let editorScrollLeft = $state(0);
 	// svelte-ignore state_referenced_locally
@@ -117,12 +120,14 @@
 	function loadExample(): void {
 		const example = getPlaygroundExample(selectedExample);
 		if (!example) return;
+		shareTracking = true;
 		source = example.source;
 		coordinator = createCoordinatorState();
 		scheduleCompilation();
 	}
 
 	function resetExample(): void {
+		shareTracking = true;
 		source = activeExample.source;
 		coordinator = createCoordinatorState();
 		scheduleCompilation();
@@ -152,13 +157,22 @@
 	}
 
 	async function shareSource(): Promise<void> {
-		sharing = true;
-		updateSharedLocation();
+		clearShareTimer();
+		const revision = ++shareRevision;
+		await updateSharedLocation(source, revision);
+		shareTracking = true;
 		await copyText(location.href, 'Share link');
 	}
 
-	function updateSharedLocation(): void {
-		history.replaceState(null, '', `${location.pathname}${encodeSharedSource(source)}`);
+	function clearShareTimer(): void {
+		if (shareTimer !== undefined) clearTimeout(shareTimer);
+		shareTimer = undefined;
+	}
+
+	async function updateSharedLocation(sharedSource: string, revision: number): Promise<void> {
+		const query = await encodeSharedSource(sharedSource);
+		if (revision !== shareRevision) return;
+		history.replaceState(null, '', `${location.pathname}${query}`);
 	}
 
 	function syncEditorScroll(event: Event): void {
@@ -172,6 +186,7 @@
 		if (event.key === 'Tab') {
 			event.preventDefault();
 			if (!editor) return;
+			shareTracking = true;
 			const next = insertIndent(source, editor.selectionStart, editor.selectionEnd);
 			source = next.source;
 			queueMicrotask(() => editor?.setSelectionRange(next.selectionStart, next.selectionEnd));
@@ -200,23 +215,36 @@
 	}
 
 	$effect(() => {
-		const shared =
-			decodeSharedSource(location.search, data.maximumCharacters) ??
-			decodeSharedSource(location.hash, data.maximumCharacters);
-		if (shared !== undefined) {
-			source = shared;
-			selectedExample = data.initialExample.id;
-			announcement = 'Loaded source from the shared link.';
+		let active = true;
+		async function initialise(): Promise<void> {
+			const fromQuery = await decodeSharedSource(location.search, data.maximumCharacters);
+			const shared = fromQuery ?? (await decodeSharedSource(location.hash, data.maximumCharacters));
+			if (!active) return;
+			if (shared !== undefined) {
+				shareTracking = true;
+				source = shared;
+				selectedExample = data.initialExample.id;
+				announcement = 'Loaded source from the shared link.';
+			}
+			shareHydrated = true;
+			await startWorker();
 		}
-		startWorker();
+		void initialise();
 		return () => {
+			active = false;
 			clearTimer();
+			clearShareTimer();
 			worker?.terminate();
 		};
 	});
 
 	$effect(() => {
-		if (sharing) updateSharedLocation();
+		const sharedSource = source;
+		if (!shareHydrated || !shareTracking) return;
+		const revision = ++shareRevision;
+		clearShareTimer();
+		shareTimer = setTimeout(() => void updateSharedLocation(sharedSource, revision), 180);
+		return clearShareTimer;
 	});
 </script>
 
@@ -297,7 +325,10 @@
 					aria-invalid={diagnostic ? 'true' : undefined}
 					onscroll={syncEditorScroll}
 					onkeydown={handleEditorKey}
-					oninput={scheduleCompilation}
+					oninput={() => {
+						shareTracking = true;
+						scheduleCompilation();
+					}}
 					oncompositionstart={() => (composing = true)}
 					oncompositionend={() => {
 						composing = false;
@@ -343,7 +374,7 @@
 					>Copy SVG</button
 				>
 				<button type="button" onclick={downloadSvg} disabled={!previewSvg}>Download</button>
-				<button type="button" onclick={shareSource} aria-pressed={sharing}>Share workspace</button>
+				<button type="button" onclick={shareSource}>Share workspace</button>
 			</div>
 			<div
 				class:scale-100={previewScale === '100'}

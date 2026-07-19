@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { acceptsCompilation, createCoordinatorState, nextCompilation } from './coordinator';
 import { fenceInfo, getPlaygroundExample, PLAYGROUND_EXAMPLES } from './examples';
 import {
@@ -72,18 +72,33 @@ describe('playground state and protocol', () => {
 		}
 	});
 
-	it('round-trips bounded shared source and rejects bad hashes', () => {
-		const source = 'port:A "µ" at (1, 2) #blue';
-		const hash = encodeSharedSource(source);
-		expect(decodeSharedSource(hash, 100)).toBe(source);
-		expect(decodeSharedSource('?other=x', 100)).toBeUndefined();
-		expect(decodeSharedSource('plain source', 100)).toBeUndefined();
-		expect(decodeSharedSource('?code=', 100)).toBe('');
-		expect(decodeSharedSource(`#source=${encodeURIComponent(source)}`, 100)).toBe(source);
-		expect(decodeSharedSource('#source=%E0%A4%A', 100)).toBeUndefined();
-		expect(decodeSharedSource(hash, 2)).toBeUndefined();
-		expect(() => decodeSharedSource(hash, 0)).toThrowError('positive integer');
-		expect(() => decodeSharedSource(hash, 1.2)).toThrowError('positive integer');
+	it('round-trips bounded compressed source and supports legacy links', async () => {
+		const source = 'port:A "µ" at (1, 2) #blue\n'.repeat(8);
+		const query = await encodeSharedSource(source);
+		expect(query).toMatch(/^\?code=z1\.[A-Za-z0-9_-]+$/u);
+		expect(query.length).toBeLessThan(encodeURIComponent(source).length);
+		expect(await decodeSharedSource(query, 300)).toBe(source);
+		const shortQuery = await encodeSharedSource('abc');
+		expect(await decodeSharedSource(shortQuery, 2)).toBeUndefined();
+		expect(await decodeSharedSource('?other=x', 300)).toBeUndefined();
+		expect(await decodeSharedSource('plain source', 300)).toBeUndefined();
+		expect(await decodeSharedSource('?code=', 300)).toBe('');
+		expect(await decodeSharedSource('?code=abc', 2)).toBeUndefined();
+		expect(await decodeSharedSource(`?code=${encodeURIComponent(source)}`, 300)).toBe(source);
+		expect(await decodeSharedSource(`#source=${encodeURIComponent(source)}`, 300)).toBe(source);
+		expect(await decodeSharedSource('#source=%E0%A4%A', 300)).toBeUndefined();
+		expect(await decodeSharedSource(query, 2)).toBeUndefined();
+		expect(await decodeSharedSource('?code=z1.not*base64', 300)).toBeUndefined();
+		expect(await decodeSharedSource('?code=z1.a', 300)).toBeUndefined();
+		expect(await decodeSharedSource('?code=z1.YWJj', 300)).toBeUndefined();
+		expect(await decodeSharedSource(`?code=z1.${'a'.repeat(2_529)}`, 300)).toBeUndefined();
+		const atobSpy = vi.spyOn(globalThis, 'atob').mockImplementation(() => {
+			throw new Error('decoder unavailable');
+		});
+		expect(await decodeSharedSource(query, 300)).toBeUndefined();
+		atobSpy.mockRestore();
+		await expect(decodeSharedSource(query, 0)).rejects.toThrowError('positive integer');
+		await expect(decodeSharedSource(query, 1.2)).rejects.toThrowError('positive integer');
 	});
 
 	it('creates portable SVG file names', () => {

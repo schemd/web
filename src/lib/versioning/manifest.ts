@@ -45,3 +45,22 @@ export function versionedPath(
 ): string {
 	return `/${area}/${version}`;
 }
+
+function safeLeaf(value: string | undefined): string | undefined {
+	return value !== undefined && /^[a-z0-9-]+$/u.test(value) ? value : undefined;
+}
+
+export function versionContextPath(pathname: string, version: VersionId): string {
+	const segments = pathname.split('/').filter(Boolean);
+	const area = segments[0];
+	if (area === 'docs') {
+		const page = safeLeaf(segments[2]) ?? 'overview';
+		return `/docs/${version}/${page}`;
+	}
+	if (area === 'playground') return `/playground/${version}`;
+	if (area === 'simulations') {
+		const simulation = safeLeaf(segments[2]);
+		return simulation ? `/simulations/${version}/${simulation}` : `/simulations/${version}`;
+	}
+	return `/docs/${version}/overview`;
+}

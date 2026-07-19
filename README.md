@@ -26,14 +26,24 @@ bun run test:e2e
 
 ## Deployment
 
-The project intentionally uses `@sveltejs/adapter-auto`. Connect the repository to a supported SvelteKit host, set the production domain to `schemd.johnowolabiidogun.dev`, and use:
+The production target is a long-running Node.js 24+ process built by
+`@sveltejs/adapter-node`. Static assets are emitted with Brotli and gzip sidecars.
 
 ```sh
 bun ci
 bun run build
+HOST=0.0.0.0 PORT=3000 bun run start
 ```
 
-No runtime environment variables are required. Change to a platform-specific adapter only after the deployment target is selected.
+The process keeps a bounded npm/GitHub release registry snapshot in memory. Every process starts
+with the reproducible bundled manifest, returns it without network latency, and refreshes the
+registry in the background. Fresh results are reused for 15 minutes; the last network result
+remains available for 24 hours if either upstream is unavailable.
+
+The adapter also supports `ORIGIN`, `PROTOCOL_HEADER`, `HOST_HEADER`,
+`ADDRESS_HEADER`, `XFF_DEPTH`, `BODY_SIZE_LIMIT`, and `SHUTDOWN_TIMEOUT` when the
+server is deployed behind a trusted reverse proxy. Set only the forwarding headers
+your proxy owns; accepting untrusted forwarded headers can make origin checks unsafe.
 
 ## Content and releases
 

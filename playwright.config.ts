@@ -21,7 +21,7 @@ export default defineConfig({
 		screenshot: 'only-on-failure'
 	},
 	webServer: {
-		command: 'bun run build && bun run preview -- --host 127.0.0.1',
+		command: 'bun run build && bun run start:test',
 		url: 'http://127.0.0.1:4173',
 		reuseExistingServer: !process.env.CI,
 		timeout: 60_000

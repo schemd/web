@@ -30,14 +30,12 @@ async function waitForServer(): Promise<void> {
 	throw new Error(`Preview did not start at ${origin}.`);
 }
 
-const preview = Bun.spawn(
-	['bun', 'run', 'preview', '--', '--host', host, '--port', String(port), '--strictPort'],
-	{
-		cwd: process.cwd(),
-		stdout: 'inherit',
-		stderr: 'inherit'
-	}
-);
+const preview = Bun.spawn(['node', 'build/index.js'], {
+	cwd: process.cwd(),
+	env: { ...process.env, HOST: host, PORT: String(port) },
+	stdout: 'inherit',
+	stderr: 'inherit'
+});
 
 let chrome: Awaited<ReturnType<typeof launch>> | undefined;
 

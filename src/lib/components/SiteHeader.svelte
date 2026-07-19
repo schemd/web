@@ -1,12 +1,25 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { getReleaseRegistry } from '$lib/releases.remote';
 	import {
 		CORE_REPOSITORY,
 		LATEST_VERSION,
 		NPM_PACKAGE_URL,
+		getVersion,
+		versionContextPath,
 		VERSIONS
 	} from '$lib/versioning/manifest';
+
+	interface HeaderReleaseSnapshot {
+		readonly registryLatest: string;
+		readonly source: 'network' | 'verified-fallback';
+		readonly compatibilityNotice?: string;
+		readonly cache: {
+			readonly state: 'fresh' | 'refreshed' | 'stale' | 'fallback';
+			readonly expiresAt: string;
+		};
+	}
+
+	let { release }: { release: HeaderReleaseSnapshot } = $props();
 
 	const links = [
 		{ href: '/docs/latest', label: 'Docs', prefix: '/docs' },
@@ -15,30 +28,31 @@
 		{ href: '/timeline', label: 'Timeline', prefix: '/timeline' },
 		{ href: '/changelog', label: 'Changelog', prefix: '/changelog' }
 	] as const;
-	let registryVersion = $state<string>(LATEST_VERSION.packageVersion);
-	let registryNotice = $state('Verified website artifact');
-
 	function isCurrent(prefix: string): boolean {
 		return page.url.pathname.startsWith(prefix);
+	}
+
+	function switchVersion(event: Event): void {
+		const target = event.currentTarget;
+		if (!(target instanceof HTMLSelectElement)) return;
+		const version = getVersion(target.value);
+		if (!version) return;
+		location.assign(versionContextPath(page.url.pathname, version.id));
 	}
 
 	function openCommandPalette(): void {
 		window.dispatchEvent(new Event('schemd:search'));
 	}
 
-	$effect(() => {
-		let active = true;
-		void getReleaseRegistry().then((snapshot) => {
-			if (!active) return;
-			registryVersion = snapshot.registryLatest;
-			registryNotice =
-				snapshot.compatibilityNotice ??
-				(snapshot.source === 'network' ? 'Confirmed by npm / GitHub' : 'Verified website artifact');
-		});
-		return () => {
-			active = false;
-		};
-	});
+	let registryNotice = $derived(
+		release.compatibilityNotice ??
+			(release.source === 'network'
+				? 'Confirmed by npm and GitHub'
+				: 'Verified bundled release; registry refresh is in progress')
+	);
+	let currentVersion = $derived(
+		VERSIONS.find((version) => page.url.pathname.includes(`/${version.id}`)) ?? LATEST_VERSION
+	);
 </script>
 
 <header class="site-header">
@@ -46,9 +60,12 @@
 		<div>
 			<p>
 				<span class="status-dot"></span><strong>@schemd/core</strong><span
-					aria-label={registryNotice}>v{registryVersion}</span
+					aria-label={registryNotice}>v{release.registryLatest}</span
 				>
 			</p>
+			<span class="runtime-state" title={`Cached until ${release.cache.expiresAt}`}
+				>NODE · {release.cache.state}</span
+			>
 			<code>bun add @schemd/core</code>
 			<nav aria-label="Package links">
 				<a href={NPM_PACKAGE_URL}
@@ -87,17 +104,16 @@
 			<button type="submit">Search</button>
 		</form>
 
-		<form class="global-version" action="/docs/select" method="get">
-			<input type="hidden" name="page" value="overview" />
+		<form class="global-version" action="/version/select" method="get">
+			<input type="hidden" name="from" value={page.url.pathname} />
 			<label class="visually-hidden" for="global-version">Package version</label>
-			<select
-				id="global-version"
-				name="version"
-				onchange={(event) => event.currentTarget.form?.requestSubmit()}
-			>
-				{#each VERSIONS as version (version.id)}<option value={version.id}>{version.id}</option
+			<select id="global-version" name="version" onchange={switchVersion}>
+				{#each VERSIONS as version (version.id)}<option
+						value={version.id}
+						selected={version.id === currentVersion.id}>{version.id}</option
 					>{/each}
 			</select>
+			<button type="submit">Load</button>
 		</form>
 
 		<button
@@ -154,6 +170,14 @@
 	.install-rail strong {
 		color: var(--paper);
 	}
+	.runtime-state {
+		border: 1px solid color-mix(in srgb, var(--signal) 42%, var(--line));
+		padding: 0.18rem 0.38rem;
+		color: var(--signal-bright);
+		font-size: 0.58rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
 	.install-rail code {
 		margin-inline-start: auto;
 		color: var(--signal-bright);
@@ -182,6 +206,15 @@
 		font-family: var(--font-mono);
 		font-size: 0.68rem;
 	}
+	.global-version {
+		display: flex;
+	}
+	.global-version button {
+		min-block-size: 2.5rem;
+		border-inline-start: 0;
+		padding-inline: 0.5rem;
+		font-size: 0.64rem;
+	}
 	.command-trigger {
 		display: inline-flex;
 		align-items: center;
@@ -207,6 +240,9 @@
 		}
 	}
 	@media (max-width: 34rem) {
+		.runtime-state {
+			display: none;
+		}
 		.install-rail code {
 			display: none;
 		}
