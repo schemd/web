@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
+	import type { SchematicSourceMap } from '@schemd/core';
 	import { browser } from '$app/environment';
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/state';
@@ -28,12 +29,35 @@
 	interface CompileState {
 		svg: string;
 		metrics?: { sourceCharacters: number; components: number; connections: number; svgBytes: number };
+		sourceMap?: SchematicSourceMap;
 		ms?: number;
 		error?: { message: string; line: number | undefined };
 	}
 
 	function isRecord(value: unknown): value is Record<string, unknown> {
 		return typeof value === 'object' && value !== null;
+	}
+
+	/** Defensively narrow the compiler-supplied source map from the JSON response. */
+	function parseSourceMap(value: unknown): SchematicSourceMap | undefined {
+		if (!isRecord(value)) return undefined;
+		const rawNodes = Array.isArray(value['nodes']) ? value['nodes'] : [];
+		const rawWires = Array.isArray(value['wires']) ? value['wires'] : [];
+		return {
+			nodes: rawNodes.flatMap((node) =>
+				isRecord(node) && typeof node['id'] === 'string' && typeof node['line'] === 'number'
+					? [{ id: node['id'], line: node['line'] }]
+					: []
+			),
+			wires: rawWires.flatMap((wire) =>
+				isRecord(wire) &&
+				typeof wire['source'] === 'string' &&
+				typeof wire['target'] === 'string' &&
+				typeof wire['line'] === 'number'
+					? [{ source: wire['source'], target: wire['target'], line: wire['line'] }]
+					: []
+			)
+		};
 	}
 
 	let result = $state<CompileState>({ svg: '' });
@@ -71,6 +95,7 @@
 							connections: Number(raw['connections'] ?? 0),
 							svgBytes: Number(raw['svgBytes'] ?? 0)
 						},
+						sourceMap: parseSourceMap(record['sourceMap']),
 						ms: Number(record['ms'] ?? 0)
 					};
 					if (ui.audio) playSuccess();
@@ -105,56 +130,35 @@
 		return () => clearTimeout(timer);
 	});
 
-	/* ---------- Source ↔ vector mapping ---------- */
-	const COMPONENT_LINE = /^([A-Za-z][A-Za-z0-9_-]*):([A-Za-z][A-Za-z0-9_-]*)\s+"/;
-	const CONNECTION_LINE =
-		/^([A-Za-z][A-Za-z0-9_-]*)\.([A-Za-z][A-Za-z0-9_-]*)\s*->\s*([A-Za-z][A-Za-z0-9_-]*)\.([A-Za-z][A-Za-z0-9_-]*)/;
+	/* ---------- Source ↔ vector mapping (driven by the compiler source map) ---------- */
 
-	/** 0-based line → the node ID or wire endpoints it declares. */
+	/**
+	 * 0-based caret line → the node or wire declared there, resolved through the
+	 * compiler's own source map rather than re-parsing the DSL in the browser.
+	 */
 	function lineTarget(
 		line: number
 	): { node?: string; wire?: { source: string; target: string } } | undefined {
-		const text = source.split('\n')[line]?.trim();
-		if (!text) return undefined;
-		const component = text.match(COMPONENT_LINE);
-		if (component) return { node: component[2]! };
-		const connection = text.match(CONNECTION_LINE);
-		if (connection) {
-			return {
-				wire: {
-					source: `${connection[1]}.${connection[2]}`,
-					target: `${connection[3]}.${connection[4]}`
-				}
-			};
-		}
+		const map = result.sourceMap;
+		if (!map) return undefined;
+		const oneBased = line + 1;
+		const node = map.nodes.find((entry) => entry.line === oneBased);
+		if (node) return { node: node.id };
+		const wire = map.wires.find((entry) => entry.line === oneBased);
+		if (wire) return { wire: { source: wire.source, target: wire.target } };
 		return undefined;
 	}
 
-	/** Element under the pointer → the 0-based source line that declared it. */
+	/**
+	 * Element under the pointer → the 0-based source line that declared it, read
+	 * straight from the `data-source-line` attribute the compiler emits in full
+	 * mode. No regex, no drift as the grammar grows.
+	 */
 	function elementLine(element: Element): number | undefined {
-		const node = element.closest('[data-node-id]');
-		const lines = source.split('\n');
-		if (node) {
-			const id = node.getAttribute('data-node-id');
-			const index = lines.findIndex((line) => line.trim().match(COMPONENT_LINE)?.[2] === id);
-			return index >= 0 ? index : undefined;
-		}
-		const wire = element.closest('[data-wire-source]');
-		if (wire) {
-			const wireSource = wire.getAttribute('data-wire-source');
-			const wireTarget = wire.getAttribute('data-wire-target');
-			const index = lines.findIndex((line) => {
-				const match = line.trim().match(CONNECTION_LINE);
-				return (
-					match !== undefined &&
-					match !== null &&
-					`${match[1]}.${match[2]}` === wireSource &&
-					`${match[3]}.${match[4]}` === wireTarget
-				);
-			});
-			return index >= 0 ? index : undefined;
-		}
-		return undefined;
+		const raw = element.closest('[data-source-line]')?.getAttribute('data-source-line');
+		if (raw === null || raw === undefined) return undefined;
+		const oneBased = Number(raw);
+		return Number.isInteger(oneBased) && oneBased >= 1 ? oneBased - 1 : undefined;
 	}
 
 	/** Caret line → highlight the matching vector via the full-mode classes. */
@@ -224,6 +228,100 @@
 		fenceCopied = true;
 		setTimeout(() => (fenceCopied = false), 1600);
 	}
+
+	/* ---------- Insert a component template at the caret ---------- */
+	function insertKind(kind: string): void {
+		const next = (result.metrics?.components ?? source.split('\n').length) + 1;
+		const id = `${kind[0]!.toUpperCase()}${next}`;
+		const x = 90 + (next % 5) * 130;
+		const y = 90 + (Math.floor(next / 5) % 4) * 110;
+		const declaration =
+			kind === 'ic'
+				? `${kind}:${id} "${id}" at (${x}, ${y}) [left="a,b" right="y"]`
+				: `${kind}:${id} "${kind}" at (${x}, ${y}) #cyan`;
+		source = `${source.replace(/\s*$/, '')}\n${declaration}\n`;
+		if (ui.audio) playSuccess();
+	}
+
+	/* ---------- Standalone / downloadable artifact ---------- */
+
+	/** Inline the viewer's resolved theme so an exported vector is self-contained. */
+	function themedSvg(): string | undefined {
+		if (!browser || result.svg === '') return undefined;
+		const start = result.svg.indexOf('<svg');
+		const end = result.svg.indexOf('</svg>');
+		if (start < 0 || end < 0) return undefined;
+		const svg = result.svg.slice(start, end + '</svg>'.length);
+		const root = getComputedStyle(document.documentElement);
+		const value = (name: string): string => root.getPropertyValue(name).trim();
+		const colors = ['amber', 'blue', 'cyan', 'purple', 'slate', 'emerald'];
+		const tokenRules = colors
+			.map((color) => `.schematic-token--${color}{--schematic-vector:${value(`--schematic-color-${color}`)}}`)
+			.join('');
+		const rootRule =
+			`.schematic-svg{background:${value('--schematic-surface') || '#fff'};` +
+			`--schematic-vector-fallback:${value('--schematic-vector-fallback') || '#333'};` +
+			`--schematic-grid:${value('--schematic-grid') || '#ccc'};color:${value('--ink') || '#222'}}`;
+		return svg.replace('<svg', `<svg xmlns="http://www.w3.org/2000/svg"`).replace(
+			/(<svg[^>]*>)/,
+			`$1<style>${rootRule}${tokenRules}</style>`
+		);
+	}
+
+	function triggerDownload(href: string, filename: string): void {
+		const anchor = document.createElement('a');
+		anchor.href = href;
+		anchor.download = filename;
+		anchor.click();
+	}
+
+	function downloadSvg(): void {
+		const svg = themedSvg();
+		if (!svg) return;
+		const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+		triggerDownload(url, 'schemd-schematic.svg');
+		setTimeout(() => URL.revokeObjectURL(url), 1000);
+	}
+
+	function downloadPng(): void {
+		const svg = themedSvg();
+		if (!svg) return;
+		const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+		const image = new Image();
+		image.onload = () => {
+			const scale = 2;
+			const canvas = document.createElement('canvas');
+			canvas.width = boundsWidth * scale;
+			canvas.height = boundsHeight * scale;
+			const context = canvas.getContext('2d');
+			if (context) {
+				context.scale(scale, scale);
+				context.drawImage(image, 0, 0, boundsWidth, boundsHeight);
+				canvas.toBlob((blob) => {
+					if (blob) {
+						const pngUrl = URL.createObjectURL(blob);
+						triggerDownload(pngUrl, 'schemd-schematic.png');
+						setTimeout(() => URL.revokeObjectURL(pngUrl), 1000);
+					}
+				}, 'image/png');
+			}
+			URL.revokeObjectURL(url);
+		};
+		image.src = url;
+	}
+
+	/** Shareable read-only embed URL for the current workspace. */
+	const embedUrl = $derived(
+		browser
+			? `${location.origin}/embed/${data.version}?code=${encodeWorkspaceState(source)}&w=${boundsWidth}&h=${boundsHeight}`
+			: ''
+	);
+	let embedCopied = $state(false);
+	async function copyEmbed(): Promise<void> {
+		await navigator.clipboard.writeText(embedUrl);
+		embedCopied = true;
+		setTimeout(() => (embedCopied = false), 1600);
+	}
 </script>
 
 <svelte:head>
@@ -266,7 +364,11 @@
 						<span class="kind-label microlabel">{group.label}</span>
 						<div class="kind-chips">
 							{#each group.kinds as kind (kind)}
-								<code class="kind-chip">{kind}</code>
+								<button
+										type="button"
+										class="kind-chip"
+										title={`Insert a ${kind} declaration`}
+										onclick={() => insertKind(kind)}>{kind}</button>
 							{/each}
 						</div>
 					</div>
@@ -318,7 +420,12 @@
 					</span>
 				{/if}
 			</div>
-			<CodeEditor bind:value={source} {mappedLine} oncaretline={(line) => (caretLine = line)} />
+			<CodeEditor
+				bind:value={source}
+				{mappedLine}
+				errorLine={result.error?.line !== undefined ? result.error.line - 1 : undefined}
+				oncaretline={(line) => (caretLine = line)}
+			/>
 		</div>
 	{/snippet}
 
@@ -378,8 +485,13 @@
 
 	{#snippet statusExtra()}
 		<span class="microlabel">mode={mode}</span>
-		<button type="button" class="share" onclick={copyShare} aria-live="polite">
-			{copied ? '✓ link copied' : '⧉ share workspace'}
+		<button type="button" class="status-action" onclick={downloadSvg} title="Download themed SVG">↓ svg</button>
+		<button type="button" class="status-action" onclick={downloadPng} title="Download 2× PNG">↓ png</button>
+		<button type="button" class="status-action" onclick={copyEmbed} aria-live="polite">
+			{embedCopied ? '✓ embed copied' : '⧉ embed'}
+		</button>
+		<button type="button" class="status-action" onclick={copyShare} aria-live="polite">
+			{copied ? '✓ link copied' : '⧉ share'}
 		</button>
 	{/snippet}
 </WorkspaceShell>
@@ -616,7 +728,7 @@
 		font-size: var(--text-2xs);
 	}
 
-	.share {
+	.status-action {
 		font-family: var(--font-mono);
 		font-size: var(--text-2xs);
 		color: var(--accent);

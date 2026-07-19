@@ -12,7 +12,12 @@ import { SIM_ENVIRONMENTS } from '$lib/server/simulations';
 export const GET: RequestHandler = async ({ url }) => {
 	const registry = await getRegistry();
 	const origin = url.origin;
-	const urls: string[] = [`${origin}/`, `${origin}/changelog`];
+	const urls: string[] = [
+		`${origin}/`,
+		`${origin}/changelog`,
+		`${origin}/coverage`,
+		`${origin}/examples`
+	];
 	for (const release of registry.releases) {
 		urls.push(`${origin}/playground/${release.version}`, `${origin}/simulations/${release.version}`);
 		for (const environment of SIM_ENVIRONMENTS) {
