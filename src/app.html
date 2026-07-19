@@ -1,9 +1,19 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-blueprint="hud">
 	<head>
 		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<meta name="text-scale" content="scale" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<meta name="theme-color" content="#0a0d10" />
+		<link rel="icon" href="/brand/schemd-mark.svg" type="image/svg+xml" />
+		<script>
+			/* Apply the persisted blueprint mode before first paint — zero CLS, zero flash. */
+			try {
+				var mode = localStorage.getItem('schemd:blueprint');
+				if (mode === 'cyanotype' || mode === 'iso') {
+					document.documentElement.dataset.blueprint = mode;
+				}
+			} catch (error) {}
+		</script>
 		%sveltekit.head%
 	</head>
 	<body>
