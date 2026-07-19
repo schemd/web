@@ -1,28 +1,25 @@
-import { error } from '@sveltejs/kit';
-import { VERSIONS, resolveVersion } from '$lib/platform';
-import { getDocumentationNavigation, getDocumentationPage } from '$lib/server/documentation';
+import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import { DOC_MANIFEST, loadDoc } from '$lib/server/docs';
+import { getRegistry, resolveVersion } from '$lib/server/registry';
 
-export const load: PageServerLoad = ({ params, setHeaders }) => {
-	const version = resolveVersion(params.version);
-	if (version === undefined) error(404, `Documentation version ${params.version} is unavailable.`);
-	const page = getDocumentationPage(version.id, params.slug);
-	if (page === undefined) error(404, `Documentation page ${params.slug} does not exist.`);
-	const navigation = getDocumentationNavigation(version.id);
-	const currentIndex = navigation.findIndex((entry) => entry.slug === page.slug);
-	setHeaders({
-		'cache-control': 'public, max-age=300, stale-while-revalidate=3600',
-		'x-content-type-options': 'nosniff'
-	});
+export const load: PageServerLoad = async ({ params }) => {
+	const registry = await getRegistry();
+	const version = resolveVersion(registry, params.version);
+	if (version === undefined) {
+		redirect(307, `/docs/${registry.latest}/${params.slug}`);
+	}
+	if (params.version === 'latest') {
+		redirect(307, `/docs/${version}/${params.slug}`);
+	}
+	const meta = DOC_MANIFEST.find((page) => page.slug === params.slug);
+	const doc = loadDoc(params.slug);
+	if (!meta || !doc) error(404, `No documentation page named ${params.slug}.`);
 	return {
-		version: version.id,
-		versions: VERSIONS,
-		page,
-		navigation,
-		previous: currentIndex > 0 ? (navigation[currentIndex - 1] ?? null) : null,
-		next:
-			currentIndex >= 0 && currentIndex < navigation.length - 1
-				? (navigation[currentIndex + 1] ?? null)
-				: null
+		version,
+		latest: registry.latest,
+		meta,
+		manifest: DOC_MANIFEST,
+		doc
 	};
 };

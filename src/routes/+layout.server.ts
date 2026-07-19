@@ -1,18 +1,21 @@
-import { CURRENT_VERSION, PACKAGE_NAME, SITE_NAME, SITE_ORIGIN, VERSIONS } from '$lib/platform';
-import { getReleaseRegistry } from '$lib/server/release-registry';
 import type { LayoutServerLoad } from './$types';
+import { getRegistry } from '$lib/server/registry';
+import { docSearchIndex } from '$lib/server/docs';
 
-export const load: LayoutServerLoad = async ({ fetch }) => {
-	const release = await getReleaseRegistry(fetch);
+export const load: LayoutServerLoad = async () => {
+	const registry = await getRegistry();
+	const versions = registry.releases.map((release) => release.version);
+	const latest = registry.latest;
 	return {
-		platform: {
-			siteName: SITE_NAME,
-			siteOrigin: SITE_ORIGIN,
-			packageName: PACKAGE_NAME,
-			currentVersion: CURRENT_VERSION
-		},
-		versions: VERSIONS,
-		release,
-		releases: release.releases
+		versions,
+		latest,
+		registryLive: registry.live,
+		paletteEntries: [
+			{ title: 'Landing', hint: 'route', href: '/' },
+			{ title: 'Playground', hint: `route · v${latest}`, href: `/playground/${latest}` },
+			{ title: 'Simulation Lab', hint: `route · v${latest}`, href: `/simulate/${latest}` },
+			{ title: 'Changelog', hint: 'route', href: '/changelog' },
+			...docSearchIndex(latest)
+		]
 	};
 };
