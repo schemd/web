@@ -1,36 +1,46 @@
 <script lang="ts">
-	import { absoluteUrl, safeStructuredData } from '$lib/seo';
-
-	interface Props {
+	let {
+		title,
+		description,
+		canonical,
+		type = 'website',
+		structuredData
+	}: {
 		title: string;
 		description: string;
-		path: string;
+		canonical: string;
+		type?: 'website' | 'article';
 		structuredData?: Record<string, unknown>;
-		noindex?: boolean;
-	}
+	} = $props();
 
-	let { title, description, path, structuredData, noindex = false }: Props = $props();
-	let canonical = $derived(absoluteUrl(path));
-	let json = $derived(structuredData ? safeStructuredData(structuredData) : '');
+	const jsonLd = $derived(
+		JSON.stringify(
+			structuredData ?? {
+				'@context': 'https://schema.org',
+				'@type': type === 'article' ? 'TechArticle' : 'SoftwareApplication',
+				name: title,
+				description,
+				url: canonical,
+				applicationCategory: 'DeveloperApplication',
+				operatingSystem: 'Any'
+			}
+		).replaceAll('<', '\\u003c')
+	);
 </script>
 
 <svelte:head>
 	<title>{title}</title>
 	<meta name="description" content={description} />
 	<link rel="canonical" href={canonical} />
-	<meta property="og:type" content="website" />
-	<meta property="og:site_name" content="Schemd" />
+	<meta property="og:type" content={type} />
+	<meta property="og:site_name" content="schemd" />
 	<meta property="og:title" content={title} />
 	<meta property="og:description" content={description} />
 	<meta property="og:url" content={canonical} />
-	<meta property="og:image" content={absoluteUrl('/og.png')} />
-	<meta property="og:image:alt" content="Schemd — text in, engineering vectors out" />
+	<meta property="og:image" content="https://schemd.johnowolabiidogun.dev/og-v2.png" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:title" content={title} />
 	<meta name="twitter:description" content={description} />
-	<meta name="twitter:image" content={absoluteUrl('/og.png')} />
-	{#if noindex}<meta name="robots" content="noindex,follow" />{/if}
-	{#if structuredData}<svelte:element this={"script"} type="application/ld+json"
-			>{json}</svelte:element
-		>{/if}
+	<meta name="twitter:image" content="https://schemd.johnowolabiidogun.dev/og-v2.png" />
+	{@html `<script type="application/ld+json">${jsonLd}</${'script'}>`}
 </svelte:head>

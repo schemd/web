@@ -1,14 +1,24 @@
 import type { Handle } from '@sveltejs/kit';
-import { compressServerResponse } from '$lib/server/response-compression';
 
 export const handle: Handle = async ({ event, resolve }) => {
-	const response = await resolve(event);
-	response.headers.set('X-Content-Type-Options', 'nosniff');
-	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+	const response = await resolve(event, {
+		filterSerializedResponseHeaders: (name) =>
+			name === 'cache-control' || name === 'etag' || name === 'last-modified'
+	});
+
+	response.headers.set('x-content-type-options', 'nosniff');
+	response.headers.set('referrer-policy', 'strict-origin-when-cross-origin');
+	response.headers.set('cross-origin-opener-policy', 'same-origin');
 	response.headers.set(
-		'Permissions-Policy',
-		'camera=(), microphone=(), geolocation=(), payment=()'
+		'permissions-policy',
+		'accelerometer=(), camera=(), geolocation=(), gyroscope=(), microphone=(), payment=()'
 	);
-	response.headers.set('X-Frame-Options', 'DENY');
-	return compressServerResponse(event.request, response);
+
+	if (event.url.pathname.startsWith('/api/')) {
+		response.headers.set('cache-control', 'no-store');
+	} else if (event.url.pathname.startsWith('/_app/')) {
+		response.headers.set('cache-control', 'public, max-age=31536000, immutable');
+	}
+
+	return response;
 };

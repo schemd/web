@@ -1,50 +1,72 @@
-# Schemd website
+# schemd web
 
-The official SvelteKit website for [`@schemd/core`](https://github.com/schemd/core): landing page, versioned documentation, worker-based playground, focused simulations, public implementation timeline, changelog, and server search.
+The standalone SvelteKit 5 platform for
+[`@schemd/core`](https://github.com/schemd/core): versioned documentation, a zero-runtime-dependency
+playground, five instrumented simulation laboratories, registry-backed release history, and native
+SVG benchmark charts.
 
-## Local development
+Schemd is pronounced like _“skemd”_ (`/skɛmd/`).
 
-The repository uses Bun only.
+## Runtime
+
+- SvelteKit with Svelte 5 runes
+- `@sveltejs/adapter-node` on Node.js 24 or newer
+- strict TypeScript
+- pure nested vanilla CSS
+- exact `@schemd/core@0.2.1` compiler pin
+- no browser editor, chart, simulation, audio, or state-serialization dependencies
 
 ```sh
-bun ci
+bun run ci
 bun run dev
 ```
 
-The development server prints the local URL. Production verification:
+The production process is a long-running Node server:
+
+```sh
+bun run build
+HOST=0.0.0.0 PORT=3000 bun run start
+```
+
+Behind a trusted reverse proxy, adapter-node also supports `ORIGIN`, `PROTOCOL_HEADER`,
+`HOST_HEADER`, `ADDRESS_HEADER`, `XFF_DEPTH`, `BODY_SIZE_LIMIT`, and `SHUTDOWN_TIMEOUT`. Configure
+only headers overwritten by that proxy.
+
+## Verification
 
 ```sh
 bun run format:check
 bun run lint
 bun run check
-bun run test:coverage
-bun run test:docs
-bun run build
-bun run check:budget
+bun run test:unit
 bun run test:e2e
 ```
 
-## Deployment
+The unit suite covers documentation parsing, registry caching, compiler isolation, SVG semantics,
+and simulation math. Playwright exercises the production adapter-node bundle, mobile documentation,
+the editor/caret/URI pipeline, command-palette focus restoration, simulation diagnostics, route
+semantics, horizontal overflow, and automated axe checks.
 
-The production target is a long-running Node.js 24+ process built by
-`@sveltejs/adapter-node`. Static assets are emitted with Brotli and gzip sidecars.
+## Server boundaries
 
-```sh
-bun ci
-bun run build
-HOST=0.0.0.0 PORT=3000 bun run start
-```
+`src/lib/server/release-registry.ts` maintains one bounded, single-flight registry snapshot. The
+bundled release archive is always immediately available; npm and GitHub refresh it with timeouts,
+response limits, a 15-minute fresh window, and a 24-hour stale fallback.
 
-The process keeps a bounded npm/GitHub release registry snapshot in memory. Every process starts
-with the reproducible bundled manifest, returns it without network latency, and refreshes the
-registry in the background. Fresh results are reused for 15 minutes; the last network result
-remains available for 24 hours if either upstream is unavailable.
+Public compilation runs through `src/lib/server/compiler-pool.ts`: two unrefed worker threads, an
+eight-request queue, a two-second routing budget, and worker replacement after timeout or protocol
+failure. Untrusted geometry cannot pin the SvelteKit event loop.
 
-The adapter also supports `ORIGIN`, `PROTOCOL_HEADER`, `HOST_HEADER`,
-`ADDRESS_HEADER`, `XFF_DEPTH`, `BODY_SIZE_LIMIT`, and `SHUTDOWN_TIMEOUT` when the
-server is deployed behind a trusted reverse proxy. Set only the forwarding headers
-your proxy owns; accepting untrusted forwarded headers can make origin checks unsafe.
+Documentation prose and metadata live in `src/lib/content/docs.ts` and are parsed by the bounded,
+server-only pipeline in `src/lib/server/documentation.ts`. Schematic fences compile during SSR;
+only compiler output and escaped Markdown/token streams cross trusted HTML boundaries.
 
-## Content and releases
+## Routes
 
-`src/lib/versioning/manifest.ts` is the website release source of truth. Versioned documentation is build-bundled under `src/lib/content/docs/<version>`. The generated metrics and timeline files record their core commit provenance; update the core sources first, then regenerate the website snapshots.
+- `/` — SSR product surface and compiler proof
+- `/docs/v0.2.1/[slug]` — 3-column synchronized documentation
+- `/playground/v0.2.1` — resizable source/render workspace
+- `/simulations/v0.2.1/[slug]` — five isolated engineering laboratories
+- `/changelog` — registry timeline and native SVG metrics
+- `/api/compile` and `/api/search` — bounded server endpoints
+- `/sitemap.xml` — automated route inventory

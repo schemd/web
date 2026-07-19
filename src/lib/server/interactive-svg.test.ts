@@ -1,23 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { exposeInteractiveSvg } from './interactive-svg';
+import { interactiveSchematicSvg } from './interactive-svg';
 
-describe('interactive SVG semantics', () => {
-	it('promotes the compiler root to a labelled group', () => {
-		expect(
-			exposeInteractiveSvg(
-				'<figure><svg role="img" aria-labelledby="title"><title id="title">Circuit</title><circle role="button"/></svg></figure>'
-			)
-		).toBe(
-			'<figure><svg role="group" aria-labelledby="title"><title id="title">Circuit</title><circle role="button"/></svg></figure>'
+describe('interactiveSchematicSvg', () => {
+	it('promotes only the root SVG image role', () => {
+		const svg =
+			'<figure><svg class="schematic-svg" role="img" aria-labelledby="title"><title id="title">Lab</title><g role="button"></g></svg></figure>';
+
+		expect(interactiveSchematicSvg(svg)).toBe(
+			'<figure><svg class="schematic-svg" role="group" aria-labelledby="title"><title id="title">Lab</title><g role="button"></g></svg></figure>'
 		);
 	});
 
-	it('rejects malformed or incompatible compiler output', () => {
-		expect(() => exposeInteractiveSvg('<figure></figure>')).toThrowError('SVG root');
-		expect(() => exposeInteractiveSvg('<svg role="img"')).toThrowError('opening tag terminator');
-		expect(() => exposeInteractiveSvg('<svg><g role="img"></g></svg>')).toThrowError(
-			'root must expose'
-		);
-		expect(() => exposeInteractiveSvg('<svg role="group"></svg>')).toThrowError('root must expose');
+	it('leaves markup without a root image role unchanged', () => {
+		const svg = '<svg role="group"><g role="button"></g></svg>';
+		expect(interactiveSchematicSvg(svg)).toBe(svg);
 	});
 });

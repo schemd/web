@@ -1,46 +1,55 @@
 export type BellStep = 0 | 1 | 2;
+export type ComputationalBasis = '00' | '01' | '10' | '11';
+
 export interface BellState {
 	readonly step: BellStep;
 	readonly label: string;
-	readonly ket: string;
-	readonly probability00: number;
-	readonly probability11: number;
-	readonly otherProbability: number;
+	readonly amplitudes: readonly [number, number, number, number];
+	readonly probabilities: readonly [number, number, number, number];
 }
-const STATES: readonly BellState[] = [
-	{
-		step: 0,
-		label: 'Initialize',
-		ket: '|00⟩',
-		probability00: 1,
-		probability11: 0,
-		otherProbability: 0
-	},
-	{
-		step: 1,
-		label: 'Hadamard',
-		ket: '(|00⟩ + |10⟩) / √2',
-		probability00: 0.5,
-		probability11: 0,
-		otherProbability: 0.5
-	},
-	{
-		step: 2,
-		label: 'Entangle',
-		ket: '(|00⟩ + |11⟩) / √2',
-		probability00: 0.5,
-		probability11: 0.5,
-		otherProbability: 0
-	}
-];
+
+const INVERSE_SQRT_TWO = 1 / Math.sqrt(2);
+
 export function bellState(step: BellStep): BellState {
-	return STATES[step];
+	switch (step) {
+		case 0:
+			return {
+				step,
+				label: '|00⟩',
+				amplitudes: [1, 0, 0, 0],
+				probabilities: [1, 0, 0, 0]
+			};
+		case 1:
+			return {
+				step,
+				label: '(|00⟩ + |10⟩) / √2',
+				amplitudes: [INVERSE_SQRT_TWO, 0, INVERSE_SQRT_TWO, 0],
+				probabilities: [0.5, 0, 0.5, 0]
+			};
+		case 2:
+			return {
+				step,
+				label: '(|00⟩ + |11⟩) / √2',
+				amplitudes: [INVERSE_SQRT_TWO, 0, 0, INVERSE_SQRT_TWO],
+				probabilities: [0.5, 0, 0, 0.5]
+			};
+	}
 }
+
 export function nextBellStep(step: BellStep): BellStep {
-	return step === 2 ? 0 : step === 1 ? 2 : 1;
+	switch (step) {
+		case 0:
+			return 1;
+		case 1:
+			return 2;
+		case 2:
+			return 0;
+	}
 }
-export function measureBell(sample: number): '00' | '11' {
-	if (!Number.isFinite(sample) || sample < 0 || sample >= 1)
-		throw new RangeError('sample must be in [0, 1).');
-	return sample < 0.5 ? '00' : '11';
+
+export function measureBell(randomValue: number): ComputationalBasis {
+	if (!Number.isFinite(randomValue) || randomValue < 0 || randomValue >= 1) {
+		throw new RangeError('Measurement entropy must be within [0, 1).');
+	}
+	return randomValue < 0.5 ? '00' : '11';
 }

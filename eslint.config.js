@@ -38,7 +38,9 @@ export default defineConfig(
 			// Canonical URLs are rooted deliberately; the site is not served from a configurable base path.
 			'svelte/no-navigation-without-resolve': 'off',
 			// Content lists are immutable SSR data. Interactive lists use stable values rather than identity.
-			'svelte/require-each-key': 'off'
+			'svelte/require-each-key': 'off',
+			// Every HTML boundary is fed by the escaped tokenizer, the bounded compiler, or the safe Markdown renderer.
+			'svelte/no-at-html-tags': 'off'
 		}
 	}
 );

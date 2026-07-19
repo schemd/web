@@ -1,4 +1,5 @@
 export type BinarySignal = 0 | 1;
+
 export interface AdderStage {
 	readonly bit: number;
 	readonly a: BinarySignal;
@@ -7,41 +8,66 @@ export interface AdderStage {
 	readonly sum: BinarySignal;
 	readonly carryOut: BinarySignal;
 }
-export interface AdderResult {
+
+export interface RippleCarryResult {
 	readonly stages: readonly AdderStage[];
 	readonly sum: number;
 	readonly carryOut: BinarySignal;
+	readonly nineBitResult: number;
 }
 
-function byte(value: number, label: string): number {
-	if (!Number.isInteger(value) || value < 0 || value > 255)
-		throw new RangeError(`${label} must be an integer from 0 through 255.`);
-	return value;
-}
-
-function binary(value: number): BinarySignal {
-	return value === 0 ? 0 : 1;
-}
-
-export function rippleCarry8(aValue: number, bValue: number, carryInput: number): AdderResult {
-	const a = byte(aValue, 'aValue');
-	const b = byte(bValue, 'bValue');
-	if (carryInput !== 0 && carryInput !== 1) throw new RangeError('carryInput must be 0 or 1.');
-	let carry: BinarySignal = carryInput;
-	let sum = 0;
-	const stages: AdderStage[] = [];
-	for (let bit = 0; bit < 8; bit += 1) {
-		const left = binary((a >> bit) & 1);
-		const right = binary((b >> bit) & 1);
-		const stageSum = binary(left ^ right ^ carry);
-		const carryOut = binary((left & right) | (left & carry) | (right & carry));
-		stages.push({ bit, a: left, b: right, carryIn: carry, sum: stageSum, carryOut });
-		sum |= stageSum << bit;
-		carry = carryOut;
+function assertByte(value: number, label: string): void {
+	if (!Number.isInteger(value) || value < 0 || value > 0xff) {
+		throw new RangeError(`${label} must be an unsigned 8-bit integer.`);
 	}
-	return { stages, sum, carryOut: carry };
+}
+
+function binarySignal(value: number): BinarySignal {
+	if (value === 0 || value === 1) return value;
+	throw new RangeError('Internal adder state escaped the binary domain.');
+}
+
+export function rippleCarry8(
+	aValue: number,
+	bValue: number,
+	carryIn: BinarySignal
+): RippleCarryResult {
+	assertByte(aValue, 'A');
+	assertByte(bValue, 'B');
+	if (carryIn !== 0 && carryIn !== 1) {
+		throw new RangeError('Carry-in must be 0 or 1.');
+	}
+
+	const stages: AdderStage[] = [];
+	let carry = carryIn;
+	let sum = 0;
+
+	for (let bit = 0; bit < 8; bit += 1) {
+		const a = binarySignal((aValue >>> bit) & 1);
+		const b = binarySignal((bValue >>> bit) & 1);
+		const stageCarryIn = carry;
+		const stageSum = binarySignal(a ^ b ^ stageCarryIn);
+		carry = binarySignal((a & b) | (a & stageCarryIn) | (b & stageCarryIn));
+		sum |= stageSum << bit;
+		stages.push({
+			bit,
+			a,
+			b,
+			carryIn: stageCarryIn,
+			sum: stageSum,
+			carryOut: carry
+		});
+	}
+
+	return {
+		stages,
+		sum,
+		carryOut: carry,
+		nineBitResult: sum | (carry << 8)
+	};
 }
 
 export function byteBinary(value: number): string {
-	return byte(value, 'value').toString(2).padStart(8, '0');
+	assertByte(value, 'Value');
+	return value.toString(2).padStart(8, '0');
 }

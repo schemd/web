@@ -1,260 +1,91 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import {
-		CORE_REPOSITORY,
-		LATEST_VERSION,
-		NPM_PACKAGE_URL,
-		getVersion,
-		versionContextPath,
-		VERSIONS
-	} from '$lib/versioning/manifest';
+	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
+	import { emitTone } from '$lib/audio';
 
-	interface HeaderReleaseSnapshot {
-		readonly registryLatest: string;
-		readonly source: 'network' | 'verified-fallback';
-		readonly compatibilityNotice?: string;
-		readonly cache: {
-			readonly state: 'fresh' | 'refreshed' | 'stale' | 'fallback';
-			readonly expiresAt: string;
-		};
+	let {
+		versions = ['v0.2.1'],
+		stableVersion = 'v0.2.1',
+		onOpenCommand
+	}: {
+		versions?: readonly string[];
+		stableVersion?: string;
+		onOpenCommand: () => void;
+	} = $props();
+
+	let audioEnabled = $state(false);
+	let mobileOpen = $state(false);
+
+	function versionPath(version: string): string {
+		const path = page.url.pathname;
+		if (/^\/(?:docs|playground|simulations)\/v[^/]+/u.test(path)) {
+			return path.replace(/^\/(docs|playground|simulations)\/v[^/]+/u, `/$1/${version}`);
+		}
+		return `/docs/${version}/overview`;
 	}
 
-	let { release }: { release: HeaderReleaseSnapshot } = $props();
-
-	const links = [
-		{ href: '/docs/latest', label: 'Docs', prefix: '/docs' },
-		{ href: '/playground/v0.2.1', label: 'Playground', prefix: '/playground' },
-		{ href: '/simulations/v0.2.1', label: 'Simulations', prefix: '/simulations' },
-		{ href: '/timeline', label: 'Timeline', prefix: '/timeline' },
-		{ href: '/changelog', label: 'Changelog', prefix: '/changelog' }
-	] as const;
-	function isCurrent(prefix: string): boolean {
-		return page.url.pathname.startsWith(prefix);
+	async function selectVersion(event: Event): Promise<void> {
+		const select = event.currentTarget;
+		if (!(select instanceof HTMLSelectElement)) return;
+		await goto(`${versionPath(select.value)}${page.url.search}`);
 	}
 
-	function switchVersion(event: Event): void {
-		const target = event.currentTarget;
-		if (!(target instanceof HTMLSelectElement)) return;
-		const version = getVersion(target.value);
-		if (!version) return;
-		location.assign(versionContextPath(page.url.pathname, version.id));
+	function toggleAudio(): void {
+		audioEnabled = !audioEnabled;
+		localStorage.setItem('schemd:audio', String(audioEnabled));
+		window.dispatchEvent(new CustomEvent('schemd:audio-toggle', { detail: audioEnabled }));
+		if (audioEnabled) emitTone('success');
 	}
 
-	function openCommandPalette(): void {
-		window.dispatchEvent(new Event('schemd:search'));
-	}
-
-	let registryNotice = $derived(
-		release.compatibilityNotice ??
-			(release.source === 'network'
-				? 'Confirmed by npm and GitHub'
-				: 'Verified bundled release; registry refresh is in progress')
-	);
-	let currentVersion = $derived(
-		VERSIONS.find((version) => page.url.pathname.includes(`/${version.id}`)) ?? LATEST_VERSION
-	);
+	onMount(() => {
+		audioEnabled = localStorage.getItem('schemd:audio') === 'true';
+	});
 </script>
 
-<header class="site-header">
-	<div class="install-rail">
-		<div>
-			<p>
-				<span class="status-dot"></span><strong>@schemd/core</strong><span
-					aria-label={registryNotice}>v{release.registryLatest}</span
-				>
-			</p>
-			<span class="runtime-state" title={`Cached until ${release.cache.expiresAt}`}
-				>NODE · {release.cache.state}</span
-			>
-			<code>bun add @schemd/core</code>
-			<nav aria-label="Package links">
-				<a href={NPM_PACKAGE_URL}
-					><svg viewBox="0 0 24 24" aria-hidden="true"
-						><path d="M3 7h18v10h-9v2H9v-2H3V7Zm3 3v4h3v-4H6Zm6 0v4h6v-4h-6Z" /></svg
-					><span>npm</span></a
-				>
-				<a href={CORE_REPOSITORY}
-					><svg viewBox="0 0 24 24" aria-hidden="true"
-						><path
-							d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.88c-2.78.6-3.37-1.18-3.37-1.18-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.35 1.09 2.92.83.09-.65.35-1.09.64-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.58 9.58 0 0 1 12 6.82c.85 0 1.71.11 2.51.34 1.91-1.3 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.86v2.76c0 .27.18.58.69.48A10 10 0 0 0 12 2Z"
-						/></svg
-					><span>GitHub</span></a
-				>
-			</nav>
-		</div>
-	</div>
-	<div class="site-header__inner">
-		<a class="wordmark" href="/" aria-label="Schemd home">
-			<img src="/brand/schemd-mark.svg" alt="" width="42" height="42" />
-			<span>schemd</span>
-			<small>v{LATEST_VERSION.packageVersion}</small>
-		</a>
+<header class="site-header" data-open={mobileOpen}>
+	<a class="brand-lockup" href="/" aria-label="schemd home">
+		<img src="/brand/schemd-mark.svg" alt="" width="34" height="34" />
+		<span>schemd</span>
+		<small>vector compiler</small>
+	</a>
 
-		<nav class="desktop-nav" aria-label="Primary navigation">
-			{#each links as link}
-				<a href={link.href} aria-current={isCurrent(link.prefix) ? 'page' : undefined}>
-					{link.label}
-				</a>
-			{/each}
-		</nav>
+	<nav class="primary-nav" aria-label="Primary navigation">
+		<a href={`/docs/${stableVersion}/overview`}>Docs</a>
+		<a href={`/playground/${stableVersion}`}>Playground</a>
+		<a href={`/simulations/${stableVersion}`}>Laboratory</a>
+		<a href="/changelog">Changelog</a>
+	</nav>
 
-		<form class="header-search" action="/search" method="get" role="search">
-			<label class="visually-hidden" for="site-search">Search documentation</label>
-			<input id="site-search" name="q" type="search" placeholder="Search docs" maxlength="80" />
-			<button type="submit">Search</button>
-		</form>
-
-		<form class="global-version" action="/version/select" method="get">
-			<input type="hidden" name="from" value={page.url.pathname} />
-			<label class="visually-hidden" for="global-version">Package version</label>
-			<select id="global-version" name="version" onchange={switchVersion}>
-				{#each VERSIONS as version (version.id)}<option
-						value={version.id}
-						selected={version.id === currentVersion.id}>{version.id}</option
-					>{/each}
-			</select>
-			<button type="submit">Load</button>
-		</form>
-
-		<button
-			class="command-trigger"
-			type="button"
-			onclick={openCommandPalette}
-			aria-label="Open search and command palette"
-		>
-			<span>Search</span><kbd>⌘ K</kbd>
-		</button>
-
-		<details class="mobile-nav">
-			<summary><span>Menu</span><span aria-hidden="true">＋</span></summary>
-			<nav aria-label="Mobile navigation">
-				{#each links as link}
-					<a href={link.href} aria-current={isCurrent(link.prefix) ? 'page' : undefined}>
-						{link.label}
-					</a>
+	<div class="header-actions">
+		<label class="version-select">
+			<span class="sr-only">Documentation version</span>
+			<select value={stableVersion} onchange={selectVersion} aria-label="Version">
+				{#each versions as version}
+					<option value={version}>{version}</option>
 				{/each}
-				<form action="/search" method="get" role="search">
-					<label for="mobile-site-search">Search documentation</label>
-					<div class="mobile-nav__search">
-						<input id="mobile-site-search" name="q" type="search" maxlength="80" />
-						<button type="submit">Search</button>
-					</div>
-				</form>
-			</nav>
-		</details>
+			</select>
+		</label>
+		<button
+			class="icon-button"
+			type="button"
+			aria-pressed={audioEnabled}
+			aria-label={audioEnabled ? 'Disable audio feedback' : 'Enable audio feedback'}
+			onclick={toggleAudio}
+		>
+			{audioEnabled ? 'AUDIO·ON' : 'AUDIO·OFF'}
+		</button>
+		<button class="command-trigger" type="button" onclick={onOpenCommand}>
+			<span>Command</span><kbd>⌘ K</kbd>
+		</button>
+		<button
+			class="nav-toggle"
+			type="button"
+			aria-label="Toggle navigation"
+			aria-expanded={mobileOpen}
+			onclick={() => (mobileOpen = !mobileOpen)}
+		>
+			<span></span><span></span>
+		</button>
 	</div>
 </header>
-
-<style>
-	.install-rail {
-		border-block-end: 1px solid var(--line);
-		background: var(--ink-0);
-	}
-	.install-rail > div {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		min-block-size: 2.35rem;
-		max-inline-size: var(--shell);
-		margin-inline: auto;
-		padding-inline: var(--gutter);
-		color: var(--muted);
-		font-family: var(--font-mono);
-		font-size: 0.68rem;
-	}
-	.install-rail p {
-		display: flex;
-		align-items: center;
-		gap: 0.45rem;
-	}
-	.install-rail strong {
-		color: var(--paper);
-	}
-	.runtime-state {
-		border: 1px solid color-mix(in srgb, var(--signal) 42%, var(--line));
-		padding: 0.18rem 0.38rem;
-		color: var(--signal-bright);
-		font-size: 0.58rem;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-	}
-	.install-rail code {
-		margin-inline-start: auto;
-		color: var(--signal-bright);
-	}
-	.install-rail nav {
-		display: flex;
-		align-items: center;
-		gap: 0.35rem;
-	}
-	.install-rail a {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.25rem;
-		min-block-size: 2rem;
-		padding-inline: 0.45rem;
-		text-decoration: none;
-	}
-	.install-rail svg {
-		inline-size: 1rem;
-		block-size: 1rem;
-		fill: currentColor;
-	}
-	.global-version select {
-		min-block-size: 2.5rem;
-		padding-inline: 0.55rem 1.8rem;
-		font-family: var(--font-mono);
-		font-size: 0.68rem;
-	}
-	.global-version {
-		display: flex;
-	}
-	.global-version button {
-		min-block-size: 2.5rem;
-		border-inline-start: 0;
-		padding-inline: 0.5rem;
-		font-size: 0.64rem;
-	}
-	.command-trigger {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.6rem;
-		min-block-size: 2.5rem;
-		padding-inline: 0.65rem;
-		color: var(--muted);
-		font-size: 0.72rem;
-	}
-	.command-trigger kbd {
-		border-inline-start: 1px solid var(--line);
-		padding-inline-start: 0.55rem;
-		color: var(--paper-soft);
-		font-size: 0.64rem;
-	}
-	@media (max-width: 70rem) {
-		.global-version,
-		.command-trigger > span {
-			display: none;
-		}
-		.command-trigger {
-			margin-inline-start: auto;
-		}
-	}
-	@media (max-width: 34rem) {
-		.runtime-state {
-			display: none;
-		}
-		.install-rail code {
-			display: none;
-		}
-		.install-rail nav {
-			margin-inline-start: auto;
-		}
-		.install-rail a span {
-			position: absolute;
-			inline-size: 1px;
-			block-size: 1px;
-			overflow: hidden;
-			clip-path: inset(50%);
-		}
-	}
-</style>

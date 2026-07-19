@@ -1,3 +1,5 @@
+export const SUPPORTED_SIMULATION_VERSION = 'v0.2.1' as const;
+
 export type SimulationId =
 	'digital-adder' | 'bell-state' | 'rc-low-pass' | '555-astable' | 'quantum-teleportation';
 
@@ -12,6 +14,27 @@ export interface SimulationDefinition {
 	readonly docsPath: string;
 }
 
+export interface PublicSimulationDefinition {
+	readonly id: SimulationId;
+	readonly domain: string;
+	readonly title: string;
+	readonly summary: string;
+	readonly idea: string;
+	readonly docsPath: string;
+}
+
+export interface SimulationVersion {
+	readonly id: typeof SUPPORTED_SIMULATION_VERSION;
+	readonly packageVersion: '0.2.1';
+	readonly label: '@schemd/core 0.2.1';
+}
+
+export const SIMULATION_VERSION: SimulationVersion = Object.freeze({
+	id: SUPPORTED_SIMULATION_VERSION,
+	packageVersion: '0.2.1',
+	label: '@schemd/core 0.2.1'
+});
+
 export const SIMULATIONS = Object.freeze([
 	Object.freeze({
 		id: 'digital-adder',
@@ -20,7 +43,7 @@ export const SIMULATIONS = Object.freeze([
 		summary: 'Follow one carry bit as two unsigned bytes pass through eight full-adder stages.',
 		idea: 'A ripple-carry adder is locally simple: each bit consumes A, B, and carry-in, then produces sum and carry-out.',
 		bounds: { width: 960, height: 420 },
-		docsPath: '/docs/v0.2.1/components#logic-quantum',
+		docsPath: '/docs/v0.2.1/component-reference#logic-gates',
 		source: `port:A "A_i" at (70, 100) #blue
 port:B "B_i" at (70, 310) #blue
 xor:X1 "A_i xor B_i" at (310, 160) #cyan [inputs=2 outputs=1]
@@ -47,7 +70,7 @@ CARRY.out -> COUT.in #amber [line marker-end=arrow]`
 			'Step from |00⟩ through superposition to a correlated Bell pair, then sample a valid measurement.',
 		idea: 'A Hadamard creates two amplitudes; CNOT correlates the target so only 00 and 11 remain possible.',
 		bounds: { width: 980, height: 420 },
-		docsPath: '/docs/v0.2.1/components#logic-quantum',
+		docsPath: '/docs/v0.2.1/component-reference#quantum-gates',
 		source: `port:Q0 "|0〉_{q0}" at (80, 110) #blue
 port:Q1 "|0〉_{q1}" at (80, 310) #blue
 hadamard:H1 "H" at (330, 110) #purple
@@ -69,7 +92,7 @@ CX.target -> M1.in #emerald [bezier]`
 			'Sweep five decades of frequency and inspect ideal gain, phase, output voltage, and cutoff.',
 		idea: 'A first-order RC low-pass attenuates increasingly above fc = 1 / (2πRC) and approaches −90° phase.',
 		bounds: { width: 920, height: 420 },
-		docsPath: '/docs/v0.2.1/components#circuit',
+		docsPath: '/docs/v0.2.1/component-reference#passives',
 		source: `port:VIN "V_{in}" at (80, 130) #blue
 resistor:R1 "R = 10 k\\Omega" at (320, 130) #amber
 capacitor:C1 "C = 100 nF" at (560, 285) #cyan
@@ -89,7 +112,7 @@ C1.out -> GND.in #slate [ortho]`
 			'Change the two resistors and timing capacitor, then inspect frequency, charge time, and duty cycle.',
 		idea: 'The capacitor charges through R1 + R2 and discharges through R2, so the high interval is always longer in this basic topology.',
 		bounds: { width: 1200, height: 660 },
-		docsPath: '/docs/v0.2.1/components#integrated-circuits',
+		docsPath: '/docs/v0.2.1/component-reference#integrated-circuits',
 		source: `port:VCC "+5V rail" at (100, 100) #blue
 resistor:R1 "R_1 = 10 k\\Omega" at (310, 100) #amber
 resistor:R2 "R_2 = 47 k\\Omega" at (510, 240) #amber
@@ -121,7 +144,7 @@ LED1.cathode -> GND.in #slate [ortho]`
 			'Trace a real-amplitude message qubit through Bell encoding, measurement, and Pauli recovery.',
 		idea: 'Teleportation transfers a state using prior entanglement and two classical bits; it does not transmit matter or exceed light speed.',
 		bounds: { width: 1500, height: 600 },
-		docsPath: '/docs/v0.2.1/components#logic-quantum',
+		docsPath: '/docs/v0.2.1/component-reference#quantum-gates',
 		source: `port:PSI "|\\psi〉_A" at (70, 100) #purple
 port:ANC0 "|0〉_A" at (70, 300) #blue
 port:ANC1 "|0〉_B" at (70, 500) #blue
@@ -153,4 +176,15 @@ MX.out -> XREC.in #amber [ortho]`
 
 export function getSimulation(id: string): SimulationDefinition | undefined {
 	return SIMULATIONS.find((simulation) => simulation.id === id);
+}
+
+export function publicSimulation(definition: SimulationDefinition): PublicSimulationDefinition {
+	return {
+		id: definition.id,
+		domain: definition.domain,
+		title: definition.title,
+		summary: definition.summary,
+		idea: definition.idea,
+		docsPath: definition.docsPath
+	};
 }

@@ -1,26 +1,33 @@
-export interface AstableTiming {
+export interface Astable555Result {
 	readonly highSeconds: number;
 	readonly lowSeconds: number;
 	readonly periodSeconds: number;
 	readonly frequencyHz: number;
 	readonly dutyCycle: number;
 }
-export function astableTiming(
-	resistorOneOhms: number,
-	resistorTwoOhms: number,
+
+const LOG_TWO = Math.log(2);
+
+export function astable555(
+	r1Ohms: number,
+	r2Ohms: number,
 	capacitanceFarads: number
-): AstableTiming {
-	for (const [value, label] of [
-		[resistorOneOhms, 'resistorOneOhms'],
-		[resistorTwoOhms, 'resistorTwoOhms'],
-		[capacitanceFarads, 'capacitanceFarads']
-	] as const) {
-		if (!Number.isFinite(value) || value <= 0)
-			throw new RangeError(`${label} must be greater than zero.`);
+): Astable555Result {
+	if (
+		!Number.isFinite(r1Ohms) ||
+		!Number.isFinite(r2Ohms) ||
+		!Number.isFinite(capacitanceFarads) ||
+		r1Ohms <= 0 ||
+		r2Ohms <= 0 ||
+		capacitanceFarads <= 0
+	) {
+		throw new RangeError('Astable timing values must be finite and positive.');
 	}
-	const highSeconds = Math.LN2 * (resistorOneOhms + resistorTwoOhms) * capacitanceFarads;
-	const lowSeconds = Math.LN2 * resistorTwoOhms * capacitanceFarads;
+
+	const highSeconds = LOG_TWO * (r1Ohms + r2Ohms) * capacitanceFarads;
+	const lowSeconds = LOG_TWO * r2Ohms * capacitanceFarads;
 	const periodSeconds = highSeconds + lowSeconds;
+
 	return {
 		highSeconds,
 		lowSeconds,
