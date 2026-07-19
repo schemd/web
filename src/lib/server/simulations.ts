@@ -11,6 +11,12 @@
  * one compiled document it needs through {@link getSimulation}.
  */
 import { compileSchematic, parseSchematicFence } from '@schemd/core';
+import katex from 'katex';
+
+/** Render a LaTeX formula to static KaTeX HTML for the sim pages. */
+function renderFormula(tex: string): string {
+	return katex.renderToString(tex, { throwOnError: false, displayMode: false });
+}
 
 /** Static, compile-free descriptor powering the selector cards and lab headers. */
 export interface SimEnvironment {
@@ -26,8 +32,10 @@ export interface SimEnvironment {
 	readonly tagline: string;
 	/** Longer technical description of the behavioural model. */
 	readonly summary: string;
-	/** The governing equation, written for the monospace readout. */
+	/** The governing equation as LaTeX source. */
 	readonly formula: string;
+	/** The governing equation pre-rendered to static KaTeX HTML. */
+	readonly formulaHtml: string;
 	/** Hardware nodes instantiated by the compiled schematic. */
 	readonly inventory: readonly string[];
 	/** Mathematical / range boundaries the model enforces. */
@@ -95,7 +103,7 @@ function adderSource(): { source: string; width: number; height: number } {
 		);
 	}
 	lines.push(`O1_${bits - 1}.out -> COUT.in #purple [ortho]`);
-	return { source: lines.join('\n'), width: 880, height: top + bits * rowHeight + 40 };
+	return { source: lines.join('\n'), width: 1080, height: top + bits * rowHeight + 60 };
 }
 
 const RC_SOURCE = `// First-order RC low-pass filter (two-port form).
@@ -194,7 +202,7 @@ const SOURCES: Record<string, { source: string; width: number; height: number }>
  * Public environment registry. The order here is the order the selector paints
  * its cards, and each `index` mirrors that ordering for the terminal chrome.
  */
-export const SIM_ENVIRONMENTS: readonly SimEnvironment[] = [
+const SIM_ENVIRONMENTS_RAW: readonly Omit<SimEnvironment, 'formulaHtml'>[] = [
 	{
 		id: 'adder',
 		index: '01',
@@ -203,7 +211,7 @@ export const SIM_ENVIRONMENTS: readonly SimEnvironment[] = [
 		tagline: 'Cascading ripple-carry gate matrix with a live combinational pass.',
 		summary:
 			'Eight full-adder cells built from XOR/AND/OR primitives. Clicking an input port toggles a bit and dispatches one synchronous logic pass; high nets glow as the carry ripples left to right.',
-		formula: 'Sᵢ = Aᵢ ⊕ Bᵢ ⊕ Cᵢ · Cᵢ₊₁ = AᵢBᵢ + Cᵢ(Aᵢ ⊕ Bᵢ)',
+		formula: 'S_i = A_i \\oplus B_i \\oplus C_i \\;\\cdot\\; C_{i+1} = A_iB_i + C_i(A_i \\oplus B_i)',
 		inventory: ['8× full-adder cell', '16× XOR + 16× AND', '8× OR carry merge', 'A/B/Cᵢₙ + Sum ports'],
 		boundaries: ['8-bit operands · 0–255', 'sum 0–511 with carry-out', 'zero propagation delay model'],
 		fault: 'carry chain stuck-at-0'
@@ -216,7 +224,7 @@ export const SIM_ENVIRONMENTS: readonly SimEnvironment[] = [
 		tagline: 'Sweep R, C, and frequency; watch the pole attenuate the output trace.',
 		summary:
 			'A first-order shunt-capacitor filter. The cutoff and the |H(jω)| magnitude are derived live; the output wire fades its opacity and stretches its dash pattern to visualise physical damping, and both channels drive the oscilloscope.',
-		formula: 'f_c = 1 / (2πRC) · |H(jω)| = 1/√(1 + (f/f_c)²)',
+		formula: 'f_c = \\dfrac{1}{2\\pi RC} \\;\\cdot\\; |H(j\\omega)| = \\dfrac{1}{\\sqrt{1 + (f/f_c)^2}}',
 		inventory: ['input source node', 'series resistor R', 'shunt capacitor C', 'reference ground'],
 		boundaries: ['R 100 Ω – 1 MΩ', 'C 1 nF – 10 µF', 'sweep 10 Hz – 100 kHz'],
 		fault: 'capacitor branch open'
@@ -229,7 +237,7 @@ export const SIM_ENVIRONMENTS: readonly SimEnvironment[] = [
 		tagline: 'Prepare the four Bell states; sample the ⟨Z⊗Z⟩ correlation.',
 		summary:
 			'H on q₀ followed by CNOT(q₀→q₁). Toggling the initialization ports selects which Bell pair is prepared; amplitudes and the correlation index are derived, and a measure button accumulates real Born-rule shots.',
-		formula: '|Φ⁺⟩ = (|00⟩ + |11⟩)/√2 · ⟨Z⊗Z⟩ ∈ [−1, +1]',
+		formula: '|\\Phi^+\\rangle = \\dfrac{|00\\rangle + |11\\rangle}{\\sqrt{2}} \\;\\cdot\\; \\langle Z \\otimes Z \\rangle \\in [-1, +1]',
 		inventory: ['2× qubit register line', 'Hadamard gate', 'CNOT control/target', 'measurement ports'],
 		boundaries: ['4 Bell states', 'amplitudes ±1/√2', 'Born-rule sampled correlation'],
 		fault: 'CNOT entangler offline'
@@ -242,7 +250,7 @@ export const SIM_ENVIRONMENTS: readonly SimEnvironment[] = [
 		tagline: 'A real charge/discharge loop clocking an output LED.',
 		summary:
 			'The timing capacitor integrates between ⅓·V_cc and ⅔·V_cc. The timing-branch stroke weight scales with instantaneous V_C, and the LED node flashes in sync with the calculated frequency (time-scaled for visibility).',
-		formula: 'f = 1.44 / ((R_A + 2R_B)·C) · D = (R_A + R_B)/(R_A + 2R_B)',
+		formula: 'f = \\dfrac{1.44}{(R_A + 2R_B)\\,C} \\;\\cdot\\; D = \\dfrac{R_A + R_B}{R_A + 2R_B}',
 		inventory: ['8-pin 555 IC block', 'R_A + R_B timing pair', 'timing capacitor C_T', 'output LED + limiter'],
 		boundaries: ['V_cc = 5 V', 'threshold ⅔ · trigger ⅓', 'C_T 10 nF – 100 µF'],
 		fault: 'THRES shorted to ground'
@@ -255,12 +263,20 @@ export const SIM_ENVIRONMENTS: readonly SimEnvironment[] = [
 		tagline: 'Step a three-qubit register through the full teleportation script.',
 		summary:
 			'Alice’s state |ψ⟩ is parameterised on the Bloch angles. Stepped playback advances the register through entanglement, Bell measurement, and the classically controlled X^{m₂}/Z^{m₁} corrections; hovering any gate reveals its action in Dirac notation.',
-		formula: '|ψ⟩ = α|0⟩ + β|1⟩ · α = cos(θ/2), β = e^{iφ} sin(θ/2)',
+		formula: '|\\psi\\rangle = \\alpha|0\\rangle + \\beta|1\\rangle \\;\\cdot\\; \\alpha = \\cos\\tfrac{\\theta}{2},\\ \\beta = e^{i\\phi}\\sin\\tfrac{\\theta}{2}',
 		inventory: ['3× qubit trace (ψ, A, B)', 'H + CNOT preparation', 'Bell-basis measurement', 'X/Z correction gates'],
 		boundaries: ['Bloch θ ∈ [0, π], φ ∈ [0, 2π]', '6-step protocol', 'classical bits m₁, m₂'],
 		fault: 'classical correction link cut'
 	}
 ];
+
+/**
+ * Public environment registry with each formula pre-rendered to KaTeX HTML.
+ * The order here is the order the selector paints its cards.
+ */
+export const SIM_ENVIRONMENTS: readonly SimEnvironment[] = SIM_ENVIRONMENTS_RAW.map(
+	(environment) => ({ ...environment, formulaHtml: renderFormula(environment.formula) })
+);
 
 const META_BY_ID = new Map(SIM_ENVIRONMENTS.map((environment) => [environment.id, environment]));
 const compiledCache = new Map<string, CompiledSimulation>();

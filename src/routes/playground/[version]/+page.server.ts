@@ -1,6 +1,29 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getRegistry, resolveVersion } from '$lib/server/registry';
+import {
+	PASSIVE_KINDS,
+	ANALOG_KINDS,
+	CLASSICAL_GATE_KINDS,
+	QUANTUM_GATE_KINDS,
+	UML_COMPONENT_KINDS,
+	COMPONENT_KINDS,
+	SEMANTIC_COLORS
+} from '@schemd/core';
+
+/**
+ * The component vocabulary is read straight from the installed compiler, so the
+ * reference panel is always exactly as current as `@schemd/core` — add a
+ * primitive upstream and it appears here with no edit to this site.
+ */
+const KIND_GROUPS = [
+	{ label: 'passive', kinds: PASSIVE_KINDS },
+	{ label: 'analog', kinds: ANALOG_KINDS },
+	{ label: 'logic', kinds: CLASSICAL_GATE_KINDS },
+	{ label: 'quantum', kinds: QUANTUM_GATE_KINDS },
+	{ label: 'uml', kinds: UML_COMPONENT_KINDS },
+	{ label: 'ic', kinds: ['ic'] }
+] as const;
 
 /** Default workspace program shown before the visitor types or shares. */
 const PLAYGROUND_SAMPLE = `// Welcome to the schemd workspace.
@@ -24,5 +47,12 @@ export const load: PageServerLoad = async ({ params }) => {
 	if (version === undefined || params.version === 'latest') {
 		redirect(307, `/playground/${version ?? registry.latest}`);
 	}
-	return { version, latest: registry.latest, sample: PLAYGROUND_SAMPLE };
+	return {
+		version,
+		latest: registry.latest,
+		sample: PLAYGROUND_SAMPLE,
+		kindGroups: KIND_GROUPS.map((group) => ({ label: group.label, kinds: [...group.kinds] })),
+		kindCount: COMPONENT_KINDS.length,
+		colors: [...SEMANTIC_COLORS]
+	};
 };

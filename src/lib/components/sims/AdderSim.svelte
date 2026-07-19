@@ -223,7 +223,7 @@
 		cursor: pointer;
 
 		:global(svg) {
-			min-inline-size: 820px;
+			min-inline-size: 1040px;
 		}
 
 		/* Inactive nets/nodes recede to a dim, desaturated wash… */

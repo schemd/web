@@ -27,8 +27,16 @@ function storedBlueprint(): BlueprintMode {
 export const ui = $state({
 	blueprint: storedBlueprint() as BlueprintMode,
 	audio: browser ? localStorage.getItem('schemd:audio') === '1' : false,
-	paletteOpen: false
+	paletteOpen: false,
+	/** Docs left-sidebar collapse — persists across navigation and reloads. */
+	docsNavCollapsed: browser ? localStorage.getItem('schemd:docsNav') === 'collapsed' : false
 });
+
+/** Collapse or expand the docs index tree, syncing storage. */
+export function setDocsNavCollapsed(collapsed: boolean): void {
+	ui.docsNavCollapsed = collapsed;
+	if (browser) localStorage.setItem('schemd:docsNav', collapsed ? 'collapsed' : 'expanded');
+}
 
 /** Switch blueprint mode, syncing the document attribute and storage. */
 export function setBlueprint(mode: BlueprintMode): void {

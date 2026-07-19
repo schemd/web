@@ -18,7 +18,7 @@
 	);
 	const MODES = ['default', 'embedded-css', 'full'] as const;
 	let mode = $state<(typeof MODES)[number]>('full');
-	let view = $state<'render' | 'raw'>('render');
+	let view = $state<'render' | 'raw' | 'fence'>('render');
 	let boundsWidth = $state(760);
 	let boundsHeight = $state(380);
 	let title = $state('Workspace schematic');
@@ -213,6 +213,17 @@
 		copied = true;
 		setTimeout(() => (copied = false), 1600);
 	}
+
+	/* ---------- Fenced-markdown form (for pasting into a Markdown pipeline) ---------- */
+	const fenceMarkdown = $derived(
+		'```schemd bounds="' + boundsWidth + 'x' + boundsHeight + '" title="' + title + '"\n' + source + '\n```'
+	);
+	let fenceCopied = $state(false);
+	async function copyFence(): Promise<void> {
+		await navigator.clipboard.writeText(fenceMarkdown);
+		fenceCopied = true;
+		setTimeout(() => (fenceCopied = false), 1600);
+	}
 </script>
 
 <svelte:head>
@@ -235,20 +246,42 @@
 	{#snippet left()}
 		<aside class="ref">
 			<p class="microlabel">grammar</p>
-			<pre class="codeblock ref-block"><code
-					>kind:ID "label" at (x, y) color [options]
-ID.port -&gt; ID.port color [line|bezier|ortho]</code
-				></pre>
-			<p class="microlabel">kinds</p>
-			<p class="ref-list">
-				resistor · capacitor · inductor · diode · transistor · port · ground · and · or · not ·
-				nand · nor · xor · hadamard · cnot · qgate · ic · class · actor · usecase · state ·
-				lifeline · note · package · initial · final
-			</p>
+			<div class="grammar">
+				<div class="grammar-row">
+					<span class="grammar-tag microlabel">node</span>
+					<code>kind:ID "label" at (x, y) #color [options]</code>
+				</div>
+				<div class="grammar-row">
+					<span class="grammar-tag microlabel">wire</span>
+					<code>A.port -&gt; B.port #color [line|bezier|ortho]</code>
+				</div>
+			</div>
+			<div class="ref-head">
+				<span class="microlabel">primitives</span>
+				<span class="ref-count" title="component kinds in this compiler build">{data.kindCount}</span>
+			</div>
+			<div class="kind-groups">
+				{#each data.kindGroups as group (group.label)}
+					<div class="kind-group">
+						<span class="kind-label microlabel">{group.label}</span>
+						<div class="kind-chips">
+							{#each group.kinds as kind (kind)}
+								<code class="kind-chip">{kind}</code>
+							{/each}
+						</div>
+					</div>
+				{/each}
+			</div>
+
 			<p class="microlabel">colors</p>
-			<p class="ref-list">
-				#amber #blue #cyan #purple #slate #emerald · hex · rgb()/hsl() · custom aliases
-			</p>
+			<div class="color-chips">
+				{#each data.colors as color (color)}
+					<span class="color-chip">
+						<span class="swatch" style={`background: var(--schematic-color-${color})`}></span>{color}
+					</span>
+				{/each}
+			</div>
+			<p class="color-note microlabel">+ hex · rgb()/hsl() · custom aliases</p>
 			<p class="microlabel">fence</p>
 			<div class="fence-controls">
 				<label>
@@ -305,21 +338,14 @@ ID.port -&gt; ID.port color [line|bezier|ortho]</code
 					{/each}
 				</div>
 				<div class="seg" role="radiogroup" aria-label="Preview channel">
-					<button
-						type="button"
-						role="radio"
-						aria-checked={view === 'render'}
-						onclick={() => (view = 'render')}
-					>
+					<button type="button" role="radio" aria-checked={view === 'render'} onclick={() => (view = 'render')}>
 						render
 					</button>
-					<button
-						type="button"
-						role="radio"
-						aria-checked={view === 'raw'}
-						onclick={() => (view = 'raw')}
-					>
+					<button type="button" role="radio" aria-checked={view === 'raw'} onclick={() => (view = 'raw')}>
 						raw svg
+					</button>
+					<button type="button" role="radio" aria-checked={view === 'fence'} onclick={() => (view = 'fence')}>
+						fence
 					</button>
 				</div>
 			</div>
@@ -334,8 +360,18 @@ ID.port -&gt; ID.port color [line|bezier|ortho]</code
 				>
 					{@html result.svg}
 				</div>
-			{:else}
+			{:else if view === 'raw'}
 				<pre class="codeblock raw-view"><code>{rawSvg}</code></pre>
+			{:else}
+				<div class="fence-view">
+					<div class="fence-bar">
+						<span class="microlabel">paste this into any Markdown pipeline</span>
+						<button type="button" class="fence-copy" onclick={copyFence}>
+							{fenceCopied ? '✓ copied' : '⧉ copy fence'}
+						</button>
+					</div>
+					<pre class="codeblock fence-block"><code>{fenceMarkdown}</code></pre>
+				</div>
 			{/if}
 		</div>
 	{/snippet}
@@ -357,16 +393,147 @@ ID.port -&gt; ID.port color [line|bezier|ortho]</code
 		align-content: start;
 	}
 
-	.ref-block {
-		font-size: var(--text-2xs);
+	.grammar {
+		display: grid;
+		gap: var(--space-2);
+		background: var(--bg-inset);
+		border: 1px solid var(--line);
+		padding: var(--space-3);
 	}
 
-	.ref-list {
-		margin: 0 0 var(--space-3);
+	.grammar-row {
+		display: grid;
+		gap: 2px;
+	}
+
+	.grammar-tag {
+		color: var(--ink-faint);
+	}
+
+	.grammar code {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: var(--text-2xs);
+		line-height: 1.6;
+		color: var(--ink);
+		white-space: normal;
+		overflow-wrap: anywhere;
+	}
+
+	.fence-view {
+		display: grid;
+		grid-template-rows: auto minmax(0, 1fr);
+		min-block-size: 0;
+	}
+
+	.fence-bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+		padding: var(--space-2) var(--space-3);
+		border-block-end: 1px solid var(--line);
+		background: var(--bg-raised);
+	}
+
+	.fence-copy {
+		font-family: var(--font-mono);
+		font-size: var(--text-2xs);
+		color: var(--accent);
+		letter-spacing: 0.04em;
+
+		&:hover {
+			color: var(--ink);
+		}
+	}
+
+	.fence-block {
+		border: none;
+		overflow: auto;
+		white-space: pre;
+		font-size: var(--text-xs);
+	}
+
+	.ref-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+		margin-block-start: var(--space-2);
+	}
+
+	.ref-count {
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		color: var(--accent);
+		border: 1px solid var(--line-strong);
+		padding: 0.05em 0.5em;
+		border-radius: 999px;
+	}
+
+	.kind-groups {
+		display: grid;
+		gap: var(--space-3);
+		margin-block-end: var(--space-3);
+	}
+
+	.kind-group {
+		display: grid;
+		gap: var(--space-1);
+	}
+
+	.kind-label {
+		color: var(--ink-faint);
+	}
+
+	.kind-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px;
+	}
+
+	.kind-chip {
 		font-family: var(--font-mono);
 		font-size: var(--text-2xs);
 		color: var(--ink-mute);
-		line-height: 1.9;
+		background: var(--bg-inset);
+		border: 1px solid var(--line);
+		padding: 0.1em 0.45em;
+		transition:
+			color var(--dur-fast) var(--ease-precise),
+			border-color var(--dur-fast) var(--ease-precise);
+
+		&:hover {
+			color: var(--accent);
+			border-color: var(--line-strong);
+		}
+	}
+
+	.color-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1) var(--space-3);
+		margin-block-end: var(--space-1);
+	}
+
+	.color-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4em;
+		font-family: var(--font-mono);
+		font-size: var(--text-2xs);
+		color: var(--ink-mute);
+
+		& .swatch {
+			inline-size: 11px;
+			block-size: 11px;
+			border: 1px solid var(--line-strong);
+		}
+	}
+
+	.color-note {
+		margin-block: 0 var(--space-3);
+		color: var(--ink-faint);
 	}
 
 	.fence-controls {

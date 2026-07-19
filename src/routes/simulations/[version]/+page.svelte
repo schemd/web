@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { playSuccess, playTick } from '$lib/audio';
 	import { ui } from '$lib/ui.svelte';
+	import 'katex/dist/katex.min.css';
 
 	let { data }: PageProps = $props();
 
@@ -149,58 +150,46 @@
 		</div>
 	</header>
 
-	<ul class="grid" aria-label="Simulation environments">
+	<ul class="lab-list" aria-label="Simulation environments">
 		{#each environments as environment, index (environment.id)}
-			<li class="card panel" class:featured={index === 0} style={`--i: ${index}`}>
-				<a class="card-open" href={`/simulations/${data.version}/${environment.id}`}>
-					<div class="card-head">
-						{@render miniIcon(environment.id)}
-						<div class="card-titles">
-							<span class="microlabel">{environment.index} · {environment.domain}</span>
-							<h2>{environment.title}</h2>
-							<p class="tagline">{environment.tagline}</p>
-						</div>
-					</div>
+			<li class="lab-row panel" style={`--i: ${index}`}>
+				<a class="lab-icon" href={`/simulations/${data.version}/${environment.id}`} aria-label={environment.title}>
+					{@render miniIcon(environment.id)}
+					<span class="lab-index microlabel">{environment.index} · {environment.domain}</span>
 				</a>
 
-				<p class="summary">{environment.summary}</p>
-
-				<dl class="specs">
-					<dt>governing model</dt>
-					<dd class="formula readout">{environment.formula}</dd>
-					<dt>structural inventory</dt>
-					<dd>
+				<div class="lab-info">
+					<a class="lab-titlelink" href={`/simulations/${data.version}/${environment.id}`}>
+						<h2>{environment.title}</h2>
+					</a>
+					<p class="tagline">{environment.tagline}</p>
+					<div class="lab-formula">{@html environment.formulaHtml}</div>
+					<div class="lab-meta">
 						<ul class="chips">
 							{#each environment.inventory as item (item)}
 								<li>{item}</li>
 							{/each}
 						</ul>
-					</dd>
-					<dt>boundaries</dt>
-					<dd>
-						<ul class="bounds">
-							{#each environment.boundaries as bound (bound)}
-								<li>{bound}</li>
-							{/each}
-						</ul>
-					</dd>
-					<dt>fault relay</dt>
-					<dd class="fault-note">{environment.fault}</dd>
-				</dl>
+						<p class="bounds-inline microlabel">{environment.boundaries.join(' · ')}</p>
+					</div>
+				</div>
 
-				<button
-					type="button"
-					class="init"
-					class:go={launching === environment.id}
-					disabled={launching !== undefined}
-					onmouseenter={() => ui.audio && playTick(520 + index * 30)}
-					onclick={() => initialize(environment.id)}
-				>
-					<span class="init-label"
-						>{launching === environment.id ? 'initializing…' : 'Initialize Laboratory Module'}</span
+				<div class="lab-action">
+					<span class="fault-note" title="Switchboard fault this lab can inject">⚠ {environment.fault}</span>
+					<button
+						type="button"
+						class="init"
+						class:go={launching === environment.id}
+						disabled={launching !== undefined}
+						onmouseenter={() => ui.audio && playTick(520 + index * 30)}
+						onclick={() => initialize(environment.id)}
 					>
-					<span class="init-progress" aria-hidden="true"></span>
-				</button>
+						<span class="init-label">
+							{launching === environment.id ? 'initializing…' : 'Initialize module →'}
+						</span>
+						<span class="init-progress" aria-hidden="true"></span>
+					</button>
+				</div>
 			</li>
 		{/each}
 	</ul>
@@ -307,40 +296,35 @@
 		}
 	}
 
-	/* ---------- Selection cards ---------- */
-	.grid {
+	/* ---------- Selection catalog rows ---------- */
+	.lab-list {
 		list-style: none;
 		margin: 0;
 		padding: 0;
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
-		gap: var(--space-4);
+		gap: var(--space-3);
 	}
 
-	.card {
+	.lab-row {
 		display: grid;
-		gap: var(--space-3);
-		padding: var(--space-4);
-		align-content: start;
-		transition:
-			border-color var(--dur-kinetic) var(--ease-kinetic),
-			transform var(--dur-kinetic) var(--ease-kinetic);
+		grid-template-columns: 172px minmax(0, 1fr) minmax(200px, 240px);
+		gap: clamp(var(--space-4), 3vw, var(--space-8));
+		padding: var(--space-5);
+		align-items: start;
+		transition: border-color var(--dur-kinetic) var(--ease-kinetic);
 		animation: sweep-in var(--dur-med) var(--ease-precise) both;
-		animation-delay: calc(var(--i) * 40ms);
+		animation-delay: calc(var(--i) * 50ms);
 
 		&:hover {
 			border-color: var(--line-strong);
-			transform: translateY(-2px);
 		}
 	}
 
-	@media (min-width: 1180px) {
-		.card.featured {
-			grid-column: span 2;
-		}
-	}
-
-	.card-open {
+	/* left: framed animated micro-schematic + index/domain */
+	.lab-icon {
+		display: grid;
+		gap: var(--space-2);
+		justify-items: start;
 		color: inherit;
 
 		&:hover {
@@ -348,37 +332,17 @@
 		}
 	}
 
-	.card-head {
-		display: flex;
-		gap: var(--space-3);
-		align-items: start;
+	.lab-index {
+		color: var(--ink-faint);
 	}
 
-	.card-titles {
-		display: grid;
-		gap: 2px;
-
-		& h2 {
-			font-family: var(--font-mono);
-			font-size: var(--text-md);
-			letter-spacing: -0.01em;
-		}
-	}
-
-	.tagline {
-		margin: 0;
-		font-size: var(--text-sm);
-		color: var(--ink-mute);
-	}
-
-	/* Mini schematic icon with a hover-animated current trace. */
 	.mini {
-		inline-size: 80px;
-		block-size: 48px;
-		flex: none;
+		inline-size: 100%;
+		block-size: auto;
+		aspect-ratio: 80 / 48;
 		border: 1px solid var(--line);
 		background: var(--bg-inset);
-		padding: 2px;
+		padding: var(--space-2);
 
 		& .wire,
 		& .body {
@@ -405,7 +369,7 @@
 		}
 	}
 
-	.card:hover .mini .trace {
+	.lab-row:hover .mini .trace {
 		opacity: 1;
 		animation: trace-run 1.4s linear infinite;
 	}
@@ -419,36 +383,50 @@
 		}
 	}
 
-	.summary {
+	/* middle: identity + governing model + meta */
+	.lab-info {
+		display: grid;
+		gap: var(--space-2);
+		min-inline-size: 0;
+	}
+
+	.lab-titlelink {
+		color: inherit;
+
+		&:hover {
+			text-decoration: none;
+
+			& h2 {
+				color: var(--accent);
+			}
+		}
+
+		& h2 {
+			font-family: var(--font-mono);
+			font-size: var(--text-md);
+			letter-spacing: -0.01em;
+			transition: color var(--dur-fast) var(--ease-precise);
+		}
+	}
+
+	.tagline {
 		margin: 0;
 		font-size: var(--text-sm);
 		color: var(--ink-mute);
 	}
 
-	.specs {
-		display: grid;
-		gap: var(--space-1);
-		margin: 0;
-		padding-block-start: var(--space-2);
-		border-block-start: 1px solid var(--line);
-
-		& dt {
-			font-family: var(--font-mono);
-			font-size: var(--text-2xs);
-			letter-spacing: var(--tracking-wide);
-			text-transform: uppercase;
-			color: var(--ink-faint);
-			margin-block-start: var(--space-2);
-		}
-
-		& dd {
-			margin: 0;
-		}
+	.lab-formula {
+		font-size: var(--text-sm);
+		color: var(--ink);
+		overflow-x: auto;
+		padding-block: var(--space-2);
+		border-block: 1px solid var(--line);
+		margin-block: var(--space-1);
 	}
 
-	.formula {
-		font-size: var(--text-xs);
-		line-height: 1.6;
+	.lab-meta {
+		display: grid;
+		gap: var(--space-2);
 	}
 
 	.chips {
@@ -469,15 +447,19 @@
 		}
 	}
 
-	.bounds {
+	.bounds-inline {
 		margin: 0;
-		padding-inline-start: 1.1em;
-		font-size: var(--text-xs);
+		font-size: var(--text-2xs);
 		color: var(--ink-mute);
+		text-transform: none;
+		letter-spacing: normal;
+	}
 
-		& li {
-			margin-block: 1px;
-		}
+	/* right: fault relay + initialize CTA */
+	.lab-action {
+		display: grid;
+		gap: var(--space-3);
+		align-content: start;
 	}
 
 	.fault-note {
@@ -490,7 +472,6 @@
 	.init {
 		position: relative;
 		overflow: hidden;
-		margin-block-start: var(--space-2);
 		padding: 0.55rem 0.95rem;
 		border: 1px solid var(--line-strong);
 		background: var(--bg-raised);
@@ -528,10 +509,38 @@
 		transition: transform var(--dur-kinetic) var(--ease-kinetic);
 	}
 
-	@media (max-width: 720px) {
+	@media (max-width: 940px) {
+		.lab-row {
+			grid-template-columns: 140px minmax(0, 1fr);
+		}
+
+		.lab-action {
+			grid-column: 1 / -1;
+			grid-template-columns: 1fr auto;
+			align-items: center;
+			padding-block-start: var(--space-3);
+			border-block-start: 1px solid var(--line);
+		}
+	}
+
+	@media (max-width: 620px) {
 		.diagnostics {
 			grid-template-columns: 1fr;
 			align-items: start;
+		}
+
+		.lab-row {
+			grid-template-columns: 1fr;
+			gap: var(--space-3);
+		}
+
+		.lab-icon {
+			grid-template-columns: 96px 1fr;
+			align-items: center;
+		}
+
+		.lab-action {
+			grid-template-columns: 1fr;
 		}
 	}
 </style>
