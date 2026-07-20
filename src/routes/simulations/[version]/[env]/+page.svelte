@@ -6,6 +6,7 @@
 	import BellSim from '$lib/components/sims/BellSim.svelte';
 	import TimerSim from '$lib/components/sims/TimerSim.svelte';
 	import TeleportSim from '$lib/components/sims/TeleportSim.svelte';
+	import 'katex/dist/katex.min.css';
 
 	let { data }: PageProps = $props();
 

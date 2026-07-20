@@ -1,6 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getRegistry, resolveVersion } from '$lib/server/registry';
+import { getRegistry, resolveVersion, WEBSITE_CORE_VERSION } from '$lib/server/registry';
 import {
 	PASSIVE_KINDS,
 	ANALOG_KINDS,
@@ -60,6 +60,13 @@ export const load: PageServerLoad = async ({ params }) => {
 	return {
 		version,
 		latest: registry.latest,
+		/**
+		 * The one engine this deployment can actually execute. The playground
+		 * compiles every keystroke with the installed `@schemd/core`; it never
+		 * re-runs a historical release. Surfacing this lets the toolbar tell the
+		 * truth when the visitor is *viewing* an older version.
+		 */
+		engineVersion: WEBSITE_CORE_VERSION,
 		sample: _PLAYGROUND_SAMPLE,
 		kindGroups: KIND_GROUPS.map((group) => ({ label: group.label, kinds: [...group.kinds] })),
 		kindCount: COMPONENT_KINDS.length,

@@ -54,11 +54,11 @@ export const load: PageServerLoad = async () => {
 		syncedAt: registry.syncedAt,
 		benchmark: runBenchmark(WEBSITE_CORE_VERSION),
 		releaseMetrics: {
-			minifiedBytes: 90_714,
-			gzipBytes: 26_398,
-			tarballBytes: 59_188,
-			unpackedBytes: 258_463,
-			gzipHeadroomBytes: 4_322
+			minifiedBytes: 90_401,
+			gzipBytes: 26_512,
+			tarballBytes: 59_709,
+			unpackedBytes: 258_900,
+			gzipHeadroomBytes: 4_208
 		}
 	};
 };

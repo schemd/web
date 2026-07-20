@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { playSuccess, playTick } from '$lib/audio';
 	import { ui } from '$lib/ui.svelte';
+	import 'katex/dist/katex.min.css';
 
 	let { data }: PageProps = $props();
 
@@ -318,14 +319,14 @@
 		margin: 0;
 		padding: 0;
 		display: grid;
-		gap: var(--space-3);
+		gap: var(--space-4);
 	}
 
 	.lab-row {
 		display: grid;
 		grid-template-columns: 172px minmax(0, 1fr) minmax(200px, 240px);
 		gap: clamp(var(--space-4), 3vw, var(--space-8));
-		padding: var(--space-5);
+		padding: clamp(var(--space-5), 2.4vw, var(--space-7));
 		align-items: start;
 		transition: border-color var(--dur-kinetic) var(--ease-kinetic);
 		animation: sweep-in var(--dur-med) var(--ease-precise) both;

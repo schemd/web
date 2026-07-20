@@ -460,7 +460,17 @@
 	{#snippet center()}
 		<div class="editor-pane">
 			<div class="editor-toolbar">
-				<span class="microlabel">source · v{data.version}</span>
+				<span class="engine-id">
+					<span class="microlabel">source · engine v{data.engineVersion}</span>
+					{#if data.version !== data.engineVersion}
+						<span
+							class="engine-note"
+							title={`This playground compiles with the installed @schemd/core (v${data.engineVersion}). Historical releases are documented, not re-executed — so the preview below is v${data.engineVersion} output.`}
+						>
+							viewing {data.version} · compiled live
+						</span>
+					{/if}
+				</span>
 				{#if result.error}
 					<span class="diagnostic" role="alert">
 						{result.error.message}
@@ -789,6 +799,26 @@
 		background: var(--bg-raised);
 		min-block-size: 42px;
 		flex-wrap: wrap;
+	}
+
+	.engine-id {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		flex-wrap: wrap;
+	}
+
+	/* Truth-in-labelling: the preview is always the installed engine's output,
+	   even when the visitor navigates to a historical version in the header. */
+	.engine-note {
+		font-family: var(--font-mono);
+		font-size: var(--text-2xs);
+		letter-spacing: 0.04em;
+		color: var(--accent);
+		border: 1px solid var(--line-strong);
+		padding: 0.05em 0.5em;
+		border-radius: 999px;
+		cursor: help;
 	}
 
 	.diagnostic {

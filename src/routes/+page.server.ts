@@ -19,19 +19,21 @@ export const _HERO_SPECS: readonly HeroSpec[] = [
 		title: 'Mixed-signal input stage',
 		bounds: '760x440',
 		source: `// Native source + junction + physically rotated shunt capacitor
-source:VIN "V_{in}" at (70, 120) #blue [type=voltage-ac]
-resistor:R1 "10 k\\Omega" at (240, 120) #amber
-junction:J1 "output" at (410, 120) #cyan
-capacitor:C1 "100 nF" at (410, 245) #cyan [orientation=down]
-ground:G1 "0 V" at (410, 345) #slate
-port:OUT "V_{out}" at (660, 120) #emerald
+source:VIN "V_{in}" at (80, 120) #blue [type=voltage-ac]
+initial:P1 "V" at (34, 310) #red 
+resistor:R1 "10 k\Omega" at (260, 120) #amber
+junction:VOUT "output node" at (440, 120) #cyan
+capacitor:C1 "100 nF" at (440, 250) #cyan [orientation=down]
+ground:GND "0 V" at (440, 350) #slate
+port:OUT "V_{out}" at (680, 120) #emerald
 
 VIN.positive -> R1.in #blue [line]
-VIN.negative -> G1.in #slate [line]
-R1.out -> J1.node #amber [line]
-J1.node -> C1.in #cyan [ortho]
-C1.out -> G1.in #slate [line]
-J1.node -> OUT.in #emerald [line marker-end=arrow]`
+VIN.negative -> P1.in #slate [ortho]
+P1.out -> GND.in #silver
+R1.out -> VOUT.node #amber [line]
+VOUT.node -> C1.in #cyan [ortho]
+C1.out -> GND.in #cyan [line]
+VOUT.node -> OUT.in #emerald [line marker-end=arrow]`
 	},
 	{
 		id: 'logic',

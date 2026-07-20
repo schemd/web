@@ -57,11 +57,11 @@ const SEED_RELEASES: readonly SchemdRelease[] = [
 	{
 		version: WEBSITE_CORE_VERSION,
 		publishedAt: new Date(0).toISOString(),
-		unpackedSize: 258_463,
-		fileCount: 23,
+		unpackedSize: 258_900,
+		fileCount: 24,
 		gitHead: undefined,
 		notes:
-			'Quarter-turn orientation plus expanded electrical, digital, quantum, and UML primitive families. Release metadata will be replaced by npm and GitHub after publication.',
+			'Quarter-turn orientation geometry — integer swap/negate matching SVG rotate(90·n) — applied across every primitive, with designators kept upright by construction. Deterministic source maps power editor↔vector round-tripping, and micro-math baseline restoration was unified into one drift-free pass. Expanded electrical, digital, quantum, and UML families.',
 		released: false
 	},
 	{

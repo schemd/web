@@ -5,6 +5,7 @@
 	import Pronounce from '$lib/components/Pronounce.svelte';
 	import { encodeWorkspaceState } from '$lib/state-uri';
 	import { ui, setDocsNavCollapsed } from '$lib/ui.svelte';
+	import 'katex/dist/katex.min.css';
 
 	let { data }: PageProps = $props();
 

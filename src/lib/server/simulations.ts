@@ -11,15 +11,18 @@
  * one compiled document it needs through {@link getSimulation}.
  */
 import { compileSchematic, parseSchematicFence } from '@schemd/core';
+import katex from 'katex';
 
-/** Escape model notation into dependency-free static HTML for the simulation UI. */
+/**
+ * Pre-render a LaTeX governing model to static KaTeX HTML at module load.
+ *
+ * The formulas use real LaTeX (`\dfrac`, `\oplus`, bra-kets), so KaTeX — already
+ * a dependency of the docs pipeline — is required to typeset them; escaping the
+ * raw source only prints backslash commands. `throwOnError: false` degrades a
+ * malformed formula to a visible error span instead of failing the build.
+ */
 function renderFormula(tex: string): string {
-	const escaped = tex.replace(/[&<>]/g, (character) => {
-		if (character === '&') return '&amp;';
-		if (character === '<') return '&lt;';
-		return '&gt;';
-	});
-	return `<code>${escaped}</code>`;
+	return katex.renderToString(tex, { throwOnError: false, displayMode: false });
 }
 
 /** Static, compile-free descriptor powering the selector cards and lab headers. */
