@@ -65,6 +65,48 @@
 		outcomes.reduce((sum, key) => sum + probabilities[key] * (key[0] === key[1] ? 1 : -1), 0)
 	);
 
+	/**
+	 * CHSH correlator E(θ_a, θ_b) = ⟨ψ| M(θ_a) ⊗ M(θ_b) |ψ⟩ for the real state,
+	 * where M(θ) = cos θ·Z + sin θ·X is a ±1-outcome measurement in the x–z plane.
+	 */
+	function correlator(thetaA: number, thetaB: number): number {
+		const opA = [
+			[Math.cos(thetaA), Math.sin(thetaA)],
+			[Math.sin(thetaA), -Math.cos(thetaA)]
+		];
+		const opB = [
+			[Math.cos(thetaB), Math.sin(thetaB)],
+			[Math.sin(thetaB), -Math.cos(thetaB)]
+		];
+		const psi = [amplitudes['00'], amplitudes['01'], amplitudes['10'], amplitudes['11']];
+		let expectation = 0;
+		for (let i = 0; i < 2; i += 1)
+			for (let j = 0; j < 2; j += 1)
+				for (let k = 0; k < 2; k += 1)
+					for (let l = 0; l < 2; l += 1)
+						expectation += psi[i * 2 + j]! * opA[i]![k]! * opB[j]![l]! * psi[k * 2 + l]!;
+		return expectation;
+	}
+
+	/**
+	 * CHSH witness S at the optimal angles. Local hidden variables cap |S| ≤ 2;
+	 * an entangled state reaches Tsirelson's bound 2√2 ≈ 2.83.
+	 */
+	const chsh = $derived.by(() => {
+		const a0 = 0;
+		const aPrime = Math.PI / 2;
+		const b0 = Math.PI / 4;
+		const bPrime = -Math.PI / 4;
+		const s =
+			correlator(a0, b0) +
+			correlator(a0, bPrime) +
+			correlator(aPrime, b0) -
+			correlator(aPrime, bPrime);
+		return Math.abs(s);
+	});
+	const TSIRELSON = 2 * Math.SQRT2;
+	const violatesRealism = $derived(chsh > 2 + 1e-6);
+
 	const bellName = $derived.by(() => {
 		if (faults.brokenEntangler) return 'product state (no entanglement)';
 		const names = { '00': 'Φ⁺', '01': 'Ψ⁺', '10': 'Φ⁻', '11': 'Ψ⁻' } as const;
@@ -158,6 +200,17 @@
 		<button type="button" class="btn btn-solid" onclick={() => sample(64)}>measure ×64</button>
 		<span class="readout">⟨Z⊗Z⟩ = {correlation.toFixed(2)} · {sampleTotal} shots</span>
 	</div>
+	<div class="chsh" class:violates={violatesRealism}>
+		<p class="microlabel">CHSH witness · local realism ≤ 2</p>
+		<div class="chsh-gauge" role="img" aria-label={`CHSH S = ${chsh.toFixed(3)}`}>
+			<span class="chsh-fill" style={`width: ${Math.min(100, (chsh / TSIRELSON) * 100)}%`}></span>
+			<span class="chsh-classical" style={`left: ${(2 / TSIRELSON) * 100}%`}></span>
+		</div>
+		<div class="chsh-legend">
+			<strong>S = {chsh.toFixed(3)}</strong>
+			<span>{violatesRealism ? 'local realism violated' : 'classically explainable'}</span>
+		</div>
+	</div>
 	<div class="switchboard">
 		<p class="microlabel">switchboard · fault injection</p>
 		<FaultSwitch label="CNOT entangler offline" bind:active={faults.brokenEntangler} />
@@ -227,6 +280,64 @@
 
 	.state-line {
 		margin: 0;
+	}
+
+	.chsh {
+		display: grid;
+		gap: var(--space-1);
+		padding: var(--space-3);
+		border: 1px solid var(--line-strong);
+		background: var(--bg-inset);
+
+		&.violates {
+			border-color: var(--accent);
+			box-shadow: inset 3px 0 0 var(--accent);
+		}
+	}
+
+	.chsh-gauge {
+		position: relative;
+		block-size: 10px;
+		background: var(--bg-panel);
+		border: 1px solid var(--line);
+		overflow: hidden;
+	}
+
+	.chsh-fill {
+		display: block;
+		block-size: 100%;
+		background: var(--ink-faint);
+		transition: width var(--dur-med) var(--ease-precise);
+	}
+
+	.chsh.violates .chsh-fill {
+		background: var(--accent);
+	}
+
+	/* The classical bound S = 2 marked as a hard line on the gauge. */
+	.chsh-classical {
+		position: absolute;
+		inset-block: -1px;
+		inline-size: 2px;
+		background: var(--danger);
+	}
+
+	.chsh-legend {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: var(--space-2);
+		font-family: var(--font-mono);
+		font-size: var(--text-2xs);
+		color: var(--ink-mute);
+
+		& strong {
+			color: var(--accent-2);
+		}
+	}
+
+	.chsh.violates .chsh-legend strong {
+		color: var(--accent);
 	}
 
 	.bars {

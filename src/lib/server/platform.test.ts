@@ -130,13 +130,18 @@ describe('versioned simulation source and compilation', () => {
 		expect(RC_SOURCE).not.toContain('initial:');
 	});
 
-	test('compiles all eight laboratories once with full semantic hooks', () => {
+	test('compiles all thirteen laboratories once with full semantic hooks', () => {
 		const environments = listSimulationEnvironments();
-		expect(environments).toHaveLength(8);
+		expect(environments).toHaveLength(13);
 		for (const environment of environments) {
 			expect(getSimulationSource(environment.id)).toBeDefined();
 			expect(environment.formulaHtml).toContain('katex');
 			expect(environment.formulaHtml).not.toContain('katex-error');
+			/* Every environment carries a rendered, error-free "aha" teaching layer. */
+			expect(environment.pedagogy.aha.length).toBeGreaterThan(0);
+			expect(environment.pedagogy.principleHtml).toContain('katex');
+			expect(environment.pedagogy.principleHtml).not.toContain('katex-error');
+			expect(environment.pedagogy.steps.length).toBeGreaterThanOrEqual(3);
 			const simulation = getSimulation(environment.id);
 			expect(simulation).toBeDefined();
 			expect(simulation?.components).toBeGreaterThan(0);

@@ -36,6 +36,8 @@
 	let lyapunov = $state(0);
 	let paused = $state(false);
 	let faults = $state({ bypassedNonlinearity: false });
+	let bifurcation = $state<{ a: number; x: number }[]>([]);
+	let computingBif = $state(false);
 
 	const regime = $derived.by(() => {
 		if (faults.bypassedNonlinearity) return 'DAMPED LINEAR';
@@ -69,6 +71,77 @@
 			value[2] + (dt / 6) * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2])
 		];
 	}
+
+	const BIF_MIN = 7;
+	const BIF_MAX = 18;
+
+	/**
+	 * Sweep the coupling α and record where the orbit turns around (local maxima
+	 * of x). One stable point gives one dot per α; period-doubling splits it into
+	 * 2, 4, …; chaos scatters a cloud — the classic route-to-chaos diagram.
+	 */
+	function computeBifurcation(): void {
+		computingBif = true;
+		/* Defer so the "computing…" state paints before the synchronous sweep. */
+		setTimeout(() => {
+			const points: { a: number; x: number }[] = [];
+			const dt = 0.006;
+			const columns = 130;
+			for (let column = 0; column <= columns; column += 1) {
+				const sweepAlpha = BIF_MIN + ((BIF_MAX - BIF_MIN) * column) / columns;
+				let state: StateVector = [0.1, 0, 0];
+				for (let step = 0; step < 1800; step += 1) state = rk4WithAlpha(state, dt, sweepAlpha);
+				let previousSlope = 0;
+				let recorded = 0;
+				for (let step = 0; step < 4200 && recorded < 24; step += 1) {
+					const next = rk4WithAlpha(state, dt, sweepAlpha);
+					const slope = next[0] - state[0];
+					if (previousSlope > 0 && slope <= 0 && Number.isFinite(state[0])) {
+						points.push({ a: sweepAlpha, x: state[0] });
+						recorded += 1;
+					}
+					previousSlope = slope;
+					state = next;
+				}
+			}
+			bifurcation = points;
+			computingBif = false;
+			if (ui.audio) playTick(620);
+		}, 30);
+	}
+
+	/** RK4 step at an explicit α (β, m₀, m₁ from the live controls). */
+	function rk4WithAlpha(value: StateVector, dt: number, sweepAlpha: number): StateVector {
+		const f = ([x, y, z]: StateVector): StateVector => [
+			sweepAlpha * (y - x - nonlinearity(x)),
+			x - y + z,
+			-beta * y
+		];
+		const k1 = f(value);
+		const k2 = f(add(value, k1, dt / 2));
+		const k3 = f(add(value, k2, dt / 2));
+		const k4 = f(add(value, k3, dt));
+		return [
+			value[0] + (dt / 6) * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]),
+			value[1] + (dt / 6) * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]),
+			value[2] + (dt / 6) * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2])
+		];
+	}
+
+	/** Bifurcation scatter as one dotted path (round caps draw the points). */
+	const bifurcationPath = $derived.by(() => {
+		if (bifurcation.length === 0) return '';
+		const W = 240;
+		const H = 150;
+		let d = '';
+		for (const point of bifurcation) {
+			const px = ((point.a - BIF_MIN) / (BIF_MAX - BIF_MIN)) * W;
+			const py = H / 2 - (Math.max(-4, Math.min(4, point.x)) / 4) * (H / 2 - 4);
+			d += `M ${px.toFixed(1)} ${py.toFixed(1)} l 0.01 0 `;
+		}
+		return d;
+	});
+	const alphaMarker = $derived(((alpha - BIF_MIN) / (BIF_MAX - BIF_MIN)) * 240);
 
 	function reset(next: StateVector = [0.11, 0, 0]): void {
 		trajectory = next;
@@ -214,6 +287,9 @@
 		>
 		<button type="button" class="btn" onclick={() => reset()}>reset orbit</button>
 		<button type="button" class="btn" onclick={perturb}>perturb 10⁻²</button>
+		<button type="button" class="btn" onclick={computeBifurcation} disabled={computingBif}>
+			{computingBif ? 'sweeping…' : 'sweep α → bifurcation'}
+		</button>
 	</div>
 	<div class="switchboard">
 		<p class="microlabel">switchboard · fault injection</p>
@@ -250,6 +326,18 @@
 		<span class="readout">λ_local ≈ {lyapunov.toFixed(4)}</span>
 	</div>
 	<PhasePortrait points={orbit} label="double-scroll phase portrait" xLabel="v_C1" yLabel="v_C2" />
+	<figure class="bifurcation" aria-label="Bifurcation diagram: orbit maxima against α">
+		<svg viewBox="0 0 240 150" role="img" aria-label="Bifurcation diagram">
+			<rect class="bif-bezel" x="0.5" y="0.5" width="239" height="149" />
+			{#if bifurcation.length > 0}
+				<path class="bif-dots" d={bifurcationPath} />
+				<line class="bif-marker" x1={alphaMarker} x2={alphaMarker} y1="0" y2="150" />
+			{:else}
+				<text class="bif-empty" x="120" y="78" text-anchor="middle">sweep α to draw the route to chaos</text>
+			{/if}
+		</svg>
+		<figcaption class="microlabel">orbit maxima vs α ({BIF_MIN}–{BIF_MAX})</figcaption>
+	</figure>
 	<Oscilloscope
 		channels={[
 			{ samples: scopeX, name: 'v_C1' },
@@ -311,5 +399,37 @@
 	}
 	.sim-stage :global(svg) {
 		min-inline-size: 880px;
+	}
+	.bifurcation {
+		margin: 0;
+		display: grid;
+		gap: 3px;
+		justify-items: center;
+	}
+	.bifurcation svg {
+		inline-size: 100%;
+		max-inline-size: 240px;
+		background: var(--bg-inset);
+	}
+	.bif-bezel {
+		fill: none;
+		stroke: var(--line-strong);
+	}
+	.bif-dots {
+		fill: none;
+		stroke: var(--accent);
+		stroke-width: 0.9;
+		stroke-linecap: round;
+		opacity: 0.85;
+	}
+	.bif-marker {
+		stroke: var(--accent-2);
+		stroke-width: 0.8;
+		stroke-dasharray: 3 2;
+	}
+	.bif-empty {
+		fill: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: 8px;
 	}
 </style>

@@ -36,6 +36,9 @@
 	let output = $state(true);
 	let scope = $state<number[]>(Array.from({ length: 96 }, () => 0.1));
 	let faults = $state({ shortedThreshold: false });
+	let mode = $state<'astable' | 'monostable'>('astable');
+	/** In monostable mode: true while the single output pulse is in flight. */
+	let oneShot = $state(false);
 
 	const VCC = 5;
 	const ra = $derived(10 ** logRa);
@@ -45,6 +48,17 @@
 	const frequency = $derived(faults.shortedThreshold ? 0 : 1.44 / ((ra + 2 * rb) * c));
 	const duty = $derived((ra + rb) / (ra + 2 * rb));
 	const period = $derived(frequency > 0 ? 1 / frequency : Number.POSITIVE_INFINITY);
+	/** Monostable output pulse width t = 1.1·R_A·C. */
+	const pulseWidth = $derived(1.1 * ra * c);
+
+	/** Fire the one-shot: only starts a pulse if the timer is idle. */
+	function trigger(): void {
+		if (mode !== 'monostable' || oneShot || faults.shortedThreshold) return;
+		vc = 1 / 3;
+		oneShot = true;
+		output = true;
+		if (ui.audio) playPulse(1 / Math.max(pulseWidth, 1e-6));
+	}
 
 	function formatSi(value: number, unit: string): string {
 		if (!Number.isFinite(value)) return `— ${unit}`;
@@ -67,6 +81,22 @@
 				/* Threshold shorted to ground: the comparator latches, C charges to Vcc. */
 				vc = Math.min(1, vc + dtReal * 0.4);
 				output = false;
+			} else if (mode === 'monostable') {
+				/* One-shot: charge to ⅔·Vcc exactly once per trigger, then rest low. */
+				if (oneShot) {
+					const rate = dtReal / Math.max(pulseWidth * 0.6, 0.02);
+					vc += rate;
+					if (vc >= 2 / 3) {
+						vc = 1 / 3;
+						oneShot = false;
+						output = false;
+					} else {
+						output = true;
+					}
+				} else {
+					output = false;
+					vc = 1 / 3;
+				}
 			} else {
 				const timeScale = Math.max(1, frequency / 1.5);
 				const dt = (dtReal * timeScale) / Math.max(period, 1e-9);
@@ -125,6 +155,31 @@
 <ProbeHud read={probe} />
 
 {#snippet controls()}
+	<div class="mode-row" role="radiogroup" aria-label="Timer mode">
+		<button
+			type="button"
+			role="radio"
+			aria-checked={mode === 'astable'}
+			class="mode"
+			onclick={() => (mode = 'astable')}
+		>
+			astable
+		</button>
+		<button
+			type="button"
+			role="radio"
+			aria-checked={mode === 'monostable'}
+			class="mode"
+			onclick={() => (mode = 'monostable')}
+		>
+			monostable
+		</button>
+	</div>
+	{#if mode === 'monostable'}
+		<button type="button" class="btn btn-solid trigger" onclick={trigger} disabled={oneShot}>
+			{oneShot ? 'pulse in flight…' : 'trigger one-shot'}
+		</button>
+	{/if}
 	<div class="controls">
 		<label>
 			<span class="microlabel">R_A = {formatSi(ra, 'Ω')}</span>
@@ -160,13 +215,18 @@
 
 {#snippet instruments()}
 	<div class="readouts">
-		<span class="readout">f = {formatSi(frequency, 'Hz')}</span>
-		<span class="readout">duty = {(duty * 100).toFixed(1)} %</span>
+		{#if mode === 'astable'}
+			<span class="readout">f = {formatSi(frequency, 'Hz')}</span>
+			<span class="readout">duty = {(duty * 100).toFixed(1)} %</span>
+		{:else}
+			<span class="readout">pulse t = {formatSi(pulseWidth, 's')}</span>
+			<span class="readout" class:on={oneShot}>{oneShot ? 'HIGH (timing)' : 'idle (LOW)'}</span>
+		{/if}
 		<span class="readout" class:on={output}>
-			V_C = {(vc * VCC).toFixed(2)} V · {charging ? 'charging' : 'discharging'}
+			V_C = {(vc * VCC).toFixed(2)} V
 		</span>
 	</div>
-	<Oscilloscope samples={scope} label="pin 3 (OUT)" />
+	<Oscilloscope samples={scope} label={mode === 'astable' ? 'pin 3 (OUT)' : 'one-shot pulse'} />
 {/snippet}
 
 <style>
@@ -192,5 +252,30 @@
 
 	.on {
 		color: var(--ok);
+	}
+
+	.mode-row {
+		display: flex;
+		gap: 1px;
+		background: var(--line);
+		border: 1px solid var(--line);
+	}
+
+	.mode {
+		flex: 1;
+		padding: 0.35rem 0.5rem;
+		font-family: var(--font-mono);
+		font-size: var(--text-2xs);
+		color: var(--ink-mute);
+		background: var(--bg-raised);
+
+		&[aria-checked='true'] {
+			color: var(--accent-ink);
+			background: var(--accent);
+		}
+	}
+
+	.trigger {
+		inline-size: 100%;
 	}
 </style>

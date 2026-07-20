@@ -55,15 +55,23 @@
 		{ id: 5, label: '|ψ⟩ reconstructed', active: ['OUT'] }
 	] as const;
 
-	/** Bob's amplitudes after the current step — the fidelity story. */
-	const bobState = $derived.by(() => {
+	/**
+	 * Bob's fidelity F = |⟨ψ|ψ_out⟩|². With the classical link intact he applies
+	 * X^{m₂}Z^{m₁} and recovers |ψ⟩ exactly (F = 1). If the link is cut he applies
+	 * the identity, so he is left holding X^{m₂}Z^{m₁}|ψ⟩ — and the overlap with
+	 * the original depends on which random outcomes occurred.
+	 */
+	const fidelity = $derived.by(() => {
 		if (step < 4) return undefined;
-		if (faults.lostClassicalBit && (m1 === 1 || m2 === 1)) {
-			/* Without the classical bits the correction is wrong half the time. */
-			return { alpha: betaMagnitude, betaText: `${alpha.toFixed(3)}`, corrupted: true };
-		}
-		return { alpha, betaText, corrupted: false };
+		if (!faults.lostClassicalBit) return 1;
+		const mm1 = m1 ?? 0;
+		const mm2 = m2 ?? 0;
+		if (mm1 === 0 && mm2 === 0) return 1; /* no correction needed */
+		if (mm1 === 1 && mm2 === 0) return (alpha * alpha - betaMagnitude * betaMagnitude) ** 2;
+		if (mm1 === 0 && mm2 === 1) return (2 * alpha * betaReal) ** 2;
+		return (2 * alpha * betaImaginary) ** 2; /* X·Z uncorrected */
 	});
+	const corrupted = $derived(fidelity !== undefined && fidelity < 0.999);
 
 	function advance(): void {
 		if (step >= 5) {
@@ -160,7 +168,8 @@
 			`X^{m₂}: applied ${m2 === undefined ? 'iff m₂ = 1' : m2 === 1 ? '(m₂ = 1 → flip)' : '(m₂ = 0 → identity)'}`,
 		ZC: () =>
 			`Z^{m₁}: applied ${m1 === undefined ? 'iff m₁ = 1' : m1 === 1 ? '(m₁ = 1 → phase flip)' : '(m₁ = 0 → identity)'}`,
-		OUT: () => `Bob holds α|0⟩ + β|1⟩ — fidelity ${bobState?.corrupted ? '< 1 (fault!)' : '= 1'}`
+		OUT: () =>
+			`Bob holds α|0⟩ + β|1⟩ — fidelity F = ${fidelity === undefined ? '…' : fidelity.toFixed(3)}`
 	};
 
 	function onStageMove(event: PointerEvent): void {
@@ -251,14 +260,22 @@
 	<div class="readouts">
 		<span class="readout">P(0) = {p0.toFixed(3)}</span>
 		<span class="readout">P(1) = {p1.toFixed(3)}</span>
-		{#if bobState}
-			<span class="readout" class:bad={bobState.corrupted}>
-				Bob: {bobState.alpha.toFixed(3)}|0⟩ + ({bobState.betaText})|1⟩
+	</div>
+	<div class="fidelity" class:ok={fidelity !== undefined && !corrupted} class:bad={corrupted}>
+		<span class="microlabel">teleportation fidelity · F = |⟨ψ|ψ_out⟩|²</span>
+		<div class="fid-bar">
+			<span style={`width: ${(fidelity ?? 0) * 100}%`}></span>
+		</div>
+		<div class="fid-legend">
+			<strong>F = {fidelity === undefined ? '—' : fidelity.toFixed(3)}</strong>
+			<span>
+				{fidelity === undefined
+					? 'run the protocol'
+					: corrupted
+						? 'correction lost — state degraded'
+						: 'state reconstructed exactly'}
 			</span>
-			<span class="readout" class:bad={bobState.corrupted}>
-				{bobState.corrupted ? 'corrections lost — diagnose' : 'fidelity = 1.000'}
-			</span>
-		{/if}
+		</div>
 	</div>
 	<Oscilloscope
 		channels={[
@@ -343,6 +360,57 @@
 	}
 
 	.bad {
+		color: var(--danger);
+	}
+
+	.fidelity {
+		display: grid;
+		gap: var(--space-1);
+		padding: var(--space-3);
+		border: 1px solid var(--line-strong);
+		background: var(--bg-inset);
+
+		&.ok {
+			border-color: var(--ok);
+		}
+
+		&.bad {
+			border-color: var(--danger);
+		}
+	}
+
+	.fid-bar {
+		block-size: 6px;
+		background: var(--bg-panel);
+		border: 1px solid var(--line);
+
+		& span {
+			display: block;
+			block-size: 100%;
+			background: var(--ok);
+			transition: width var(--dur-med) var(--ease-precise);
+		}
+	}
+
+	.fidelity.bad .fid-bar span {
+		background: var(--danger);
+	}
+
+	.fid-legend {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: var(--space-2);
+		font-family: var(--font-mono);
+		font-size: var(--text-2xs);
+		color: var(--ink-mute);
+
+		& strong {
+			color: var(--ok);
+		}
+	}
+
+	.fidelity.bad .fid-legend strong {
 		color: var(--danger);
 	}
 

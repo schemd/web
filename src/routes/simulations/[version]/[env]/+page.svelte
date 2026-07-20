@@ -9,6 +9,11 @@
 	import BuckSim from '$lib/components/sims/BuckSim.svelte';
 	import ChuaSim from '$lib/components/sims/ChuaSim.svelte';
 	import PllSim from '$lib/components/sims/PllSim.svelte';
+	import StatechartSim from '$lib/components/sims/StatechartSim.svelte';
+	import QecSim from '$lib/components/sims/QecSim.svelte';
+	import WienSim from '$lib/components/sims/WienSim.svelte';
+	import LfsrSim from '$lib/components/sims/LfsrSim.svelte';
+	import GroverSim from '$lib/components/sims/GroverSim.svelte';
 	import 'katex/dist/katex.min.css';
 
 	let { data }: PageProps = $props();
@@ -22,7 +27,12 @@
 		teleport: TeleportSim,
 		buck: BuckSim,
 		chua: ChuaSim,
-		pll: PllSim
+		pll: PllSim,
+		statechart: StatechartSim,
+		qec: QecSim,
+		wien: WienSim,
+		lfsr: LfsrSim,
+		grover: GroverSim
 	};
 
 	const sim = $derived(data.simulation);
@@ -63,20 +73,34 @@
 			<span class="microlabel">{sim.index} · {sim.tier} · {sim.domain} · v{data.version}</span>
 		</div>
 
+		<div class="lab-identity">
+			<div class="lab-title-row">
+				<h1>{sim.title}</h1>
+				<span class="domain-badge">{sim.domain}</span>
+			</div>
+			<p class="lab-summary">{sim.summary}</p>
+			<p class="microlabel lab-metrics">
+				{sim.components} components · {sim.connections} connections · {sim.model}
+			</p>
+		</div>
+
+		<!-- The aha: the one realization this lab is built to deliver. -->
+		<blockquote class="aha">
+			<span class="aha-mark microlabel">the aha</span>
+			<p>{sim.pedagogy.aha}</p>
+		</blockquote>
+
 		<div class="lab-grid">
-			<div class="lab-identity">
-				<div class="lab-title-row">
-					<h1>{sim.title}</h1>
-					<span class="domain-badge">{sim.domain}</span>
-				</div>
-				<p class="lab-summary">{sim.summary}</p>
-				<p class="microlabel lab-metrics">
-					{sim.components} components · {sim.connections} connections · {sim.model}
-				</p>
+			<div class="principle">
+				<span class="microlabel">why it works</span>
+				<div class="prose">{@html sim.pedagogy.principleHtml}</div>
 			</div>
 
 			<div class="lab-model">
-				<div class="lab-formula" aria-label="Governing model">{@html sim.formulaHtml}</div>
+				<div class="model-card">
+					<span class="microlabel">governing model</span>
+					<div class="lab-formula" aria-label="Governing model">{@html sim.formulaHtml}</div>
+				</div>
 				<div class="lab-spec">
 					<div class="spec-group">
 						<span class="microlabel">structural inventory</span>
@@ -101,6 +125,19 @@
 				</div>
 			</div>
 		</div>
+
+		<!-- Guided walk-through: earn the aha through direct interaction. -->
+		<ol class="guided" aria-label="Guided walk-through">
+			{#each sim.pedagogy.steps as step, index (step.label)}
+				<li class="guided-step">
+					<span class="step-index" aria-hidden="true">{index + 1}</span>
+					<div class="step-body">
+						<p class="step-label">{step.label}</p>
+						<div class="prose step-detail">{@html step.detailHtml}</div>
+					</div>
+				</li>
+			{/each}
+		</ol>
 	</header>
 
 	<nav class="env-nav" aria-label="Simulation environments">
@@ -180,20 +217,83 @@
 		border-radius: 999px;
 	}
 
-	/* KaTeX governing model on its own line, in an inset strip. */
-	.lab-formula {
+	/* ---------- The aha callout ---------- */
+	.aha {
+		position: relative;
+		margin: 0;
+		padding: var(--space-4) var(--space-5);
+		background: color-mix(in srgb, var(--accent) 8%, var(--bg-inset));
+		border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+		border-inline-start: 3px solid var(--accent);
+		display: grid;
+		gap: var(--space-2);
+	}
+
+	.aha-mark {
+		color: var(--accent);
+	}
+
+	.aha p {
+		margin: 0;
+		font-size: var(--text-lg);
+		line-height: 1.4;
+		letter-spacing: -0.01em;
+		color: var(--ink);
+		text-wrap: balance;
+	}
+
+	/* KaTeX governing model card. */
+	.model-card {
+		display: grid;
+		gap: var(--space-2);
 		padding: var(--space-3) var(--space-4);
 		background: var(--bg-inset);
 		border: 1px solid var(--line);
+	}
+
+	.lab-formula {
 		overflow-x: auto;
 		font-size: var(--text-md);
 		color: var(--ink);
 	}
 
-	/* Compact two-column header: identity+summary left, model+specs right. */
+	/* Rendered author prose with typeset math. */
+	.prose {
+		color: var(--ink-mute);
+		line-height: 1.7;
+		font-size: var(--text-sm);
+
+		& :global(strong) {
+			color: var(--ink);
+			font-weight: 600;
+		}
+
+		& :global(code) {
+			font-family: var(--font-mono);
+			font-size: 0.9em;
+			padding: 0.05em 0.35em;
+			background: var(--bg-inset);
+			border: 1px solid var(--line);
+			border-radius: 4px;
+		}
+
+		& :global(.katex-display) {
+			margin: var(--space-3) 0;
+			overflow-x: auto;
+			overflow-y: hidden;
+		}
+	}
+
+	.principle {
+		display: grid;
+		gap: var(--space-2);
+		align-content: start;
+	}
+
+	/* Two-column body: principle prose left, model + specs right. */
 	.lab-grid {
 		display: grid;
-		grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+		grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
 		gap: clamp(var(--space-4), 3vw, var(--space-8));
 		align-items: start;
 	}
@@ -208,6 +308,59 @@
 		display: grid;
 		gap: var(--space-3);
 		align-content: start;
+	}
+
+	/* ---------- Guided walk-through ---------- */
+	.guided {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 1px;
+		background: var(--line);
+		border: 1px solid var(--line);
+	}
+
+	.guided-step {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		gap: var(--space-3);
+		padding: var(--space-3) var(--space-4);
+		background: var(--bg-panel);
+		transition: background-color var(--dur-fast) var(--ease-precise);
+
+		&:hover {
+			background: var(--bg-raised);
+		}
+	}
+
+	.step-index {
+		display: grid;
+		place-items: center;
+		inline-size: 1.6rem;
+		block-size: 1.6rem;
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		color: var(--accent-ink);
+		background: var(--accent);
+		border-radius: 999px;
+	}
+
+	.step-body {
+		display: grid;
+		gap: 2px;
+		min-inline-size: 0;
+	}
+
+	.step-label {
+		margin: 0;
+		font-size: var(--text-sm);
+		font-weight: 600;
+		color: var(--ink);
+	}
+
+	.step-detail {
+		font-size: var(--text-xs);
 	}
 
 	.lab-summary {

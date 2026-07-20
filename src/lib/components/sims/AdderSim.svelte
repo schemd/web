@@ -27,8 +27,15 @@
 	let cin = $state(0);
 	let scope = $state<number[]>(Array.from({ length: 96 }, () => 0));
 	let faults = $state({ stuckCarry: false });
+	/** Per-gate propagation delay (ns). The whole point of "ripple" is this delay. */
+	let gateDelay = $state(6);
+	/** How many bit positions have settled since the last input change. */
+	let frontier = $state(8);
 
 	const BITS = 8;
+	/** Worst-case critical path: two gate delays of carry per cell, plus the final sum. */
+	const criticalNs = $derived((2 * BITS + 1) * gateDelay);
+	const settling = $derived(frontier < BITS);
 
 	/** One combinational pass, mirroring the gate network exactly. */
 	const nets = $derived.by(() => {
@@ -64,18 +71,41 @@
 	});
 	const carryOut = $derived(nets[`O1_${BITS - 1}.out`] ?? 0);
 
-	/* Paint the logic pass into the compiled SVG's state classes. */
+	/** Which bit position an endpoint belongs to, for the ripple front gate. */
+	function endpointBit(endpoint: string): number {
+		const indexed = endpoint.match(/(?:_|^[ABS])(\d)/);
+		return indexed ? Number(indexed[1]) : 0;
+	}
+
+	/* Animate the carry front bit-by-bit after every input change, so the ripple
+	 * is a physical event in time rather than an instantaneous truth table. */
+	$effect(() => {
+		void a;
+		void b;
+		void cin;
+		void faults.stuckCarry;
+		frontier = 0;
+		const stepMs = Math.max(40, gateDelay * 12);
+		const timer = setInterval(() => {
+			frontier += 1;
+			if (frontier >= BITS) clearInterval(timer);
+		}, stepMs);
+		return () => clearInterval(timer);
+	});
+
+	/* Paint the settled portion of the logic pass into the compiled SVG. */
 	$effect(() => {
 		const root = host;
 		if (!root) return;
 		for (const [endpoint, value] of Object.entries(nets)) {
-			setWiresFrom(root, endpoint, value === 1);
-			setNodeActive(root, endpoint.split('.')[0]!, value === 1);
+			const lit = value === 1 && endpointBit(endpoint) < frontier;
+			setWiresFrom(root, endpoint, lit);
+			setNodeActive(root, endpoint.split('.')[0]!, lit);
 		}
 		for (let bit = 0; bit < BITS; bit += 1) {
-			setNodeActive(root, `S${bit}`, ((sum >> bit) & 1) === 1);
+			setNodeActive(root, `S${bit}`, ((sum >> bit) & 1) === 1 && bit < frontier);
 		}
-		setNodeActive(root, 'COUT', carryOut === 1);
+		setNodeActive(root, 'COUT', carryOut === 1 && frontier >= BITS);
 	});
 
 	/* Feed the oscilloscope a rolling logic trace of the sum's LSB rail. */
@@ -143,6 +173,13 @@
 	function bitString(value: number): string {
 		return value.toString(2).padStart(8, '0');
 	}
+
+	/** Clamp a typed operand into a byte. */
+	function clampByte(raw: string): number {
+		const value = Number(raw);
+		if (!Number.isFinite(value)) return 0;
+		return Math.max(0, Math.min(255, Math.trunc(value)));
+	}
 </script>
 
 <LabShell {controls} {canvas} {instruments} />
@@ -151,9 +188,36 @@
 {#snippet controls()}
 	<div class="stack">
 		<p class="control-note">
-			Click any <strong>A</strong>, <strong>B</strong>, or <strong>C_in</strong> port in the test bed
-			to toggle its bit. The combinational pass re-evaluates and the carry ripples left to right.
+			Type two operands, or click any <strong>A</strong>/<strong>B</strong>/<strong>C_in</strong> port
+			to toggle a bit. Watch the carry <strong>ripple</strong> upward over real gate delay — that travel
+			time is why fast adders exist.
 		</p>
+		<div class="operands">
+			<label>
+				<span class="microlabel">A (0–255)</span>
+				<input
+					type="number"
+					min="0"
+					max="255"
+					value={a}
+					oninput={(event) => (a = clampByte(event.currentTarget.value))}
+				/>
+			</label>
+			<label>
+				<span class="microlabel">B (0–255)</span>
+				<input
+					type="number"
+					min="0"
+					max="255"
+					value={b}
+					oninput={(event) => (b = clampByte(event.currentTarget.value))}
+				/>
+			</label>
+		</div>
+		<label>
+			<span class="microlabel">gate delay = {gateDelay} ns · critical path ≈ {criticalNs} ns</span>
+			<input type="range" min="2" max="16" step="1" bind:value={gateDelay} aria-label="Gate delay" />
+		</label>
 		<div class="button-row">
 			<button type="button" class="btn" onclick={randomize}>randomize A,B</button>
 			<button type="button" class="btn" onclick={clearInputs}>clear</button>
@@ -191,6 +255,9 @@
 		<span class="readout sum" class:faulted={faults.stuckCarry}>
 			= {sum + (carryOut << 8)} · C_out = {carryOut}
 		</span>
+		<span class="readout ripple" class:settling>
+			{settling ? `carry front @ bit ${frontier}…` : `settled · ${criticalNs} ns worst case`}
+		</span>
 	</div>
 	<Oscilloscope samples={scope} label="S₀ rail" />
 {/snippet}
@@ -219,9 +286,43 @@
 		gap: var(--space-2);
 	}
 
+	.operands {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--space-2);
+	}
+
+	.stack label {
+		display: grid;
+		gap: 2px;
+	}
+
+	.stack input[type='number'] {
+		inline-size: 100%;
+		padding: 0.3rem 0.5rem;
+		font-family: var(--font-mono);
+		background: var(--bg-inset);
+		border: 1px solid var(--line);
+		color: var(--ink);
+	}
+
+	.stack input[type='range'] {
+		accent-color: var(--accent);
+	}
+
 	.readouts {
 		display: grid;
 		gap: var(--space-1);
+	}
+
+	.ripple {
+		font-family: var(--font-mono);
+		font-size: var(--text-2xs);
+		color: var(--ink-faint);
+
+		&.settling {
+			color: var(--accent);
+		}
 	}
 
 	.sum {
