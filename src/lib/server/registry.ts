@@ -49,20 +49,38 @@ const FETCH_TIMEOUT_MS = 6_000;
  * network round-trip completes and when the registry is unreachable. The
  * version pinned here matches the workspace's installed `@schemd/core`.
  */
-export const WEBSITE_CORE_VERSION = '0.3.0';
+export const WEBSITE_CORE_VERSION = '0.3.1';
 export const HISTORICAL_CORE_VERSION = '0.2.1';
 export const DOCUMENTATION_VERSIONS = [WEBSITE_CORE_VERSION, HISTORICAL_CORE_VERSION] as const;
+
+/**
+ * Patch releases share their minor line's documentation corpus, so superseded
+ * patch routes 308 to the current version instead of mislabeling old content.
+ */
+export const SUPERSEDED_PATCH_VERSIONS: Readonly<Record<string, string>> = {
+	'0.3.0': WEBSITE_CORE_VERSION
+};
 
 const SEED_RELEASES: readonly SchemdRelease[] = [
 	{
 		version: WEBSITE_CORE_VERSION,
+		publishedAt: new Date(0).toISOString(),
+		unpackedSize: 260_610,
+		fileCount: 24,
+		gitHead: undefined,
+		notes:
+			'Routing, fidelity, and accessibility patch. Dense sub-clearance layouts now route as straight traces instead of failing, empty qgate detail rows no longer inflate the shared quantum shell, embedded-css output keeps hover-only groups out of the tab order under its role="img" root, and renders skip redundant revalidation plus AST serialization on the hot path. Output is byte-identical for valid documents; the bundle shrank 33 B.',
+		released: false
+	},
+	{
+		version: '0.3.0',
 		publishedAt: new Date(0).toISOString(),
 		unpackedSize: 258_900,
 		fileCount: 24,
 		gitHead: undefined,
 		notes:
 			'Quarter-turn orientation geometry — integer swap/negate matching SVG rotate(90·n) — applied across every primitive, with designators kept upright by construction. Deterministic source maps power editor↔vector round-tripping, and micro-math baseline restoration was unified into one drift-free pass. Expanded electrical, digital, quantum, and UML families.',
-		released: false
+		released: true
 	},
 	{
 		version: HISTORICAL_CORE_VERSION,

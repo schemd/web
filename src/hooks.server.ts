@@ -6,7 +6,11 @@
  * previously indexed URLs keep resolving.
  */
 import { redirect, type Handle } from '@sveltejs/kit';
-import { getRegistry, HISTORICAL_CORE_VERSION } from '$lib/server/registry';
+import {
+	getRegistry,
+	HISTORICAL_CORE_VERSION,
+	SUPERSEDED_PATCH_VERSIONS
+} from '$lib/server/registry';
 
 export function legacyTarget(pathname: string): string | undefined {
 	const normalized = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
@@ -24,6 +28,13 @@ export function legacyTarget(pathname: string): string | undefined {
 	return documentation ? `/docs/${HISTORICAL_CORE_VERSION}/${documentation[1]}` : undefined;
 }
 
+/** Map a superseded patch-release docs path onto the current corpus, verbatim tail preserved. */
+export function supersededDocsTarget(pathname: string): string | undefined {
+	const match = /^\/docs\/([0-9.]+)(\/.*)?$/.exec(pathname);
+	const current = match === null ? undefined : SUPERSEDED_PATCH_VERSIONS[match[1]!];
+	return current === undefined ? undefined : `/docs/${current}${match![2] ?? ''}`;
+}
+
 /** Sections whose bare (unversioned) paths resolve to the latest release. */
 const VERSIONED_SECTIONS = ['/docs', '/playground', '/simulations'] as const;
 
@@ -32,6 +43,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	const legacy = legacyTarget(pathname);
 	if (legacy !== undefined) redirect(308, `${legacy}${search}`);
+
+	const superseded = supersededDocsTarget(pathname);
+	if (superseded !== undefined) redirect(308, `${superseded}${search}`);
 
 	for (const section of VERSIONED_SECTIONS) {
 		if (pathname === section || pathname === `${section}/`) {

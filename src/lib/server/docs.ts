@@ -29,7 +29,7 @@ const historicalSources = import.meta.glob<string>('$lib/content/schemd/*.md', {
 	eager: true
 });
 
-const currentSources = import.meta.glob<string>('$lib/content/schemd/0.3.0/*.md', {
+const currentSources = import.meta.glob<string>('$lib/content/schemd/0.3.1/*.md', {
 	query: '?raw',
 	import: 'default',
 	eager: true

@@ -242,13 +242,14 @@
 	}
 
 	/* ---------- Fenced-markdown form (for pasting into a Markdown pipeline) ---------- */
+	/* Fence titles cannot escape quotes, so strip them exactly like the compile endpoint. */
 	const fenceMarkdown = $derived(
 		'```schemd bounds="' +
 			boundsWidth +
 			'x' +
 			boundsHeight +
 			'" title="' +
-			title +
+			(title.replace(/"/g, '').trim() || 'Playground schematic') +
 			'"\n' +
 			source +
 			'\n```'
@@ -303,9 +304,11 @@
 			`.schematic-svg{background:${value('--schematic-surface') || '#fff'};` +
 			`--schematic-vector-fallback:${value('--schematic-vector-fallback') || '#333'};` +
 			`--schematic-grid:${value('--schematic-grid') || '#ccc'};color:${value('--ink') || '#222'}}`;
-		return svg
-			.replace('<svg', `<svg xmlns="http://www.w3.org/2000/svg"`)
-			.replace(/(<svg[^>]*>)/, `$1<style>${rootRule}${tokenRules}</style>`);
+		/* The compiler already declares xmlns; adding a second copy is an XML parse error. */
+		const namespaced = svg.includes('xmlns=')
+			? svg
+			: svg.replace('<svg', `<svg xmlns="http://www.w3.org/2000/svg"`);
+		return namespaced.replace(/(<svg[^>]*>)/, `$1<style>${rootRule}${tokenRules}</style>`);
 	}
 
 	function triggerDownload(href: string, filename: string): void {

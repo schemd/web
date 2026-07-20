@@ -202,8 +202,15 @@
 		transition: opacity var(--dur-fast) var(--ease-precise);
 
 		&[data-open='false'] {
+			/* visibility removes the collapsed pane's controls from the tab order
+			 * and accessibility tree; opacity alone leaves invisible tab stops.
+			 * The delay applies only while closing, so reopening shows instantly. */
 			opacity: 0;
+			visibility: hidden;
 			pointer-events: none;
+			transition:
+				opacity var(--dur-fast) var(--ease-precise),
+				visibility 0s linear var(--dur-fast);
 		}
 	}
 

@@ -9,6 +9,7 @@ import {
 	compareVersionsDesc,
 	DOCUMENTATION_VERSIONS,
 	resolveVersion,
+	WEBSITE_CORE_VERSION,
 	type SchemdRegistry
 } from './registry';
 import {
@@ -26,9 +27,9 @@ const registry: SchemdRegistry = {
 		fileCount: undefined,
 		gitHead: undefined,
 		notes: undefined,
-		released: version !== '0.3.0'
+		released: version !== WEBSITE_CORE_VERSION
 	})),
-	latest: '0.3.0',
+	latest: WEBSITE_CORE_VERSION,
 	syncedAt: 0,
 	live: false
 };
@@ -41,18 +42,18 @@ describe('versioned registry and documentation', () => {
 	});
 
 	test('sorts semver, resolves aliases, and rejects unknown releases', () => {
-		expect(['0.2.1', '0.3.0', '0.2.9'].sort(compareVersionsDesc)).toEqual([
-			'0.3.0',
+		expect(['0.2.1', '0.3.1', '0.2.9'].sort(compareVersionsDesc)).toEqual([
+			'0.3.1',
 			'0.2.9',
 			'0.2.1'
 		]);
-		expect(resolveVersion(registry, 'latest')).toBe('0.3.0');
+		expect(resolveVersion(registry, 'latest')).toBe(WEBSITE_CORE_VERSION);
 		expect(resolveVersion(registry, '0.2.1')).toBe('0.2.1');
 		expect(resolveVersion(registry, '9.9.9')).toBeUndefined();
 	});
 
-	test('keeps complete, distinct 0.3.0 and historical 0.2.1 corpora', () => {
-		const current = docManifest('0.3.0');
+	test('keeps complete, distinct current and historical 0.2.1 corpora', () => {
+		const current = docManifest(WEBSITE_CORE_VERSION);
 		const historical = docManifest('0.2.1');
 		expect(current.map(({ slug }) => slug)).toEqual(historical.map(({ slug }) => slug));
 		expect(current).toHaveLength(11);
@@ -76,7 +77,7 @@ describe('versioned registry and documentation', () => {
 			}
 		}
 
-		const currentOverview = loadDoc('0.3.0', 'overview');
+		const currentOverview = loadDoc(WEBSITE_CORE_VERSION, 'overview');
 		const historicalOverview = loadDoc('0.2.1', 'overview');
 		expect(
 			currentOverview?.examples.some(({ source }) => source.includes('orientation=down'))
@@ -87,10 +88,14 @@ describe('versioned registry and documentation', () => {
 	});
 
 	test('indexes current sections with version-preserving command links', () => {
-		const entries = docSearchIndex('0.3.0');
-		expect(entries.some(({ href }) => href === '/docs/0.3.0/component-reference')).toBe(true);
+		const entries = docSearchIndex(WEBSITE_CORE_VERSION);
+		expect(
+			entries.some(({ href }) => href === `/docs/${WEBSITE_CORE_VERSION}/component-reference`)
+		).toBe(true);
 		expect(entries.some(({ title }) => title.includes('Sources, connectivity'))).toBe(true);
-		expect(entries.every(({ href }) => href.startsWith('/docs/0.3.0/'))).toBe(true);
+		expect(entries.every(({ href }) => href.startsWith(`/docs/${WEBSITE_CORE_VERSION}/`))).toBe(
+			true
+		);
 	});
 
 	test('builds the gallery exclusively from compiled current documentation', () => {

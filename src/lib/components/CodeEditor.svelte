@@ -84,9 +84,17 @@
 		return (root.textContent ?? '').replace(/\u00a0/g, ' ');
 	}
 
-	function onInput(): void {
+	/* Re-rendering the surface mid-IME-composition destroys the composition
+	 * session (dead keys, CJK input), so highlighting waits for compositionend. */
+	let composing = false;
+
+	function onInput(event?: Event): void {
 		const root = surface;
 		if (!root) return;
+		if (composing || (event instanceof InputEvent && event.isComposing)) {
+			value = readValue(root);
+			return;
+		}
 		const offset = caretOffset(root);
 		value = readValue(root);
 		render(root, value);
@@ -148,6 +156,11 @@
 		onkeydown={onKeydown}
 		onkeyup={() => updateCaretLine()}
 		onpointerup={() => updateCaretLine()}
+		oncompositionstart={() => (composing = true)}
+		oncompositionend={() => {
+			composing = false;
+			onInput();
+		}}
 	></div>
 </div>
 
