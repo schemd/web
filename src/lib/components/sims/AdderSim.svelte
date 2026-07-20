@@ -32,9 +32,9 @@
 
 	/** One combinational pass, mirroring the gate network exactly. */
 	const nets = $derived.by(() => {
-		const values = new Map<string, number>();
+		const values: Record<string, number> = {};
 		let carry = faults.stuckCarry ? 0 : cin;
-		values.set('CIN.out', cin);
+		values['CIN.out'] = cin;
 		for (let bit = 0; bit < BITS; bit += 1) {
 			const av = (a >> bit) & 1;
 			const bv = (b >> bit) & 1;
@@ -43,13 +43,13 @@
 			const c1 = av & bv;
 			const c2 = axb & carry;
 			const cout = faults.stuckCarry ? 0 : c1 | c2;
-			values.set(`A${bit}.out`, av);
-			values.set(`B${bit}.out`, bv);
-			values.set(`X1_${bit}.out`, axb);
-			values.set(`X2_${bit}.out`, sum);
-			values.set(`N1_${bit}.out`, c1);
-			values.set(`N2_${bit}.out`, c2);
-			values.set(`O1_${bit}.out`, cout);
+			values[`A${bit}.out`] = av;
+			values[`B${bit}.out`] = bv;
+			values[`X1_${bit}.out`] = axb;
+			values[`X2_${bit}.out`] = sum;
+			values[`N1_${bit}.out`] = c1;
+			values[`N2_${bit}.out`] = c2;
+			values[`O1_${bit}.out`] = cout;
 			carry = cout;
 		}
 		return values;
@@ -58,17 +58,17 @@
 	const sum = $derived.by(() => {
 		let total = 0;
 		for (let bit = 0; bit < BITS; bit += 1) {
-			total |= (nets.get(`X2_${bit}.out`) ?? 0) << bit;
+			total |= (nets[`X2_${bit}.out`] ?? 0) << bit;
 		}
 		return total;
 	});
-	const carryOut = $derived(nets.get(`O1_${BITS - 1}.out`) ?? 0);
+	const carryOut = $derived(nets[`O1_${BITS - 1}.out`] ?? 0);
 
 	/* Paint the logic pass into the compiled SVG's state classes. */
 	$effect(() => {
 		const root = host;
 		if (!root) return;
-		for (const [endpoint, value] of nets) {
+		for (const [endpoint, value] of Object.entries(nets)) {
 			setWiresFrom(root, endpoint, value === 1);
 			setNodeActive(root, endpoint.split('.')[0]!, value === 1);
 		}
@@ -87,7 +87,10 @@
 
 	function onStageClick(event: MouseEvent): void {
 		if (!(event.target instanceof Element)) return;
-		const id = delegatedNodeId(event.target);
+		toggleNode(delegatedNodeId(event.target));
+	}
+
+	function toggleNode(id: string | undefined): void {
 		if (!id) return;
 		const bitMatch = id.match(/^([AB])(\d)$/);
 		if (bitMatch) {
@@ -99,6 +102,13 @@
 			cin ^= 1;
 			if (ui.audio) playTick(460);
 		}
+	}
+
+	function onStageKeydown(event: KeyboardEvent): void {
+		if (event.key !== 'Enter' && event.key !== ' ') return;
+		if (!(event.target instanceof Element)) return;
+		event.preventDefault();
+		toggleNode(delegatedNodeId(event.target));
 	}
 
 	function randomize(): void {
@@ -117,12 +127,12 @@
 	/** Probe reading used by the lab-wide diagnostic HUD. */
 	function probe(element: Element): string | undefined {
 		const wire = element.closest('[data-wire-source]')?.getAttribute('data-wire-source');
-		if (wire && nets.has(wire)) {
-			return `${wire} = logic ${nets.get(wire)} (${nets.get(wire) === 1 ? '5.0 V' : '0.0 V'})`;
+		if (wire && wire in nets) {
+			return `${wire} = logic ${nets[wire]} (${nets[wire] === 1 ? '5.0 V' : '0.0 V'})`;
 		}
 		const node = delegatedNodeId(element);
 		if (!node) return undefined;
-		const out = nets.get(`${node}.out`);
+		const out = nets[`${node}.out`];
 		if (out !== undefined) return `${node}.out = logic ${out}`;
 		const sumBit = node.match(/^S(\d)$/);
 		if (sumBit) return `${node} = logic ${(sum >> Number(sumBit[1])) & 1}`;
@@ -141,8 +151,8 @@
 {#snippet controls()}
 	<div class="stack">
 		<p class="control-note">
-			Click any <strong>A</strong>, <strong>B</strong>, or <strong>C_in</strong> port in the test
-			bed to toggle its bit. The combinational pass re-evaluates and the carry ripples left to right.
+			Click any <strong>A</strong>, <strong>B</strong>, or <strong>C_in</strong> port in the test bed
+			to toggle its bit. The combinational pass re-evaluates and the carry ripples left to right.
 		</p>
 		<div class="button-row">
 			<button type="button" class="btn" onclick={randomize}>randomize A,B</button>
@@ -156,11 +166,14 @@
 {/snippet}
 
 {#snippet canvas()}
+	<!-- The group owns delegation only; the compiler-emitted port buttons remain the interactive controls. -->
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<div
 		class="sim-stage schemd-frame"
 		bind:this={host}
 		onclick={onStageClick}
-		role="application"
+		onkeydown={onStageKeydown}
+		role="group"
 		aria-label="Interactive 8-bit adder schematic. Click input ports to toggle bits."
 	>
 		{@html svg}

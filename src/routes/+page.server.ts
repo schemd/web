@@ -12,25 +12,26 @@ interface HeroSpec {
 	readonly source: string;
 }
 
-const HERO_SPECS: readonly HeroSpec[] = [
+export const _HERO_SPECS: readonly HeroSpec[] = [
 	{
 		id: 'circuit',
 		domain: 'Analog',
 		title: 'Mixed-signal input stage',
-		bounds: '760x300',
-		source: `// A mixed-signal input stage, written as text
-port:VIN "V_{in}" at (60, 90) #blue
-resistor:R1 "10 k\\Omega" at (220, 90) #amber
-capacitor:C1 "100 nF" at (380, 90) #cyan
-nand:N1 "N1" at (560, 150) #purple
-port:OUT "Q" at (700, 150) #emerald
-ground:G1 "0 V" at (380, 220) #slate
+		bounds: '760x440',
+		source: `// Native source + junction + physically rotated shunt capacitor
+source:VIN "V_{in}" at (70, 120) #blue [type=voltage-ac]
+resistor:R1 "10 k\\Omega" at (240, 120) #amber
+junction:J1 "output" at (410, 120) #cyan
+capacitor:C1 "100 nF" at (410, 245) #cyan [orientation=down]
+ground:G1 "0 V" at (410, 345) #slate
+port:OUT "V_{out}" at (660, 120) #emerald
 
-VIN.out -> R1.in #blue [ortho]
-R1.out -> C1.in #amber [ortho]
-C1.out -> N1.in1 #cyan [ortho]
-C1.out -> G1.in #slate [ortho]
-N1.out -> OUT.in #purple [ortho marker-end=arrow]`
+VIN.positive -> R1.in #blue [line]
+VIN.negative -> G1.in #slate [line]
+R1.out -> J1.node #amber [line]
+J1.node -> C1.in #cyan [ortho]
+C1.out -> G1.in #slate [line]
+J1.node -> OUT.in #emerald [line marker-end=arrow]`
 	},
 	{
 		id: 'logic',
@@ -99,13 +100,17 @@ export interface CompiledHero {
 /** Cache the compiled heroes per process — the compiler is deterministic. */
 let heroesCache: readonly CompiledHero[] | undefined;
 
-function compileHeroes(): readonly CompiledHero[] {
+export function _compileHeroes(): readonly CompiledHero[] {
 	if (heroesCache) return heroesCache;
-	heroesCache = HERO_SPECS.map((spec) => {
+	heroesCache = _HERO_SPECS.map((spec) => {
 		const fence = parseSchematicFence(`schemd bounds="${spec.bounds}" title="${spec.title}"`);
 		if (!fence) throw new Error(`Unreachable: canonical hero fence for ${spec.id}.`);
 		const startedAt = performance.now();
-		const compiled = compileSchematic(spec.source, { ...fence, mode: 'full', idPrefix: `hero-${spec.id}` });
+		const compiled = compileSchematic(spec.source, {
+			...fence,
+			mode: 'full',
+			idPrefix: `hero-${spec.id}`
+		});
 		return {
 			id: spec.id,
 			domain: spec.domain,
@@ -122,7 +127,7 @@ function compileHeroes(): readonly CompiledHero[] {
 export const load: PageServerLoad = async () => {
 	const registry = await getRegistry();
 	return {
-		heroes: compileHeroes(),
+		heroes: _compileHeroes(),
 		limits: { ...SCHEMATIC_LIMITS },
 		latest: registry.latest,
 		releaseCount: registry.releases.length

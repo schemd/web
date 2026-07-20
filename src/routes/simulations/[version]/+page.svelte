@@ -3,7 +3,6 @@
 	import { goto } from '$app/navigation';
 	import { playSuccess, playTick } from '$lib/audio';
 	import { ui } from '$lib/ui.svelte';
-	import 'katex/dist/katex.min.css';
 
 	let { data }: PageProps = $props();
 
@@ -22,6 +21,7 @@
 			}))
 		})
 	);
+	const jsonLdMarkup = $derived(`<script type="application/ld+json">${jsonLd}</${'script'}>`);
 
 	/* ---------- Live client canvas performance readout ---------- */
 	let fps = $state(60);
@@ -81,7 +81,7 @@
 	/>
 	<meta property="og:type" content="website" />
 	<meta property="og:image" content="/brand/schemd-logo.svg" />
-	{@html `<script type="application/ld+json">${jsonLd}</script>`}
+	{@html jsonLdMarkup}
 </svelte:head>
 
 {#snippet miniIcon(id: string)}
@@ -128,9 +128,10 @@
 		<p class="terminal-lede">
 			Every laboratory below is real engine output — compiled server-side by <code
 				>@schemd/core</code
-			> in <code>full</code> mode — and every interaction is vanilla event delegation on the
-			compiler's own <code>data-*</code> attributes. The client never draws; it only flips state
-			classes and custom properties.
+			>
+			in <code>full</code> mode — and every interaction is vanilla event delegation on the
+			compiler's own <code>data-*</code> attributes. The client never draws; it only flips state classes
+			and custom properties.
 		</p>
 		<div class="diagnostics" role="status" aria-live="polite">
 			<div class="diag-log">
@@ -143,9 +144,18 @@
 				</p>
 			</div>
 			<dl class="diag-metrics">
-				<div><dt>client</dt><dd class="readout">{fps} FPS</dd></div>
-				<div><dt>environments</dt><dd class="readout">{environments.length}</dd></div>
-				<div><dt>compile</dt><dd class="readout">server</dd></div>
+				<div>
+					<dt>client</dt>
+					<dd class="readout">{fps} FPS</dd>
+				</div>
+				<div>
+					<dt>environments</dt>
+					<dd class="readout">{environments.length}</dd>
+				</div>
+				<div>
+					<dt>compile</dt>
+					<dd class="readout">server</dd>
+				</div>
 			</dl>
 		</div>
 	</header>
@@ -153,7 +163,11 @@
 	<ul class="lab-list" aria-label="Simulation environments">
 		{#each environments as environment, index (environment.id)}
 			<li class="lab-row panel" style={`--i: ${index}`}>
-				<a class="lab-icon" href={`/simulations/${data.version}/${environment.id}`} aria-label={environment.title}>
+				<a
+					class="lab-icon"
+					href={`/simulations/${data.version}/${environment.id}`}
+					aria-label={environment.title}
+				>
 					{@render miniIcon(environment.id)}
 					<span class="lab-index microlabel">{environment.index} · {environment.domain}</span>
 				</a>
@@ -175,7 +189,9 @@
 				</div>
 
 				<div class="lab-action">
-					<span class="fault-note" title="Switchboard fault this lab can inject">⚠ {environment.fault}</span>
+					<span class="fault-note" title="Switchboard fault this lab can inject"
+						>⚠ {environment.fault}</span
+					>
 					<button
 						type="button"
 						class="init"

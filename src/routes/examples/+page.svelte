@@ -9,6 +9,7 @@
 		name: 'schemd example gallery',
 		description: 'Compiled schematic and UML examples, each openable in the playground.'
 	});
+	const jsonLdMarkup = `<script type="application/ld+json">${jsonLd}</${'script'}>`;
 </script>
 
 <svelte:head>
@@ -19,7 +20,7 @@
 	/>
 	<meta property="og:title" content="schemd — example gallery" />
 	<meta property="og:type" content="website" />
-	{@html `<script type="application/ld+json">${jsonLd}</script>`}
+	{@html jsonLdMarkup}
 </svelte:head>
 
 <article class="gallery grid-backdrop">

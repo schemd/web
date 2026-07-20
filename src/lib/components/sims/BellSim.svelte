@@ -87,20 +87,29 @@
 		}
 		counts = next;
 		const total = next['00'] + next['01'] + next['10'] + next['11'];
-		const empirical =
-			total === 0 ? 0 : (next['00'] + next['11'] - next['01'] - next['10']) / total;
+		const empirical = total === 0 ? 0 : (next['00'] + next['11'] - next['01'] - next['10']) / total;
 		scope = [...scope.slice(1), 0.5 + empirical / 2];
 		if (ui.audio) playTick(600);
 	}
 
 	function onStageClick(event: MouseEvent): void {
 		if (!(event.target instanceof Element)) return;
-		const id = delegatedNodeId(event.target);
+		toggleNode(delegatedNodeId(event.target));
+	}
+
+	function toggleNode(id: string | undefined): void {
 		if (id === 'Q0') q0 ^= 1;
 		else if (id === 'Q1') q1 ^= 1;
 		else return;
 		counts = { '00': 0, '01': 0, '10': 0, '11': 0 };
 		if (ui.audio) playTick(560);
+	}
+
+	function onStageKeydown(event: KeyboardEvent): void {
+		if (event.key !== 'Enter' && event.key !== ' ') return;
+		if (!(event.target instanceof Element)) return;
+		event.preventDefault();
+		toggleNode(delegatedNodeId(event.target));
 	}
 
 	const GATE_MATH: Record<string, string> = {
@@ -156,13 +165,16 @@
 {/snippet}
 
 {#snippet canvas()}
+	<!-- The group owns delegation only; the compiler-emitted port buttons remain the interactive controls. -->
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<div
 		class="sim-stage schemd-frame"
 		bind:this={host}
 		onclick={onStageClick}
+		onkeydown={onStageKeydown}
 		onpointermove={onStageMove}
 		onpointerleave={() => (hover = undefined)}
-		role="application"
+		role="group"
 		aria-label="Bell state circuit. Click the initialization ports to flip qubits."
 	>
 		{@html svg}

@@ -11,7 +11,7 @@ Quantum computing relies on mathematical (**and, briefly in this article, physic
 ## Qubit Visualization on the Bloch sphere
 
 Consider the Bloch sphere below:
-![Bloch Sphere](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/lq27b9qgh0khw8cflkn7.png "Bloch Sphere")
+![Bloch Sphere](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/lq27b9qgh0khw8cflkn7.png 'Bloch Sphere')
 {Figure 1: Bloch Sphere showing the major measurement basis and angles.}
 
 where:
@@ -557,7 +557,7 @@ In all, $\theta=\frac{\pi}{2}$ while $\phi$ varies.
 
 Enjoyed this article? I'm a Software Engineer and Technical Writer actively seeking new opportunities to impact and learn, particularly in areas related to web security, finance, healthcare, and education. If you think my expertise aligns with your team's needs, let's chat! You can find me on [LinkedIn](https://www.linkedin.com/in/john-owolabi-idogun/) and [X](https://x.com/Sirneij). I am also an [email](mailto:john@johnowolabiidogun.dev) away.
 
-[1]: https://johnowolabiidogun.dev/blog/quantum-information-processing-foundations-part-1-ab5a3c/6801dc9d6e2495ac3e5db09c#question-2 "Quantum Information Processing: Foundations - Part 1 (Question 2)"
+[1]: https://johnowolabiidogun.dev/blog/quantum-information-processing-foundations-part-1-ab5a3c/6801dc9d6e2495ac3e5db09c#question-2 'Quantum Information Processing: Foundations - Part 1 (Question 2)'
 [2]: https://en.wikipedia.org/wiki/Euler%27s_formula "Euler's formula"
 
 References

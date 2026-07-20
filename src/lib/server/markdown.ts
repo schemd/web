@@ -64,7 +64,8 @@ marked.use({
 	renderer: {
 		code({ text, lang }) {
 			const attr = lang ? ` data-lang="${escapeHtml(lang)}"` : '';
-			return `<pre class="codeblock"${attr}><code>${escapeHtml(text)}</code></pre>`;
+			const label = lang ? `Scrollable ${escapeHtml(lang)} code` : 'Scrollable code block';
+			return `<pre class="codeblock" tabindex="0" role="region" aria-label="${label}"${attr}><code>${escapeHtml(text)}</code></pre>`;
 		}
 	}
 });
@@ -130,12 +131,19 @@ function extractSchemdFences(
 		const source = code.trim();
 		const compiled = compileSchematic(source, { ...fence, mode: 'embedded-css', idPrefix: id });
 		const sourceHtml = highlightSourceHtml(source);
-		examples.push({ id, sectionId, title: exampleTitle || fence.title, source, sourceHtml, svg: compiled.svg });
+		examples.push({
+			id,
+			sectionId,
+			title: exampleTitle || fence.title,
+			source,
+			sourceHtml,
+			svg: compiled.svg
+		});
 		const placeholder = `%%SCHEMD_FENCE_${counter.value}%%`;
 		figures.set(
 			placeholder,
 			`<figure class="doc-example" data-example="${id}">` +
-				`<pre class="codeblock" data-lang="schemd"><code>${sourceHtml}</code></pre>` +
+				`<pre class="codeblock" tabindex="0" role="region" aria-label="Scrollable schemd source" data-lang="schemd"><code>${sourceHtml}</code></pre>` +
 				`<figcaption class="microlabel">compiled by @schemd/core → shown in the rail</figcaption>` +
 				`</figure>`
 		);
@@ -174,13 +182,11 @@ export function renderMarkdownDoc(source: string, docSlug: string): RenderedDoc 
 		.slice(preambleStart, firstSection === -1 ? undefined : firstSection)
 		.trim();
 	if (preamble) {
-		const { markdown, examples: exs, figures } = extractSchemdFences(
-			preamble,
-			docSlug,
-			'intro',
-			'',
-			counter
-		);
+		const {
+			markdown,
+			examples: exs,
+			figures
+		} = extractSchemdFences(preamble, docSlug, 'intro', '', counter);
 		examples.push(...exs);
 		out.push(renderProse(markdown, figures));
 	}
@@ -194,13 +200,11 @@ export function renderMarkdownDoc(source: string, docSlug: string): RenderedDoc 
 		const eyebrow = attrs.eyebrow ?? '';
 		sections.push({ id, title });
 
-		const { markdown, examples: exs, figures } = extractSchemdFences(
-			match[2]!,
-			docSlug,
-			id,
-			attrs['example-title'] ?? title,
-			counter
-		);
+		const {
+			markdown,
+			examples: exs,
+			figures
+		} = extractSchemdFences(match[2]!, docSlug, id, attrs['example-title'] ?? title, counter);
 		examples.push(...exs);
 
 		out.push(

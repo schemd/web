@@ -26,6 +26,7 @@ function renderMath(token: Tokens.Generic, options: KatexOptions, newline = fals
 	const math = asMathToken(token);
 	const html = katex.renderToString(math.text, {
 		throwOnError: false,
+		output: 'mathml',
 		...options,
 		displayMode: math.displayMode
 	});

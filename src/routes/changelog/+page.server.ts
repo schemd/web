@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { compileSchematic, parseSchematicFence } from '@schemd/core';
-import { getRegistry } from '$lib/server/registry';
+import { getRegistry, WEBSITE_CORE_VERSION } from '$lib/server/registry';
 
 /** Reference workload used for the installed-version benchmark. */
 const BENCH_SOURCE = `port:P0 "in" at (60, 100) #blue
@@ -52,6 +52,13 @@ export const load: PageServerLoad = async () => {
 		latest: registry.latest,
 		live: registry.live,
 		syncedAt: registry.syncedAt,
-		benchmark: runBenchmark('0.2.1')
+		benchmark: runBenchmark(WEBSITE_CORE_VERSION),
+		releaseMetrics: {
+			minifiedBytes: 90_714,
+			gzipBytes: 26_398,
+			tarballBytes: 59_188,
+			unpackedBytes: 258_463,
+			gzipHeadroomBytes: 4_322
+		}
 	};
 };

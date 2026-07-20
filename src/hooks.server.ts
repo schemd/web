@@ -6,14 +6,23 @@
  * previously indexed URLs keep resolving.
  */
 import { redirect, type Handle } from '@sveltejs/kit';
-import { getRegistry } from '$lib/server/registry';
+import { getRegistry, HISTORICAL_CORE_VERSION } from '$lib/server/registry';
 
-/** Static legacy → canonical path prefixes. */
-const LEGACY_PREFIXES: ReadonlyArray<readonly [string, string]> = [
-	['/tools/schemd/docs', '/docs'],
-	['/tools/schemd/playground', '/playground'],
-	['/tools/schemd', '/']
-];
+export function legacyTarget(pathname: string): string | undefined {
+	const normalized = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+	if (normalized === '/tools/schemd') return '/';
+	if (normalized === '/tools/schemd/docs') {
+		return `/docs/${HISTORICAL_CORE_VERSION}/overview`;
+	}
+	if (normalized === '/tools/schemd/playground') {
+		return `/playground/${HISTORICAL_CORE_VERSION}`;
+	}
+	if (normalized === '/tools/schemd/simulations') {
+		return `/simulations/${HISTORICAL_CORE_VERSION}`;
+	}
+	const documentation = /^\/tools\/schemd\/docs\/([a-z0-9-]+)$/.exec(normalized);
+	return documentation ? `/docs/${HISTORICAL_CORE_VERSION}/${documentation[1]}` : undefined;
+}
 
 /** Sections whose bare (unversioned) paths resolve to the latest release. */
 const VERSIONED_SECTIONS = ['/docs', '/playground', '/simulations'] as const;
@@ -21,11 +30,8 @@ const VERSIONED_SECTIONS = ['/docs', '/playground', '/simulations'] as const;
 export const handle: Handle = async ({ event, resolve }) => {
 	const { pathname, search } = event.url;
 
-	for (const [legacy, canonical] of LEGACY_PREFIXES) {
-		if (pathname === legacy || pathname.startsWith(`${legacy}/`)) {
-			redirect(308, `${canonical}${pathname.slice(legacy.length)}${search}` || '/');
-		}
-	}
+	const legacy = legacyTarget(pathname);
+	if (legacy !== undefined) redirect(308, `${legacy}${search}`);
 
 	for (const section of VERSIONED_SECTIONS) {
 		if (pathname === section || pathname === `${section}/`) {

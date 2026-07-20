@@ -7,7 +7,7 @@
  * "hud" blueprint palette is inlined so the SVG renders correctly without the
  * host page's custom properties.
  */
-import { redirect } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { compileSchematic, parseSchematicFence, SchematicSyntaxError } from '@schemd/core';
 import { getRegistry, resolveVersion } from '$lib/server/registry';
@@ -41,10 +41,9 @@ function standalone(compiledSvg: string): string {
 	const end = compiledSvg.indexOf('</svg>');
 	if (start < 0 || end < 0) return compiledSvg;
 	const svg = compiledSvg.slice(start, end + '</svg>'.length);
-	return svg.replace(/(<svg\b)/, '$1 xmlns="http://www.w3.org/2000/svg"').replace(
-		/(<svg[^>]*>)/,
-		`$1<style>${THEME_STYLE}</style>`
-	);
+	return svg
+		.replace(/(<svg\b)/, '$1 xmlns="http://www.w3.org/2000/svg"')
+		.replace(/(<svg[^>]*>)/, `$1<style>${THEME_STYLE}</style>`);
 }
 
 function svgResponse(body: string, status = 200): Response {
@@ -68,8 +67,11 @@ function errorSvg(message: string, width: number, height: number): string {
 export const GET: RequestHandler = async ({ params, url }) => {
 	const registry = await getRegistry();
 	const version = resolveVersion(registry, params.version);
-	if (version === undefined || params.version === 'latest') {
-		redirect(307, `/embed/${version ?? registry.latest}${url.search}`);
+	if (version === undefined) {
+		error(404, `No embed release named ${params.version}.`);
+	}
+	if (params.version === 'latest') {
+		redirect(307, `/embed/${version}${url.search}`);
 	}
 
 	const width = clampDimension(url.searchParams.get('w'), 760);
@@ -77,14 +79,21 @@ export const GET: RequestHandler = async ({ params, url }) => {
 	const code = url.searchParams.get('code');
 	const source = (code ? decodeWorkspaceState(code) : undefined) ?? FALLBACK_SOURCE;
 
-	const fence = parseSchematicFence(`schemd bounds="${width}x${height}" title="Embedded schematic"`);
+	const fence = parseSchematicFence(
+		`schemd bounds="${width}x${height}" title="Embedded schematic"`
+	);
 	if (!fence) return svgResponse(errorSvg('Invalid bounds.', width, height), 400);
 
 	try {
-		const compiled = compileSchematic(source, { ...fence, mode: 'embedded-css', idPrefix: 'embed' });
+		const compiled = compileSchematic(source, {
+			...fence,
+			mode: 'embedded-css',
+			idPrefix: 'embed'
+		});
 		return svgResponse(standalone(compiled.svg));
 	} catch (failure) {
-		const message = failure instanceof SchematicSyntaxError ? failure.message : 'Compilation failed.';
+		const message =
+			failure instanceof SchematicSyntaxError ? failure.message : 'Compilation failed.';
 		return svgResponse(errorSvg(message, width, height), 200);
 	}
 };

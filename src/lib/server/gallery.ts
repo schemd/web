@@ -20,7 +20,7 @@ export interface GalleryItem {
 const SCHEMD_FENCE = /```(schemd[^\n]*)\n([\s\S]*?)\n```/g;
 const BOUNDS = /bounds="(\d+)x(\d+)"/;
 
-const docSources = import.meta.glob<string>('$lib/content/schemd/*.md', {
+const docSources = import.meta.glob<string>('$lib/content/schemd/0.3.0/*.md', {
 	query: '?raw',
 	import: 'default',
 	eager: true

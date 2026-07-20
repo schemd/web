@@ -6,8 +6,11 @@ import { getSimulation, listSimulationEnvironments } from '$lib/server/simulatio
 export const load: PageServerLoad = async ({ params }) => {
 	const registry = await getRegistry();
 	const version = resolveVersion(registry, params.version);
-	if (version === undefined || params.version === 'latest') {
-		redirect(307, `/simulations/${version ?? registry.latest}/${params.env}`);
+	if (version === undefined) {
+		error(404, `No simulation release named ${params.version}.`);
+	}
+	if (params.version === 'latest') {
+		redirect(307, `/simulations/${version}/${params.env}`);
 	}
 
 	const simulation = getSimulation(params.env);

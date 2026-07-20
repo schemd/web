@@ -44,8 +44,10 @@
 		rightOpen = $bindable(true)
 	}: Props = $props();
 
-	let leftWidth = $state(leftInitial);
-	let rightWidth = $state(rightInitial);
+	let leftWidthOverride = $state<number | undefined>();
+	let rightWidthOverride = $state<number | undefined>();
+	const leftWidth = $derived(leftWidthOverride ?? leftInitial);
+	const rightWidth = $derived(rightWidthOverride ?? rightInitial);
 	let dragging = $state<'left' | 'right' | undefined>();
 
 	const COLLAPSE_THRESHOLD = 80;
@@ -71,11 +73,11 @@
 			if (side === 'left') {
 				if (!leftOpen && next > COLLAPSE_THRESHOLD) leftOpen = true;
 				if (next < COLLAPSE_THRESHOLD) leftOpen = false;
-				else leftWidth = Math.max(leftMin, Math.min(next, window.innerWidth * 0.5));
+				else leftWidthOverride = Math.max(leftMin, Math.min(next, window.innerWidth * 0.5));
 			} else {
 				if (!rightOpen && next > COLLAPSE_THRESHOLD) rightOpen = true;
 				if (next < COLLAPSE_THRESHOLD) rightOpen = false;
-				else rightWidth = Math.max(rightMin, Math.min(next, window.innerWidth * 0.7));
+				else rightWidthOverride = Math.max(rightMin, Math.min(next, window.innerWidth * 0.7));
 			}
 		};
 
@@ -109,14 +111,14 @@
 			if (next < COLLAPSE_THRESHOLD) leftOpen = false;
 			else {
 				leftOpen = true;
-				leftWidth = Math.max(leftMin, next);
+				leftWidthOverride = Math.max(leftMin, next);
 			}
 		} else {
 			const next = rightWidth + delta;
 			if (next < COLLAPSE_THRESHOLD) rightOpen = false;
 			else {
 				rightOpen = true;
-				rightWidth = Math.max(rightMin, next);
+				rightWidthOverride = Math.max(rightMin, next);
 			}
 		}
 	}
@@ -127,15 +129,14 @@
 		<section class="pane pane-left" aria-label={leftLabel} data-open={leftOpen}>
 			{@render left()}
 		</section>
-		<div
+		<button
+			type="button"
 			class="handle"
-			role="separator"
-			aria-orientation="vertical"
 			aria-label={`Resize ${leftLabel}. Arrow keys resize, Enter toggles.`}
-			tabindex="0"
+			aria-pressed={leftOpen}
 			onpointerdown={(event) => startDrag('left', event)}
 			onkeydown={(event) => keyResize('left', event)}
-		></div>
+		></button>
 	{/if}
 
 	<section class="pane pane-center">
@@ -143,15 +144,14 @@
 	</section>
 
 	{#if right}
-		<div
+		<button
+			type="button"
 			class="handle"
-			role="separator"
-			aria-orientation="vertical"
 			aria-label={`Resize ${rightLabel}. Arrow keys resize, Enter toggles.`}
-			tabindex="0"
+			aria-pressed={rightOpen}
 			onpointerdown={(event) => startDrag('right', event)}
 			onkeydown={(event) => keyResize('right', event)}
-		></div>
+		></button>
 		<section class="pane pane-right" aria-label={rightLabel} data-open={rightOpen}>
 			{@render right()}
 		</section>
@@ -209,20 +209,31 @@
 
 	.handle {
 		position: relative;
-		background: var(--line);
+		z-index: 2;
+		inline-size: 24px;
+		justify-self: center;
+		background: transparent;
 		cursor: col-resize;
 		touch-action: none;
 
-		/* Generous invisible hit area without changing layout */
-		&::after {
+		/* A 24 px control overlays the 1 px structural grid track. */
+		&::before {
 			content: '';
 			position: absolute;
 			inset-block: 0;
-			inset-inline: -4px;
+			inset-inline-start: calc(50% - 0.5px);
+			inline-size: 1px;
+			background: var(--line);
 		}
 
-		&:hover,
-		&:focus-visible {
+		&::after {
+			content: '';
+			position: absolute;
+			inset: 0;
+		}
+
+		&:hover::before,
+		&:focus-visible::before {
 			background: var(--accent);
 		}
 	}

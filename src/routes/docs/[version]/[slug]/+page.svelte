@@ -1,9 +1,10 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
+	import { SvelteMap } from 'svelte/reactivity';
 	import { page } from '$app/state';
 	import Pronounce from '$lib/components/Pronounce.svelte';
+	import { encodeWorkspaceState } from '$lib/state-uri';
 	import { ui, setDocsNavCollapsed } from '$lib/ui.svelte';
-	import 'katex/dist/katex.min.css';
 
 	let { data }: PageProps = $props();
 
@@ -24,7 +25,7 @@
 	 * the section's own first example, else the nearest preceding one.
 	 */
 	const exampleForSection = $derived.by(() => {
-		const map = new Map<string, (typeof data.doc.examples)[number]>();
+		const map = new SvelteMap<string, (typeof data.doc.examples)[number]>();
 		let previous: (typeof data.doc.examples)[number] | undefined;
 		for (const section of [{ id: 'intro', title: '' }, ...data.doc.sections]) {
 			const own = data.doc.examples.find((example) => example.sectionId === section.id);
@@ -34,9 +35,7 @@
 		return map;
 	});
 
-	const activeExample = $derived(
-		exampleForSection.get(activeSectionId) ?? data.doc.examples[0]
-	);
+	const activeExample = $derived(exampleForSection.get(activeSectionId) ?? data.doc.examples[0]);
 
 	$effect(() => {
 		/* Re-arm the observer whenever the rendered document changes. */
@@ -59,7 +58,7 @@
 
 	const groups = $derived.by(() => {
 		const order: string[] = [];
-		const byGroup = new Map<string, (typeof data.manifest)[number][]>();
+		const byGroup = new SvelteMap<string, (typeof data.manifest)[number][]>();
 		for (const entry of data.manifest) {
 			const bucket = byGroup.get(entry.group);
 			if (bucket) {
@@ -88,7 +87,8 @@
 		const update = (): void => {
 			const distance = el.offsetHeight - window.innerHeight;
 			const scrolled = -el.getBoundingClientRect().top;
-			readProgress = distance > 0 ? Math.min(1, Math.max(0, scrolled / distance)) : scrolled >= 0 ? 1 : 0;
+			readProgress =
+				distance > 0 ? Math.min(1, Math.max(0, scrolled / distance)) : scrolled >= 0 ? 1 : 0;
 		};
 		update();
 		window.addEventListener('scroll', update, { passive: true });
@@ -106,10 +106,13 @@
 			headline: `${data.meta.title} — schemd v${data.version}`,
 			description: data.meta.summary,
 			version: data.version,
+			inLanguage: 'en-US',
+			url: `${page.url.origin}/docs/${data.version}/${data.meta.slug}`,
 			author: { '@type': 'Person', name: 'John Owolabi Idogun' },
 			about: { '@type': 'SoftwareApplication', name: '@schemd/core' }
 		})
 	);
+	const jsonLdMarkup = $derived(`<script type="application/ld+json">${jsonLd}</${'script'}>`);
 </script>
 
 <svelte:head>
@@ -118,10 +121,8 @@
 	<meta property="og:title" content={`${data.meta.title} · schemd docs`} />
 	<meta property="og:description" content={data.meta.summary} />
 	<meta property="og:type" content="article" />
-	{#if data.version !== data.latest}
-		<link rel="canonical" href={`${page.url.origin}/docs/${data.latest}/${data.meta.slug}`} />
-	{/if}
-	{@html `<script type="application/ld+json">${jsonLd}</script>`}
+	<link rel="canonical" href={`${page.url.origin}/docs/${data.version}/${data.meta.slug}`} />
+	{@html jsonLdMarkup}
 </svelte:head>
 
 <div class="docs-shell" class:nav-collapsed={ui.docsNavCollapsed}>
@@ -217,6 +218,9 @@
 		<header class="doc-header">
 			<p class="microlabel">v{data.version} · {data.meta.group}</p>
 			<h1>{data.meta.title}</h1>
+			{#if data.meta.slug === 'overview'}
+				<Pronounce />
+			{/if}
 			<p class="doc-summary">{data.meta.summary}</p>
 		</header>
 		<div class="prose">
@@ -256,15 +260,18 @@
 					<div class="schemd-frame">
 						{@html activeExample.svg}
 					</div>
-					<pre class="codeblock rail-src"><code>{@html activeExample.sourceHtml}</code></pre>
+					<!-- Keyboard focus exposes overflowing source to Safari users. -->
+					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+					<pre
+						class="codeblock rail-src"
+						tabindex="0"
+						role="region"
+						aria-label="Scrollable active example source"><code
+							>{@html activeExample.sourceHtml}</code
+						></pre>
 					<a
 						class="btn rail-open"
-						href={`/playground/${data.version}?code=${encodeURIComponent(
-							btoa(unescape(encodeURIComponent(activeExample.source)))
-								.replace(/\+/g, '-')
-								.replace(/\//g, '_')
-								.replace(/=+$/, '')
-						)}`}
+						href={`/playground/${data.version}?code=${encodeWorkspaceState(activeExample.source)}`}
 					>
 						Open in playground →
 					</a>
@@ -590,7 +597,16 @@
 	.rail-body {
 		display: grid;
 		gap: var(--space-3);
-		animation: crossfade var(--dur-med) var(--ease-precise) both;
+		animation: rail-align var(--dur-med) var(--ease-precise) both;
+	}
+
+	@keyframes rail-align {
+		from {
+			transform: translateY(4px);
+		}
+		to {
+			transform: translateY(0);
+		}
 	}
 
 	.rail-title {

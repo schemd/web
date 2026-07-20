@@ -81,7 +81,7 @@
 
 	/** Read the true text back out of the surface. */
 	function readValue(root: HTMLElement): string {
-		return (root.textContent ?? '').replace(/ /g, ' ');
+		return (root.textContent ?? '').replace(/\u00a0/g, ' ');
 	}
 
 	function onInput(): void {
@@ -126,7 +126,7 @@
 
 <div class="editor" style={`--mapped-line: ${mappedLine ?? -1}`}>
 	<div class="gutter" aria-hidden="true">
-		{#each { length: lineCount } as _, index (index)}
+		{#each { length: lineCount }, index (index)}
 			<span
 				class="gutter-line"
 				class:caret={index === caretLine}

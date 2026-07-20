@@ -6,7 +6,6 @@
 	import BellSim from '$lib/components/sims/BellSim.svelte';
 	import TimerSim from '$lib/components/sims/TimerSim.svelte';
 	import TeleportSim from '$lib/components/sims/TeleportSim.svelte';
-	import 'katex/dist/katex.min.css';
 
 	let { data }: PageProps = $props();
 
@@ -37,6 +36,7 @@
 			description: sim.summary
 		})
 	);
+	const jsonLdMarkup = $derived(`<script type="application/ld+json">${jsonLd}</${'script'}>`);
 </script>
 
 <svelte:head>
@@ -46,7 +46,7 @@
 	<meta property="og:description" content={sim.tagline} />
 	<meta property="og:type" content="website" />
 	<meta property="og:image" content="/brand/schemd-logo.svg" />
-	{@html `<script type="application/ld+json">${jsonLd}</script>`}
+	{@html jsonLdMarkup}
 </svelte:head>
 
 <div class="lab-page grid-backdrop">

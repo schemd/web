@@ -41,7 +41,9 @@
 	});
 
 	const areaPath = $derived(
-		linePath === '' ? '' : `${linePath} L ${CHART_W - PAD} ${CHART_H - PAD} L ${PAD} ${CHART_H - PAD} Z`
+		linePath === ''
+			? ''
+			: `${linePath} L ${CHART_W - PAD} ${CHART_H - PAD} L ${PAD} ${CHART_H - PAD} Z`
 	);
 
 	const gridLines = [0, 0.25, 0.5, 0.75, 1];
@@ -56,7 +58,9 @@
 		{ label: 'latest release', value: `v${data.latest}` },
 		{ label: 'releases tracked', value: String(data.releases.length) },
 		{ label: 'median compile', value: `${data.benchmark.medianMs} ms` },
-		{ label: 'workload output', value: `${data.benchmark.svgBytes.toLocaleString('en-US')} B` }
+		{ label: 'workload output', value: `${data.benchmark.svgBytes.toLocaleString('en-US')} B` },
+		{ label: 'compiler gzip', value: `${data.releaseMetrics.gzipBytes.toLocaleString('en-US')} B` },
+		{ label: 'npm tarball', value: `${data.releaseMetrics.tarballBytes.toLocaleString('en-US')} B` }
 	]);
 </script>
 
@@ -78,28 +82,32 @@
 		</p>
 		<h1>Changelog</h1>
 		<p class="lede">
-			This feed is not written by hand. The server polls the npm registry (and GitHub, when
-			reachable) on a rolling cache, parses release dates, git heads, and dist metadata, and renders
-			the timeline you're reading. Every milestone links into its own versioned documentation,
-			playground, and laboratory.
+			The server merges npm and GitHub metadata into a bounded process cache. Until 0.3.0 is
+			published, its deterministic release-candidate entry keeps the new documentation routable
+			without inventing a publish date or git hash. Every milestone links into its matching docs,
+			playground, and laboratory context.
 		</p>
 	</header>
 
-	<section class="stat-band" aria-label="Compiler at a glance">
+	<dl class="stat-band" aria-label="Compiler at a glance">
 		{#each stats as stat (stat.label)}
 			<div class="stat">
 				<dd class="readout">{stat.value}</dd>
 				<dt class="microlabel">{stat.label}</dt>
 			</div>
 		{/each}
-	</section>
+	</dl>
 
 	<section class="metrics panel" aria-label="Compiler metrics">
 		<div class="metrics-grid">
 			<figure class="metric">
 				<figcaption class="microlabel">unpacked install footprint by release</figcaption>
 				{#if sizePoints.length > 0}
-					<svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} role="img" aria-label="Install footprint per release">
+					<svg
+						viewBox={`0 0 ${CHART_W} ${CHART_H}`}
+						role="img"
+						aria-label="Install footprint per release"
+					>
 						<defs>
 							<linearGradient id="footprint-fill" x1="0" y1="0" x2="0" y2="1">
 								<stop class="fill-top" offset="0%" />
@@ -123,7 +131,9 @@
 							</circle>
 							<text class="tick" x={point.x} y={CHART_H - PAD + 16}>v{point.version}</text>
 						{/each}
-						<text class="peak" x={PAD} y={PAD - 10}>{formatBytes(Math.max(...sizePoints.map((p) => p.bytes)))}</text>
+						<text class="peak" x={PAD} y={PAD - 10}
+							>{formatBytes(Math.max(...sizePoints.map((p) => p.bytes)))}</text
+						>
 					</svg>
 				{:else}
 					<p class="microlabel empty">npm dist metadata unavailable in this snapshot.</p>
@@ -159,10 +169,13 @@
 							{#if release.version === data.latest}
 								<span class="latest-tag">latest</span>
 							{/if}
+							{#if !release.released}
+								<span class="latest-tag">release candidate</span>
+							{/if}
 						</h2>
 						<span class="microlabel">
 							{release.publishedAt.startsWith('1970')
-								? 'publish date pending sync'
+								? 'publish date and git hash pending release'
 								: dateFormat.format(new Date(release.publishedAt))}
 							{#if release.gitHead}
 								· <code>{release.gitHead}</code>
@@ -170,8 +183,14 @@
 						</span>
 					</header>
 					<dl class="milestone-metrics">
-						<div><dt class="microlabel">install</dt><dd class="readout">{formatBytes(release.unpackedSize)}</dd></div>
-						<div><dt class="microlabel">files</dt><dd class="readout">{release.fileCount ?? '—'}</dd></div>
+						<div>
+							<dt class="microlabel">install</dt>
+							<dd class="readout">{formatBytes(release.unpackedSize)}</dd>
+						</div>
+						<div>
+							<dt class="microlabel">files</dt>
+							<dd class="readout">{release.fileCount ?? '—'}</dd>
+						</div>
 					</dl>
 					{#if release.notes}
 						<p class="notes">{release.notes.slice(0, 400)}</p>
@@ -233,7 +252,7 @@
 	/* ---------- Stat band ---------- */
 	.stat-band {
 		display: grid;
-		grid-template-columns: repeat(4, 1fr);
+		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
 		gap: 1px;
 		background: var(--line);
 		border: 1px solid var(--line);

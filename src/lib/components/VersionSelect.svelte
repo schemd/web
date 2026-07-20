@@ -6,6 +6,7 @@
 	 */
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import { browser } from '$app/environment';
 
 	interface Props {
 		versions: readonly string[];
@@ -19,11 +20,14 @@
 	function pathFor(version: string): string {
 		const parameter = page.params['version'];
 		if (parameter !== undefined) {
-			const { pathname } = page.url;
+			/* Shallow playground URI writes can lead the route snapshot by a tick. */
+			const { pathname, search, hash } = browser ? new URL(window.location.href) : page.url;
 			const swapped = pathname.replace(`/${parameter}`, `/${version}`);
-			return swapped === pathname && !pathname.includes(`/${version}`)
-				? `/docs/${version}/overview`
-				: swapped;
+			const target =
+				swapped === pathname && !pathname.includes(`/${version}`)
+					? `/docs/${version}/overview`
+					: swapped;
+			return `${target}${search}${hash}`;
 		}
 		return `/docs/${version}/overview`;
 	}

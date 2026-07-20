@@ -203,7 +203,7 @@ We'll introduce the concept of the Bloch Sphere here.
 
 Here's an illustration:
 
-![Bloch Sphere](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/lq27b9qgh0khw8cflkn7.png "Bloch Sphere")
+![Bloch Sphere](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/lq27b9qgh0khw8cflkn7.png 'Bloch Sphere')
 {Figure 1: Bloch Sphere showing the major measurement basis.}
 
 According to the Bloch Sphere (will be discussed more later) above, the given state:
@@ -566,10 +566,10 @@ print(f"Probability of outcome corresponding to |-i>: {probability_minus_i:.3f}"
 
 Enjoyed this article? I'm a Software Engineer and Technical Writer actively seeking new opportunities to impact and learn, particularly in areas related to web security, finance, healthcare, and education. If you think my expertise aligns with your team's needs, let's chat! You can find me on [LinkedIn](https://www.linkedin.com/in/john-owolabi-idogun/) and [X](https://x.com/Sirneij). I am also an [email](mailto:john@johnowolabiidogun.dev) away.
 
-[1]: https://feynman.com/ "Richard Feynman - Scientist. Teacher. Raconteur. Musician"
-[2]: https://ncatlab.org/nlab/show/Yuri+Manin "Yuri Ivanovich Manin (1937-2023, Russian: Юрий Иванович Манин)"
-[3]: https://www.ibm.com/quantum/qiskit "Qiskit is the world’s most popular software stack for quantum computing."
-[4]: https://quantumai.google/cirq "Cirq is a Python software library for writing, manipulating, and optimizing quantum circuits, and then running them on quantum computers and quantum simulators."
+[1]: https://feynman.com/ 'Richard Feynman - Scientist. Teacher. Raconteur. Musician'
+[2]: https://ncatlab.org/nlab/show/Yuri+Manin 'Yuri Ivanovich Manin (1937-2023, Russian: Юрий Иванович Манин)'
+[3]: https://www.ibm.com/quantum/qiskit 'Qiskit is the world’s most popular software stack for quantum computing.'
+[4]: https://quantumai.google/cirq 'Cirq is a Python software library for writing, manipulating, and optimizing quantum circuits, and then running them on quantum computers and quantum simulators.'
 
 References
 [@Rieffel2011]: Rieffel, E. G., & Polak, W. H. (2014). Quantum Computing: A Gentle Introduction. MIT Press. https://books.google.com/books?id=CQ3YoAEACAAJ

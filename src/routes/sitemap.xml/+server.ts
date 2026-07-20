@@ -6,7 +6,7 @@
  */
 import type { RequestHandler } from './$types';
 import { getRegistry } from '$lib/server/registry';
-import { DOC_MANIFEST } from '$lib/server/docs';
+import { docManifest } from '$lib/server/docs';
 import { SIM_ENVIRONMENTS } from '$lib/server/simulations';
 
 export const GET: RequestHandler = async ({ url }) => {
@@ -19,11 +19,14 @@ export const GET: RequestHandler = async ({ url }) => {
 		`${origin}/examples`
 	];
 	for (const release of registry.releases) {
-		urls.push(`${origin}/playground/${release.version}`, `${origin}/simulations/${release.version}`);
+		urls.push(
+			`${origin}/playground/${release.version}`,
+			`${origin}/simulations/${release.version}`
+		);
 		for (const environment of SIM_ENVIRONMENTS) {
 			urls.push(`${origin}/simulations/${release.version}/${environment.id}`);
 		}
-		for (const page of DOC_MANIFEST) {
+		for (const page of docManifest(release.version)) {
 			urls.push(`${origin}/docs/${release.version}/${page.slug}`);
 		}
 	}

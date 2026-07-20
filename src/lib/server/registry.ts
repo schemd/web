@@ -23,6 +23,8 @@ export interface SchemdRelease {
 	readonly gitHead: string | undefined;
 	/** Release notes pulled from GitHub releases, when the API is reachable. */
 	readonly notes: string | undefined;
+	/** False only for the deterministic local-development release candidate. */
+	readonly released: boolean;
 }
 
 /** Aggregated registry state shared by every route. */
@@ -47,18 +49,35 @@ const FETCH_TIMEOUT_MS = 6_000;
  * network round-trip completes and when the registry is unreachable. The
  * version pinned here matches the workspace's installed `@schemd/core`.
  */
+export const WEBSITE_CORE_VERSION = '0.3.0';
+export const HISTORICAL_CORE_VERSION = '0.2.1';
+export const DOCUMENTATION_VERSIONS = [WEBSITE_CORE_VERSION, HISTORICAL_CORE_VERSION] as const;
+
+const SEED_RELEASES: readonly SchemdRelease[] = [
+	{
+		version: WEBSITE_CORE_VERSION,
+		publishedAt: new Date(0).toISOString(),
+		unpackedSize: 258_463,
+		fileCount: 23,
+		gitHead: undefined,
+		notes:
+			'Quarter-turn orientation plus expanded electrical, digital, quantum, and UML primitive families. Release metadata will be replaced by npm and GitHub after publication.',
+		released: false
+	},
+	{
+		version: HISTORICAL_CORE_VERSION,
+		publishedAt: new Date(0).toISOString(),
+		unpackedSize: undefined,
+		fileCount: undefined,
+		gitHead: undefined,
+		notes: undefined,
+		released: true
+	}
+];
+
 const SEED_REGISTRY: SchemdRegistry = {
-	releases: [
-		{
-			version: '0.2.1',
-			publishedAt: new Date(0).toISOString(),
-			unpackedSize: undefined,
-			fileCount: undefined,
-			gitHead: undefined,
-			notes: undefined
-		}
-	],
-	latest: '0.2.1',
+	releases: [...SEED_RELEASES],
+	latest: WEBSITE_CORE_VERSION,
 	live: false,
 	syncedAt: 0
 };
@@ -113,7 +132,6 @@ function buildRegistry(packument: unknown, githubReleases: unknown): SchemdRegis
 	if (!isRecord(packument)) return undefined;
 	const versions = isRecord(packument.versions) ? packument.versions : undefined;
 	const time = isRecord(packument.time) ? packument.time : undefined;
-	const distTags = isRecord(packument['dist-tags']) ? packument['dist-tags'] : undefined;
 	if (!versions || !time) return undefined;
 
 	const notesByTag = new Map<string, string>();
@@ -126,24 +144,26 @@ function buildRegistry(packument: unknown, githubReleases: unknown): SchemdRegis
 		}
 	}
 
-	const releases: SchemdRelease[] = [];
+	const releasesByVersion = new Map(SEED_RELEASES.map((release) => [release.version, release]));
 	for (const [version, manifest] of Object.entries(versions)) {
 		if (!isRecord(manifest)) continue;
 		const dist = isRecord(manifest.dist) ? manifest.dist : undefined;
-		releases.push({
+		releasesByVersion.set(version, {
 			version,
 			publishedAt: asString(time[version]) ?? new Date(0).toISOString(),
 			unpackedSize: dist ? asNumber(dist.unpackedSize) : undefined,
 			fileCount: dist ? asNumber(dist.fileCount) : undefined,
 			gitHead: asString(manifest.gitHead)?.slice(0, 12),
-			notes: notesByTag.get(version)
+			notes: notesByTag.get(version) ?? releasesByVersion.get(version)?.notes,
+			released: true
 		});
 	}
+	const releases = [...releasesByVersion.values()];
 	if (releases.length === 0) return undefined;
 	releases.sort((a, b) => compareVersionsDesc(a.version, b.version));
 	return {
 		releases,
-		latest: asString(distTags?.latest) ?? releases[0]!.version,
+		latest: releases[0]!.version,
 		live: true,
 		syncedAt: Date.now()
 	};
@@ -167,7 +187,7 @@ async function refresh(): Promise<void> {
  * the cache is stale. Never blocks longer than the first cold sync.
  */
 export async function getRegistry(): Promise<SchemdRegistry> {
-	if (building) return cache;
+	if (building || process.env.SCHEMD_REGISTRY_OFFLINE === '1') return cache;
 	const stale = Date.now() - lastAttemptAt > REFRESH_INTERVAL_MS;
 	if (stale && !refreshInFlight) {
 		refreshInFlight = refresh().finally(() => {
@@ -182,7 +202,5 @@ export async function getRegistry(): Promise<SchemdRegistry> {
 /** Resolve a `[version]` path parameter against known releases. */
 export function resolveVersion(registry: SchemdRegistry, parameter: string): string | undefined {
 	if (parameter === 'latest') return registry.latest;
-	return registry.releases.some((release) => release.version === parameter)
-		? parameter
-		: undefined;
+	return registry.releases.some((release) => release.version === parameter) ? parameter : undefined;
 }

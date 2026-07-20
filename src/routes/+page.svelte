@@ -43,18 +43,59 @@
 	}
 
 	const pipeline = [
-		{ n: '01', name: 'Tokenize', body: 'Each declaration is lexed into kind, id, label, coordinate, color, and options.' },
-		{ n: '02', name: 'Validate', body: 'Options are checked by name against the kind you named — unknowns fail loudly.' },
-		{ n: '03', name: 'Route', body: 'Orthogonal traces escape each body, avoid every obstacle, and bridge true crossings.' },
-		{ n: '04', name: 'Emit', body: 'A deterministic, accessible SVG — byte-identical for identical source.' }
+		{
+			n: '01',
+			name: 'Tokenize',
+			body: 'Each declaration is lexed into kind, id, label, coordinate, color, and options.'
+		},
+		{
+			n: '02',
+			name: 'Validate',
+			body: 'Options are checked by name against the kind you named — unknowns fail loudly.'
+		},
+		{
+			n: '03',
+			name: 'Route',
+			body: 'Orthogonal traces escape each body, avoid every obstacle, and bridge true crossings.'
+		},
+		{
+			n: '04',
+			name: 'Emit',
+			body: 'A deterministic, accessible SVG — byte-identical for identical source.'
+		}
 	];
 
 	const features = [
-		{ n: '01', span: 3, title: 'Two-line grammar', body: 'Components and connections. Everything else is bracketed options, validated by name against the kind you chose — so a typo is an error at compile time, never a silent wrong drawing.' },
-		{ n: '02', span: 3, title: 'Zero dependencies', body: 'No DOM, no browser layout pass, no Markdown parser. The compiler runs on a server or during a build — this very page compiled its own hero, four ways.' },
-		{ n: '03', span: 2, title: 'Deterministic output', body: 'Identical source yields byte-identical SVG. Diagnostics carry exact one-based line numbers.' },
-		{ n: '04', span: 2, title: 'Obstacle-aware routing', body: 'Orthogonal traces route around bodies with clearance; crossings get draftsman bridge arcs, never false junctions.' },
-		{ n: '05', span: 2, title: 'Three output budgets', body: 'default stays static; embedded-css adds theme styles; full instruments every node, port, and wire.' }
+		{
+			n: '01',
+			span: 3,
+			title: 'Two-line grammar',
+			body: 'Components and connections. Everything else is bracketed options, validated by name against the kind you chose — so a typo is an error at compile time, never a silent wrong drawing.'
+		},
+		{
+			n: '02',
+			span: 3,
+			title: 'Zero dependencies',
+			body: 'No DOM, no browser layout pass, no Markdown parser. The compiler runs on a server or during a build — this very page compiled its own hero, four ways.'
+		},
+		{
+			n: '03',
+			span: 2,
+			title: 'Deterministic output',
+			body: 'Identical source yields byte-identical SVG. Diagnostics carry exact one-based line numbers.'
+		},
+		{
+			n: '04',
+			span: 2,
+			title: 'Obstacle-aware routing',
+			body: 'Orthogonal traces route around bodies with clearance; crossings get draftsman bridge arcs, never false junctions.'
+		},
+		{
+			n: '05',
+			span: 2,
+			title: 'Three output budgets',
+			body: 'default stays static; embedded-css adds theme styles; full instruments every node, port, and wire.'
+		}
 	];
 
 	const limits = $derived([
@@ -66,19 +107,24 @@
 
 	const jsonLd = $derived(
 		JSON.stringify({
-		'@context': 'https://schema.org',
-		'@type': 'SoftwareApplication',
-		name: '@schemd/core',
-		alternateName: 'schemd',
-		description:
-			'Zero-dependency text-to-SVG compiler for schematics and UML. Write declarations; get accessible, deterministic vectors.',
-		applicationCategory: 'DeveloperApplication',
-		operatingSystem: 'Node.js 24+',
-		softwareVersion: data.latest,
-		offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-		author: { '@type': 'Person', name: 'John Owolabi Idogun', url: 'https://www.johnowolabiidogun.dev' }
+			'@context': 'https://schema.org',
+			'@type': 'SoftwareApplication',
+			name: '@schemd/core',
+			alternateName: 'schemd',
+			description:
+				'Zero-dependency text-to-SVG compiler for schematics and UML. Write declarations; get accessible, deterministic vectors.',
+			applicationCategory: 'DeveloperApplication',
+			operatingSystem: 'Node.js 24+',
+			softwareVersion: data.latest,
+			offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+			author: {
+				'@type': 'Person',
+				name: 'John Owolabi Idogun',
+				url: 'https://www.johnowolabiidogun.dev'
+			}
 		})
 	);
+	const jsonLdMarkup = $derived(`<script type="application/ld+json">${jsonLd}</${'script'}>`);
 </script>
 
 <svelte:head>
@@ -88,10 +134,13 @@
 		content="schemd (pronounced “skemd”, /skɛmd/) compiles plain-text schematics and UML into accessible, deterministic SVG. Zero dependencies. Node 24+."
 	/>
 	<meta property="og:title" content="schemd — the vector schematic compiler" />
-	<meta property="og:description" content="Write schematics and UML as text. Get accessible, deterministic SVG." />
+	<meta
+		property="og:description"
+		content="Write schematics and UML as text. Get accessible, deterministic SVG."
+	/>
 	<meta property="og:type" content="website" />
 	<meta property="og:image" content="/brand/schemd-logo.svg" />
-	{@html `<script type="application/ld+json">${jsonLd}</script>`}
+	{@html jsonLdMarkup}
 </svelte:head>
 
 <article class="landing grid-backdrop">
@@ -131,7 +180,12 @@
 				</div>
 				<div class="pm-line">
 					<code><span class="pm-prompt" aria-hidden="true">$</span> {installCmd}</code>
-					<button type="button" class="pm-copy microlabel" onclick={copyInstall} aria-label="Copy install command">
+					<button
+						type="button"
+						class="pm-copy microlabel"
+						onclick={copyInstall}
+						aria-label="Copy install command"
+					>
 						{copied ? '✓ copied' : 'copy'}
 					</button>
 				</div>
@@ -167,14 +221,32 @@
 			</div>
 
 			<dl class="instrument-metrics">
-				<div><dt>nodes</dt><dd class="readout">{hero.metrics['components'] ?? 0}</dd></div>
-				<div><dt>wires</dt><dd class="readout">{hero.metrics['connections'] ?? 0}</dd></div>
-				<div><dt>bytes</dt><dd class="readout">{bytes.toLocaleString('en-US')}</dd></div>
-				<div><dt>compile</dt><dd class="readout">{hero.ms} ms</dd></div>
+				<div>
+					<dt>nodes</dt>
+					<dd class="readout">{hero.metrics['components'] ?? 0}</dd>
+				</div>
+				<div>
+					<dt>wires</dt>
+					<dd class="readout">{hero.metrics['connections'] ?? 0}</dd>
+				</div>
+				<div>
+					<dt>bytes</dt>
+					<dd class="readout">{bytes.toLocaleString('en-US')}</dd>
+				</div>
+				<div>
+					<dt>compile</dt>
+					<dd class="readout">{hero.ms} ms</dd>
+				</div>
 			</dl>
 
 			{#key selected}
-				<pre class="codeblock stage-src"><code>{@html hero.sourceHtml}</code></pre>
+				<!-- Keyboard focus exposes overflowing source to Safari users. -->
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+				<pre
+					class="codeblock stage-src"
+					tabindex="0"
+					role="region"
+					aria-label="Scrollable hero source"><code>{@html hero.sourceHtml}</code></pre>
 			{/key}
 		</figure>
 	</section>
@@ -215,7 +287,10 @@
 				<div class="limits-copy">
 					<span class="feature-n microlabel">06</span>
 					<h3>Bounded by design</h3>
-					<p>Hard ceilings on everything. The writer refuses to exceed them, so a runaway document fails fast instead of exhausting the server.</p>
+					<p>
+						Hard ceilings on everything. The writer refuses to exceed them, so a runaway document
+						fails fast instead of exhausting the server.
+					</p>
 				</div>
 				<dl class="limits-grid">
 					{#each limits as limit (limit.label)}

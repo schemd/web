@@ -106,7 +106,9 @@ export function tokenizeLine(line: string): SchemdTokenLine {
 			pushToken(out, at[2]!);
 			pushToken(out, at[3]!, 'number');
 			pushToken(out, ')', 'punct');
-			rest = rest.slice(paren.length - 1 + 1 + at[1]!.length + 1 + at[2]!.length + at[3]!.length + 1);
+			rest = rest.slice(
+				paren.length - 1 + 1 + at[1]!.length + 1 + at[2]!.length + at[3]!.length + 1
+			);
 			tokenizeTail(rest, out);
 		} else {
 			pushToken(out, rest);

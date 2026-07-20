@@ -3,7 +3,9 @@
 
 	let { data }: PageProps = $props();
 
-	const ratio = $derived(data.coverage.total === 0 ? 0 : data.coverage.covered / data.coverage.total);
+	const ratio = $derived(
+		data.coverage.total === 0 ? 0 : data.coverage.covered / data.coverage.total
+	);
 	const percent = $derived(Math.round(ratio * 100));
 </script>
 
@@ -27,7 +29,8 @@
 		<div class="summary panel">
 			<div class="summary-figures">
 				<span class="readout big">{data.coverage.covered} / {data.coverage.total}</span>
-				<span class="microlabel">primitives exercised across {data.coverage.examples} examples</span>
+				<span class="microlabel">primitives exercised across {data.coverage.examples} examples</span
+				>
 			</div>
 			<div class="meter" role="img" aria-label={`${percent}% of primitives covered`}>
 				<span class="meter-fill" style={`transform: scaleX(${ratio})`}></span>

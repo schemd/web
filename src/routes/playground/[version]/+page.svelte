@@ -14,21 +14,27 @@
 
 	/* ---------- Workspace state ---------- */
 	const shared = browser ? page.url.searchParams.get('code') : null;
-	let source = $state(
-		(shared !== null ? decodeWorkspaceState(shared) : undefined) ?? data.sample
-	);
+	function initialSource(): string {
+		return (shared !== null ? decodeWorkspaceState(shared) : undefined) ?? data.sample;
+	}
+	let source = $state(initialSource());
 	const MODES = ['default', 'embedded-css', 'full'] as const;
 	let mode = $state<(typeof MODES)[number]>('full');
 	let view = $state<'render' | 'raw' | 'fence'>('render');
 	let boundsWidth = $state(760);
-	let boundsHeight = $state(380);
+	let boundsHeight = $state(440);
 	let title = $state('Workspace schematic');
 	let leftOpen = $state(true);
 	let rightOpen = $state(true);
 
 	interface CompileState {
 		svg: string;
-		metrics?: { sourceCharacters: number; components: number; connections: number; svgBytes: number };
+		metrics?: {
+			sourceCharacters: number;
+			components: number;
+			connections: number;
+			svgBytes: number;
+		};
 		sourceMap?: SchematicSourceMap;
 		ms?: number;
 		error?: { message: string; line: number | undefined };
@@ -65,6 +71,7 @@
 	let caretLine = $state(0);
 	let mappedLine = $state<number | undefined>();
 	let previewHost = $state<HTMLElement | undefined>();
+	let compileGeneration = 0;
 
 	/* ---------- Debounced server compilation ---------- */
 	$effect(() => {
@@ -75,14 +82,18 @@
 			title,
 			mode
 		};
+		const generation = ++compileGeneration;
+		const controller = new AbortController();
 		compiling = true;
 		const timer = setTimeout(async () => {
 			try {
 				const response = await fetch('/api/compile', {
 					method: 'POST',
 					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify(payload)
+					body: JSON.stringify(payload),
+					signal: controller.signal
 				});
+				if (generation !== compileGeneration) return;
 				const body: unknown = await response.json();
 				const record = isRecord(body) ? body : {};
 				if (record['ok'] === true) {
@@ -110,12 +121,19 @@
 					if (ui.audio) playError();
 				}
 			} catch {
-				result = { ...result, error: { message: 'Compile endpoint unreachable.', line: undefined } };
+				if (controller.signal.aborted || generation !== compileGeneration) return;
+				result = {
+					...result,
+					error: { message: 'Compile endpoint unreachable.', line: undefined }
+				};
 			} finally {
-				compiling = false;
+				if (generation === compileGeneration) compiling = false;
 			}
 		}, 220);
-		return () => clearTimeout(timer);
+		return () => {
+			clearTimeout(timer);
+			controller.abort();
+		};
 	});
 
 	/* ---------- State-to-URI compression ---------- */
@@ -124,6 +142,7 @@
 		if (!browser) return;
 		const timer = setTimeout(() => {
 			const url = new URL(location.href);
+			if (url.searchParams.get('code') === token) return;
 			url.searchParams.set('code', token);
 			replaceState(url, page.state);
 		}, 300);
@@ -172,7 +191,9 @@
 		const target = lineTarget(caretLine);
 		if (!target) return;
 		if (target.node) {
-			host.querySelector(`[data-node-id="${CSS.escape(target.node)}"]`)?.classList.add('is-selected');
+			host
+				.querySelector(`[data-node-id="${CSS.escape(target.node)}"]`)
+				?.classList.add('is-selected');
 		} else if (target.wire) {
 			host
 				.querySelector(
@@ -208,7 +229,9 @@
 	});
 
 	const shareUrl = $derived(
-		browser ? `${location.origin}/playground/${data.version}?code=${encodeWorkspaceState(source)}` : ''
+		browser
+			? `${location.origin}/playground/${data.version}?code=${encodeWorkspaceState(source)}`
+			: ''
 	);
 
 	let copied = $state(false);
@@ -220,7 +243,15 @@
 
 	/* ---------- Fenced-markdown form (for pasting into a Markdown pipeline) ---------- */
 	const fenceMarkdown = $derived(
-		'```schemd bounds="' + boundsWidth + 'x' + boundsHeight + '" title="' + title + '"\n' + source + '\n```'
+		'```schemd bounds="' +
+			boundsWidth +
+			'x' +
+			boundsHeight +
+			'" title="' +
+			title +
+			'"\n' +
+			source +
+			'\n```'
 	);
 	let fenceCopied = $state(false);
 	async function copyFence(): Promise<void> {
@@ -243,6 +274,13 @@
 		if (ui.audio) playSuccess();
 	}
 
+	/** Orientation controls always write visible source; there is no hidden model state. */
+	function insertOrientation(orientation: string): void {
+		const next = (result.metrics?.components ?? source.split('\n').length) + 1;
+		const declaration = `resistor:R${next} "rotated ${orientation}" at (360, 220) #amber [orientation=${orientation}]`;
+		source = `${source.replace(/\s*$/, '')}\n${declaration}\n`;
+	}
+
 	/* ---------- Standalone / downloadable artifact ---------- */
 
 	/** Inline the viewer's resolved theme so an exported vector is self-contained. */
@@ -256,16 +294,18 @@
 		const value = (name: string): string => root.getPropertyValue(name).trim();
 		const colors = ['amber', 'blue', 'cyan', 'purple', 'slate', 'emerald'];
 		const tokenRules = colors
-			.map((color) => `.schematic-token--${color}{--schematic-vector:${value(`--schematic-color-${color}`)}}`)
+			.map(
+				(color) =>
+					`.schematic-token--${color}{--schematic-vector:${value(`--schematic-color-${color}`)}}`
+			)
 			.join('');
 		const rootRule =
 			`.schematic-svg{background:${value('--schematic-surface') || '#fff'};` +
 			`--schematic-vector-fallback:${value('--schematic-vector-fallback') || '#333'};` +
 			`--schematic-grid:${value('--schematic-grid') || '#ccc'};color:${value('--ink') || '#222'}}`;
-		return svg.replace('<svg', `<svg xmlns="http://www.w3.org/2000/svg"`).replace(
-			/(<svg[^>]*>)/,
-			`$1<style>${rootRule}${tokenRules}</style>`
-		);
+		return svg
+			.replace('<svg', `<svg xmlns="http://www.w3.org/2000/svg"`)
+			.replace(/(<svg[^>]*>)/, `$1<style>${rootRule}${tokenRules}</style>`);
 	}
 
 	function triggerDownload(href: string, filename: string): void {
@@ -354,9 +394,19 @@
 					<code>A.port -&gt; B.port #color [line|bezier|ortho]</code>
 				</div>
 			</div>
+			<p class="microlabel">quarter-turn source controls</p>
+			<div class="orientation-controls" aria-label="Insert an oriented resistor declaration">
+				{#each data.orientations as orientation (orientation)}
+					<button type="button" class="kind-chip" onclick={() => insertOrientation(orientation)}>
+						{orientation}
+					</button>
+				{/each}
+			</div>
 			<div class="ref-head">
 				<span class="microlabel">primitives</span>
-				<span class="ref-count" title="component kinds in this compiler build">{data.kindCount}</span>
+				<span class="ref-count" title="component kinds in this compiler build"
+					>{data.kindCount}</span
+				>
 			</div>
 			<div class="kind-groups">
 				{#each data.kindGroups as group (group.label)}
@@ -365,10 +415,11 @@
 						<div class="kind-chips">
 							{#each group.kinds as kind (kind)}
 								<button
-										type="button"
-										class="kind-chip"
-										title={`Insert a ${kind} declaration`}
-										onclick={() => insertKind(kind)}>{kind}</button>
+									type="button"
+									class="kind-chip"
+									title={`Insert a ${kind} declaration`}
+									onclick={() => insertKind(kind)}>{kind}</button
+								>
 							{/each}
 						</div>
 					</div>
@@ -379,7 +430,8 @@
 			<div class="color-chips">
 				{#each data.colors as color (color)}
 					<span class="color-chip">
-						<span class="swatch" style={`background: var(--schematic-color-${color})`}></span>{color}
+						<span class="swatch" style={`background: var(--schematic-color-${color})`}
+						></span>{color}
 					</span>
 				{/each}
 			</div>
@@ -399,7 +451,9 @@
 					<input type="text" maxlength="512" bind:value={title} />
 				</label>
 			</div>
-			<a class="ref-docs" href={`/docs/${data.version}/language`}>Full language reference →</a>
+			<a class="ref-docs" href={`/docs/${data.version}/component-reference`}
+				>Full component reference →</a
+			>
 		</aside>
 	{/snippet}
 
@@ -445,13 +499,28 @@
 					{/each}
 				</div>
 				<div class="seg" role="radiogroup" aria-label="Preview channel">
-					<button type="button" role="radio" aria-checked={view === 'render'} onclick={() => (view = 'render')}>
+					<button
+						type="button"
+						role="radio"
+						aria-checked={view === 'render'}
+						onclick={() => (view = 'render')}
+					>
 						render
 					</button>
-					<button type="button" role="radio" aria-checked={view === 'raw'} onclick={() => (view = 'raw')}>
+					<button
+						type="button"
+						role="radio"
+						aria-checked={view === 'raw'}
+						onclick={() => (view = 'raw')}
+					>
 						raw svg
 					</button>
-					<button type="button" role="radio" aria-checked={view === 'fence'} onclick={() => (view = 'fence')}>
+					<button
+						type="button"
+						role="radio"
+						aria-checked={view === 'fence'}
+						onclick={() => (view = 'fence')}
+					>
 						fence
 					</button>
 				</div>
@@ -462,13 +531,21 @@
 					bind:this={previewHost}
 					class="schemd-frame preview-stage"
 					class:stale={result.error !== undefined}
+					role="region"
+					aria-label="Compiled schematic preview"
 					onpointerover={onPreviewOver}
 					onpointerleave={onPreviewLeave}
 				>
 					{@html result.svg}
 				</div>
 			{:else if view === 'raw'}
-				<pre class="codeblock raw-view"><code>{rawSvg}</code></pre>
+				<!-- Keyboard focus exposes overflowing source to Safari users. -->
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+				<pre
+					class="codeblock raw-view"
+					tabindex="0"
+					role="region"
+					aria-label="Scrollable raw SVG"><code>{rawSvg}</code></pre>
 			{:else}
 				<div class="fence-view">
 					<div class="fence-bar">
@@ -477,7 +554,13 @@
 							{fenceCopied ? '✓ copied' : '⧉ copy fence'}
 						</button>
 					</div>
-					<pre class="codeblock fence-block"><code>{fenceMarkdown}</code></pre>
+					<!-- Keyboard focus exposes overflowing source to Safari users. -->
+					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+					<pre
+						class="codeblock fence-block"
+						tabindex="0"
+						role="region"
+						aria-label="Scrollable Markdown fence"><code>{fenceMarkdown}</code></pre>
 				</div>
 			{/if}
 		</div>
@@ -485,8 +568,12 @@
 
 	{#snippet statusExtra()}
 		<span class="microlabel">mode={mode}</span>
-		<button type="button" class="status-action" onclick={downloadSvg} title="Download themed SVG">↓ svg</button>
-		<button type="button" class="status-action" onclick={downloadPng} title="Download 2× PNG">↓ png</button>
+		<button type="button" class="status-action" onclick={downloadSvg} title="Download themed SVG"
+			>↓ svg</button
+		>
+		<button type="button" class="status-action" onclick={downloadPng} title="Download 2× PNG"
+			>↓ png</button
+		>
 		<button type="button" class="status-action" onclick={copyEmbed} aria-live="polite">
 			{embedCopied ? '✓ embed copied' : '⧉ embed'}
 		</button>

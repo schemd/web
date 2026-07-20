@@ -32,7 +32,7 @@
 		"preview:exposed": "vite preview --host --port 3000",
 		"prepare": "svelte-kit sync || echo ''",
 		"start": "node build/index.js",
-		"start:test": "HOST=127.0.0.1 PORT=4173 node build/index.js",
+		"start:test": "SCHEMD_REGISTRY_OFFLINE=1 HOST=127.0.0.1 PORT=4173 node build/index.js",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"ci": "bun install --frozen-lockfile",
@@ -46,7 +46,7 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"@schemd/core": "0.2.1",
+		"@schemd/core": "^0.3.0",
 		"katex": "^0.18.1",
 		"marked": "^18.0.6"
 	}

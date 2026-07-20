@@ -21,6 +21,8 @@
 	let activeIndex = $state(0);
 	let input = $state<HTMLInputElement | undefined>();
 	let listbox = $state<HTMLElement | undefined>();
+	let dialog = $state<HTMLElement | undefined>();
+	let restoreFocus: HTMLElement | undefined;
 
 	const results = $derived.by(() => {
 		const needle = query.trim().toLowerCase();
@@ -44,10 +46,32 @@
 
 	$effect(() => {
 		if (ui.paletteOpen) {
+			restoreFocus =
+				document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
 			query = '';
 			queueMicrotask(() => input?.focus());
+		} else if (restoreFocus) {
+			restoreFocus.focus();
+			restoreFocus = undefined;
 		}
 	});
+
+	function trapFocus(event: KeyboardEvent): void {
+		if (event.key !== 'Tab') return;
+		const focusable = dialog?.querySelectorAll<HTMLElement>(
+			'input:not([tabindex="-1"]), button:not([disabled]):not([tabindex="-1"]), [href]:not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])'
+		);
+		if (!focusable || focusable.length === 0) return;
+		const first = focusable[0]!;
+		const last = focusable[focusable.length - 1]!;
+		if (event.shiftKey && document.activeElement === first) {
+			event.preventDefault();
+			last.focus();
+		} else if (!event.shiftKey && document.activeElement === last) {
+			event.preventDefault();
+			first.focus();
+		}
+	}
 
 	function onWindowKeydown(event: KeyboardEvent): void {
 		if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
@@ -70,9 +94,7 @@
 			const target = results[activeIndex];
 			if (target) activate(target);
 		}
-		listbox
-			?.querySelector(`[data-index="${activeIndex}"]`)
-			?.scrollIntoView({ block: 'nearest' });
+		listbox?.querySelector(`[data-index="${activeIndex}"]`)?.scrollIntoView({ block: 'nearest' });
 	}
 
 	function activate(entry: PaletteEntry): void {
@@ -91,9 +113,17 @@
 			if (event.target === event.currentTarget) ui.paletteOpen = false;
 		}}
 	>
-		<div class="palette panel" role="dialog" aria-modal="true" aria-label="Command palette">
+		<div
+			bind:this={dialog}
+			class="palette panel"
+			role="dialog"
+			tabindex="-1"
+			aria-modal="true"
+			aria-labelledby="palette-title"
+			onkeydown={trapFocus}
+		>
 			<div class="palette-head">
-				<span class="microlabel" aria-hidden="true">⌘K</span>
+				<span id="palette-title" class="microlabel">⌘K · command palette</span>
 				<input
 					bind:this={input}
 					bind:value={query}
@@ -101,23 +131,30 @@
 					type="text"
 					placeholder="Search documentation, playground, simulations…"
 					role="combobox"
+					aria-label="Search commands and documentation"
 					aria-expanded="true"
 					aria-controls="palette-results"
 					aria-activedescendant={results.length > 0 ? `palette-option-${activeIndex}` : undefined}
 					autocomplete="off"
 					spellcheck="false"
 				/>
+				<button
+					type="button"
+					class="palette-close"
+					onclick={() => (ui.paletteOpen = false)}
+					aria-label="Close command palette">×</button
+				>
 			</div>
 			<ul id="palette-results" role="listbox" bind:this={listbox} aria-label="Search results">
 				{#each results as entry, index (entry.href)}
-					<li
-						id={`palette-option-${index}`}
-						role="option"
-						aria-selected={index === activeIndex}
-						data-index={index}
-					>
+					<li role="presentation">
 						<button
+							id={`palette-option-${index}`}
 							type="button"
+							class="palette-option"
+							role="option"
+							aria-selected={index === activeIndex}
+							data-index={index}
 							tabindex="-1"
 							onclick={() => activate(entry)}
 							onpointerenter={() => (activeIndex = index)}
@@ -127,7 +164,9 @@
 						</button>
 					</li>
 				{:else}
-					<li class="palette-empty" role="option" aria-selected="false">No matches. Try “ports”.</li>
+					<li class="palette-empty" role="option" aria-selected="false">
+						No matches. Try “ports”.
+					</li>
 				{/each}
 			</ul>
 			<footer class="palette-foot microlabel">
@@ -186,7 +225,7 @@
 		overflow-y: auto;
 	}
 
-	li[role='option'] > button {
+	.palette-option {
 		display: flex;
 		inline-size: 100%;
 		align-items: baseline;
@@ -196,8 +235,12 @@
 		text-align: start;
 	}
 
-	li[aria-selected='true'] > button {
+	.palette-option[aria-selected='true'] {
 		background: var(--selection);
+
+		& .entry-hint {
+			color: var(--ink);
+		}
 	}
 
 	.entry-title {

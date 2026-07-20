@@ -8,7 +8,12 @@
 	 * calculated frequency (time-scaled for visibility above a few hertz).
 	 * f = 1.44 / ((R_A + 2·R_B)·C) · duty = (R_A + R_B)/(R_A + 2·R_B).
 	 */
-	import { setNodeActive, delegatedNodeId, delegatedWireSource, styleWiresFrom } from '$lib/sim-dom';
+	import {
+		setNodeActive,
+		delegatedNodeId,
+		delegatedWireSource,
+		styleWiresFrom
+	} from '$lib/sim-dom';
 	import { playPulse } from '$lib/audio';
 	import { ui } from '$lib/ui.svelte';
 	import Oscilloscope from './Oscilloscope.svelte';
@@ -103,11 +108,14 @@
 		if (wire === 'RB.out' || wire === 'CT.in') {
 			return `V_C = ${(vc * VCC).toFixed(2)} V (${charging ? 'charging' : 'discharging'})`;
 		}
-		if (wire === 'U1.q') return `OUT = ${output ? 'HIGH (≈Vcc)' : 'LOW (0 V)'} @ ${formatSi(frequency, 'Hz')}`;
+		if (wire === 'U1.q')
+			return `OUT = ${output ? 'HIGH (≈Vcc)' : 'LOW (0 V)'} @ ${formatSi(frequency, 'Hz')}`;
 		if (wire === 'VCC.out') return `V_cc = ${VCC.toFixed(1)} V`;
 		const node = delegatedNodeId(element);
-		if (node === 'U1') return `555 · f = ${formatSi(frequency, 'Hz')} · duty ${(duty * 100).toFixed(0)} %`;
-		if (node === 'LED') return `LED ${output ? 'ON' : 'off'} · flashing at ${formatSi(frequency, 'Hz')}`;
+		if (node === 'U1')
+			return `555 · f = ${formatSi(frequency, 'Hz')} · duty ${(duty * 100).toFixed(0)} %`;
+		if (node === 'LED')
+			return `LED ${output ? 'ON' : 'off'} · flashing at ${formatSi(frequency, 'Hz')}`;
 		if (node === 'CT') return `C_T = ${formatSi(c, 'F')} · V_C = ${(vc * VCC).toFixed(2)} V`;
 		return undefined;
 	}
@@ -128,7 +136,14 @@
 		</label>
 		<label>
 			<span class="microlabel">C_T = {formatSi(c, 'F')}</span>
-			<input type="range" min="-8" max="-4" step="0.01" bind:value={logC} aria-label="Timing capacitor" />
+			<input
+				type="range"
+				min="-8"
+				max="-4"
+				step="0.01"
+				bind:value={logC}
+				aria-label="Timing capacitor"
+			/>
 		</label>
 	</div>
 	<div class="switchboard">

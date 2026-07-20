@@ -55,7 +55,7 @@
 	--bg-inset: #070a0c;
 	--ink: #dbe4ec;
 	--ink-mute: #8b98a5;
-	--ink-faint: #566472;
+	--ink-faint: #83919e;
 	--line: #1e262e;
 	--line-strong: #2c3844;
 	--accent: #57d7c4;
@@ -88,7 +88,7 @@
 	--bg-inset: #0a2444;
 	--ink: #e8f1fb;
 	--ink-mute: #a8c3e2;
-	--ink-faint: #6f92bd;
+	--ink-faint: #9ab7d8;
 	--line: #1d4479;
 	--line-strong: #2c5a99;
 	--accent: #ffffff;
@@ -120,7 +120,7 @@
 	--bg-inset: #eef0ef;
 	--ink: #17211f;
 	--ink-mute: #51605c;
-	--ink-faint: #8a9793;
+	--ink-faint: #596a65;
 	--line: #dde2e0;
 	--line-strong: #c2cbc8;
 	--accent: #0b7d6c;
@@ -594,11 +594,9 @@ pre.codeblock {
 
 @keyframes sweep-in {
 	from {
-		opacity: 0;
 		transform: translateY(8px);
 	}
 	to {
-		opacity: 1;
 		transform: translateY(0);
 	}
 }

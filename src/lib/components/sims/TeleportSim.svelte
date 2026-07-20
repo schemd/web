@@ -103,7 +103,20 @@
 		const root = host;
 		if (!root) return;
 		const activeNow = new Set(STEPS[step]?.active ?? []);
-		const all = ['PSI', 'A', 'B', 'H1', 'CX1', 'CX2', 'H2', 'MZ1', 'MZ2', 'XC', 'ZC', 'OUT'] as const;
+		const all = [
+			'PSI',
+			'A',
+			'B',
+			'H1',
+			'CX1',
+			'CX2',
+			'H2',
+			'MZ1',
+			'MZ2',
+			'XC',
+			'ZC',
+			'OUT'
+		] as const;
 		for (const id of all) {
 			setNodeActive(root, id, activeNow.has(id));
 			setNodeDegraded(root, id, false);
@@ -143,8 +156,10 @@
 		H2: () => 'H rotates ψ into the Bell basis before measurement',
 		MZ1: () => `M_Z on ψ → m₁ ${m1 === undefined ? '∈ {0,1}' : `= ${m1}`}`,
 		MZ2: () => `M_Z on A → m₂ ${m2 === undefined ? '∈ {0,1}' : `= ${m2}`}`,
-		XC: () => `X^{m₂}: applied ${m2 === undefined ? 'iff m₂ = 1' : m2 === 1 ? '(m₂ = 1 → flip)' : '(m₂ = 0 → identity)'}`,
-		ZC: () => `Z^{m₁}: applied ${m1 === undefined ? 'iff m₁ = 1' : m1 === 1 ? '(m₁ = 1 → phase flip)' : '(m₁ = 0 → identity)'}`,
+		XC: () =>
+			`X^{m₂}: applied ${m2 === undefined ? 'iff m₂ = 1' : m2 === 1 ? '(m₂ = 1 → flip)' : '(m₂ = 0 → identity)'}`,
+		ZC: () =>
+			`Z^{m₁}: applied ${m1 === undefined ? 'iff m₁ = 1' : m1 === 1 ? '(m₁ = 1 → phase flip)' : '(m₁ = 0 → identity)'}`,
 		OUT: () => `Bob holds α|0⟩ + β|1⟩ — fidelity ${bobState?.corrupted ? '< 1 (fault!)' : '= 1'}`
 	};
 
@@ -225,7 +240,7 @@
 		bind:this={host}
 		onpointermove={onStageMove}
 		onpointerleave={() => (hover = undefined)}
-		role="application"
+		role="group"
 		aria-label="Quantum teleportation register. Hover gates for their Dirac-notation action."
 	>
 		{@html svg}

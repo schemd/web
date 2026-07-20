@@ -70,12 +70,12 @@
 			magnitude > 0.7
 				? 'none'
 				: `${(magnitude * 12 + 2).toFixed(1)} ${((1 - magnitude) * 8 + 1).toFixed(1)}`;
-		for (const source of ['R1.out', 'VOUT_NODE.right', 'VOUT_RETURN.top']) {
+		for (const source of ['R1.out', 'VOUT_PROBE.node']) {
 			styleWiresFrom(root, source, 'opacity', opacity);
 			styleWiresFrom(root, source, 'stroke-dasharray', dash);
 		}
 		const capacitorOpacity = faults.openCapacitor ? '0.2' : '1';
-		styleWiresFrom(root, 'VOUT_NODE.bottom', 'opacity', capacitorOpacity);
+		styleWiresFrom(root, 'VOUT_NODE.node', 'opacity', capacitorOpacity);
 		styleWiresFrom(root, 'C1.out', 'opacity', capacitorOpacity);
 	});
 
@@ -102,14 +102,16 @@
 
 	function probe(element: Element): string | undefined {
 		const wire = delegatedWireSource(element);
-		if (wire === 'VIN_TOP.right' || wire === 'VIN_RETURN.top') {
+		if (wire === 'VIN.positive' || wire === 'VIN.negative') {
 			return `V_in = 1.000 V_pp @ ${formatSi(frequency, 'Hz')}`;
 		}
-		if (wire === 'R1.out' || wire === 'VOUT_NODE.right' || wire === 'VOUT_RETURN.top') {
+		if (wire === 'R1.out' || wire === 'VOUT_PROBE.node') {
 			return `V_out = ${magnitude.toFixed(3)} V_pp · ${attenuationDb.toFixed(1)} dB · φ ${(phaseShift * 57.2958).toFixed(1)}°`;
 		}
-		if (wire === 'VOUT_NODE.bottom' || wire === 'C1.out') {
-			return faults.openCapacitor ? 'C branch OPEN (fault)' : `I_C path · f_c = ${formatSi(cutoff, 'Hz')}`;
+		if (wire === 'VOUT_NODE.node' || wire === 'C1.out') {
+			return faults.openCapacitor
+				? 'C branch OPEN (fault)'
+				: `I_C path · f_c = ${formatSi(cutoff, 'Hz')}`;
 		}
 		return undefined;
 	}
@@ -126,7 +128,14 @@
 		</label>
 		<label>
 			<span class="microlabel">C = {formatSi(capacitance, 'F')}</span>
-			<input type="range" min="-9" max="-5" step="0.01" bind:value={logC} aria-label="Capacitance" />
+			<input
+				type="range"
+				min="-9"
+				max="-5"
+				step="0.01"
+				bind:value={logC}
+				aria-label="Capacitance"
+			/>
 		</label>
 		<label>
 			<span class="microlabel">f = {formatSi(frequency, 'Hz')}</span>

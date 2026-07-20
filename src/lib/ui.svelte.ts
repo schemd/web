@@ -52,4 +52,3 @@ export function setAudio(enabled: boolean): void {
 	ui.audio = enabled;
 	if (browser) localStorage.setItem('schemd:audio', enabled ? '1' : '0');
 }
-

@@ -11,11 +11,15 @@
  * one compiled document it needs through {@link getSimulation}.
  */
 import { compileSchematic, parseSchematicFence } from '@schemd/core';
-import katex from 'katex';
 
-/** Render a LaTeX formula to static KaTeX HTML for the sim pages. */
+/** Escape model notation into dependency-free static HTML for the simulation UI. */
 function renderFormula(tex: string): string {
-	return katex.renderToString(tex, { throwOnError: false, displayMode: false });
+	const escaped = tex.replace(/[&<>]/g, (character) => {
+		if (character === '&') return '&amp;';
+		if (character === '<') return '&lt;';
+		return '&gt;';
+	});
+	return `<code>${escaped}</code>`;
 }
 
 /** Static, compile-free descriptor powering the selector cards and lab headers. */
@@ -106,36 +110,32 @@ function adderSource(): { source: string; width: number; height: number } {
 	return { source: lines.join('\n'), width: 1080, height: top + bits * rowHeight + 60 };
 }
 
-const RC_SOURCE = `// First-order RC low-pass filter (two-port form).
-// Paired terminal arrows measure Vin and Vout against the shared return rail.
-initial:VIN_TOP "input high" at (70, 120) #slate
-initial:VIN_RETURN "input return" at (70, 340) #slate
-resistor:R1 "Resistor, R" at (270, 120) #blue
-initial:VOUT_NODE "output node" at (460, 120) #slate
-capacitor:C1 "Capacitor, C" at (460, 245) #cyan
-initial:RETURN_NODE "return node" at (460, 340) #slate
-initial:VOUT_TOP "output high" at (740, 120) #slate
-initial:VOUT_RETURN "output return" at (740, 340) #slate
-ground:GND "0 V" at (460, 420) #slate
+export const RC_SOURCE = `// First-order RC low-pass filter using native 0.3 electrical primitives.
+source:VIN "V_{in}" at (80, 140) #blue [type=voltage-ac]
+resistor:R1 "Resistor, R" at (260, 140) #blue
+junction:VOUT_NODE "output node" at (440, 140) #cyan
+testpoint:VOUT_PROBE "V_{out}" at (590, 140) #purple
+port:VOUT "output" at (760, 140) #emerald
+capacitor:C1 "Capacitor, C" at (440, 270) #cyan [orientation=down]
+junction:RETURN_NODE "return" at (440, 370) #slate
+ground:GND "0 V" at (440, 470) #slate
 
-VIN_TOP.right -> R1.in #slate [line]
-R1.out -> VOUT_NODE.left #slate [line marker-end=arrow label="I"]
-VOUT_NODE.right -> VOUT_TOP.left #slate [line]
-VOUT_NODE.bottom -> C1.in #cyan [ortho]
-C1.out -> RETURN_NODE.top #cyan [ortho]
-VIN_RETURN.right -> RETURN_NODE.left #slate [line]
-RETURN_NODE.right -> VOUT_RETURN.left #slate [line]
-RETURN_NODE.bottom -> GND.in #slate [line]
-VIN_RETURN.top -> VIN_TOP.bottom #blue [line marker-start=arrow marker-end=arrow label="V_{in}"]
-VOUT_RETURN.top -> VOUT_TOP.bottom #blue [line marker-start=arrow marker-end=arrow label="V_{out}"]`;
+VIN.positive -> R1.in #blue [line]
+R1.out -> VOUT_NODE.node #slate [line marker-end=arrow label="I"]
+VOUT_NODE.node -> VOUT_PROBE.node #slate [line]
+VOUT_PROBE.node -> VOUT.in #slate [line]
+VOUT_NODE.node -> C1.in #cyan [ortho]
+C1.out -> RETURN_NODE.node #cyan [line]
+VIN.negative -> RETURN_NODE.node #slate [line]
+RETURN_NODE.node -> GND.in #slate [line]`;
 
 const BELL_SOURCE = `// Bell-state preparation: H then CNOT
 port:Q0 "q_0 = |0⟩" at (80, 90) #blue
 port:Q1 "q_1 = |0⟩" at (80, 210) #blue
 hadamard:H1 "H" at (280, 90) #cyan
 cnot:CX1 "CNOT" at (460, 150) #purple
-port:M0 "meter" at (640, 90) #emerald
-port:M1 "meter" at (640, 210) #emerald
+measure:M0 "M_0" at (640, 90) #emerald
+measure:M1 "M_1" at (640, 210) #emerald
 
 Q0.out -> H1.in #blue [line]
 H1.out -> CX1.control #cyan [ortho]
@@ -171,8 +171,8 @@ hadamard:H1 "H" at (210, 200) #cyan
 cnot:CX1 "CNOT" at (340, 260) #blue
 cnot:CX2 "CNOT" at (470, 140) #purple
 hadamard:H2 "H" at (600, 80) #cyan
-qgate:MZ1 "M" at (720, 80) #amber [parameter="Z"]
-qgate:MZ2 "M" at (720, 200) #amber [parameter="Z"]
+measure:MZ1 "M_Z" at (720, 80) #amber
+measure:MZ2 "M_Z" at (720, 200) #amber
 qgate:XC "X^{m_2}" at (720, 320) #emerald
 qgate:ZC "Z^{m_1}" at (840, 320) #emerald
 port:OUT "|ψ⟩" at (950, 320) #purple
@@ -192,7 +192,7 @@ ZC.out -> OUT.in #emerald [line]`;
 /** Bounds + generated DSL keyed by environment id. */
 const SOURCES: Record<string, { source: string; width: number; height: number }> = {
 	adder: adderSource(),
-	rc: { source: RC_SOURCE, width: 810, height: 500 },
+	rc: { source: RC_SOURCE, width: 840, height: 540 },
 	bell: { source: BELL_SOURCE, width: 760, height: 300 },
 	timer: { source: TIMER_SOURCE, width: 700, height: 480 },
 	teleport: { source: TELEPORT_SOURCE, width: 1020, height: 400 }
@@ -211,9 +211,19 @@ const SIM_ENVIRONMENTS_RAW: readonly Omit<SimEnvironment, 'formulaHtml'>[] = [
 		tagline: 'Cascading ripple-carry gate matrix with a live combinational pass.',
 		summary:
 			'Eight full-adder cells built from XOR/AND/OR primitives. Clicking an input port toggles a bit and dispatches one synchronous logic pass; high nets glow as the carry ripples left to right.',
-		formula: 'S_i = A_i \\oplus B_i \\oplus C_i \\;\\cdot\\; C_{i+1} = A_iB_i + C_i(A_i \\oplus B_i)',
-		inventory: ['8× full-adder cell', '16× XOR + 16× AND', '8× OR carry merge', 'A/B/Cᵢₙ + Sum ports'],
-		boundaries: ['8-bit operands · 0–255', 'sum 0–511 with carry-out', 'zero propagation delay model'],
+		formula:
+			'S_i = A_i \\oplus B_i \\oplus C_i \\;\\cdot\\; C_{i+1} = A_iB_i + C_i(A_i \\oplus B_i)',
+		inventory: [
+			'8× full-adder cell',
+			'16× XOR + 16× AND',
+			'8× OR carry merge',
+			'A/B/Cᵢₙ + Sum ports'
+		],
+		boundaries: [
+			'8-bit operands · 0–255',
+			'sum 0–511 with carry-out',
+			'zero propagation delay model'
+		],
 		fault: 'carry chain stuck-at-0'
 	},
 	{
@@ -224,7 +234,8 @@ const SIM_ENVIRONMENTS_RAW: readonly Omit<SimEnvironment, 'formulaHtml'>[] = [
 		tagline: 'Sweep R, C, and frequency; watch the pole attenuate the output trace.',
 		summary:
 			'A first-order shunt-capacitor filter. The cutoff and the |H(jω)| magnitude are derived live; the output wire fades its opacity and stretches its dash pattern to visualise physical damping, and both channels drive the oscilloscope.',
-		formula: 'f_c = \\dfrac{1}{2\\pi RC} \\;\\cdot\\; |H(j\\omega)| = \\dfrac{1}{\\sqrt{1 + (f/f_c)^2}}',
+		formula:
+			'f_c = \\dfrac{1}{2\\pi RC} \\;\\cdot\\; |H(j\\omega)| = \\dfrac{1}{\\sqrt{1 + (f/f_c)^2}}',
 		inventory: ['input source node', 'series resistor R', 'shunt capacitor C', 'reference ground'],
 		boundaries: ['R 100 Ω – 1 MΩ', 'C 1 nF – 10 µF', 'sweep 10 Hz – 100 kHz'],
 		fault: 'capacitor branch open'
@@ -237,8 +248,14 @@ const SIM_ENVIRONMENTS_RAW: readonly Omit<SimEnvironment, 'formulaHtml'>[] = [
 		tagline: 'Prepare the four Bell states; sample the ⟨Z⊗Z⟩ correlation.',
 		summary:
 			'H on q₀ followed by CNOT(q₀→q₁). Toggling the initialization ports selects which Bell pair is prepared; amplitudes and the correlation index are derived, and a measure button accumulates real Born-rule shots.',
-		formula: '|\\Phi^+\\rangle = \\dfrac{|00\\rangle + |11\\rangle}{\\sqrt{2}} \\;\\cdot\\; \\langle Z \\otimes Z \\rangle \\in [-1, +1]',
-		inventory: ['2× qubit register line', 'Hadamard gate', 'CNOT control/target', 'measurement ports'],
+		formula:
+			'|\\Phi^+\\rangle = \\dfrac{|00\\rangle + |11\\rangle}{\\sqrt{2}} \\;\\cdot\\; \\langle Z \\otimes Z \\rangle \\in [-1, +1]',
+		inventory: [
+			'2× qubit register line',
+			'Hadamard gate',
+			'CNOT control/target',
+			'measurement ports'
+		],
 		boundaries: ['4 Bell states', 'amplitudes ±1/√2', 'Born-rule sampled correlation'],
 		fault: 'CNOT entangler offline'
 	},
@@ -251,7 +268,12 @@ const SIM_ENVIRONMENTS_RAW: readonly Omit<SimEnvironment, 'formulaHtml'>[] = [
 		summary:
 			'The timing capacitor integrates between ⅓·V_cc and ⅔·V_cc. The timing-branch stroke weight scales with instantaneous V_C, and the LED node flashes in sync with the calculated frequency (time-scaled for visibility).',
 		formula: 'f = \\dfrac{1.44}{(R_A + 2R_B)\\,C} \\;\\cdot\\; D = \\dfrac{R_A + R_B}{R_A + 2R_B}',
-		inventory: ['8-pin 555 IC block', 'R_A + R_B timing pair', 'timing capacitor C_T', 'output LED + limiter'],
+		inventory: [
+			'8-pin 555 IC block',
+			'R_A + R_B timing pair',
+			'timing capacitor C_T',
+			'output LED + limiter'
+		],
 		boundaries: ['V_cc = 5 V', 'threshold ⅔ · trigger ⅓', 'C_T 10 nF – 100 µF'],
 		fault: 'THRES shorted to ground'
 	},
@@ -263,17 +285,20 @@ const SIM_ENVIRONMENTS_RAW: readonly Omit<SimEnvironment, 'formulaHtml'>[] = [
 		tagline: 'Step a three-qubit register through the full teleportation script.',
 		summary:
 			'Alice’s state |ψ⟩ is parameterised on the Bloch angles. Stepped playback advances the register through entanglement, Bell measurement, and the classically controlled X^{m₂}/Z^{m₁} corrections; hovering any gate reveals its action in Dirac notation.',
-		formula: '|\\psi\\rangle = \\alpha|0\\rangle + \\beta|1\\rangle \\;\\cdot\\; \\alpha = \\cos\\tfrac{\\theta}{2},\\ \\beta = e^{i\\phi}\\sin\\tfrac{\\theta}{2}',
-		inventory: ['3× qubit trace (ψ, A, B)', 'H + CNOT preparation', 'Bell-basis measurement', 'X/Z correction gates'],
+		formula:
+			'|\\psi\\rangle = \\alpha|0\\rangle + \\beta|1\\rangle \\;\\cdot\\; \\alpha = \\cos\\tfrac{\\theta}{2},\\ \\beta = e^{i\\phi}\\sin\\tfrac{\\theta}{2}',
+		inventory: [
+			'3× qubit trace (ψ, A, B)',
+			'H + CNOT preparation',
+			'Bell-basis measurement',
+			'X/Z correction gates'
+		],
 		boundaries: ['Bloch θ ∈ [0, π], φ ∈ [0, 2π]', '6-step protocol', 'classical bits m₁, m₂'],
 		fault: 'classical correction link cut'
 	}
 ];
 
-/**
- * Public environment registry with each formula pre-rendered to KaTeX HTML.
- * The order here is the order the selector paints its cards.
- */
+/** Public environment registry with dependency-free escaped model notation. */
 export const SIM_ENVIRONMENTS: readonly SimEnvironment[] = SIM_ENVIRONMENTS_RAW.map(
 	(environment) => ({ ...environment, formulaHtml: renderFormula(environment.formula) })
 );
@@ -291,6 +316,11 @@ export function isSimulationId(id: string): boolean {
 	return META_BY_ID.has(id);
 }
 
+/** Expose immutable source for route tests and downloadable lab fixtures. */
+export function getSimulationSource(id: string): string | undefined {
+	return SOURCES[id]?.source;
+}
+
 /** Compile (once, cached) and return the full document for one environment. */
 export function getSimulation(id: string): CompiledSimulation | undefined {
 	const cached = compiledCache.get(id);
@@ -300,7 +330,9 @@ export function getSimulation(id: string): CompiledSimulation | undefined {
 	const spec = SOURCES[id];
 	if (!meta || !spec) return undefined;
 
-	const fence = parseSchematicFence(`schemd bounds="${spec.width}x${spec.height}" title="${meta.title}"`);
+	const fence = parseSchematicFence(
+		`schemd bounds="${spec.width}x${spec.height}" title="${meta.title}"`
+	);
 	if (!fence) throw new Error(`Unreachable: canonical fence for ${id}.`);
 
 	const compilation = compileSchematic(spec.source, {

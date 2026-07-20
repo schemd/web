@@ -13,7 +13,7 @@ Schemd is pronounced like _“skemd”_ (`/skɛmd/`).
 - `@sveltejs/adapter-node` on Node.js 24 or newer
 - strict TypeScript
 - pure nested vanilla CSS
-- exact `@schemd/core@0.2.1` compiler pin
+- exact `@schemd/core` compiler pin (0.2.1 until 0.3.0 is published; the validated release tarball is installed locally during release verification)
 - no browser editor, chart, simulation, audio, or state-serialization dependencies
 
 ```sh
@@ -42,31 +42,35 @@ bun run test:unit
 bun run test:e2e
 ```
 
-The unit suite covers documentation parsing, registry caching, compiler isolation, SVG semantics,
-and simulation math. Playwright exercises the production adapter-node bundle, mobile documentation,
-the editor/caret/URI pipeline, command-palette focus restoration, simulation diagnostics, route
-semantics, horizontal overflow, and automated axe checks.
+The unit suite compiles every current and historical documentation fence, validates the registry,
+URI codec, hero programs, and all five full-mode simulation sources. Playwright exercises the
+production adapter-node bundle, current/historical switching, invalid routes, source/vector mapping,
+raw SVG parity, URI persistence, mobile documentation, command-palette focus containment, zero-CLS
+landing structure, simulation reactivity, sitemap inventory, and automated axe WCAG A/AA checks.
 
 ## Server boundaries
 
-`src/lib/server/release-registry.ts` maintains one bounded, single-flight registry snapshot. The
-bundled release archive is always immediately available; npm and GitHub refresh it with timeouts,
-response limits, a 15-minute fresh window, and a 24-hour stale fallback.
+`src/lib/server/registry.ts` maintains a bounded, single-flight registry snapshot. A deterministic
+0.3.0 release-candidate record and the last stable historical release are always available; npm and
+GitHub refresh the process cache with abort deadlines and a stale fallback. Publish dates and git
+hashes remain explicitly pending until the real release exists.
 
-Public compilation runs through `src/lib/server/compiler-pool.ts`: two unrefed worker threads, an
-eight-request queue, a two-second routing budget, and worker replacement after timeout or protocol
-failure. Untrusted geometry cannot pin the SvelteKit event loop.
+Public compilation runs through `src/routes/api/compile/+server.ts`. It validates source, dimensions,
+title, and mode before compilation, hashes cache keys with native SHA-256, and enforces both entry and
+byte ceilings on its process-local LRU cache. The compiler itself enforces bounded declarations,
+geometry, crossings, and SVG output.
 
-Documentation prose and metadata live in `src/lib/content/docs.ts` and are parsed by the bounded,
-server-only pipeline in `src/lib/server/documentation.ts`. Schematic fences compile during SSR;
-only compiler output and escaped Markdown/token streams cross trusted HTML boundaries.
+Documentation prose and metadata live in `src/lib/content/schemd/`. The immutable 0.2.1 corpus is
+kept separate from `0.3.0/`; `src/lib/server/docs.ts` and `markdown.ts` parse, compile, and cache them
+on the server. Schematic fences compile during SSR, and every fence is compiled again in tests.
 
 ## Routes
 
 - `/` — SSR product surface and compiler proof
-- `/docs/v0.2.1/[slug]` — 3-column synchronized documentation
-- `/playground/v0.2.1` — resizable source/render workspace
-- `/simulations/v0.2.1/[slug]` — five isolated engineering laboratories
+- `/docs/0.3.0/[slug]` and `/docs/0.2.1/[slug]` — versioned 3-column documentation
+- `/playground/0.3.0` — resizable source/render workspace with shareable `?code=` state
+- `/embed/0.3.0` — standalone SVG response for shared workspace source
+- `/simulations/0.3.0/[adder|rc|bell|timer|teleport]` — isolated engineering laboratories
 - `/changelog` — registry timeline and native SVG metrics
-- `/api/compile` and `/api/search` — bounded server endpoints
+- `/api/compile` — bounded compilation endpoint
 - `/sitemap.xml` — automated route inventory
