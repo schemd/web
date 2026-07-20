@@ -35,6 +35,10 @@ export interface SimEnvironment {
 	readonly title: string;
 	/** Engineering domain tag, e.g. `Digital`. */
 	readonly domain: string;
+	/** Collection tier used by the catalogue filters. */
+	readonly tier: 'Core' | 'Advanced' | 'Frontier';
+	/** Short description of the numerical / behavioural engine. */
+	readonly model: string;
 	/** One-line summary shown under the card title. */
 	readonly tagline: string;
 	/** Longer technical description of the behavioural model. */
@@ -192,13 +196,99 @@ CX1.out -> XC.in #blue [ortho]
 XC.out -> ZC.in #emerald [line]
 ZC.out -> OUT.in #emerald [line]`;
 
+const BUCK_SOURCE = `// Closed-loop synchronous buck converter power stage
+source:VIN "V_{in}" at (70, 120) #amber [type=voltage-dc]
+ic:CTRL "PWM" at (200, 300) #purple [right="gate,fb"]
+transistor:QH "Q_H" at (260, 120) #purple [type=pmos]
+junction:SW "switch node" at (390, 120) #amber
+diode:D1 "D_{free}" at (390, 270) #blue [type=schottky orientation=down]
+inductor:L1 "L" at (520, 120) #cyan
+junction:VOUT_NODE "regulated rail" at (650, 120) #emerald
+testpoint:VOUT_PROBE "V_{out}" at (780, 120) #emerald
+capacitor:COUT "C_{out}" at (650, 280) #cyan [type=polarized orientation=down]
+resistor:RLOAD "R_{load}" at (820, 280) #slate [orientation=down]
+junction:RETURN "power return" at (650, 420) #slate
+ground:GND "0 V" at (650, 500) #slate
+
+VIN.positive -> QH.source #amber [line]
+CTRL.gate -> QH.gate #purple [ortho]
+QH.drain -> SW.node #amber [line]
+SW.node -> L1.in #amber [line]
+L1.out -> VOUT_NODE.node #cyan [line marker-end=arrow label="i_L"]
+VOUT_NODE.node -> VOUT_PROBE.node #emerald [line]
+VOUT_PROBE.node -> CTRL.fb #emerald [ortho]
+VOUT_NODE.node -> COUT.in #cyan [ortho]
+VOUT_NODE.node -> RLOAD.in #slate [ortho]
+SW.node -> D1.cathode #blue [ortho]
+D1.anode -> RETURN.node #blue [ortho]
+COUT.out -> RETURN.node #cyan [line]
+RLOAD.out -> RETURN.node #slate [line]
+VIN.negative -> RETURN.node #slate [ortho]
+RETURN.node -> GND.in #slate [line]`;
+
+const CHUA_SOURCE = `// Chua double-scroll oscillator with nonlinear negative-resistance element
+junction:X_NODE "v_{C1}" at (260, 150) #purple
+resistor:R1 "R" at (450, 150) #amber [type=variable]
+junction:Y_NODE "v_{C2}" at (640, 150) #cyan
+testpoint:X_PROBE "x(t)" at (260, 70) #purple
+testpoint:Y_PROBE "y(t)" at (640, 70) #cyan
+capacitor:C1 "C_1" at (260, 300) #purple [orientation=down]
+capacitor:C2 "C_2" at (640, 300) #cyan [orientation=down]
+inductor:L1 "L" at (820, 300) #emerald [orientation=down]
+ic:NR "g(v)" at (100, 300) #red [right="sense,sink"]
+junction:RETURN "common" at (520, 450) #slate
+ground:GND "0 V" at (520, 530) #slate
+
+X_PROBE.node -> X_NODE.node #purple [line]
+X_NODE.node -> R1.in #amber [line]
+R1.out -> Y_NODE.node #amber [line]
+Y_PROBE.node -> Y_NODE.node #cyan [line]
+X_NODE.node -> C1.in #purple [ortho]
+X_NODE.node -> NR.sense #red [ortho]
+NR.sink -> RETURN.node #red [ortho marker-end=arrow label="g(v)"]
+Y_NODE.node -> C2.in #cyan [ortho]
+Y_NODE.node -> L1.in #emerald [ortho]
+C1.out -> RETURN.node #purple [line]
+C2.out -> RETURN.node #cyan [line]
+L1.out -> RETURN.node #emerald [line]
+RETURN.node -> GND.in #slate [line]`;
+
+const PLL_SOURCE = `// Integer-N charge-pump phase-locked loop
+clock:REF "f_{ref}" at (70, 120) #blue
+ic:PFD "PFD" at (240, 170) #purple [left="ref,fb" right="up,down"]
+ic:CP "charge pump" at (430, 170) #amber [left="up,down" right="iout"]
+resistor:RLP "R_{loop}" at (600, 140) #amber
+junction:VCTRL "V_{ctrl}" at (740, 140) #cyan
+capacitor:CLP "C_{loop}" at (740, 300) #cyan [orientation=down]
+ic:VCO "VCO" at (900, 140) #emerald [left="vc" right="clk"]
+port:OUT "f_{out}" at (1080, 140) #emerald
+ic:DIV "÷N" at (900, 340) #blue [left="clk" right="fb"]
+junction:RETURN "analog return" at (740, 460) #slate
+ground:GND "0 V" at (740, 530) #slate
+
+REF.out -> PFD.ref #blue [line]
+PFD.up -> CP.up #purple [line]
+PFD.down -> CP.down #purple [ortho]
+CP.iout -> RLP.in #amber [line]
+RLP.out -> VCTRL.node #cyan [line]
+VCTRL.node -> VCO.vc #cyan [line]
+VCTRL.node -> CLP.in #cyan [ortho]
+CLP.out -> RETURN.node #cyan [line]
+VCO.clk -> OUT.in #emerald [line]
+VCO.clk -> DIV.clk #emerald [ortho]
+DIV.fb -> PFD.fb #blue [ortho marker-end=arrow label="feedback"]
+RETURN.node -> GND.in #slate [line]`;
+
 /** Bounds + generated DSL keyed by environment id. */
 const SOURCES: Record<string, { source: string; width: number; height: number }> = {
 	adder: adderSource(),
 	rc: { source: RC_SOURCE, width: 840, height: 540 },
 	bell: { source: BELL_SOURCE, width: 760, height: 300 },
 	timer: { source: TIMER_SOURCE, width: 700, height: 480 },
-	teleport: { source: TELEPORT_SOURCE, width: 1020, height: 400 }
+	teleport: { source: TELEPORT_SOURCE, width: 1020, height: 400 },
+	buck: { source: BUCK_SOURCE, width: 920, height: 640 },
+	chua: { source: CHUA_SOURCE, width: 920, height: 660 },
+	pll: { source: PLL_SOURCE, width: 1160, height: 660 }
 };
 
 /**
@@ -211,6 +301,8 @@ const SIM_ENVIRONMENTS_RAW: readonly Omit<SimEnvironment, 'formulaHtml'>[] = [
 		index: '01',
 		title: '8-Bit Digital Adder',
 		domain: 'Digital',
+		tier: 'Core',
+		model: 'event-driven Boolean solver',
 		tagline: 'Cascading ripple-carry gate matrix with a live combinational pass.',
 		summary:
 			'Eight full-adder cells built from XOR/AND/OR primitives. Clicking an input port toggles a bit and dispatches one synchronous logic pass; high nets glow as the carry ripples left to right.',
@@ -234,6 +326,8 @@ const SIM_ENVIRONMENTS_RAW: readonly Omit<SimEnvironment, 'formulaHtml'>[] = [
 		index: '02',
 		title: 'Dynamic RC Low-Pass Filter',
 		domain: 'Analog',
+		tier: 'Core',
+		model: 'frequency-domain transfer function',
 		tagline: 'Sweep R, C, and frequency; watch the pole attenuate the output trace.',
 		summary:
 			'A first-order shunt-capacitor filter. The cutoff and the |H(jω)| magnitude are derived live; the output wire fades its opacity and stretches its dash pattern to visualise physical damping, and both channels drive the oscilloscope.',
@@ -248,6 +342,8 @@ const SIM_ENVIRONMENTS_RAW: readonly Omit<SimEnvironment, 'formulaHtml'>[] = [
 		index: '03',
 		title: 'Bell-State Entanglement Visualizer',
 		domain: 'Quantum',
+		tier: 'Advanced',
+		model: 'state-vector + Born sampler',
 		tagline: 'Prepare the four Bell states; sample the ⟨Z⊗Z⟩ correlation.',
 		summary:
 			'H on q₀ followed by CNOT(q₀→q₁). Toggling the initialization ports selects which Bell pair is prepared; amplitudes and the correlation index are derived, and a measure button accumulates real Born-rule shots.',
@@ -267,6 +363,8 @@ const SIM_ENVIRONMENTS_RAW: readonly Omit<SimEnvironment, 'formulaHtml'>[] = [
 		index: '04',
 		title: '555 Astable Multivibrator',
 		domain: 'Mixed-signal',
+		tier: 'Core',
+		model: 'hybrid charge/discharge integrator',
 		tagline: 'A real charge/discharge loop clocking an output LED.',
 		summary:
 			'The timing capacitor integrates between ⅓·V_cc and ⅔·V_cc. The timing-branch stroke weight scales with instantaneous V_C, and the LED node flashes in sync with the calculated frequency (time-scaled for visibility).',
@@ -285,6 +383,8 @@ const SIM_ENVIRONMENTS_RAW: readonly Omit<SimEnvironment, 'formulaHtml'>[] = [
 		index: '05',
 		title: 'Quantum Teleportation Protocol',
 		domain: 'Advanced quantum',
+		tier: 'Advanced',
+		model: 'stepped three-qubit protocol',
 		tagline: 'Step a three-qubit register through the full teleportation script.',
 		summary:
 			'Alice’s state |ψ⟩ is parameterised on the Bloch angles. Stepped playback advances the register through entanglement, Bell measurement, and the classically controlled X^{m₂}/Z^{m₁} corrections; hovering any gate reveals its action in Dirac notation.',
@@ -298,6 +398,66 @@ const SIM_ENVIRONMENTS_RAW: readonly Omit<SimEnvironment, 'formulaHtml'>[] = [
 		],
 		boundaries: ['Bloch θ ∈ [0, π], φ ∈ [0, 2π]', '6-step protocol', 'classical bits m₁, m₂'],
 		fault: 'classical correction link cut'
+	},
+	{
+		id: 'buck',
+		index: '06',
+		title: 'Closed-Loop Buck Converter',
+		domain: 'Power electronics',
+		tier: 'Frontier',
+		model: 'continuous-time averaged state space',
+		tagline: 'Drive a PWM power stage across CCM, boundary, and discontinuous conduction.',
+		summary:
+			'A synchronous step-down converter with a continuous-time L–C state solver and switching-ripple reconstruction. Sweep duty cycle, source voltage, load, inductance, capacitance, and carrier frequency; the laboratory identifies conduction mode, efficiency, ripple, and transient settling in real time.',
+		formula: '\\dot i_L = \\dfrac{D V_{in}-v_o}{L},\\quad \\dot v_o = \\dfrac{i_L-v_o/R}{C}',
+		inventory: [
+			'PWM feedback controller',
+			'PMOS high-side switch',
+			'Schottky freewheel diode',
+			'L–C output network'
+		],
+		boundaries: ['V_in 5–36 V', 'f_sw 20–500 kHz', 'CCM / BCM / DCM classification'],
+		fault: 'high-side MOSFET gate drive lost'
+	},
+	{
+		id: 'chua',
+		index: '07',
+		title: 'Chua Double-Scroll Oscillator',
+		domain: 'Nonlinear dynamics',
+		tier: 'Frontier',
+		model: 'RK4 nonlinear ODE integration',
+		tagline: 'Tune a physical circuit through fixed points, limit cycles, and deterministic chaos.',
+		summary:
+			'Two capacitors, one inductor, a coupling resistor, and a piecewise-linear negative-resistance element form the canonical chaotic circuit. A fourth-order solver evolves the three state variables while a live phase portrait exposes orbit folding, attractor symmetry, and sensitivity to initial conditions.',
+		formula: '\\dot x = \\alpha(y-x-h(x)),\\quad \\dot y=x-y+z,\\quad \\dot z=-\\beta y',
+		inventory: [
+			'piecewise-linear Chua diode',
+			'C₁ / C₂ energy stores',
+			'coupling resistor R',
+			'inductor current state'
+		],
+		boundaries: ['α 7–18', 'β 18–35', 'RK4 · adaptive visual time scale'],
+		fault: 'nonlinear negative-resistance branch bypassed'
+	},
+	{
+		id: 'pll',
+		index: '08',
+		title: 'Adaptive Clock-Recovery PLL',
+		domain: 'Control + RF',
+		tier: 'Frontier',
+		model: 'second-order phase-domain loop',
+		tagline: 'Watch an integer-N synthesizer acquire, track, and lose phase lock.',
+		summary:
+			'A phase/frequency detector, charge pump, passive loop filter, VCO, and programmable divider form a complete frequency-synthesis loop. Change the reference, divide ratio, bandwidth, and damping; the phase-domain solver reveals pull-in, overshoot, control-voltage motion, lock confidence, and cycle slips.',
+		formula: 'f_{out}=Nf_{ref},\\quad \\ddot e + 2\\zeta\\omega_n\\dot e + \\omega_n^2e=0',
+		inventory: [
+			'phase/frequency detector',
+			'charge pump + loop filter',
+			'voltage-controlled oscillator',
+			'programmable ÷N feedback'
+		],
+		boundaries: ['N 2–64', 'loop bandwidth 0.2–8 kHz', 'lock threshold ±50 ppm'],
+		fault: 'reference clock disconnected'
 	}
 ];
 

@@ -2,7 +2,7 @@
 
 The standalone SvelteKit 5 platform for
 [`@schemd/core`](https://github.com/schemd/core): versioned documentation, a zero-runtime-dependency
-playground, five instrumented simulation laboratories, registry-backed release history, and native
+playground, eight instrumented simulation laboratories, registry-backed release history, and native
 SVG benchmark charts.
 
 Schemd is pronounced like _“skemd”_ (`/skɛmd/`).
@@ -43,7 +43,7 @@ bun run test:e2e
 ```
 
 The unit suite compiles every current and historical documentation fence, validates the registry,
-URI codec, hero programs, and all five full-mode simulation sources. Playwright exercises the
+URI codec, hero programs, and all eight full-mode simulation sources. Playwright exercises the
 production adapter-node bundle, current/historical switching, invalid routes, source/vector mapping,
 raw SVG parity, URI persistence, mobile documentation, command-palette focus containment, zero-CLS
 landing structure, simulation reactivity, sitemap inventory, and automated axe WCAG A/AA checks.

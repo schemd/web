@@ -6,6 +6,9 @@
 	import BellSim from '$lib/components/sims/BellSim.svelte';
 	import TimerSim from '$lib/components/sims/TimerSim.svelte';
 	import TeleportSim from '$lib/components/sims/TeleportSim.svelte';
+	import BuckSim from '$lib/components/sims/BuckSim.svelte';
+	import ChuaSim from '$lib/components/sims/ChuaSim.svelte';
+	import PllSim from '$lib/components/sims/PllSim.svelte';
 	import 'katex/dist/katex.min.css';
 
 	let { data }: PageProps = $props();
@@ -16,7 +19,10 @@
 		rc: RcSim,
 		bell: BellSim,
 		timer: TimerSim,
-		teleport: TeleportSim
+		teleport: TeleportSim,
+		buck: BuckSim,
+		chua: ChuaSim,
+		pll: PllSim
 	};
 
 	const sim = $derived(data.simulation);
@@ -54,7 +60,7 @@
 	<header class="lab-head panel">
 		<div class="lab-crumbs">
 			<a href={`/simulations/${data.version}`} class="back">← all environments</a>
-			<span class="microlabel">{sim.index} · {sim.domain} · v{data.version}</span>
+			<span class="microlabel">{sim.index} · {sim.tier} · {sim.domain} · v{data.version}</span>
 		</div>
 
 		<div class="lab-grid">
@@ -65,7 +71,7 @@
 				</div>
 				<p class="lab-summary">{sim.summary}</p>
 				<p class="microlabel lab-metrics">
-					{sim.components} components · {sim.connections} connections · mode=full
+					{sim.components} components · {sim.connections} connections · {sim.model}
 				</p>
 			</div>
 

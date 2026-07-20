@@ -8,6 +8,15 @@
 	let { data }: PageProps = $props();
 
 	const environments = $derived(data.environments);
+	type TierFilter = 'All' | 'Core' | 'Advanced' | 'Frontier';
+	const tiers: readonly TierFilter[] = ['All', 'Core', 'Advanced', 'Frontier'];
+	let tier = $state<TierFilter>('All');
+	const visibleEnvironments = $derived(
+		tier === 'All' ? environments : environments.filter((environment) => environment.tier === tier)
+	);
+	const frontierCount = $derived(
+		environments.filter((environment) => environment.tier === 'Frontier').length
+	);
 
 	const jsonLd = $derived(
 		JSON.stringify({
@@ -73,12 +82,12 @@
 	<title>Simulation Laboratory · schemd v{data.version}</title>
 	<meta
 		name="description"
-		content="Select from five interactive engineering laboratories running on live @schemd/core full-mode compilations: an 8-bit adder, an RC low-pass filter, Bell states, a 555 astable, and quantum teleportation."
+		content="Explore eight interactive circuit laboratories spanning digital logic, analog filters, quantum protocols, power electronics, nonlinear chaos, and phase-locked control systems."
 	/>
 	<meta property="og:title" content="schemd — simulation laboratory" />
 	<meta
 		property="og:description"
-		content="Five high-fidelity engineering simulations, compiled server-side and driven by native event delegation."
+		content="Eight high-fidelity engineering simulations with live physics, fault injection, and instrumentation."
 	/>
 	<meta property="og:type" content="website" />
 	<meta property="og:image" content="/brand/schemd-logo.svg" />
@@ -109,12 +118,26 @@
 			<path class="wire" d="M20 16h6M20 24h6M20 32h6M54 16h6M54 32h6M40 6v4M40 38v4" />
 			<path class="wire" d="M14 22v10M11 24h6M11 30h6M14 32v6" />
 			<path class="trace" d="M40 10v4h14v18" />
-		{:else}
+		{:else if id === 'teleport'}
 			<path class="wire" d="M6 12h68M6 24h68M6 36h68" />
 			<rect class="body" x="18" y="6" width="10" height="12" />
 			<rect class="body" x="40" y="18" width="10" height="12" />
 			<rect class="body" x="58" y="6" width="10" height="12" />
 			<path class="trace" d="M6 12h12M28 12h17v6h13M62 18v-6" />
+		{:else if id === 'buck'}
+			<path class="wire" d="M5 16h12M27 16h9M50 16h24M58 16v13M52 29h12M52 33h12M58 33v9" />
+			<path class="body" d="M17 8v16M17 12l10-4v16l-10-4M36 16c2-7 5-7 7 0s5 7 7 0" />
+			<path class="trace" d="M5 16h12M27 16h9M36 16c2-7 5-7 7 0s5 7 7 0h24" />
+		{:else if id === 'chua'}
+			<path class="wire" d="M5 18h13l3-6 5 12 5-12 5 12 3-6h14M18 18v22M53 18v22" />
+			<path class="body" d="M12 40h12M14 44h8M47 40h12M49 44h8M62 12c-10 0-10 12 0 12s10 12 0 12" />
+			<path class="trace" d="M5 18h13l3-6 5 12 5-12 5 12 3-6h14" />
+		{:else}
+			<path class="wire" d="M5 14h13M34 14h10M58 14h17M66 14v22H22V28" />
+			<rect class="body" x="18" y="7" width="16" height="14" />
+			<rect class="body" x="44" y="7" width="14" height="14" />
+			<path class="body" d="M22 28h10M22 32h10M27 32v8" />
+			<path class="trace" d="M5 14h13M34 14h10M58 14h8v22H32" />
 		{/if}
 	</svg>
 {/snippet}
@@ -125,14 +148,12 @@
 			<span class="microlabel">schemd · simulation laboratory</span>
 			<span class="microlabel">v{data.version} · mode=full · adapter-node</span>
 		</div>
-		<h1>Choose a testing ground.</h1>
+		<h1>Enter the circuit frontier.</h1>
 		<p class="terminal-lede">
-			Every laboratory below is real engine output — compiled server-side by <code
-				>@schemd/core</code
-			>
-			in <code>full</code> mode — and every interaction is vanilla event delegation on the
-			compiler's own <code>data-*</code> attributes. The client never draws; it only flips state classes
-			and custom properties.
+			Eight live experiments now span foundational circuits and frontier systems: switched-mode
+			power, deterministic chaos, phase-lock acquisition, quantum protocols, and classical logic.
+			Every test bed is compiled from the same <code>@schemd/core</code> source and instrumented with
+			fault injection, probes, and live numerical models.
 		</p>
 		<div class="diagnostics" role="status" aria-live="polite">
 			<div class="diag-log">
@@ -154,15 +175,29 @@
 					<dd class="readout">{environments.length}</dd>
 				</div>
 				<div>
-					<dt>compile</dt>
-					<dd class="readout">server</dd>
+					<dt>frontier labs</dt>
+					<dd class="readout">{frontierCount}</dd>
 				</div>
 			</dl>
 		</div>
 	</header>
 
+	<div class="catalog-bar panel">
+		<div>
+			<span class="microlabel">experiment catalogue</span>
+			<p>{visibleEnvironments.length} of {environments.length} laboratories online</p>
+		</div>
+		<div class="tier-filters" role="group" aria-label="Filter simulations by complexity tier">
+			{#each tiers as option (option)}
+				<button type="button" aria-pressed={tier === option} onclick={() => (tier = option)}
+					>{option}</button
+				>
+			{/each}
+		</div>
+	</div>
+
 	<ul class="lab-list" aria-label="Simulation environments">
-		{#each environments as environment, index (environment.id)}
+		{#each visibleEnvironments as environment, index (environment.id)}
 			<li class="lab-row panel" style={`--i: ${index}`}>
 				<a
 					class="lab-icon"
@@ -178,6 +213,10 @@
 						<h2>{environment.title}</h2>
 					</a>
 					<p class="tagline">{environment.tagline}</p>
+					<div class="model-line">
+						<span class:frontier={environment.tier === 'Frontier'}>{environment.tier}</span>
+						<code>{environment.model}</code>
+					</div>
 					<div class="lab-formula">{@html environment.formulaHtml}</div>
 					<div class="lab-meta">
 						<ul class="chips">
@@ -313,6 +352,47 @@
 		}
 	}
 
+	.catalog-bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-4);
+		padding: var(--space-3) var(--space-4);
+
+		& p {
+			margin: 2px 0 0;
+			color: var(--ink-mute);
+			font-size: var(--text-sm);
+		}
+	}
+
+	.tier-filters {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1px;
+		padding: 1px;
+		background: var(--line);
+
+		& button {
+			padding: 0.45rem 0.8rem;
+			background: var(--bg-raised);
+			color: var(--ink-mute);
+			font-family: var(--font-mono);
+			font-size: var(--text-2xs);
+			letter-spacing: var(--tracking-wide);
+			text-transform: uppercase;
+
+			&:hover {
+				color: var(--ink);
+			}
+
+			&[aria-pressed='true'] {
+				background: var(--accent);
+				color: var(--accent-ink);
+			}
+		}
+	}
+
 	/* ---------- Selection catalog rows ---------- */
 	.lab-list {
 		list-style: none;
@@ -432,6 +512,34 @@
 		color: var(--ink-mute);
 	}
 
+	.model-line {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		flex-wrap: wrap;
+
+		& span {
+			padding: 0.12rem 0.5rem;
+			border: 1px solid var(--line-strong);
+			color: var(--ink-mute);
+			font-family: var(--font-mono);
+			font-size: var(--text-2xs);
+			letter-spacing: var(--tracking-wide);
+			text-transform: uppercase;
+
+			&.frontier {
+				border-color: var(--accent);
+				color: var(--accent);
+				box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
+			}
+		}
+
+		& code {
+			color: var(--ink-faint);
+			font-size: var(--text-2xs);
+		}
+	}
+
 	.lab-formula {
 		font-size: var(--text-sm);
 		color: var(--ink);
@@ -541,6 +649,16 @@
 	}
 
 	@media (max-width: 620px) {
+		.catalog-bar {
+			align-items: stretch;
+			flex-direction: column;
+		}
+
+		.tier-filters {
+			display: grid;
+			grid-template-columns: repeat(2, 1fr);
+		}
+
 		.diagnostics {
 			grid-template-columns: 1fr;
 			align-items: start;

@@ -130,11 +130,13 @@ describe('versioned simulation source and compilation', () => {
 		expect(RC_SOURCE).not.toContain('initial:');
 	});
 
-	test('compiles all five laboratories once with full semantic hooks', () => {
+	test('compiles all eight laboratories once with full semantic hooks', () => {
 		const environments = listSimulationEnvironments();
-		expect(environments).toHaveLength(5);
+		expect(environments).toHaveLength(8);
 		for (const environment of environments) {
 			expect(getSimulationSource(environment.id)).toBeDefined();
+			expect(environment.formulaHtml).toContain('katex');
+			expect(environment.formulaHtml).not.toContain('katex-error');
 			const simulation = getSimulation(environment.id);
 			expect(simulation).toBeDefined();
 			expect(simulation?.components).toBeGreaterThan(0);
