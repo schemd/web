@@ -21,7 +21,7 @@ export const _HERO_SPECS: readonly HeroSpec[] = [
 		source: `// Native source + junction + physically rotated shunt capacitor
 source:VIN "V_{in}" at (80, 120) #blue [type=voltage-ac]
 initial:P1 "V" at (34, 310) #red 
-resistor:R1 "10 k\Omega" at (260, 120) #amber
+resistor:R1 "10 kΩ" at (260, 120) #amber
 junction:VOUT "output node" at (440, 120) #cyan
 capacitor:C1 "100 nF" at (440, 250) #cyan [orientation=down]
 ground:GND "0 V" at (220, 350) #slate

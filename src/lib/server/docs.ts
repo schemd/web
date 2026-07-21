@@ -9,11 +9,7 @@
  * server.
  */
 import { renderMarkdownDoc, parseDocFrontmatter, type RenderedDoc } from './markdown';
-import {
-	DOCUMENTED_VERSIONS,
-	LATEST_DOCUMENTED_VERSION,
-	versionedRawSources
-} from './versions';
+import { DOCUMENTED_VERSIONS, LATEST_DOCUMENTED_VERSION, versionedRawSources } from './versions';
 
 /** Ordered navigation manifest for the left index tree. */
 export interface DocPageMeta {

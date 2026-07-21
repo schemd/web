@@ -12,11 +12,7 @@ import {
 	WEBSITE_CORE_VERSION,
 	type SchemdRegistry
 } from './registry';
-import {
-	DOCUMENTED_VERSIONS,
-	LATEST_DOCUMENTED_VERSION,
-	resolveDocVersion
-} from './versions';
+import { DOCUMENTED_VERSIONS, LATEST_DOCUMENTED_VERSION, resolveDocVersion } from './versions';
 import { languageCoverage } from './coverage';
 import { COMPONENT_CATALOG } from './component-catalog';
 import {
@@ -155,9 +151,15 @@ describe('language coverage is a genuine 100%', () => {
 				`schemd bounds="${entry.width}x${entry.height}" title="${entry.kind}"`
 			);
 			expect(fence, entry.kind).not.toBeNull();
-			expect(() =>
-				compileSchematic(entry.source, { ...fence!, mode: 'default', idPrefix: `cat-${entry.kind}` })
-			, entry.kind).not.toThrow();
+			expect(
+				() =>
+					compileSchematic(entry.source, {
+						...fence!,
+						mode: 'default',
+						idPrefix: `cat-${entry.kind}`
+					}),
+				entry.kind
+			).not.toThrow();
 			expect(decodeWorkspaceState(entry.code)).toBe(entry.source);
 		}
 	});

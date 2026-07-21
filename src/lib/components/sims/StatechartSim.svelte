@@ -99,7 +99,9 @@
 		if (!root) return;
 		for (const state of ['RED', 'GREEN', 'YELLOW'] as const) {
 			setNodeActive(root, state, state === current);
-			root.querySelector(`[data-node-id="${state}"]`)?.classList.toggle('is-selected', state === current);
+			root
+				.querySelector(`[data-node-id="${state}"]`)
+				?.classList.toggle('is-selected', state === current);
 		}
 		for (const transition of TRANSITIONS) {
 			setWiresFrom(root, transition.wire, transition.wire === pulsing);
@@ -163,7 +165,8 @@
 	>
 		{@html svg}
 		<div class="dwell" aria-hidden="true">
-			<span style={`width: ${deadlocked ? 100 : progress * 100}%`} class:stalled={deadlocked}></span>
+			<span style={`width: ${deadlocked ? 100 : progress * 100}%`} class:stalled={deadlocked}
+			></span>
 		</div>
 	</div>
 {/snippet}

@@ -333,7 +333,9 @@
 				<path class="bif-dots" d={bifurcationPath} />
 				<line class="bif-marker" x1={alphaMarker} x2={alphaMarker} y1="0" y2="150" />
 			{:else}
-				<text class="bif-empty" x="120" y="78" text-anchor="middle">sweep α to draw the route to chaos</text>
+				<text class="bif-empty" x="120" y="78" text-anchor="middle"
+					>sweep α to draw the route to chaos</text
+				>
 			{/if}
 		</svg>
 		<figcaption class="microlabel">orbit maxima vs α ({BIF_MIN}–{BIF_MAX})</figcaption>

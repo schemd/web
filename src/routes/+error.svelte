@@ -92,10 +92,7 @@
 			<!-- Source terminal -->
 			<circle class="motif-node" cx="26" cy="60" r="5" />
 			<!-- Live trace with an engineering bridge over a crossing -->
-			<path
-				class="motif-wire"
-				d="M31 60 H120 A5 5 0 0 1 130 60 H150 A5 5 0 0 0 160 60 H214"
-			/>
+			<path class="motif-wire" d="M31 60 H120 A5 5 0 0 1 130 60 H150 A5 5 0 0 0 160 60 H214" />
 			<!-- Crossing signal (vertical) -->
 			<path class="motif-cross" d="M140 20 V100" />
 			<!-- Animated signal pulse riding the trace up to the break -->
@@ -119,9 +116,9 @@
 			<pre><code
 					><span class="d-head">schemd: {band.code.toLowerCase()}: {detail}</span>
 <span class="d-gutter">  request │</span> <span class="d-verb">GET</span> {path}
-<span class="d-gutter">        │</span> <span class="d-caret">{'^'.repeat(Math.min(path.length, 48))}</span> <span
-						class="d-hint">{band.hint}</span
-					></code
+<span class="d-gutter">        │</span> <span class="d-caret"
+						>{'^'.repeat(Math.min(path.length, 48))}</span
+					> <span class="d-hint">{band.hint}</span></code
 				></pre>
 		</figure>
 

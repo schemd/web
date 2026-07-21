@@ -114,8 +114,9 @@
 {#snippet controls()}
 	<div class="stack">
 		<p class="control-note">
-			Inject a bit-flip on any physical qubit. The two <strong>parity</strong> checks name the culprit
-			without ever reading <strong>α</strong> or <strong>β</strong>. Then correct and read the fidelity.
+			Inject a bit-flip on any physical qubit. The two <strong>parity</strong> checks name the
+			culprit without ever reading <strong>α</strong> or <strong>β</strong>. Then correct and read
+			the fidelity.
 		</p>
 		<div class="inject-row">
 			{#each [0, 1, 2] as qubit (qubit)}
@@ -170,7 +171,11 @@
 			{accused === undefined ? 'no error detected' : `→ flip q${accused}`}
 		</span>
 	</div>
-	<div class="fidelity" class:ok={corrected && fidelity === 1} class:bad={corrected && fidelity === 0}>
+	<div
+		class="fidelity"
+		class:ok={corrected && fidelity === 1}
+		class:bad={corrected && fidelity === 0}
+	>
 		<span class="microlabel">logical fidelity</span>
 		<div class="fid-bar"><span style={`width: ${fidelity * 100}%`}></span></div>
 		<strong>F = {corrected ? fidelity.toFixed(0) : '—'}</strong>

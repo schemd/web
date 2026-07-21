@@ -188,9 +188,9 @@
 {#snippet controls()}
 	<div class="stack">
 		<p class="control-note">
-			Type two operands, or click any <strong>A</strong>/<strong>B</strong>/<strong>C_in</strong> port
-			to toggle a bit. Watch the carry <strong>ripple</strong> upward over real gate delay — that travel
-			time is why fast adders exist.
+			Type two operands, or click any <strong>A</strong>/<strong>B</strong>/<strong>C_in</strong>
+			port to toggle a bit. Watch the carry <strong>ripple</strong> upward over real gate delay — that
+			travel time is why fast adders exist.
 		</p>
 		<div class="operands">
 			<label>
@@ -216,7 +216,14 @@
 		</div>
 		<label>
 			<span class="microlabel">gate delay = {gateDelay} ns · critical path ≈ {criticalNs} ns</span>
-			<input type="range" min="2" max="16" step="1" bind:value={gateDelay} aria-label="Gate delay" />
+			<input
+				type="range"
+				min="2"
+				max="16"
+				step="1"
+				bind:value={gateDelay}
+				aria-label="Gate delay"
+			/>
 		</label>
 		<div class="button-row">
 			<button type="button" class="btn" onclick={randomize}>randomize A,B</button>

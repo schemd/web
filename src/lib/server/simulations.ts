@@ -883,7 +883,11 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<SimEnvironment, 'formulaHtml' | 'peda
 			'2 ancilla syndrome bits',
 			'majority-vote decoder'
 		],
-		boundaries: ['corrects any single bit-flip', 'syndrome ∈ {00,01,10,11}', 'logical fidelity 0/1'],
+		boundaries: [
+			'corrects any single bit-flip',
+			'syndrome ∈ {00,01,10,11}',
+			'logical fidelity 0/1'
+		],
 		fault: 'syndrome decoder miswired',
 		pedagogy: {
 			aha: 'You can protect a qubit you are not even allowed to look at — by measuring only whether the copies *disagree*, never what they say.',
@@ -918,8 +922,7 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<SimEnvironment, 'formulaHtml' | 'peda
 		tagline: 'An amplifier with just enough positive feedback sings a pure tone out of noise.',
 		summary:
 			'A non-inverting op-amp wrapped in a Wien RC network. When the loop gain crosses unity at exactly one frequency, thermal noise is amplified into a clean sinusoid; a nonlinear gain limiter parks the amplitude on a stable limit cycle. The phase portrait shows the oscillation being born — a Hopf bifurcation you can trigger with a knob.',
-		formula:
-			'f_0 = \\dfrac{1}{2\\pi RC} \\;\\cdot\\; A\\beta = 1 \\text{ (Barkhausen), gain } = 3',
+		formula: 'f_0 = \\dfrac{1}{2\\pi RC} \\;\\cdot\\; A\\beta = 1 \\text{ (Barkhausen), gain } = 3',
 		inventory: [
 			'op-amp gain stage',
 			'series + shunt RC bridge',
@@ -958,11 +961,11 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<SimEnvironment, 'formulaHtml' | 'peda
 		domain: 'Sequential digital',
 		tier: 'Advanced',
 		model: 'clocked shift register over GF(2)',
-		tagline: 'Four flip-flops and one XOR make a stream that looks random but repeats after exactly 15.',
+		tagline:
+			'Four flip-flops and one XOR make a stream that looks random but repeats after exactly 15.',
 		summary:
 			'A 4-bit Fibonacci linear-feedback shift register with taps at stages 3 and 4 — the primitive polynomial x⁴ + x³ + 1. Each clock edge shifts the register and feeds back the XOR of the tapped bits. The result cycles through all 15 non-zero states before repeating: a deterministic sequence wearing the disguise of randomness.',
-		formula:
-			'x^4 + x^3 + 1 \\;\\cdot\\; \\text{period} = 2^n - 1 = 15',
+		formula: 'x^4 + x^3 + 1 \\;\\cdot\\; \\text{period} = 2^n - 1 = 15',
 		inventory: [
 			'shared clock',
 			'4× D flip-flop chain',

@@ -9,7 +9,12 @@
 	 * (1 − x²) term parks the amplitude — a Hopf bifurcation drawn live in the
 	 * phase portrait. The compiled op-amp and its RC bridge pulse with |x|.
 	 */
-	import { setNodeActive, styleWiresFrom, delegatedNodeId, delegatedWireSource } from '$lib/sim-dom';
+	import {
+		setNodeActive,
+		styleWiresFrom,
+		delegatedNodeId,
+		delegatedWireSource
+	} from '$lib/sim-dom';
 	import { playTick } from '$lib/audio';
 	import { ui } from '$lib/ui.svelte';
 	import LabShell from './LabShell.svelte';
@@ -123,7 +128,8 @@
 	function probe(element: Element): string | undefined {
 		const wire = delegatedWireSource(element);
 		if (wire === 'U1.out' || wire === 'VOUT.node') return `v_o = ${x.toFixed(3)} (normalized)`;
-		if (wire?.startsWith('CS') || wire?.startsWith('RS')) return `positive feedback @ f₀ = ${formatSi(frequency, 'Hz')}`;
+		if (wire?.startsWith('CS') || wire?.startsWith('RS'))
+			return `positive feedback @ f₀ = ${formatSi(frequency, 'Hz')}`;
 		const id = delegatedNodeId(element);
 		if (id === 'U1') return `op-amp gain = ${gain.toFixed(2)} · μ = ${mu.toFixed(2)}`;
 		if (id === 'RF' || id === 'RG') return `gain-set divider · needs gain = 3 to oscillate`;
@@ -177,7 +183,11 @@
 {/snippet}
 
 {#snippet instruments()}
-	<div class="regime" class:oscillating={regime.startsWith('OSC')} class:faulted={faults.openGainResistor}>
+	<div
+		class="regime"
+		class:oscillating={regime.startsWith('OSC')}
+		class:faulted={faults.openGainResistor}
+	>
 		<span class="microlabel">Barkhausen classifier</span>
 		<strong>{regime}</strong>
 	</div>

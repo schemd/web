@@ -76,8 +76,8 @@ const RELEASE_NOTES: Readonly<Record<string, { unpackedSize?: number; notes?: st
 };
 
 /** Every known release, newest first, derived from the editorial record. */
-const KNOWN_RELEASE_VERSIONS: readonly string[] = Object.keys(RELEASE_NOTES).sort(
-	(a, b) => compareVersionsDesc(a, b)
+const KNOWN_RELEASE_VERSIONS: readonly string[] = Object.keys(RELEASE_NOTES).sort((a, b) =>
+	compareVersionsDesc(a, b)
 );
 
 /** The release this deployment's installed `@schemd/core` engine executes. */

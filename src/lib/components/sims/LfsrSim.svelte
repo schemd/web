@@ -123,12 +123,22 @@
 		</div>
 		<label>
 			<span class="microlabel">clock period = {(logRate * 1000).toFixed(0)} ms</span>
-			<input type="range" min="0.06" max="1" step="0.02" bind:value={logRate} aria-label="Clock rate" />
+			<input
+				type="range"
+				min="0.06"
+				max="1"
+				step="0.02"
+				bind:value={logRate}
+				aria-label="Clock rate"
+			/>
 		</label>
 	</div>
 	<div class="switchboard">
 		<p class="microlabel">switchboard · fault injection</p>
-		<FaultSwitch label="feedback tap moved to {'{2,4}'} (short cycle)" bind:active={faults.movedTap} />
+		<FaultSwitch
+			label="feedback tap moved to {'{2,4}'} (short cycle)"
+			bind:active={faults.movedTap}
+		/>
 	</div>
 {/snippet}
 
@@ -151,7 +161,11 @@
 		<span class="readout state">state = {stateString} ({registerValue})</span>
 		<span class="readout">clock edges = {steps}</span>
 		<span class="readout" class:locked={period !== undefined} class:short={faults.movedTap}>
-			period = {period ?? '…'}{period !== undefined ? (period === 15 ? ' (maximal)' : ' (short)') : ''}
+			period = {period ?? '…'}{period !== undefined
+				? period === 15
+					? ' (maximal)'
+					: ' (short)'
+				: ''}
 		</span>
 	</div>
 	<div class="register" aria-label="Register bits">

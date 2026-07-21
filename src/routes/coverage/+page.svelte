@@ -24,8 +24,8 @@
 		<p class="lede">
 			This page is generated from the compiler's own <code>COMPONENT_KINDS</code> registry. Every
 			primitive carries a canonical, compiling example, so coverage is a genuine 100% — and the
-			documentation's <code>schemd</code> fences add real-world usages on top. Open any primitive to
-			take it apart in the playground.
+			documentation's <code>schemd</code> fences add real-world usages on top. Open any primitive to take
+			it apart in the playground.
 		</p>
 		<div class="summary panel">
 			<div class="summary-figures">
