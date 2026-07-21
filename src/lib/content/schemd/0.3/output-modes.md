@@ -10,6 +10,8 @@
 
 All modes use the same parsed document, layout, routes, vectors, and viewBox. Raw SVG in the playground is the exact string used by Render View—not a reconstructed DOM snapshot.
 
+With wire hooks enabled, every signal wire exposes its parser-resolved topology as `data-net-id`: named nets keep their author name and unnamed nets use deterministic `$N` identities. The compilation source map exposes the same value as `SchematicWireSource.netId`; relation-only UML connectors omit it.
+
 ```schemd bounds="760x320" title="Mode-parity specimen"
 source:S "pulse" at (90, 130) #blue [type=voltage-pulse]
 switch:SW "SPST" at (290, 130) #amber [type=spst]

@@ -16,14 +16,14 @@ component:SYS "system" at (870, 290) #slate [width=150 height=80]
 
 <!-- schemd-section: id=release; eyebrow=02 / Gate; title=Publication metadata remains pending; example-title=Release-gate signal -->
 
-The 0.3.1 documentation route is a deterministic prerelease fallback until npm publication. The timeline must replace the pending date and commit hash from registry/GitHub data after release. Phase 5 owns version changes, changelogs, README updates, tags, pushes, and npm publication authorization.
+The 0.3 line documents releases 0.3.0 through the current 0.3.x patch; the newest release in the line is the deterministic fallback until npm publication confirms it. The timeline must replace the pending date and commit hash from registry/GitHub data after release. Phase 5 owns version changes, changelogs, README updates, tags, pushes, and npm publication authorization.
 
 ```schemd bounds="700x300" title="Release-gate signal"
 logic:READY "1" at (100, 120) #blue [type=high]
 testpoint:GATE "release gate" at (340, 120) #amber
 load:L "lamp" at (590, 120) #emerald [type=lamp]
 READY.out -> GATE.node #blue [digital line]
-GATE.node -> L.in #emerald [line]
+GATE.node -> L.in #emerald [digital line]
 ```
 
 Known boundaries remain deliberate: no arbitrary-angle rotation, no browser font measurement, no unbounded plug-in renderer, and no silent scalar/bus coercion.

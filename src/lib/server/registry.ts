@@ -8,11 +8,7 @@
  * network after first warm-up.
  */
 import { building } from '$app/environment';
-import {
-	DOCUMENTED_VERSIONS,
-	LATEST_DOCUMENTED_VERSION,
-	OLDEST_DOCUMENTED_VERSION
-} from './versions';
+import { DOCUMENTED_VERSIONS } from './versions';
 
 /** One published release aggregated from npm (and GitHub when reachable). */
 export interface SchemdRelease {
@@ -55,23 +51,16 @@ const FETCH_TIMEOUT_MS = 6_000;
  * version pinned here matches the workspace's installed `@schemd/core`.
  */
 /**
- * Version constants are derived from the documentation folders discovered at
- * build time (see {@link ./versions}). Dropping a new `content/schemd/x.y.z/`
- * folder makes it the site-wide latest with zero edits here.
- */
-export const WEBSITE_CORE_VERSION = LATEST_DOCUMENTED_VERSION;
-export const HISTORICAL_CORE_VERSION = OLDEST_DOCUMENTED_VERSION;
-export const DOCUMENTATION_VERSIONS: readonly string[] = DOCUMENTED_VERSIONS;
-
-/**
- * Editorial notes per documented release, shown on the changelog when the npm
- * registry is unreachable. Absent versions still seed correctly with no note.
+ * Editorial notes per known release, shown on the changelog when the npm
+ * registry is unreachable. Adding a release is one entry here; the newest key
+ * becomes the site's installed-engine version and every seed derives from it.
+ * Documentation lines are discovered separately from content folders.
  */
 const RELEASE_NOTES: Readonly<Record<string, { unpackedSize?: number; notes?: string }>> = {
 	'0.3.2': {
-		unpackedSize: 260_400,
+		unpackedSize: 298_854,
 		notes:
-			'Maintenance and consolidation patch: duplicated component type guards and the two near-identical SVG number formatters are unified into single shared implementations, trimming the bundle while holding output byte-identical and coverage at 100%.'
+			'Net topology, universal collision rules, and overlap detection. Signal wires resolve to first-class nets (`net=NAME`, deterministic $N identities, one domain/width contract per net); same-net crossings stay continuous while separate nets bridge; straight, Bézier, and orthogonal routes share one collision policy with soft channel occupancy; physical overlap is rejected with source-line diagnostics; open markers are genuinely transparent; Chromium visual goldens, property fuzzing, and a mutation gate pin it all.'
 	},
 	'0.3.1': {
 		unpackedSize: 260_610,
@@ -82,35 +71,39 @@ const RELEASE_NOTES: Readonly<Record<string, { unpackedSize?: number; notes?: st
 		unpackedSize: 258_900,
 		notes:
 			'Quarter-turn orientation geometry across every primitive, deterministic source maps for editor↔vector round-tripping, drift-free micro-math baselines, and expanded electrical, digital, quantum, and UML families.'
-	}
+	},
+	'0.2.1': {}
 };
 
-/**
- * Patch releases that have been superseded by a newer documented patch on the
- * same line: their doc routes 308 to the latest instead of 404-ing.
- */
-export const SUPERSEDED_PATCH_VERSIONS: Readonly<Record<string, string>> = {
-	'0.3.0': LATEST_DOCUMENTED_VERSION
-};
+/** Every known release, newest first, derived from the editorial record. */
+const KNOWN_RELEASE_VERSIONS: readonly string[] = Object.keys(RELEASE_NOTES).sort(
+	(a, b) => compareVersionsDesc(a, b)
+);
+
+/** The release this deployment's installed `@schemd/core` engine executes. */
+export const WEBSITE_CORE_VERSION = KNOWN_RELEASE_VERSIONS[0]!;
+/** The oldest release kept alive for legacy playground/simulation deep links. */
+export const HISTORICAL_CORE_VERSION = KNOWN_RELEASE_VERSIONS[KNOWN_RELEASE_VERSIONS.length - 1]!;
+/** Documented docs lines (newest first), re-exported for route/test callers. */
+export const DOCUMENTATION_VERSIONS: readonly string[] = DOCUMENTED_VERSIONS;
 
 /**
- * Seed every documented version as a known release so routes resolve offline.
- * The latest documented version is the local release candidate (`released:
- * false`) until the npm registry confirms its publication.
+ * Seed every known release so routes resolve offline. The newest is the local
+ * release candidate (`released: false`) until npm confirms its publication.
  */
-const SEED_RELEASES: readonly SchemdRelease[] = DOCUMENTED_VERSIONS.map((version) => ({
+const SEED_RELEASES: readonly SchemdRelease[] = KNOWN_RELEASE_VERSIONS.map((version) => ({
 	version,
 	publishedAt: new Date(0).toISOString(),
 	unpackedSize: RELEASE_NOTES[version]?.unpackedSize,
 	fileCount: RELEASE_NOTES[version]?.unpackedSize === undefined ? undefined : 24,
 	gitHead: undefined,
 	notes: RELEASE_NOTES[version]?.notes,
-	released: version !== LATEST_DOCUMENTED_VERSION
+	released: version !== KNOWN_RELEASE_VERSIONS[0]
 }));
 
 const SEED_REGISTRY: SchemdRegistry = {
 	releases: [...SEED_RELEASES],
-	latest: LATEST_DOCUMENTED_VERSION,
+	latest: WEBSITE_CORE_VERSION,
 	live: false,
 	syncedAt: 0
 };

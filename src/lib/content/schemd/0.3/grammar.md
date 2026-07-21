@@ -27,13 +27,17 @@ INPUT.out -> REG.in #blue [digital width=8]
 REG.out -> OUTPUT.in #emerald [digital width=8]
 ```
 
-Connection options also include `marker-start`, `marker-end`, `label`, UML relations, and `dashed`. Full mode emits source-line metadata for nodes, ports, and wires.
+Connection options also include `net`, `marker-start`, `marker-end`, `label`, UML relations, and `dashed`. Full mode emits source-line metadata for nodes, ports, and wires.
+
+`net=NAME` gives signal segments one explicit topology identity. Names begin with an ASCII letter, contain only letters, digits, `_`, or `-`, and are at most 64 characters. Segments sharing an exact `component.port` join implicitly, so every branch declared through the same `junction.node` inherits one net, and a name may also join geometrically disconnected segments. Every segment in one net must use the same signal domain and width; conflicting names at a shared terminal are errors. UML relations cannot declare nets. Unnamed signal topologies receive deterministic source-ordered `$1`, `$2`, … identities in the AST, source map, and full-mode SVG (`data-net-id`).
+
+Geometry is contract-checked at compile time. Physical component bodies may touch at an edge but cannot overlap (UML containers and lifeline overlays may intentionally contain children). All route families are collision checked: straight and cubic paths cannot penetrate unrelated bodies or earlier connector labels, orthogonal paths route around bodies and labels while pricing earlier unrelated wire channels as soft occupancy, and transformed endpoint-marker footprints participate in the same rule. Separate nets may cross only as a strict perpendicular orthogonal crossing — which receives a bridge on the later trace — while same-net contacts stay continuous with no bridge. Collinear overlap between separate nets, endpoint contact, diagonal or cubic crossings, and bridge clusters too dense to render are compile errors with source-line diagnostics.
 
 <!-- /schemd-section -->
 
 <!-- schemd-section: id=options; eyebrow=03 / Validation; title=Use family options, never untyped attributes; example-title=Variant-driven components -->
 
-Common family options are `type`, `orientation`, `inputs`, `outputs`, `width`, `controls`, `targets`, `wires`, `parameter`, `phase`, `matrix`, `operator`, and `control`. Availability is defined per kind in the [component API](/docs/0.3.1/component-reference).
+Common family options are `type`, `orientation`, `inputs`, `outputs`, `width`, `controls`, `targets`, `wires`, `parameter`, `phase`, `matrix`, `operator`, and `control`. Availability is defined per kind in the [component API](/docs/0.3/component-reference).
 
 ```schemd bounds="900x360" title="Variant-driven components"
 source:AC "AC" at (100, 150) #blue [type=voltage-ac orientation=down]

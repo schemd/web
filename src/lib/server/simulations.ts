@@ -169,17 +169,17 @@ function adderSource(): { source: string; width: number; height: number } {
 	for (let bit = 0; bit < bits; bit += 1) {
 		const carry = bit === 0 ? 'CIN.out' : `O1_${bit - 1}.out`;
 		lines.push(
-			`A${bit}.out -> X1_${bit}.in1 #blue [line]`,
-			`B${bit}.out -> X1_${bit}.in2 #blue [line]`,
-			`A${bit}.out -> N1_${bit}.in1 #blue [line]`,
-			`B${bit}.out -> N1_${bit}.in2 #blue [line]`,
-			`X1_${bit}.out -> X2_${bit}.in1 #cyan [line]`,
+			`A${bit}.out -> X1_${bit}.in1 #blue [ortho]`,
+			`B${bit}.out -> X1_${bit}.in2 #blue [ortho]`,
+			`A${bit}.out -> N1_${bit}.in1 #blue [ortho]`,
+			`B${bit}.out -> N1_${bit}.in2 #blue [ortho]`,
+			`X1_${bit}.out -> X2_${bit}.in1 #cyan [ortho]`,
 			`${carry} -> X2_${bit}.in2 #slate [ortho]`,
-			`X1_${bit}.out -> N2_${bit}.in1 #cyan [line]`,
+			`X1_${bit}.out -> N2_${bit}.in1 #cyan [ortho]`,
 			`${carry} -> N2_${bit}.in2 #slate [ortho]`,
-			`N1_${bit}.out -> O1_${bit}.in1 #amber [line]`,
-			`N2_${bit}.out -> O1_${bit}.in2 #amber [line]`,
-			`X2_${bit}.out -> S${bit}.in #emerald [line]`
+			`N1_${bit}.out -> O1_${bit}.in1 #amber [ortho]`,
+			`N2_${bit}.out -> O1_${bit}.in2 #amber [ortho]`,
+			`X2_${bit}.out -> S${bit}.in #emerald [ortho]`
 		);
 	}
 	lines.push(`O1_${bits - 1}.out -> COUT.in #purple [ortho]`);
@@ -230,11 +230,12 @@ resistor:RL "330 \\Omega" at (580, 300) #slate
 ground:G1 "0 V" at (360, 370) #slate
 
 VCC.out -> U1.vcc #amber [ortho]
+VCC.out -> RA.in #amber [ortho]
 RA.out -> RB.in #amber [ortho]
+RB.in -> U1.dis #amber [ortho]
 RB.out -> CT.in #cyan [ortho]
 RB.out -> U1.th #cyan [ortho]
 CT.in -> U1.tr #cyan [ortho]
-RA.in -> U1.dis #amber [ortho]
 U1.q -> LED.anode #emerald [ortho]
 LED.cathode -> RL.in #slate [ortho]
 U1.gnd -> G1.in #slate [ortho]`;
@@ -279,21 +280,21 @@ resistor:RLOAD "R_{load}" at (820, 280) #slate [orientation=down]
 junction:RETURN "power return" at (650, 420) #slate
 ground:GND "0 V" at (650, 500) #slate
 
-VIN.positive -> QH.source #amber [line]
+VIN.positive -> QH.source #amber [ortho]
 CTRL.gate -> QH.gate #purple [ortho]
-QH.drain -> SW.node #amber [line]
-SW.node -> L1.in #amber [line]
-L1.out -> VOUT_NODE.node #cyan [line marker-end=arrow label="i_L"]
-VOUT_NODE.node -> VOUT_PROBE.node #emerald [line]
+QH.drain -> SW.node #amber [ortho]
+SW.node -> L1.in #amber [ortho]
+L1.out -> VOUT_NODE.node #cyan [ortho marker-end=arrow label="i_L"]
+VOUT_NODE.node -> VOUT_PROBE.node #emerald [ortho]
 VOUT_PROBE.node -> CTRL.fb #emerald [ortho]
 VOUT_NODE.node -> COUT.in #cyan [ortho]
 VOUT_NODE.node -> RLOAD.in #slate [ortho]
 SW.node -> D1.cathode #blue [ortho]
 D1.anode -> RETURN.node #blue [ortho]
-COUT.out -> RETURN.node #cyan [line]
-RLOAD.out -> RETURN.node #slate [line]
+COUT.out -> RETURN.node #cyan [ortho]
+RLOAD.out -> RETURN.node #slate [ortho]
 VIN.negative -> RETURN.node #slate [ortho]
-RETURN.node -> GND.in #slate [line]`;
+RETURN.node -> GND.in #slate [ortho]`;
 
 const CHUA_SOURCE = `// Chua double-scroll oscillator with nonlinear negative-resistance element
 junction:X_NODE "v_{C1}" at (260, 150) #purple
@@ -383,20 +384,20 @@ COR.d -> MOUT.in #emerald [ortho]`;
 
 const WIEN_SOURCE = `// Wien-bridge oscillator — op-amp with an RC frequency-selective positive-feedback network
 amplifier:U1 "A" at (470, 250) #purple [type=opamp]
-resistor:RF "R_f" at (330, 90) #amber
+resistor:RF "R_f" at (330, 150) #amber [orientation=down]
 resistor:RG "R_g" at (150, 250) #amber [orientation=down]
 junction:VN "v_-" at (330, 250) #amber
 junction:VOUT "v_o" at (700, 250) #purple
 resistor:RS "R" at (760, 110) #cyan
 capacitor:CS "C" at (890, 110) #cyan
-junction:VP "v_+" at (330, 400) #cyan
+junction:VP "v_+" at (280, 400) #cyan
 resistor:RP "R" at (620, 470) #emerald
 capacitor:CP "C" at (470, 470) #emerald [orientation=down]
 port:OUT "v_o" at (1000, 250) #emerald
 ground:GND "0 V" at (150, 470) #slate
 
 U1.out -> VOUT.node #purple [line]
-VOUT.node -> OUT.in #purple [line]
+VOUT.node -> OUT.in #purple [ortho]
 VOUT.node -> RS.in #cyan [ortho]
 RS.out -> CS.in #cyan [line]
 CS.out -> VP.node #cyan [ortho]
@@ -407,30 +408,30 @@ VP.node -> CP.in #emerald [ortho]
 CP.out -> GND.in #emerald [line]
 VOUT.node -> RF.in #amber [ortho]
 RF.out -> VN.node #amber [ortho]
-VN.node -> U1.negative #amber [line]
+VN.node -> U1.negative #amber [ortho]
 VN.node -> RG.in #amber [ortho]
 RG.out -> GND.in #amber [ortho]`;
 
 const LFSR_SOURCE = `// 4-bit Fibonacci LFSR — maximal-length m-sequence, taps at stages 3 and 4
 clock:CLK "clk" at (110, 300) #amber
-xor:FB "XOR" at (150, 110) #purple [inputs=2]
+xor:FB "XOR" at (1090, 80) #purple [inputs=2]
 flipflop:Q1 "D1" at (360, 300) #blue [type=d]
 flipflop:Q2 "D2" at (560, 300) #cyan [type=d]
 flipflop:Q3 "D3" at (760, 300) #emerald [type=d]
 flipflop:Q4 "D4" at (960, 300) #amber [type=d]
 port:OUT "seq" at (1120, 300) #emerald
 
+Q3.q -> FB.in1 #purple [ortho]
+Q4.q -> FB.in2 #purple [ortho]
+FB.out -> Q1.d #purple [ortho]
 CLK.out -> Q1.clock #amber [ortho]
 CLK.out -> Q2.clock #amber [ortho]
 CLK.out -> Q3.clock #amber [ortho]
 CLK.out -> Q4.clock #amber [ortho]
-FB.out -> Q1.d #purple [ortho]
 Q1.q -> Q2.d #blue [line]
 Q2.q -> Q3.d #cyan [line]
 Q3.q -> Q4.d #emerald [line]
-Q4.q -> OUT.in #emerald [line]
-Q3.q -> FB.in1 #purple [ortho]
-Q4.q -> FB.in2 #purple [ortho]`;
+Q4.q -> OUT.in #emerald [line]`;
 
 const GROVER_SOURCE = `// Grover 3-qubit search — uniform superposition, oracle marking, amplitude amplification
 port:Q0 "q_0" at (80, 130) #blue

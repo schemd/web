@@ -13,7 +13,7 @@ load:L "lamp" at (740, 130) #emerald [type=lamp]
 ONE.out -> T.in1 #blue [digital line]
 CLK.out -> T.enable #amber [digital ortho]
 T.out1 -> TP.node #cyan [digital line]
-TP.node -> L.in #emerald [line]
+TP.node -> L.in #emerald [digital line]
 ```
 
 Source-to-vector mapping uses compiler-emitted one-based lines. Do not reparse the DSL with browser regexes; the server response already supplies the authoritative source map.

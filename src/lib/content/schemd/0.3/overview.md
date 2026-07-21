@@ -7,7 +7,7 @@
 Install the exact release and compile without a DOM, Canvas, `getBBox()`, or browser layout:
 
 ```sh
-npm install --save-exact @schemd/core@0.3.1
+npm install --save-exact @schemd/core@0.3.2
 ```
 
 ```ts
@@ -27,14 +27,14 @@ source:VIN "V_{in}" at (80, 140) #blue [type=voltage-ac]
 resistor:R1 "10 k\Omega" at (250, 140) #amber
 junction:OUT "output node" at (420, 140) #cyan
 capacitor:C1 "100 nF" at (420, 260) #cyan [orientation=down]
-ground:GND "0 V" at (420, 360) #slate
+ground:GND "0 V" at (200, 360) #slate
 port:LOAD "V_{out}" at (650, 140) #emerald
 
 VIN.positive -> R1.in #blue [ortho]
-VIN.negative -> GND.in #slate [line]
+VIN.negative -> GND.in #slate [ortho]
 R1.out -> OUT.node #amber [line]
 OUT.node -> C1.in #cyan [ortho]
-C1.out -> GND.in #cyan [line]
+C1.out -> GND.in #cyan [ortho]
 OUT.node -> LOAD.in #emerald [line]
 ```
 
@@ -57,6 +57,6 @@ IN.out -> R1.in #blue [line]
 R1.out -> OUT.in #emerald [line]
 ```
 
-Continue with the [grammar](/docs/0.3.1/grammar), [component API](/docs/0.3.1/component-reference), [playground](/playground/0.3.1), and [release timeline](/changelog).
+Continue with the [grammar](/docs/0.3/grammar), [component API](/docs/0.3/component-reference), [playground](/playground/latest), and [release timeline](/changelog).
 
 <!-- /schemd-section -->

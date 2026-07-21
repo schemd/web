@@ -27,7 +27,7 @@ import {
 } from './simulations';
 
 const registry: SchemdRegistry = {
-	releases: DOCUMENTATION_VERSIONS.map((version) => ({
+	releases: [WEBSITE_CORE_VERSION, '0.2.1'].map((version) => ({
 		version,
 		publishedAt: new Date(0).toISOString(),
 		unpackedSize: undefined,
@@ -59,9 +59,9 @@ describe('versioned registry and documentation', () => {
 		expect(resolveVersion(registry, '9.9.9')).toBeUndefined();
 	});
 
-	test('keeps complete, distinct current and historical 0.2.1 corpora', () => {
-		const current = docManifest(WEBSITE_CORE_VERSION);
-		const historical = docManifest('0.2.1');
+	test('keeps complete, distinct current and historical line corpora', () => {
+		const current = docManifest(LATEST_DOCUMENTED_VERSION);
+		const historical = docManifest('0.2');
 		expect(current.map(({ slug }) => slug)).toEqual(historical.map(({ slug }) => slug));
 		expect(current).toHaveLength(11);
 
@@ -84,8 +84,8 @@ describe('versioned registry and documentation', () => {
 			}
 		}
 
-		const currentOverview = loadDoc(WEBSITE_CORE_VERSION, 'overview');
-		const historicalOverview = loadDoc('0.2.1', 'overview');
+		const currentOverview = loadDoc(LATEST_DOCUMENTED_VERSION, 'overview');
+		const historicalOverview = loadDoc('0.2', 'overview');
 		expect(
 			currentOverview?.examples.some(({ source }) => source.includes('orientation=down'))
 		).toBe(true);
@@ -94,15 +94,15 @@ describe('versioned registry and documentation', () => {
 		);
 	});
 
-	test('indexes current sections with version-preserving command links', () => {
-		const entries = docSearchIndex(WEBSITE_CORE_VERSION);
+	test('indexes current sections with line-preserving command links', () => {
+		const entries = docSearchIndex(LATEST_DOCUMENTED_VERSION);
 		expect(
-			entries.some(({ href }) => href === `/docs/${WEBSITE_CORE_VERSION}/component-reference`)
+			entries.some(({ href }) => href === `/docs/${LATEST_DOCUMENTED_VERSION}/component-reference`)
 		).toBe(true);
 		expect(entries.some(({ title }) => title.includes('Sources, connectivity'))).toBe(true);
-		expect(entries.every(({ href }) => href.startsWith(`/docs/${WEBSITE_CORE_VERSION}/`))).toBe(
-			true
-		);
+		expect(
+			entries.every(({ href }) => href.startsWith(`/docs/${LATEST_DOCUMENTED_VERSION}/`))
+		).toBe(true);
 	});
 
 	test('builds the gallery exclusively from compiled current documentation', () => {
@@ -119,24 +119,29 @@ describe('versioned registry and documentation', () => {
 	});
 });
 
-describe('dynamic versioning', () => {
-	test('discovers documented versions newest-first with the latest as default', () => {
+describe('dynamic line-based versioning', () => {
+	test('discovers documented lines newest-first with the latest as default', () => {
 		expect(DOCUMENTED_VERSIONS.length).toBeGreaterThanOrEqual(2);
 		expect(LATEST_DOCUMENTED_VERSION).toBe(DOCUMENTED_VERSIONS[0]);
-		expect(WEBSITE_CORE_VERSION).toBe(LATEST_DOCUMENTED_VERSION);
+		/* The installed engine release always belongs to the latest documented line. */
+		expect(WEBSITE_CORE_VERSION.startsWith(`${LATEST_DOCUMENTED_VERSION}.`)).toBe(true);
 		const sorted = [...DOCUMENTED_VERSIONS].sort(compareVersionsDesc);
 		expect(DOCUMENTED_VERSIONS).toEqual(sorted);
 	});
 
-	test('resolves docs against documented folders, not the npm registry', () => {
+	test('snaps every requested version onto a documented line', () => {
 		expect(resolveDocVersion('latest')).toBe(LATEST_DOCUMENTED_VERSION);
 		expect(resolveDocVersion(LATEST_DOCUMENTED_VERSION)).toBe(LATEST_DOCUMENTED_VERSION);
-		expect(resolveDocVersion('0.2.1')).toBe('0.2.1');
-		expect(resolveDocVersion('9.9.9')).toBeUndefined();
-		/* Every documented version resolves and carries a complete manifest. */
-		for (const version of DOCUMENTED_VERSIONS) {
-			expect(resolveDocVersion(version)).toBe(version);
-			expect(docManifest(version).length).toBeGreaterThan(0);
+		/* Patches resolve to their line; undocumented releases snap to the range. */
+		expect(resolveDocVersion(WEBSITE_CORE_VERSION)).toBe(LATEST_DOCUMENTED_VERSION);
+		expect(resolveDocVersion('0.2.1')).toBe('0.2');
+		expect(resolveDocVersion('0.1.0')).toBe('0.2');
+		expect(resolveDocVersion('9.9.9')).toBe(LATEST_DOCUMENTED_VERSION);
+		expect(resolveDocVersion('not-a-version')).toBeUndefined();
+		/* Every documented line resolves to itself with a complete manifest. */
+		for (const line of DOCUMENTED_VERSIONS) {
+			expect(resolveDocVersion(line)).toBe(line);
+			expect(docManifest(line).length).toBeGreaterThan(0);
 		}
 	});
 });

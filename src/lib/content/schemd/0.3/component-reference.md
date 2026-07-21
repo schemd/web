@@ -78,12 +78,15 @@ Classical gates are `and`, `or`, `not`, `nand`, `nor`, `xor`, and `xnor`; they u
 
 ```schemd bounds="1020x430" title="Registered bus pipeline"
 port:DIN "D[7:0]" at (80, 150) #blue [width=8]
-bus:SPLIT "split" at (270, 150) #cyan [type=splitter width=8 outputs=2]
+bus:SPLIT "split" at (270, 260) #cyan [type=splitter width=8 outputs=2]
 register:REG "R0" at (520, 150) #purple [width=8]
 clock:CLK "CLK" at (520, 310) #amber
 port:DOUT "Q[7:0]" at (850, 150) #emerald [width=8]
+port:FLAG "D_0" at (80, 330) #cyan
 
-DIN.out -> REG.in #blue [digital width=8]
+DIN.out -> REG.in #blue [digital ortho width=8]
+DIN.out -> SPLIT.bus #blue [digital ortho width=8]
+SPLIT.out1 -> FLAG.in #cyan [digital ortho]
 CLK.out -> REG.clock #amber [digital ortho]
 REG.out -> DOUT.in #emerald [digital width=8]
 ```
@@ -114,7 +117,7 @@ classical-bit:C "c_0" at (940, 280) #slate
 
 P0.out -> H.in #blue [quantum line]
 H.out -> CRZ.control1 #cyan [quantum ortho]
-P1.out -> CRZ.target1 #blue [quantum ortho]
+P1.out -> CRZ.target1 #blue [quantum line]
 CRZ.out1 -> M.in #purple [quantum ortho]
 M.classical -> C.in #slate [classical ortho]
 ```

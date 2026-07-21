@@ -7,6 +7,7 @@
 import type { RequestHandler } from './$types';
 import { getRegistry } from '$lib/server/registry';
 import { docManifest } from '$lib/server/docs';
+import { DOCUMENTED_VERSIONS } from '$lib/server/versions';
 import { SIM_ENVIRONMENTS } from '$lib/server/simulations';
 
 export const GET: RequestHandler = async ({ url }) => {
@@ -18,6 +19,7 @@ export const GET: RequestHandler = async ({ url }) => {
 		`${origin}/coverage`,
 		`${origin}/examples`
 	];
+	/* Playground and simulations exist per release; docs exist per documented line. */
 	for (const release of registry.releases) {
 		urls.push(
 			`${origin}/playground/${release.version}`,
@@ -26,8 +28,10 @@ export const GET: RequestHandler = async ({ url }) => {
 		for (const environment of SIM_ENVIRONMENTS) {
 			urls.push(`${origin}/simulations/${release.version}/${environment.id}`);
 		}
-		for (const page of docManifest(release.version)) {
-			urls.push(`${origin}/docs/${release.version}/${page.slug}`);
+	}
+	for (const line of DOCUMENTED_VERSIONS) {
+		for (const page of docManifest(line)) {
+			urls.push(`${origin}/docs/${line}/${page.slug}`);
 		}
 	}
 	const body =

@@ -24,15 +24,15 @@ initial:P1 "V" at (34, 310) #red
 resistor:R1 "10 k\Omega" at (260, 120) #amber
 junction:VOUT "output node" at (440, 120) #cyan
 capacitor:C1 "100 nF" at (440, 250) #cyan [orientation=down]
-ground:GND "0 V" at (440, 350) #slate
+ground:GND "0 V" at (220, 350) #slate
 port:OUT "V_{out}" at (680, 120) #emerald
 
 VIN.positive -> R1.in #blue [line]
 VIN.negative -> P1.in #slate [ortho]
-P1.out -> GND.in #silver
+P1.out -> GND.in #silver [ortho]
 R1.out -> VOUT.node #amber [line]
 VOUT.node -> C1.in #cyan [ortho]
-C1.out -> GND.in #cyan [line]
+C1.out -> GND.in #cyan [ortho]
 VOUT.node -> OUT.in #emerald [line marker-end=arrow]`
 	},
 	{

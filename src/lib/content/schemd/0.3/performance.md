@@ -13,7 +13,7 @@ A.out -> R.in #blue [ortho]
 R.out -> B.in #emerald [ortho]
 ```
 
-Release-candidate measurements for the complete 0.3 compiler are **90,294 B minified**, **26,479 B gzip**, **60,411 B npm tarball**, and **260,610 B unpacked**. The hard compiler gate is 30,720 B gzip.
+The 0.3.2 release measures **101,672 B minified**, **30,348 B gzip**, **68,779 B npm tarball**, and **298,854 B unpacked**. The hard compiler gate is 30,720 B gzip, enforced by `bun run size`.
 
 <!-- /schemd-section -->
 
