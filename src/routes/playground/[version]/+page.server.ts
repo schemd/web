@@ -1,6 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getRegistry, resolveVersion, WEBSITE_CORE_VERSION } from '$lib/server/registry';
+import { getRegistry, resolveReleaseVersion, WEBSITE_CORE_VERSION } from '$lib/server/registry';
 import {
 	PASSIVE_KINDS,
 	ANALOG_KINDS,
@@ -48,14 +48,16 @@ VOUT.node -> C1.in #cyan [ortho]
 C1.out -> GND.in #cyan [ortho]
 VOUT.node -> OUT.in #emerald [line marker-end=arrow]`;
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, url }) => {
 	const registry = await getRegistry();
-	const version = resolveVersion(registry, params.version);
+	const version = resolveReleaseVersion(registry, params.version);
 	if (version === undefined) {
 		error(404, `No playground release named ${params.version}.`);
 	}
-	if (params.version === 'latest') {
-		redirect(307, `/playground/${version}`);
+	/* Canonicalize aliases (`latest`, `0.3`) to the concrete release URL,
+	 * preserving `?code=`/bounds so an opened example survives the hop. */
+	if (params.version !== version) {
+		redirect(307, `/playground/${version}${url.search}`);
 	}
 	return {
 		version,

@@ -1,16 +1,17 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getRegistry, resolveVersion } from '$lib/server/registry';
+import { getRegistry, resolveReleaseVersion } from '$lib/server/registry';
 import { getSimulation, listSimulationEnvironments } from '$lib/server/simulations';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, url }) => {
 	const registry = await getRegistry();
-	const version = resolveVersion(registry, params.version);
+	const version = resolveReleaseVersion(registry, params.version);
 	if (version === undefined) {
 		error(404, `No simulation release named ${params.version}.`);
 	}
-	if (params.version === 'latest') {
-		redirect(307, `/simulations/${version}/${params.env}`);
+	/* Canonicalize aliases (`latest`, `0.3`) to the concrete release URL. */
+	if (params.version !== version) {
+		redirect(307, `/simulations/${version}/${params.env}${url.search}`);
 	}
 
 	const simulation = getSimulation(params.env);

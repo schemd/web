@@ -1,18 +1,21 @@
 <script lang="ts">
 	/**
-	 * Grover's algorithm over N = 8 basis states (3 qubits).
+	 * Grover's algorithm over N = 8 basis states (3 qubits), as a step-by-step
+	 * transformation inspector.
 	 *
-	 * The engine is the exact real-amplitude state vector. Each round applies the
-	 * oracle (sign-flip on the marked state) then the diffusion operator
-	 * (inversion about the mean). Amplitudes stay real throughout this
-	 * construction, so an 8-element array is the whole simulator — the bar chart
-	 * is a direct plot of |aᵢ|². The compiled schematic pulses its oracle and
-	 * diffusion blocks as the rotation proceeds.
+	 * The whole run is a pure function of the `step` index, so Previous/Next jump
+	 * instantly with no async state: uniform superposition, then per round an
+	 * oracle phase-flip, the mean-line calculation, and the diffuser inversion,
+	 * ending in measurement. Amplitudes are real and **signed** — the target dips
+	 * below the resting plane after the oracle and rebounds above the mean after
+	 * the diffuser. The active gate lights in the compiled circuit and a HUD shows
+	 * the exact transformation for the current step.
 	 */
 	import { setNodeActive, delegatedNodeId } from '$lib/sim-dom';
 	import { playSuccess, playTick } from '$lib/audio';
 	import { ui } from '$lib/ui.svelte';
 	import LabShell from './LabShell.svelte';
+	import Stepper from './Stepper.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
 
@@ -26,71 +29,115 @@
 	const UNIFORM = 1 / Math.sqrt(N);
 	const OPTIMAL = Math.floor((Math.PI / 4) * Math.sqrt(N)); /* = 2 for N = 8 */
 
+	type PhaseKind = 'super' | 'oracle' | 'mean' | 'diffuse' | 'measure';
+	interface Phase {
+		readonly kind: PhaseKind;
+		readonly round: number;
+		readonly label: string;
+	}
+
+	/** The full staged schedule: superposition, k×(oracle, mean, diffuse), measure. */
+	const PHASES: readonly Phase[] = (() => {
+		const list: Phase[] = [{ kind: 'super', round: 0, label: 'Superposition' }];
+		for (let round = 1; round <= OPTIMAL; round += 1) {
+			list.push({ kind: 'oracle', round, label: `Round ${round} · Oracle U_f` });
+			list.push({ kind: 'mean', round, label: `Round ${round} · Mean ⟨a⟩` });
+			list.push({ kind: 'diffuse', round, label: `Round ${round} · Diffuser` });
+		}
+		list.push({ kind: 'measure', round: OPTIMAL, label: 'Measurement' });
+		return list;
+	})();
+	const STEP_LABELS = PHASES.map((phase) => phase.label);
+
 	let host = $state<HTMLElement | undefined>();
 	let target = $state(0b101); /* the marked item; set by the 3 qubit toggles */
-	let amplitudes = $state<number[]>(Array.from({ length: N }, () => UNIFORM));
-	let rounds = $state(0);
-	let phase = $state<'idle' | 'oracle' | 'diffuse'>('idle');
+	let step = $state(0);
+	let playing = $state(false);
 	let faults = $state({ wrongOracle: false });
 
-	const probabilities = $derived(amplitudes.map((a) => a * a));
 	const markedIndex = $derived(faults.wrongOracle ? target ^ 0b001 : target);
-	const pTarget = $derived(probabilities[target]!);
 	const label = (index: number): string => index.toString(2).padStart(3, '0');
 
-	function reset(): void {
-		amplitudes = Array.from({ length: N }, () => UNIFORM);
-		rounds = 0;
-		phase = 'idle';
-	}
-
-	/** One Grover iteration: oracle sign-flip, then inversion about the mean. */
-	async function applyRound(): Promise<void> {
-		phase = 'oracle';
-		const oracled = amplitudes.map((a, index) => (index === markedIndex ? -a : a));
-		amplitudes = oracled;
-		if (ui.audio) playTick(520);
-		await delay(280);
-		phase = 'diffuse';
-		const mean = oracled.reduce((sum, a) => sum + a, 0) / N;
-		amplitudes = oracled.map((a) => 2 * mean - a);
-		rounds += 1;
-		await delay(280);
-		phase = 'idle';
-		if (ui.audio) {
-			if (rounds === OPTIMAL && !faults.wrongOracle) playSuccess();
-			else playTick(600);
+	/** The exact state after replaying every phase up to (and including) `step`. */
+	const stepState = $derived.by(() => {
+		const marked = markedIndex;
+		let amplitudes = Array.from({ length: N }, () => UNIFORM);
+		for (let index = 1; index <= step; index += 1) {
+			const kind = PHASES[index]!.kind;
+			if (kind === 'oracle') {
+				amplitudes = amplitudes.map((a, i) => (i === marked ? -a : a));
+			} else if (kind === 'diffuse') {
+				const mean = amplitudes.reduce((sum, a) => sum + a, 0) / N;
+				amplitudes = amplitudes.map((a) => 2 * mean - a);
+			}
 		}
-	}
+		const phase = PHASES[step]!;
+		/* The mean line is the reflection axis shown at the dedicated mean step. */
+		const mean = phase.kind === 'mean' ? amplitudes.reduce((sum, a) => sum + a, 0) / N : undefined;
+		return { amplitudes, mean, phase };
+	});
 
-	function delay(ms: number): Promise<void> {
-		return new Promise((resolve) => setTimeout(resolve, ms));
-	}
+	const amplitudes = $derived(stepState.amplitudes);
+	const currentPhase = $derived(stepState.phase);
+	const meanValue = $derived(stepState.mean);
+	const pTarget = $derived(amplitudes[target]! ** 2);
 
-	async function runToOptimum(): Promise<void> {
-		reset();
-		for (let round = 0; round < OPTIMAL; round += 1) {
-			await applyRound();
-			await delay(160);
-		}
-	}
+	/* Restart the walk whenever the marked state or the oracle fault changes. */
+	$effect(() => {
+		void target;
+		void faults.wrongOracle;
+		step = 0;
+		playing = false;
+	});
 
-	/** Toggle one bit of the target and restart the search. */
+	/** Toggle one bit of the target. */
 	function toggleTargetBit(bit: number): void {
 		target ^= 1 << bit;
-		reset();
 		if (ui.audio) playTick(500 + bit * 60);
 	}
 
-	/* Paint the algorithm phase into the schematic. */
+	/* Per-step audit chime + a success chime when the optimum measurement lands. */
+	function onStep(next: number): void {
+		if (!ui.audio) return;
+		if (PHASES[next]!.kind === 'measure' && !faults.wrongOracle) playSuccess();
+		else playTick(480 + next * 40);
+	}
+
+	/* ---------- Signed amplitude bar geometry ---------- */
+	const CHART_W = 244;
+	const CHART_H = 150;
+	const ZERO_Y = 98; /* the resting plane */
+	const SCALE = 80; /* px per unit amplitude */
+	const barX = (index: number): number => 12 + index * 29;
+	const barTop = (a: number): number => (a >= 0 ? ZERO_Y - a * SCALE : ZERO_Y);
+	const barHeight = (a: number): number => Math.abs(a) * SCALE;
+	const meanY = $derived(meanValue === undefined ? ZERO_Y : ZERO_Y - meanValue * SCALE);
+
+	/** The live math for the current step, shown in the HUD. */
+	const hudMath = $derived.by(() => {
+		switch (currentPhase.kind) {
+			case 'super':
+				return `|s⟩ = 1/√8 · Σ|x⟩  —  every amplitude = +${UNIFORM.toFixed(3)}`;
+			case 'oracle':
+				return `U_f : a[${label(markedIndex)}] → −a[${label(markedIndex)}]  (phase flip)`;
+			case 'mean':
+				return `⟨a⟩ = ${(meanValue ?? 0).toFixed(3)}  —  reflect every amplitude about this line`;
+			case 'diffuse':
+				return `aᵢ → 2⟨a⟩ − aᵢ  ·  P(|${label(target)}⟩) = ${(pTarget * 100).toFixed(1)}%`;
+			case 'measure':
+				return `measure → P(|${label(target)}⟩) = ${(pTarget * 100).toFixed(1)}%`;
+		}
+	});
+
+	/* Light the gate that corresponds to the active step in the compiled circuit. */
 	$effect(() => {
 		const root = host;
 		if (!root) return;
-		setNodeActive(root, 'ORACLE', phase === 'oracle');
-		setNodeActive(root, 'DIFF', phase === 'diffuse');
-		for (let index = 0; index < 3; index += 1) {
-			setNodeActive(root, `M${index}`, ((target >> (2 - index)) & 1) === 1 && pTarget > 0.5);
-		}
+		const kind = currentPhase.kind;
+		for (let i = 0; i < 3; i += 1) setNodeActive(root, `H${i}`, kind === 'super');
+		setNodeActive(root, 'ORACLE', kind === 'oracle');
+		setNodeActive(root, 'DIFF', kind === 'mean' || kind === 'diffuse');
+		for (let i = 0; i < 3; i += 1) setNodeActive(root, `M${i}`, kind === 'measure');
 	});
 
 	function probe(element: Element): string | undefined {
@@ -99,6 +146,8 @@
 		if (id === 'DIFF') return `diffusion: aᵢ → 2⟨a⟩ − aᵢ`;
 		const measure = id?.match(/^M(\d)$/);
 		if (measure) return `qubit ${measure[1]} · P(target) = ${(pTarget * 100).toFixed(1)}%`;
+		const hadamard = id?.match(/^H(\d)$/);
+		if (hadamard) return `H on q${hadamard[1]} — build uniform superposition`;
 		return undefined;
 	}
 </script>
@@ -109,8 +158,8 @@
 {#snippet controls()}
 	<div class="stack">
 		<p class="control-note">
-			Mark one of the eight states, then rotate the whole register toward it. The optimum is
-			<strong>{OPTIMAL} rounds</strong> — more over-rotates past the target.
+			Mark one of the eight states, then <strong>step</strong> the register toward it. Each round is an
+			oracle phase-flip, a mean reflection, and a diffuser rebound — watch the target grow.
 		</p>
 		<div class="target-picker">
 			<span class="microlabel">marked state |q₂q₁q₀⟩</span>
@@ -129,11 +178,7 @@
 				<span class="target-ket">= |{label(target)}⟩</span>
 			</div>
 		</div>
-		<div class="button-row">
-			<button type="button" class="btn btn-solid" onclick={applyRound}>apply round</button>
-			<button type="button" class="btn" onclick={runToOptimum}>run to optimum</button>
-			<button type="button" class="btn" onclick={reset}>reset</button>
-		</div>
+		<Stepper bind:step bind:playing count={PHASES.length} labels={STEP_LABELS} onchange={onStep} />
 	</div>
 	<div class="switchboard">
 		<p class="microlabel">switchboard · fault injection</p>
@@ -143,7 +188,7 @@
 
 {#snippet canvas()}
 	<div
-		class="sim-stage schemd-frame"
+		class="sim-stage schemd-frame net-optics"
 		bind:this={host}
 		role="group"
 		aria-label="Grover 3-qubit search circuit"
@@ -153,28 +198,49 @@
 {/snippet}
 
 {#snippet instruments()}
-	<div class="readouts">
-		<span class="readout">round {rounds} / optimum {OPTIMAL}</span>
-		<span class="readout big" class:peak={pTarget > 0.9} class:faulted={faults.wrongOracle}>
-			P(|{label(target)}⟩) = {(pTarget * 100).toFixed(1)}%
-		</span>
-		<span class="readout phase">phase: {phase}</span>
+	<div class="hud" aria-live="polite">
+		<span class="microlabel">{currentPhase.label}</span>
+		<p class="hud-math">{hudMath}</p>
 	</div>
-	<svg class="bars" viewBox="0 0 240 130" role="img" aria-label="Amplitude probabilities">
-		{#each probabilities as probability, index (index)}
+	<svg
+		class="bars"
+		viewBox={`0 0 ${CHART_W} ${CHART_H}`}
+		role="img"
+		aria-label="Signed amplitude bars"
+	>
+		<!-- resting plane (amplitude 0) -->
+		<line class="zero-line" x1="4" x2={CHART_W - 4} y1={ZERO_Y} y2={ZERO_Y} />
+		<!-- uniform reference -->
+		<line
+			class="uniform-line"
+			x1="4"
+			x2={CHART_W - 4}
+			y1={ZERO_Y - UNIFORM * SCALE}
+			y2={ZERO_Y - UNIFORM * SCALE}
+		/>
+		{#each amplitudes as amplitude, index (index)}
 			<rect
 				class="bar"
 				class:target={index === target}
-				x={8 + index * 29}
-				y={104 - probability * 96}
+				class:negative={amplitude < 0}
+				x={barX(index)}
+				y={barTop(amplitude)}
 				width="20"
-				height={Math.max(0, probability * 96)}
+				height={barHeight(amplitude)}
 			/>
-			<text class="bar-label" x={18 + index * 29} y="118">{label(index)}</text>
+			<text class="bar-label" x={barX(index) + 10} y={CHART_H - 4}>{label(index)}</text>
 		{/each}
-		<line class="uniform-line" x1="4" x2="236" y1={104 - (1 / N) * 96} y2={104 - (1 / N) * 96} />
+		<!-- mean reflection axis (shown at the mean step) -->
+		{#if meanValue !== undefined}
+			<line class="mean-line" x1="4" x2={CHART_W - 4} y1={meanY} y2={meanY} />
+			<text class="mean-label" x={CHART_W - 6} y={meanY - 3}>⟨a⟩</text>
+		{/if}
 	</svg>
-	<p class="hint microlabel">dashed line = uniform 1/8 · target bar in accent</p>
+	<div class="legend microlabel">
+		<span><i class="sw target"></i> target</span>
+		<span><i class="sw"></i> others</span>
+		<span class="peak" class:hit={pTarget > 0.9}>P = {(pTarget * 100).toFixed(1)}%</span>
+	</div>
 {/snippet}
 
 <style>
@@ -231,35 +297,25 @@
 		color: var(--accent-2);
 	}
 
-	.button-row {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
-	}
-
-	.readouts {
+	/* ---------- HUD ---------- */
+	.hud {
 		display: grid;
-		gap: var(--space-1);
+		gap: 2px;
+		padding: var(--space-3);
+		border: 1px solid var(--line-strong);
+		border-inline-start: 3px solid var(--accent);
+		background: var(--bg-inset);
 	}
 
-	.big {
-		font-size: var(--text-md);
-		color: var(--accent-2);
-	}
-
-	.big.peak {
-		color: var(--ok);
-	}
-
-	.big.faulted {
-		color: var(--danger);
-	}
-
-	.phase {
+	.hud-math {
+		margin: 0;
 		font-family: var(--font-mono);
-		color: var(--ink-faint);
+		font-size: var(--text-xs);
+		line-height: 1.5;
+		color: var(--ink);
 	}
 
+	/* ---------- Signed bar chart ---------- */
 	.bars {
 		inline-size: 100%;
 		max-inline-size: 260px;
@@ -267,16 +323,52 @@
 		border: 1px solid var(--line);
 	}
 
+	.zero-line {
+		stroke: var(--line-strong);
+		stroke-width: 0.8;
+	}
+
+	.uniform-line {
+		stroke: var(--ink-faint);
+		stroke-width: 0.6;
+		stroke-dasharray: 2 3;
+		opacity: 0.6;
+	}
+
+	.mean-line {
+		stroke: var(--warn, var(--accent-2));
+		stroke-width: 1;
+		stroke-dasharray: 4 2;
+	}
+
+	.mean-label {
+		fill: var(--warn, var(--accent-2));
+		font-family: var(--font-mono);
+		font-size: 8px;
+		text-anchor: end;
+	}
+
 	.bar {
 		fill: var(--ink-faint);
 		opacity: 0.7;
 		transition:
 			y var(--dur-med) var(--ease-precise),
-			height var(--dur-med) var(--ease-precise);
+			height var(--dur-med) var(--ease-precise),
+			fill var(--dur-med) var(--ease-precise);
 	}
 
 	.bar.target {
 		fill: var(--accent);
+		opacity: 1;
+	}
+
+	.bar.negative {
+		fill: var(--danger);
+		opacity: 0.85;
+	}
+
+	.bar.target.negative {
+		fill: var(--danger);
 		opacity: 1;
 	}
 
@@ -287,29 +379,38 @@
 		text-anchor: middle;
 	}
 
-	.uniform-line {
-		stroke: var(--accent-2);
-		stroke-width: 0.6;
-		stroke-dasharray: 3 2;
-		opacity: 0.7;
-	}
+	.legend {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
 
-	.hint {
-		margin: 0;
+		& .sw {
+			display: inline-block;
+			inline-size: 9px;
+			block-size: 9px;
+			margin-inline-end: 3px;
+			vertical-align: -1px;
+			background: var(--ink-faint);
+		}
+
+		& .sw.target {
+			background: var(--accent);
+		}
+
+		& .peak {
+			margin-inline-start: auto;
+			font-family: var(--font-mono);
+			color: var(--ink-mute);
+		}
+
+		& .peak.hit {
+			color: var(--ok);
+		}
 	}
 
 	.sim-stage {
 		:global(svg) {
 			min-inline-size: 1180px;
-		}
-
-		:global([data-node-id='ORACLE']),
-		:global([data-node-id='DIFF']) {
-			transition: filter var(--dur-fast) var(--ease-precise);
-		}
-
-		:global([data-node-id].is-active) {
-			filter: drop-shadow(0 0 6px var(--glow));
 		}
 	}
 </style>

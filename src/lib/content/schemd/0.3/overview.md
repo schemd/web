@@ -7,7 +7,7 @@
 Install the exact release and compile without a DOM, Canvas, `getBBox()`, or browser layout:
 
 ```sh
-npm install --save-exact @schemd/core@0.3.2
+npm i @schemd/core@0.3.2
 ```
 
 ```ts

@@ -9,6 +9,7 @@ import {
 	compareVersionsDesc,
 	DOCUMENTATION_VERSIONS,
 	resolveVersion,
+	resolveReleaseVersion,
 	WEBSITE_CORE_VERSION,
 	type SchemdRegistry
 } from './registry';
@@ -53,6 +54,20 @@ describe('versioned registry and documentation', () => {
 		expect(resolveVersion(registry, 'latest')).toBe(WEBSITE_CORE_VERSION);
 		expect(resolveVersion(registry, '0.2.1')).toBe('0.2.1');
 		expect(resolveVersion(registry, '9.9.9')).toBeUndefined();
+	});
+
+	test('resolves release line aliases to a concrete release for playground/simulations', () => {
+		/* A docs line alias must navigate to the real engine build, not 404. */
+		const line = WEBSITE_CORE_VERSION.split('.').slice(0, 2).join('.'); // e.g. 0.3
+		const major = WEBSITE_CORE_VERSION.split('.')[0]!; // e.g. 0
+		expect(resolveReleaseVersion(registry, line)).toBe(WEBSITE_CORE_VERSION);
+		expect(resolveReleaseVersion(registry, major)).toBe(WEBSITE_CORE_VERSION);
+		expect(resolveReleaseVersion(registry, 'latest')).toBe(WEBSITE_CORE_VERSION);
+		expect(resolveReleaseVersion(registry, WEBSITE_CORE_VERSION)).toBe(WEBSITE_CORE_VERSION);
+		expect(resolveReleaseVersion(registry, '0.2.1')).toBe('0.2.1');
+		expect(resolveReleaseVersion(registry, '0.2')).toBe('0.2.1');
+		expect(resolveReleaseVersion(registry, '9.9')).toBeUndefined();
+		expect(resolveReleaseVersion(registry, 'nope')).toBeUndefined();
 	});
 
 	test('keeps complete, distinct current and historical line corpora', () => {

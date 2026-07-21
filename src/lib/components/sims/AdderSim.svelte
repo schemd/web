@@ -3,17 +3,18 @@
 	 * 8-bit ripple-carry adder simulation.
 	 *
 	 * Clicking an input port toggles its bit; a synchronous logic pass then
-	 * recomputes every intermediate net and flips `is-active` on the wires the
-	 * compiler emitted — active nets glow, idle nets stay muted. One click
-	 * listener on the root SVG container does all delegation.
+	 * recomputes every net and lights it through the 0.3.2 `data-net-id` hooks —
+	 * high-signal nets glow via the shared `.net-optics` system, idle nets stay
+	 * muted. One click listener on the root SVG container does all delegation.
 	 */
-	import { delegatedNodeId, setNodeActive, setWiresFrom } from '$lib/sim-dom';
+	import { delegatedNodeId, setNetLevel, setNodeActive } from '$lib/sim-dom';
 	import { playTick } from '$lib/audio';
 	import { ui } from '$lib/ui.svelte';
 	import Oscilloscope from './Oscilloscope.svelte';
 	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	interface Props {
 		svg: string;
@@ -93,14 +94,24 @@
 		return () => clearInterval(timer);
 	});
 
-	/* Paint the settled portion of the logic pass into the compiled SVG. */
+	/* Paint the settled portion of the logic pass into the compiled SVG by
+	 * lighting first-class nets (data-net-id): a logic-1 net that has reached the
+	 * ripple frontier glows high-signal; everything else stays muted. */
 	$effect(() => {
 		const root = host;
 		if (!root) return;
+		const painted = new SvelteSet<string>();
+		for (const wire of root.querySelectorAll('[data-net-id]')) {
+			const netId = wire.getAttribute('data-net-id');
+			if (netId === null || painted.has(netId)) continue;
+			painted.add(netId);
+			const source = wire.getAttribute('data-wire-source');
+			const value = source === null ? undefined : nets[source];
+			const lit = value === 1 && endpointBit(source ?? '') < frontier;
+			setNetLevel(root, netId, lit ? 'high' : 'off');
+		}
 		for (const [endpoint, value] of Object.entries(nets)) {
-			const lit = value === 1 && endpointBit(endpoint) < frontier;
-			setWiresFrom(root, endpoint, lit);
-			setNodeActive(root, endpoint.split('.')[0]!, lit);
+			setNodeActive(root, endpoint.split('.')[0]!, value === 1 && endpointBit(endpoint) < frontier);
 		}
 		for (let bit = 0; bit < BITS; bit += 1) {
 			setNodeActive(root, `S${bit}`, ((sum >> bit) & 1) === 1 && bit < frontier);
@@ -240,7 +251,7 @@
 	<!-- The group owns delegation only; the compiler-emitted port buttons remain the interactive controls. -->
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<div
-		class="sim-stage schemd-frame"
+		class="sim-stage schemd-frame net-optics"
 		bind:this={host}
 		onclick={onStageClick}
 		onkeydown={onStageKeydown}
@@ -340,6 +351,9 @@
 		}
 	}
 
+	/* Muting, active, and high-signal optics come from the shared `.net-optics`
+	   system (app.css); this stage only sets its scroll width and keeps the
+	   clickable input ports a touch more visible at logic 0. */
 	.sim-stage {
 		cursor: pointer;
 
@@ -347,33 +361,10 @@
 			min-inline-size: 1040px;
 		}
 
-		/* Inactive nets/nodes recede to a dim, desaturated wash… */
-		:global([data-wire-source]),
-		:global([data-node-id]) {
-			opacity: 0.26;
-			filter: grayscale(0.85);
-			transition:
-				opacity var(--dur-med) var(--ease-precise),
-				filter var(--dur-med) var(--ease-precise);
-		}
-
-		/* …while nets carrying a logic-1 (the live propagation) light up. */
-		:global([data-wire-source].is-active) {
-			opacity: 1;
-			filter: drop-shadow(0 0 4px var(--glow));
-		}
-
-		:global([data-node-id].is-active) {
-			opacity: 1;
-			filter: drop-shadow(0 0 5px var(--glow));
-		}
-
-		/* Keep the clickable input ports discoverable even at logic 0. */
 		:global([data-node-id^='A']:not(.is-active)),
 		:global([data-node-id^='B']:not(.is-active)),
 		:global([data-node-id='CIN']:not(.is-active)) {
-			opacity: 0.5;
-			filter: grayscale(0.5);
+			opacity: 0.55;
 		}
 	}
 </style>

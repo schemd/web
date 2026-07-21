@@ -44,6 +44,52 @@
 	const phaseShift = $derived(-Math.atan(ratio));
 	const attenuationDb = $derived(20 * Math.log10(magnitude));
 
+	/* ---------- Bode cutoff-response overlay geometry ----------
+	 * A first-order magnitude curve |H(f)| across a log-frequency axis
+	 * (10 Hz – 100 kHz), with the cutoff marker, the live operating point, and a
+	 * "cutoff line" whose stroke-width, opacity, and dash all track the current
+	 * attenuation — thinning and fading toward silence as the pole sweeps down. */
+	const PLOT_W = 220;
+	const PLOT_H = 132;
+	const PLOT_PAD = 16;
+	const F_MIN_LOG = 1; /* 10 Hz */
+	const F_MAX_LOG = 5; /* 100 kHz */
+
+	function plotX(logFrequency: number): number {
+		const span = (logFrequency - F_MIN_LOG) / (F_MAX_LOG - F_MIN_LOG);
+		return PLOT_PAD + Math.max(0, Math.min(1, span)) * (PLOT_W - 2 * PLOT_PAD);
+	}
+	function plotY(unitMagnitude: number): number {
+		return PLOT_PAD + (1 - Math.max(0, Math.min(1, unitMagnitude))) * (PLOT_H - 2 * PLOT_PAD);
+	}
+
+	/** The response curve |H(f)| sampled across the visible decades. */
+	const responsePath = $derived.by(() => {
+		const samples = 56;
+		let d = '';
+		for (let index = 0; index <= samples; index += 1) {
+			const logFrequency = F_MIN_LOG + ((F_MAX_LOG - F_MIN_LOG) * index) / samples;
+			const localRatio = 10 ** logFrequency / cutoff;
+			const localMagnitude = 1 / Math.sqrt(1 + localRatio * localRatio);
+			d += `${index === 0 ? 'M' : 'L'} ${plotX(logFrequency).toFixed(1)} ${plotY(localMagnitude).toFixed(1)} `;
+		}
+		return d;
+	});
+	const cutoffX = $derived(Number.isFinite(cutoff) ? plotX(Math.log10(cutoff)) : PLOT_W - PLOT_PAD);
+	const opX = $derived(plotX(logF));
+	const opY = $derived(plotY(magnitude));
+	/** −3 dB reference row (magnitude = 1/√2). */
+	const halfPowerY = plotY(1 / Math.SQRT2);
+
+	/* The cutoff line's optics, driven entirely by the live attenuation. */
+	const cutoffStrokeWidth = $derived((0.8 + magnitude * 2.6).toFixed(2));
+	const cutoffOpacity = $derived((0.25 + magnitude * 0.75).toFixed(2));
+	const cutoffDash = $derived(
+		magnitude > 0.85
+			? 'none'
+			: `${(2 + magnitude * 16).toFixed(1)} ${((1 - magnitude) * 9 + 1).toFixed(1)}`
+	);
+
 	function formatSi(value: number, unit: string): string {
 		if (!Number.isFinite(value)) return `∞ ${unit}`;
 		const prefixes: ReadonlyArray<readonly [number, string]> = [
@@ -167,6 +213,39 @@
 		<span class="readout">|H| = {magnitude.toFixed(3)} ({attenuationDb.toFixed(1)} dB)</span>
 		<span class="readout">φ = {(phaseShift * 57.2958).toFixed(1)}°</span>
 	</div>
+	<figure class="bode" aria-label="Frequency response with cutoff marker">
+		<svg
+			viewBox={`0 0 ${PLOT_W} ${PLOT_H}`}
+			role="img"
+			aria-label="First-order low-pass magnitude response"
+		>
+			<rect class="bode-bezel" x="0.5" y="0.5" width={PLOT_W - 1} height={PLOT_H - 1} />
+			<!-- −3 dB reference row -->
+			<line
+				class="bode-halfpower"
+				x1={PLOT_PAD}
+				x2={PLOT_W - PLOT_PAD}
+				y1={halfPowerY}
+				y2={halfPowerY}
+			/>
+			<!-- Cutoff frequency marker -->
+			<line class="bode-cutoff" x1={cutoffX} x2={cutoffX} y1={PLOT_PAD} y2={PLOT_H - PLOT_PAD} />
+			<!-- Glow underlay for the response curve -->
+			<path class="bode-glow" d={responsePath} style={`opacity: ${cutoffOpacity}`} />
+			<!-- The response curve, thinning and fading with attenuation -->
+			<path
+				class="bode-curve"
+				d={responsePath}
+				style={`stroke-width: ${cutoffStrokeWidth}; opacity: ${cutoffOpacity}; stroke-dasharray: ${cutoffDash}`}
+			/>
+			<!-- Live operating point at the stimulus frequency -->
+			<circle class="bode-op" cx={opX} cy={opY} r="3.5" />
+			<text class="bode-axis" x={PLOT_PAD} y={PLOT_H - 4}>10 Hz</text>
+			<text class="bode-axis end" x={PLOT_W - PLOT_PAD} y={PLOT_H - 4}>100 kHz</text>
+			<text class="bode-fc" x={Math.min(PLOT_W - 24, cutoffX + 3)} y={PLOT_PAD + 8}>f_c</text>
+		</svg>
+		<figcaption class="microlabel">|H(jω)| · cutoff line damps as the pole falls</figcaption>
+	</figure>
 	<Oscilloscope
 		channels={[
 			{ samples: scopeIn, name: 'V_in' },
@@ -195,5 +274,95 @@
 	.readouts {
 		display: grid;
 		gap: var(--space-1);
+	}
+
+	.bode {
+		margin: 0;
+		display: grid;
+		gap: 3px;
+		justify-items: center;
+
+		& svg {
+			inline-size: 100%;
+			max-inline-size: 240px;
+			background: var(--bg-inset);
+		}
+	}
+
+	.bode-bezel {
+		fill: none;
+		stroke: var(--line-strong);
+	}
+
+	.bode-halfpower {
+		stroke: var(--line);
+		stroke-width: 0.6;
+		stroke-dasharray: 2 3;
+	}
+
+	.bode-cutoff {
+		stroke: var(--accent-2);
+		stroke-width: 1;
+		stroke-dasharray: 3 2;
+		/* The marker glides as R/C move the pole. */
+		transition:
+			x1 var(--dur-med) var(--ease-precise),
+			x2 var(--dur-med) var(--ease-precise);
+	}
+
+	.bode-glow {
+		fill: none;
+		stroke: var(--accent);
+		stroke-width: 5;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		filter: blur(3px);
+		transition: opacity var(--dur-med) var(--ease-precise);
+	}
+
+	.bode-curve {
+		fill: none;
+		stroke: var(--accent);
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		filter: drop-shadow(0 0 4px var(--glow));
+		transition:
+			stroke-width var(--dur-med) var(--ease-precise),
+			opacity var(--dur-med) var(--ease-precise),
+			stroke-dasharray var(--dur-med) var(--ease-precise);
+	}
+
+	.bode-op {
+		fill: var(--accent);
+		stroke: var(--bg);
+		stroke-width: 1;
+		filter: drop-shadow(0 0 5px var(--glow));
+		transition:
+			cx var(--dur-fast) var(--ease-precise),
+			cy var(--dur-fast) var(--ease-precise);
+	}
+
+	.bode-axis,
+	.bode-fc {
+		fill: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: 7px;
+	}
+
+	.bode-axis.end {
+		text-anchor: end;
+	}
+
+	.bode-fc {
+		fill: var(--accent-2);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.bode-cutoff,
+		.bode-glow,
+		.bode-curve,
+		.bode-op {
+			transition: none;
+		}
 	}
 </style>

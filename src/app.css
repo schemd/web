@@ -408,6 +408,71 @@ kbd {
 	}
 }
 
+/* ---------- Net-topology signal optics ----------
+   Opt-in reusable lighting for full-mode compiled schematics that carry the
+   0.3.2 `data-net-id` hooks. A `.net-optics` stage starts every net and node
+   muted (low-contrast, desaturated). The simulation drives three classes via
+   `setNetLevel` / `setNodeActive`: `.net-active` (a net that is carrying),
+   `.net-high-signal` (a logic-1 / high-signal net that glows), and `.is-active`
+   (a powered node). All transitions are GPU-compositable for 60 FPS sweeps. */
+.net-optics {
+	/* Illumination color; resolves per-theme through the cascading --glow token. */
+	--accent-glow: var(--glow);
+
+	& [data-net-id],
+	& [data-node-id] {
+		opacity: 0.35;
+		transition:
+			opacity var(--dur-med) var(--ease-precise),
+			filter var(--dur-med) var(--ease-precise);
+	}
+
+	& [data-net-id] path,
+	& [data-node-id] .schematic-token {
+		transition:
+			stroke var(--dur-med) var(--ease-precise),
+			stroke-width var(--dur-med) var(--ease-precise);
+	}
+
+	/* A carrying net (or powered node) returns to full contrast. */
+	& [data-net-id].net-active,
+	& [data-node-id].is-active {
+		opacity: 1;
+	}
+
+	/* A high-signal net glows and adopts the accent illumination. */
+	& [data-net-id].net-high-signal {
+		opacity: 1;
+		filter: drop-shadow(0 0 6px var(--accent-glow));
+
+		& path {
+			stroke: var(--accent);
+			stroke-width: var(--schematic-interactive-stroke-width, 2.25);
+		}
+	}
+
+	/* Powered nodes bloom to signal an executed logic pass. */
+	& [data-node-id].is-active {
+		filter: drop-shadow(0 0 5px var(--accent-glow));
+	}
+
+	/* A faulted net/node dims hard, overriding any active class. */
+	& [data-net-id].is-degraded,
+	& [data-node-id].is-degraded {
+		opacity: 0.18 !important;
+		filter: none !important;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.net-optics [data-net-id],
+	.net-optics [data-node-id],
+	.net-optics [data-net-id] path,
+	.net-optics [data-node-id] .schematic-token {
+		transition: none;
+	}
+}
+
 /* Semantic color tokens → the `.schematic-token--<token>` classes that
    @schemd/core emits for `#amber`, `#blue`, `#cyan`, `#purple`, `#slate`,
    and `#emerald`. Alias colors resolve through `--schematic-color-<alias>`. */

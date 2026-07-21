@@ -20,7 +20,11 @@
 	}
 	/** Read an integer bound from the URL, clamped to the compiler's legal range. */
 	function initialBound(name: 'w' | 'h', fallback: number): number {
-		const value = Number(params?.get(name));
+		/* A missing param is `null`; `Number(null)` is 0, which would clamp the
+		 * default workspace to the 64×64 minimum — guard it before coercing. */
+		const raw = params?.get(name);
+		if (raw === null || raw === undefined || raw.trim() === '') return fallback;
+		const value = Number(raw);
 		if (!Number.isFinite(value)) return fallback;
 		return Math.max(64, Math.min(4096, Math.round(value)));
 	}

@@ -54,3 +54,24 @@ export function styleWiresFrom(
 		}
 	}
 }
+
+/**
+ * Drive net-topology lighting from `@schemd/core@0.3.2` `data-net-id` groups.
+ *
+ * A net is the first-class electrical identity the compiler resolves, so
+ * lighting a whole net (every branch that shares a terminal) is one call rather
+ * than one per source endpoint. `level` selects the shared optics class:
+ * `'off'` clears both, `'active'` marks a carrying-but-low net, and `'high'`
+ * marks a logic-1 / high-signal net that glows.
+ */
+export function setNetLevel(host: Element, netId: string, level: 'off' | 'active' | 'high'): void {
+	for (const wire of host.querySelectorAll(`[data-net-id="${CSS.escape(netId)}"]`)) {
+		wire.classList.toggle('net-active', level !== 'off');
+		wire.classList.toggle('net-high-signal', level === 'high');
+	}
+}
+
+/** Resolve the net identity for any element inside a delegated wire group. */
+export function delegatedNetId(element: Element): string | undefined {
+	return element.closest('[data-net-id]')?.getAttribute('data-net-id') ?? undefined;
+}

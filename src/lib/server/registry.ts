@@ -225,8 +225,33 @@ export async function getRegistry(): Promise<SchemdRegistry> {
 	return cache;
 }
 
-/** Resolve a `[version]` path parameter against known releases. */
+/** Resolve a `[version]` path parameter against known releases (exact only). */
 export function resolveVersion(registry: SchemdRegistry, parameter: string): string | undefined {
 	if (parameter === 'latest') return registry.latest;
 	return registry.releases.some((release) => release.version === parameter) ? parameter : undefined;
+}
+
+/**
+ * Resolve any release parameter — `latest`, an exact release, or a
+ * major/minor **line alias** — to a concrete published release. This is what
+ * lets a docs line alias (`0.3`) navigate to the playground or simulations,
+ * which run one real engine build (`0.3.2`), instead of 404-ing. A bare line
+ * resolves to the newest release within it; unknown parameters return
+ * `undefined` so the route can still surface a genuine 404.
+ */
+export function resolveReleaseVersion(
+	registry: SchemdRegistry,
+	parameter: string
+): string | undefined {
+	if (parameter === 'latest') return registry.latest;
+	const versions = registry.releases.map((release) => release.version);
+	if (versions.includes(parameter)) return parameter;
+	if (/^\d+(\.\d+)?$/.test(parameter)) {
+		const prefix = `${parameter}.`;
+		const matches = versions
+			.filter((version) => version === parameter || version.startsWith(prefix))
+			.sort(compareVersionsDesc);
+		if (matches.length > 0) return matches[0];
+	}
+	return undefined;
 }
