@@ -1,11 +1,12 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { docManifest, loadDoc } from '$lib/server/docs';
-import { getRegistry, resolveVersion } from '$lib/server/registry';
+import { getRegistry } from '$lib/server/registry';
+import { resolveDocVersion } from '$lib/server/versions';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const registry = await getRegistry();
-	const version = resolveVersion(registry, params.version);
+	const version = resolveDocVersion(params.version);
 	if (version === undefined) {
 		error(404, `No documentation release named ${params.version}.`);
 	}

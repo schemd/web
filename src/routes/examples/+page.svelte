@@ -44,7 +44,12 @@
 						<span class="card-title">{item.title}</span>
 						<span class="microlabel">{item.doc}</span>
 					</div>
-					<a class="open" href={`/playground/${data.latest}?code=${item.code}`}>open →</a>
+					<a
+						class="open"
+						href={`/playground/${data.latest}?code=${item.code}&w=${item.width}&h=${item.height}&t=${encodeURIComponent(item.title)}`}
+					>
+						open →
+					</a>
 				</div>
 			</li>
 		{/each}

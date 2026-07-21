@@ -5,6 +5,7 @@
  */
 import { compileSchematic, parseSchematicFence } from '@schemd/core';
 import { encodeWorkspaceState } from '$lib/state-uri';
+import { latestRawSources } from './versions';
 
 export interface GalleryItem {
 	readonly id: string;
@@ -20,11 +21,8 @@ export interface GalleryItem {
 const SCHEMD_FENCE = /```(schemd[^\n]*)\n([\s\S]*?)\n```/g;
 const BOUNDS = /bounds="(\d+)x(\d+)"/;
 
-const docSources = import.meta.glob<string>('$lib/content/schemd/0.3.0/*.md', {
-	query: '?raw',
-	import: 'default',
-	eager: true
-});
+/** Always build the gallery from the latest documented corpus. */
+const docSources = latestRawSources();
 
 function docSlug(path: string): string {
 	return path.split('/').pop()!.replace(/\.md$/, '');

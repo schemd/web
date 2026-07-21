@@ -11,6 +11,7 @@ import {
 	HISTORICAL_CORE_VERSION,
 	SUPERSEDED_PATCH_VERSIONS
 } from '$lib/server/registry';
+import { LATEST_DOCUMENTED_VERSION } from '$lib/server/versions';
 
 export function legacyTarget(pathname: string): string | undefined {
 	const normalized = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
@@ -49,9 +50,13 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	for (const section of VERSIONED_SECTIONS) {
 		if (pathname === section || pathname === `${section}/`) {
+			/* Docs follow the latest documented folder; playground and simulations
+			 * follow the newest published release the running engine can execute. */
+			if (section === '/docs') {
+				redirect(307, `/docs/${LATEST_DOCUMENTED_VERSION}/overview${search}`);
+			}
 			const registry = await getRegistry();
-			const suffix = section === '/docs' ? '/overview' : '';
-			redirect(307, `${section}/${registry.latest}${suffix}${search}`);
+			redirect(307, `${section}/${registry.latest}${search}`);
 		}
 	}
 

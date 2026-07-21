@@ -13,17 +13,45 @@
 	let { data }: PageProps = $props();
 
 	/* ---------- Workspace state ---------- */
-	const shared = browser ? page.url.searchParams.get('code') : null;
+	const params = browser ? page.url.searchParams : undefined;
+	const shared = params?.get('code') ?? null;
 	function initialSource(): string {
 		return (shared !== null ? decodeWorkspaceState(shared) : undefined) ?? data.sample;
+	}
+	/** Read an integer bound from the URL, clamped to the compiler's legal range. */
+	function initialBound(name: 'w' | 'h', fallback: number): number {
+		const value = Number(params?.get(name));
+		if (!Number.isFinite(value)) return fallback;
+		return Math.max(64, Math.min(4096, Math.round(value)));
 	}
 	let source = $state(initialSource());
 	const MODES = ['default', 'embedded-css', 'full'] as const;
 	let mode = $state<(typeof MODES)[number]>('full');
 	let view = $state<'render' | 'raw' | 'fence'>('render');
-	let boundsWidth = $state(760);
-	let boundsHeight = $state(440);
-	let title = $state('Workspace schematic');
+	/* Bounds and title follow a shared/opened example so it renders as authored. */
+	let boundsWidth = $state(initialBound('w', 760));
+	let boundsHeight = $state(initialBound('h', 440));
+	let title = $state(params?.get('t') ?? 'Workspace schematic');
+
+	/**
+	 * Accept a pasted Markdown ```schemd fence: hoist its bounds and title out of
+	 * the source so an example (or a docs snippet) opens exactly as authored. The
+	 * match only fires on a *complete* fence, so ordinary typing is untouched.
+	 */
+	const FENCE_PATTERN =
+		/^```schemd\s+bounds="(\d+)x(\d+)"(?:\s+title="([^"]*)")?\s*\n([\s\S]*?)\n```\s*$/;
+	function absorbFence(candidate: string): boolean {
+		const match = FENCE_PATTERN.exec(candidate.trim());
+		if (!match) return false;
+		boundsWidth = Math.max(64, Math.min(4096, Number(match[1])));
+		boundsHeight = Math.max(64, Math.min(4096, Number(match[2])));
+		if (match[3] !== undefined && match[3] !== '') title = match[3];
+		source = match[4]!;
+		return true;
+	}
+	$effect(() => {
+		absorbFence(source);
+	});
 	let leftOpen = $state(true);
 	let rightOpen = $state(true);
 
@@ -439,15 +467,29 @@
 				{/each}
 			</div>
 			<p class="color-note microlabel">+ hex · rgb()/hsl() · custom aliases</p>
-			<p class="microlabel">fence</p>
+			<p class="microlabel">fence · bounds (px)</p>
 			<div class="fence-controls">
 				<label>
-					<span class="microlabel">w</span>
-					<input type="number" min="64" max="4096" bind:value={boundsWidth} />
+					<span class="microlabel">width</span>
+					<input
+						type="number"
+						min="64"
+						max="4096"
+						step="10"
+						inputmode="numeric"
+						bind:value={boundsWidth}
+					/>
 				</label>
 				<label>
-					<span class="microlabel">h</span>
-					<input type="number" min="64" max="4096" bind:value={boundsHeight} />
+					<span class="microlabel">height</span>
+					<input
+						type="number"
+						min="64"
+						max="4096"
+						step="10"
+						inputmode="numeric"
+						bind:value={boundsHeight}
+					/>
 				</label>
 				<label class="fence-title">
 					<span class="microlabel">title</span>
@@ -749,33 +791,36 @@
 	}
 
 	.fence-controls {
-		display: flex;
-		flex-wrap: wrap;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
 		gap: var(--space-2);
 
 		& label {
-			display: flex;
-			align-items: center;
-			gap: var(--space-1);
+			display: grid;
+			gap: 2px;
+			min-inline-size: 0;
 		}
 
 		& input {
+			inline-size: 100%;
+			min-inline-size: 0;
+			box-sizing: border-box;
 			background: var(--bg-inset);
 			border: 1px solid var(--line-strong);
 			color: var(--ink);
 			font-family: var(--font-mono);
-			font-size: var(--text-xs);
-			padding: 0.2rem 0.4rem;
-			inline-size: 5.5ch;
+			font-size: var(--text-sm);
+			padding: 0.4rem 0.55rem;
+			transition: border-color var(--dur-fast) var(--ease-precise);
+		}
+
+		& input:focus-visible {
+			outline: none;
+			border-color: var(--accent);
 		}
 
 		& .fence-title {
-			flex: 1 1 100%;
-
-			& input {
-				flex: 1;
-				inline-size: auto;
-			}
+			grid-column: 1 / -1;
 		}
 	}
 

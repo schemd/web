@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { compileSchematic } from '@schemd/core';
+import { compileSchematic, parseSchematicFence, COMPONENT_KINDS } from '@schemd/core';
 import { decodeWorkspaceState } from '$lib/state-uri';
 import { _compileHeroes } from '../../routes/+page.server';
 import { _PLAYGROUND_SAMPLE } from '../../routes/playground/[version]/+page.server';
@@ -12,6 +12,13 @@ import {
 	WEBSITE_CORE_VERSION,
 	type SchemdRegistry
 } from './registry';
+import {
+	DOCUMENTED_VERSIONS,
+	LATEST_DOCUMENTED_VERSION,
+	resolveDocVersion
+} from './versions';
+import { languageCoverage } from './coverage';
+import { COMPONENT_CATALOG } from './component-catalog';
 import {
 	getSimulation,
 	getSimulationSource,
@@ -105,6 +112,61 @@ describe('versioned registry and documentation', () => {
 		for (const item of items) {
 			expect(item.svg).toContain('<svg');
 			expect(decodeWorkspaceState(item.code)).toBe(item.source);
+			/* Every gallery item carries its authored bounds so it opens as drawn. */
+			expect(item.width).toBeGreaterThanOrEqual(64);
+			expect(item.height).toBeGreaterThanOrEqual(64);
+		}
+	});
+});
+
+describe('dynamic versioning', () => {
+	test('discovers documented versions newest-first with the latest as default', () => {
+		expect(DOCUMENTED_VERSIONS.length).toBeGreaterThanOrEqual(2);
+		expect(LATEST_DOCUMENTED_VERSION).toBe(DOCUMENTED_VERSIONS[0]);
+		expect(WEBSITE_CORE_VERSION).toBe(LATEST_DOCUMENTED_VERSION);
+		const sorted = [...DOCUMENTED_VERSIONS].sort(compareVersionsDesc);
+		expect(DOCUMENTED_VERSIONS).toEqual(sorted);
+	});
+
+	test('resolves docs against documented folders, not the npm registry', () => {
+		expect(resolveDocVersion('latest')).toBe(LATEST_DOCUMENTED_VERSION);
+		expect(resolveDocVersion(LATEST_DOCUMENTED_VERSION)).toBe(LATEST_DOCUMENTED_VERSION);
+		expect(resolveDocVersion('0.2.1')).toBe('0.2.1');
+		expect(resolveDocVersion('9.9.9')).toBeUndefined();
+		/* Every documented version resolves and carries a complete manifest. */
+		for (const version of DOCUMENTED_VERSIONS) {
+			expect(resolveDocVersion(version)).toBe(version);
+			expect(docManifest(version).length).toBeGreaterThan(0);
+		}
+	});
+});
+
+describe('language coverage is a genuine 100%', () => {
+	test('every compiler primitive has a canonical, compiling catalog example', () => {
+		expect(COMPONENT_CATALOG).toHaveLength(COMPONENT_KINDS.length);
+		expect(new Set(COMPONENT_CATALOG.map((entry) => entry.kind)).size).toBe(COMPONENT_KINDS.length);
+		for (const entry of COMPONENT_CATALOG) {
+			const fence = parseSchematicFence(
+				`schemd bounds="${entry.width}x${entry.height}" title="${entry.kind}"`
+			);
+			expect(fence, entry.kind).not.toBeNull();
+			expect(() =>
+				compileSchematic(entry.source, { ...fence!, mode: 'default', idPrefix: `cat-${entry.kind}` })
+			, entry.kind).not.toThrow();
+			expect(decodeWorkspaceState(entry.code)).toBe(entry.source);
+		}
+	});
+
+	test('coverage report exercises 100% of the exported vocabulary', () => {
+		const coverage = languageCoverage();
+		expect(coverage.total).toBe(COMPONENT_KINDS.length);
+		expect(coverage.covered).toBe(coverage.total);
+		/* Every kind shown in a group is covered and openable. */
+		const shown = coverage.groups.flatMap((group) => group.kinds);
+		expect(shown).toHaveLength(COMPONENT_KINDS.length);
+		for (const kind of shown) {
+			expect(kind.count, kind.kind).toBeGreaterThan(0);
+			expect(kind.code.length, kind.kind).toBeGreaterThan(0);
 		}
 	});
 });

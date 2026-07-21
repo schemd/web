@@ -9,7 +9,11 @@
  * server.
  */
 import { renderMarkdownDoc, parseDocFrontmatter, type RenderedDoc } from './markdown';
-import { WEBSITE_CORE_VERSION } from './registry';
+import {
+	DOCUMENTED_VERSIONS,
+	LATEST_DOCUMENTED_VERSION,
+	versionedRawSources
+} from './versions';
 
 /** Ordered navigation manifest for the left index tree. */
 export interface DocPageMeta {
@@ -22,26 +26,13 @@ export interface DocPageMeta {
 	readonly group: string;
 }
 
-/** Raw sources; the tone references are voice guides, not documentation. */
-const historicalSources = import.meta.glob<string>('$lib/content/schemd/*.md', {
-	query: '?raw',
-	import: 'default',
-	eager: true
-});
-
-const currentSources = import.meta.glob<string>('$lib/content/schemd/0.3.1/*.md', {
-	query: '?raw',
-	import: 'default',
-	eager: true
-});
-
 function slugFromPath(path: string): string {
 	return path.split('/').pop()!.replace(/\.md$/, '');
 }
 
 const EXCLUDED = new Set(['tone1', 'tone2']);
 
-/** Raw markdown keyed by slug, and the ordered manifest — built once. */
+/** Raw markdown keyed by slug, and the ordered manifest — built once per version. */
 interface DocCorpus {
 	readonly rawBySlug: ReadonlyMap<string, string>;
 	readonly manifest: readonly DocPageMeta[];
@@ -71,23 +62,25 @@ function buildCorpus(sources: Readonly<Record<string, string>>): DocCorpus {
 	return { rawBySlug, manifest: entries.map((entry) => entry.meta) };
 }
 
-const historicalCorpus = buildCorpus(historicalSources);
-const currentCorpus = buildCorpus(currentSources);
+/** One corpus per discovered version, built once at module load. */
+const CORPORA = new Map<string, DocCorpus>(
+	DOCUMENTED_VERSIONS.map((version) => [version, buildCorpus(versionedRawSources(version)!)])
+);
 
-function corpusFor(version: string): DocCorpus {
-	return version === WEBSITE_CORE_VERSION ? currentCorpus : historicalCorpus;
+function corpusFor(version: string): DocCorpus | undefined {
+	return CORPORA.get(version);
 }
 
 export function docManifest(version: string): readonly DocPageMeta[] {
-	return corpusFor(version).manifest;
+	return corpusFor(version)?.manifest ?? [];
 }
 
-/** Current manifest retained for sitemap and build-time callers. */
-export const DOC_MANIFEST: readonly DocPageMeta[] = currentCorpus.manifest;
+/** Latest manifest retained for sitemap and build-time callers. */
+export const DOC_MANIFEST: readonly DocPageMeta[] = docManifest(LATEST_DOCUMENTED_VERSION);
 
 /* Compile-time invariant: a release must never silently ship an empty corpus. */
 if (DOC_MANIFEST.length === 0) {
-	throw new Error(`No documentation corpus found for ${WEBSITE_CORE_VERSION}.`);
+	throw new Error(`No documentation corpus found for ${LATEST_DOCUMENTED_VERSION}.`);
 }
 
 /* Previous implementation built one global corpus. Keep the cache version-keyed. */
@@ -98,7 +91,7 @@ export function loadDoc(version: string, slug: string): RenderedDoc | undefined 
 	const key = `${version}\0${slug}`;
 	const cached = rendered.get(key);
 	if (cached) return cached;
-	const raw = corpusFor(version).rawBySlug.get(slug);
+	const raw = corpusFor(version)?.rawBySlug.get(slug);
 	if (!raw) return undefined;
 	const doc = renderMarkdownDoc(raw, `${version}-${slug}`);
 	rendered.set(key, doc);

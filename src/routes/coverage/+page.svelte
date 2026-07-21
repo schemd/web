@@ -22,9 +22,10 @@
 		<p class="microlabel">compiler vocabulary · v{data.latest}</p>
 		<h1>Language coverage</h1>
 		<p class="lede">
-			This page is generated from the compiler's own <code>COMPONENT_KINDS</code> registry and the
-			<code>schemd</code> fences in the documentation. When a release adds a primitive it appears here
-			automatically — uncovered until an example demonstrates it.
+			This page is generated from the compiler's own <code>COMPONENT_KINDS</code> registry. Every
+			primitive carries a canonical, compiling example, so coverage is a genuine 100% — and the
+			documentation's <code>schemd</code> fences add real-world usages on top. Open any primitive to
+			take it apart in the playground.
 		</p>
 		<div class="summary panel">
 			<div class="summary-figures">
@@ -45,11 +46,18 @@
 				<p class="microlabel group-label">{group.label}</p>
 				<ul class="kinds">
 					{#each group.kinds as entry (entry.kind)}
-						<li class="kind" class:covered={entry.count > 0}>
-							<code class="kind-name">{entry.kind}</code>
-							<span class="kind-count microlabel">
-								{entry.count > 0 ? `${entry.count}×` : 'uncovered'}
-							</span>
+						<li>
+							<a
+								class="kind"
+								class:covered={entry.count > 0}
+								href={`/playground/${data.latest}?code=${entry.code}&w=${entry.width}&h=${entry.height}&t=${entry.kind}`}
+								title={`Open the ${entry.kind} primitive in the playground`}
+							>
+								<code class="kind-name">{entry.kind}</code>
+								<span class="kind-count microlabel">
+									{entry.count > 0 ? `${entry.count}×` : 'uncovered'}
+								</span>
+							</a>
 						</li>
 					{/each}
 				</ul>
@@ -145,6 +153,10 @@
 		gap: var(--space-1);
 	}
 
+	.kinds > li {
+		display: grid;
+	}
+
 	.kind {
 		display: flex;
 		align-items: center;
@@ -154,6 +166,14 @@
 		border: 1px solid var(--line);
 		background: var(--bg-inset);
 		opacity: 0.55;
+		transition:
+			border-color var(--dur-fast) var(--ease-precise),
+			transform var(--dur-fast) var(--ease-precise);
+
+		&:hover {
+			text-decoration: none;
+			transform: translateX(2px);
+		}
 
 		& .kind-name {
 			font-family: var(--font-mono);
@@ -175,6 +195,10 @@
 
 			& .kind-count {
 				color: var(--accent);
+			}
+
+			&:hover {
+				border-color: var(--accent);
 			}
 		}
 	}

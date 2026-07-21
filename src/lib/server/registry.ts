@@ -8,6 +8,11 @@
  * network after first warm-up.
  */
 import { building } from '$app/environment';
+import {
+	DOCUMENTED_VERSIONS,
+	LATEST_DOCUMENTED_VERSION,
+	OLDEST_DOCUMENTED_VERSION
+} from './versions';
 
 /** One published release aggregated from npm (and GitHub when reachable). */
 export interface SchemdRelease {
@@ -49,53 +54,63 @@ const FETCH_TIMEOUT_MS = 6_000;
  * network round-trip completes and when the registry is unreachable. The
  * version pinned here matches the workspace's installed `@schemd/core`.
  */
-export const WEBSITE_CORE_VERSION = '0.3.1';
-export const HISTORICAL_CORE_VERSION = '0.2.1';
-export const DOCUMENTATION_VERSIONS = [WEBSITE_CORE_VERSION, HISTORICAL_CORE_VERSION] as const;
+/**
+ * Version constants are derived from the documentation folders discovered at
+ * build time (see {@link ./versions}). Dropping a new `content/schemd/x.y.z/`
+ * folder makes it the site-wide latest with zero edits here.
+ */
+export const WEBSITE_CORE_VERSION = LATEST_DOCUMENTED_VERSION;
+export const HISTORICAL_CORE_VERSION = OLDEST_DOCUMENTED_VERSION;
+export const DOCUMENTATION_VERSIONS: readonly string[] = DOCUMENTED_VERSIONS;
 
 /**
- * Patch releases share their minor line's documentation corpus, so superseded
- * patch routes 308 to the current version instead of mislabeling old content.
+ * Editorial notes per documented release, shown on the changelog when the npm
+ * registry is unreachable. Absent versions still seed correctly with no note.
  */
-export const SUPERSEDED_PATCH_VERSIONS: Readonly<Record<string, string>> = {
-	'0.3.0': WEBSITE_CORE_VERSION
+const RELEASE_NOTES: Readonly<Record<string, { unpackedSize?: number; notes?: string }>> = {
+	'0.3.2': {
+		unpackedSize: 260_400,
+		notes:
+			'Maintenance and consolidation patch: duplicated component type guards and the two near-identical SVG number formatters are unified into single shared implementations, trimming the bundle while holding output byte-identical and coverage at 100%.'
+	},
+	'0.3.1': {
+		unpackedSize: 260_610,
+		notes:
+			'Routing, fidelity, and accessibility patch. Dense sub-clearance layouts now route as straight traces instead of failing, empty qgate detail rows no longer inflate the shared quantum shell, and embedded-css output keeps hover-only groups out of the tab order under its role="img" root.'
+	},
+	'0.3.0': {
+		unpackedSize: 258_900,
+		notes:
+			'Quarter-turn orientation geometry across every primitive, deterministic source maps for editor↔vector round-tripping, drift-free micro-math baselines, and expanded electrical, digital, quantum, and UML families.'
+	}
 };
 
-const SEED_RELEASES: readonly SchemdRelease[] = [
-	{
-		version: WEBSITE_CORE_VERSION,
-		publishedAt: new Date(0).toISOString(),
-		unpackedSize: 260_610,
-		fileCount: 24,
-		gitHead: undefined,
-		notes:
-			'Routing, fidelity, and accessibility patch. Dense sub-clearance layouts now route as straight traces instead of failing, empty qgate detail rows no longer inflate the shared quantum shell, embedded-css output keeps hover-only groups out of the tab order under its role="img" root, and renders skip redundant revalidation plus AST serialization on the hot path. Output is byte-identical for valid documents; the bundle shrank 33 B.',
-		released: false
-	},
-	{
-		version: '0.3.0',
-		publishedAt: new Date(0).toISOString(),
-		unpackedSize: 258_900,
-		fileCount: 24,
-		gitHead: undefined,
-		notes:
-			'Quarter-turn orientation geometry — integer swap/negate matching SVG rotate(90·n) — applied across every primitive, with designators kept upright by construction. Deterministic source maps power editor↔vector round-tripping, and micro-math baseline restoration was unified into one drift-free pass. Expanded electrical, digital, quantum, and UML families.',
-		released: true
-	},
-	{
-		version: HISTORICAL_CORE_VERSION,
-		publishedAt: new Date(0).toISOString(),
-		unpackedSize: undefined,
-		fileCount: undefined,
-		gitHead: undefined,
-		notes: undefined,
-		released: true
-	}
-];
+/**
+ * Patch releases that have been superseded by a newer documented patch on the
+ * same line: their doc routes 308 to the latest instead of 404-ing.
+ */
+export const SUPERSEDED_PATCH_VERSIONS: Readonly<Record<string, string>> = {
+	'0.3.0': LATEST_DOCUMENTED_VERSION
+};
+
+/**
+ * Seed every documented version as a known release so routes resolve offline.
+ * The latest documented version is the local release candidate (`released:
+ * false`) until the npm registry confirms its publication.
+ */
+const SEED_RELEASES: readonly SchemdRelease[] = DOCUMENTED_VERSIONS.map((version) => ({
+	version,
+	publishedAt: new Date(0).toISOString(),
+	unpackedSize: RELEASE_NOTES[version]?.unpackedSize,
+	fileCount: RELEASE_NOTES[version]?.unpackedSize === undefined ? undefined : 24,
+	gitHead: undefined,
+	notes: RELEASE_NOTES[version]?.notes,
+	released: version !== LATEST_DOCUMENTED_VERSION
+}));
 
 const SEED_REGISTRY: SchemdRegistry = {
 	releases: [...SEED_RELEASES],
-	latest: WEBSITE_CORE_VERSION,
+	latest: LATEST_DOCUMENTED_VERSION,
 	live: false,
 	syncedAt: 0
 };
