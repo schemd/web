@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import { compileSchematic, parseSchematicFence, COMPONENT_KINDS } from '@schemd/core';
 import { decodeWorkspaceState } from '$lib/state-uri';
-import { _compileHeroes } from '../../routes/+page.server';
+import { _compileHeroes, _HERO_SPECS } from '../../routes/+page.server';
 import { _PLAYGROUND_SAMPLE } from '../../routes/playground/[version]/+page.server';
+import { timelineFor } from '$lib/simulation-timelines';
 import { docManifest, docSearchIndex, loadDoc } from './docs';
 import { loadGallery } from './gallery';
 import {
@@ -43,6 +44,15 @@ describe('versioned registry and documentation', () => {
 		const heroes = _compileHeroes();
 		expect(heroes).toHaveLength(4);
 		for (const hero of heroes) expect(hero.svg).toContain('data-schematic');
+
+		const analog = _HERO_SPECS.find(({ id }) => id === 'circuit')?.source ?? '';
+		expect(analog).not.toContain('initial:');
+		const quantum = _HERO_SPECS.find(({ id }) => id === 'quantum')?.source ?? '';
+		expect(quantum).toContain('CX.in1');
+		expect(quantum).toContain('CX.in2');
+		expect(quantum).toContain('CX.out1');
+		expect(quantum).toContain('CX.out2');
+		expect(quantum).not.toMatch(/CX\.(?:control|target|out)(?:\s|$)/);
 	});
 
 	test('sorts semver, resolves aliases, and rejects unknown releases', () => {
@@ -127,6 +137,11 @@ describe('versioned registry and documentation', () => {
 			expect(item.width).toBeGreaterThanOrEqual(64);
 			expect(item.height).toBeGreaterThanOrEqual(64);
 		}
+		const cnot = items.find(({ source }) => source.includes('cnot:CX'));
+		expect(cnot?.source).toContain('CX.in1');
+		expect(cnot?.source).toContain('CX.in2');
+		expect(cnot?.source).toContain('CX.out1');
+		expect(cnot?.source).toContain('CX.out2');
 	});
 });
 
@@ -238,6 +253,19 @@ describe('versioned simulation source and compilation', () => {
 			expect(simulation).toBeDefined();
 			expect(simulation?.components).toBeGreaterThan(0);
 			expect(simulation?.connections).toBeGreaterThan(0);
+			const wireSources = new Set(
+				[...(simulation?.svg.matchAll(/data-wire-source="([^"]+)"/g) ?? [])].map(
+					(match) => match[1]!
+				)
+			);
+			for (const frame of timelineFor(environment.id)) {
+				for (const source of [...frame.wires, ...(frame.highWires ?? [])]) {
+					expect(
+						wireSources.has(source),
+						`${environment.id}: missing timeline wire ${source}`
+					).toBe(true);
+				}
+			}
 			expect(simulation?.svg).toContain('data-schematic');
 			expect(simulation?.svg).toContain('data-node-id');
 		}

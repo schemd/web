@@ -93,33 +93,36 @@ REG.out -> DOUT.in #emerald [digital width=8]
 
 <!-- /schemd-section -->
 
-<!-- schemd-section: id=quantum; eyebrow=04 / Quantum; title=Named gates, multi-track operators, and classical results; example-title=Measured controlled rotation -->
+<!-- schemd-section: id=quantum; eyebrow=04 / Quantum; title=Named gates, two-track CNOT, multi-track operators, and classical results; example-title=Bell-state entangler -->
 
 Single-qubit shells are `hadamard`, `qgate`, `xgate`, `ygate`, `zgate`, `sgate`, `sdg`, `tgate`, `tdg`, `sx`, `phase`, `rx`, `ry`, `rz`, and `ugate`; they use `in`/`out`. `qgate` accepts `parameter`, `phase`, and `matrix` detail rows.
 
-| Kind                                                                | Stable ports and options                                                             |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `measure`                                                           | `in`, `out`, `classical`                                                             |
-| `reset`                                                             | `in`, `out`                                                                          |
-| `prepare`                                                           | `out`                                                                                |
-| `control`                                                           | `in`, `out`, `control`; `control=positive                                            | negative | classical` |
-| `swap`, `cz`, `cphase`, `toffoli`, `controlled`, `barrier`, `delay` | indexed `inN`, `outN`, `controlN`, `targetN`; bounded `wires`, `controls`, `targets` |
-| `classical-bit`                                                     | `in`, `out`                                                                          |
-| `classical-register`                                                | `in`, `out`, `width=2..256`                                                          |
+| Kind                                                                | Stable ports and options                                                                                               |
+| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `cnot`                                                              | control rail `in1`, `out1`; target rail `in2`, `out2`; legacy aliases `in`, `out`, `control`, `target` remain accepted |
+| `measure`                                                           | `in`, `out`, `classical`                                                                                               |
+| `reset`                                                             | `in`, `out`                                                                                                            |
+| `prepare`                                                           | `out`                                                                                                                  |
+| `control`                                                           | `in`, `out`, `control`; `control=positive`, `negative`, or `classical`                                                 |
+| `swap`, `cz`, `cphase`, `toffoli`, `controlled`, `barrier`, `delay` | indexed `inN`, `outN`, `controlN`, `targetN`; bounded `wires`, `controls`, `targets`                                   |
+| `classical-bit`                                                     | `in`, `out`                                                                                                            |
+| `classical-register`                                                | `in`, `out`, `width=2..256`                                                                                            |
 
-```schemd bounds="1040x440" title="Measured controlled rotation"
+`cnot` always owns exactly two continuous qubit rails. Use the indexed through-ports when composing a circuit; `control` and `target` address the marker locations for compatibility and interaction metadata. `initial` and `final` belong to UML state/activity diagrams—they are not quantum state boundaries. Start a quantum rail with `prepare`, and terminate it with `measure` or a system `port` when it remains unmeasured.
+
+```schemd bounds="900x400" title="Bell-state entangler"
 prepare:P0 "|0\rangle" at (80, 120) #blue
 prepare:P1 "|0\rangle" at (80, 280) #blue
 hadamard:H "H" at (260, 120) #cyan
-controlled:CRZ "R_z" at (500, 200) #purple [controls=1 targets=1 operator="R_z"]
-measure:M "M" at (750, 120) #emerald
-classical-bit:C "c_0" at (940, 280) #slate
+cnot:CX "CNOT" at (500, 200) #purple
+measure:M0 "M_0" at (760, 120) #emerald
+measure:M1 "M_1" at (760, 280) #emerald
 
 P0.out -> H.in #blue [quantum line]
-H.out -> CRZ.control1 #cyan [quantum ortho]
-P1.out -> CRZ.target1 #blue [quantum line]
-CRZ.out1 -> M.in #purple [quantum ortho]
-M.classical -> C.in #slate [classical ortho]
+H.out -> CX.in1 #cyan [quantum line]
+P1.out -> CX.in2 #blue [quantum line]
+CX.out1 -> M0.in #purple [quantum line]
+CX.out2 -> M1.in #purple [quantum line]
 ```
 
 <!-- /schemd-section -->

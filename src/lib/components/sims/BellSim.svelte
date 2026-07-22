@@ -2,7 +2,7 @@
 	/**
 	 * Bell-state entanglement visualizer.
 	 *
-	 * Toggling the two initialization ports selects which of the four Bell
+	 * Toggling the two state-preparation nodes selects which of the four Bell
 	 * states H·CNOT prepares. Amplitudes and the ⟨Z⊗Z⟩ correlation index are
 	 * `$derived`; the probability plot is a native SVG bar chart; sampling
 	 * accumulates real Born-rule measurements and streams the empirical
@@ -157,8 +157,8 @@
 	const GATE_MATH: Record<string, string> = {
 		H1: 'H|q₀⟩ = (|0⟩ + (−1)^{q₀}|1⟩)/√2',
 		CX1: 'CNOT: |a⟩|b⟩ → |a⟩|b ⊕ a⟩',
-		Q0: 'initialization pass: |q₀⟩ ∈ {|0⟩, |1⟩} — click to flip',
-		Q1: 'initialization pass: |q₁⟩ ∈ {|0⟩, |1⟩} — click to flip'
+		Q0: 'state preparation: |q₀⟩ ∈ {|0⟩, |1⟩} — click to flip',
+		Q1: 'state preparation: |q₁⟩ ∈ {|0⟩, |1⟩} — click to flip'
 	};
 
 	function onStageMove(event: PointerEvent): void {
@@ -196,7 +196,7 @@
 {#snippet controls()}
 	<div class="stack">
 		<p class="control-note">
-			Click the two initialization ports in the test bed to flip <strong>q₀</strong> /
+			Click the two state-preparation nodes in the test bed to flip <strong>q₀</strong> /
 			<strong>q₁</strong> and select which Bell pair H·CNOT prepares.
 		</p>
 		<button type="button" class="btn btn-solid" onclick={() => sample(64)}>measure ×64</button>
@@ -230,7 +230,7 @@
 		onpointermove={onStageMove}
 		onpointerleave={() => (hover = undefined)}
 		role="group"
-		aria-label="Bell state circuit. Click the initialization ports to flip qubits."
+		aria-label="Bell state circuit. Click the state-preparation nodes to flip qubits."
 	>
 		{@html svg}
 	</div>

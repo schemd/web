@@ -213,18 +213,18 @@ C1.out -> GND.in #cyan [ortho]
 VOUT.node -> OUT.in #emerald [line marker-end=arrow]`;
 
 const BELL_SOURCE = `// Bell-state preparation: H then CNOT
-port:Q0 "q_0 = |0⟩" at (80, 90) #blue
-port:Q1 "q_1 = |0⟩" at (80, 210) #blue
+prepare:Q0 "q_0 = |0⟩" at (80, 90) #blue
+prepare:Q1 "q_1 = |0⟩" at (80, 210) #blue
 hadamard:H1 "H" at (280, 90) #cyan
 cnot:CX1 "CNOT" at (460, 150) #purple
 measure:M0 "M_0" at (640, 90) #emerald
 measure:M1 "M_1" at (640, 210) #emerald
 
 Q0.out -> H1.in #blue [line]
-H1.out -> CX1.control #cyan [ortho]
-Q1.out -> CX1.target #blue [ortho]
-CX1.out -> M0.in #purple [ortho]
-CX1.out -> M1.in #purple [ortho]`;
+H1.out -> CX1.in1 #cyan [line]
+Q1.out -> CX1.in2 #blue [line]
+CX1.out1 -> M0.in #purple [line]
+CX1.out2 -> M1.in #purple [line]`;
 
 const TIMER_SOURCE = `// 555 timer, astable configuration
 ic:U1 "555" at (360, 220) [left="tr,th,dis" right="q,rst" top="vcc" bottom="gnd"]
@@ -248,9 +248,9 @@ LED.cathode -> RL.in #slate [ortho]
 U1.gnd -> G1.in #slate [ortho]`;
 
 const TELEPORT_SOURCE = `// Quantum teleportation protocol register
-port:PSI "|ψ⟩" at (70, 80) #purple
-port:A "|0⟩" at (70, 200) #blue
-port:B "|0⟩" at (70, 320) #blue
+prepare:PSI "|ψ⟩" at (70, 80) #purple
+prepare:A "|0⟩" at (70, 200) #blue
+prepare:B "|0⟩" at (70, 320) #blue
 hadamard:H1 "H" at (210, 200) #cyan
 cnot:CX1 "CNOT" at (340, 260) #blue
 cnot:CX2 "CNOT" at (470, 140) #purple
@@ -261,15 +261,15 @@ qgate:XC "X^{m_2}" at (720, 320) #emerald
 qgate:ZC "Z^{m_1}" at (840, 320) #emerald
 port:OUT "|ψ⟩" at (950, 320) #purple
 
-PSI.out -> CX2.control #purple [line]
+PSI.out -> CX2.in1 #purple [line]
 A.out -> H1.in #blue [line]
-H1.out -> CX1.control #cyan [ortho]
-B.out -> CX1.target #blue [ortho]
-CX1.out -> CX2.target #blue [ortho]
-CX2.out -> H2.in #purple [ortho]
+H1.out -> CX1.in1 #cyan [line]
+B.out -> CX1.in2 #blue [line]
+CX1.out1 -> CX2.in2 #blue [line]
+CX2.out1 -> H2.in #purple [line]
 H2.out -> MZ1.in #cyan [line]
-CX2.out -> MZ2.in #purple [ortho]
-CX1.out -> XC.in #blue [ortho]
+CX2.out2 -> MZ2.in #purple [line]
+CX1.out2 -> XC.in #blue [line]
 XC.out -> ZC.in #emerald [line]
 ZC.out -> OUT.in #emerald [line]`;
 

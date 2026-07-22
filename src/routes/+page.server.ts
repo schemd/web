@@ -20,7 +20,6 @@ export const _HERO_SPECS: readonly HeroSpec[] = [
 		bounds: '760x440',
 		source: `// Native source + junction + physically rotated shunt capacitor
 source:VIN "V_{in}" at (80, 120) #blue [type=voltage-ac]
-initial:P1 "V" at (34, 310) #red 
 resistor:R1 "10 kΩ" at (260, 120) #amber
 junction:VOUT "output node" at (440, 120) #cyan
 capacitor:C1 "100 nF" at (440, 250) #cyan [orientation=down]
@@ -28,8 +27,7 @@ ground:GND "0 V" at (220, 350) #slate
 port:OUT "V_{out}" at (680, 120) #emerald
 
 VIN.positive -> R1.in #blue [line]
-VIN.negative -> P1.in #slate [ortho]
-P1.out -> GND.in #silver [ortho]
+VIN.negative -> GND.in #slate [ortho]
 R1.out -> VOUT.node #amber [line]
 VOUT.node -> C1.in #cyan [ortho]
 C1.out -> GND.in #cyan [ortho]
@@ -61,18 +59,18 @@ A1.out -> C.in #amber [line marker-end=arrow]`
 		title: 'Bell-state preparation',
 		bounds: '780x320',
 		source: `// Bell-state preparation: H then CNOT
-port:Q0 "q_0 = |0〉" at (70, 90) #blue
-port:Q1 "q_1 = |0〉" at (70, 240) #blue
+prepare:Q0 "q_0 = |0⟩" at (70, 90) #blue
+prepare:Q1 "q_1 = |0⟩" at (70, 240) #blue
 hadamard:H1 "H" at (300, 90) #purple
 cnot:CX "CNOT" at (500, 165) #cyan
-port:M0 "|\\Phi^+〉" at (700, 90) #emerald
-port:M1 "meter" at (700, 240) #emerald
+measure:M0 "M_0" at (700, 90) #emerald
+measure:M1 "M_1" at (700, 240) #emerald
 
 Q0.out -> H1.in #blue [line]
-H1.out -> CX.control #purple [ortho]
-Q1.out -> CX.target #blue [ortho]
-CX.out -> M0.in #cyan [ortho marker-end=arrow]
-CX.out -> M1.in #cyan [ortho]`
+H1.out -> CX.in1 #purple [line]
+Q1.out -> CX.in2 #blue [line]
+CX.out1 -> M0.in #cyan [line marker-end=arrow]
+CX.out2 -> M1.in #cyan [line]`
 	},
 	{
 		id: 'uml',

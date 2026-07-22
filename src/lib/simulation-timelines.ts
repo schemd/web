@@ -163,13 +163,13 @@ export const SIMULATION_TIMELINES: Readonly<Record<string, readonly SimulationSt
 			'Entangle with CNOT',
 			'q₀ controls q₁; the pair becomes one correlated Bell state.',
 			['CX1'],
-			['H1.out', 'Q1.out', 'CX1.out']
+			['H1.out', 'Q1.out', 'CX1.out1', 'CX1.out2']
 		),
 		stage(
 			'Measure correlation',
 			'The individual bits are random, while their parity is perfectly correlated.',
 			['M0', 'M1'],
-			['CX1.out']
+			['CX1.out1', 'CX1.out2']
 		)
 	],
 	timer: [
@@ -209,25 +209,25 @@ export const SIMULATION_TIMELINES: Readonly<Record<string, readonly SimulationSt
 			'Create the Bell resource',
 			'H and CNOT entangle Alice’s and Bob’s resource qubits.',
 			['H1', 'CX1'],
-			['A.out', 'B.out', 'H1.out', 'CX1.out']
+			['A.out', 'B.out', 'H1.out', 'CX1.out1', 'CX1.out2']
 		),
 		stage(
 			'Bell-basis transform',
 			'The unknown state interferes with Alice’s entangled qubit before measurement.',
 			['CX2', 'H2'],
-			['PSI.out', 'CX1.out', 'CX2.out', 'H2.out']
+			['PSI.out', 'CX1.out1', 'CX2.out1', 'CX2.out2', 'H2.out']
 		),
 		stage(
 			'Send two classical bits',
 			'Alice’s measurements contain the correction recipe, not a copy of ψ.',
 			['MZ1', 'MZ2'],
-			['H2.out', 'CX2.out']
+			['H2.out', 'CX2.out2']
 		),
 		stage(
 			'Apply conditional corrections',
 			'Bob applies X and Z conditioned on the two measurement bits.',
 			['XC', 'ZC'],
-			['CX1.out', 'XC.out', 'ZC.out']
+			['CX1.out2', 'XC.out', 'ZC.out']
 		),
 		stage(
 			'Recover |ψ⟩',
