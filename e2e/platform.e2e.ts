@@ -43,18 +43,19 @@ test('landing page is SSR-valid, stable, and proves rotated native geometry', as
 	expect(cumulativeShift).toBeLessThanOrEqual(0.1);
 });
 
-test('version selector preserves the documentation slug and rejects invalid releases', async ({
+test('version selector preserves the slug and snaps future releases to the documented line', async ({
 	page,
 	request
 }) => {
 	await page.goto('/docs/0.3.0/component-reference');
 	await expect(page.locator('main h1')).toHaveText('Use every 0.3 primitive deliberately');
 	await page.getByRole('combobox', { name: 'Documentation version' }).selectOption('0.2.1');
-	await expect(page).toHaveURL(/\/docs\/0\.2\.1\/component-reference$/);
+	await expect(page).toHaveURL(/\/docs\/0\.2\/component-reference$/);
 	await expect(page.locator('main h1')).toHaveText('Find a component and its ports');
 
-	const missingVersion = await request.get('/docs/9.9.9/overview');
-	expect(missingVersion.status()).toBe(404);
+	const futureVersion = await request.get('/docs/9.9.9/overview');
+	expect(futureVersion.status()).toBe(200);
+	expect(futureVersion.url()).toMatch(/\/docs\/0\.3\/overview$/);
 	const missingSlug = await request.get('/docs/0.3.0/not-a-document');
 	expect(missingSlug.status()).toBe(404);
 });
@@ -77,7 +78,7 @@ test('command palette traps focus and keyboard-navigates the versioned search in
 	await expect(close).toBeFocused();
 	await search.fill('Component API');
 	await search.press('Enter');
-	await expect(page).toHaveURL(/\/docs\/0\.3\.0\/component-reference$/);
+	await expect(page).toHaveURL(/\/docs\/0\.3\/component-reference$/);
 });
 
 test('playground opens valid, maps source to vector, preserves URI state, and exposes raw parity', async ({
@@ -111,7 +112,8 @@ test('RC laboratory uses native primitives and updates derived physics without r
 	const schematic = page.locator('.sim-stage [data-schematic] svg');
 	await expect(schematic).toBeVisible();
 	await expect(schematic.locator('[data-node-id="VIN"]')).toBeVisible();
-	await expect(schematic.locator('[data-node-id="VOUT_NODE"]')).toBeVisible();
+	await expect(schematic.locator('[data-node-id="VOUT"]')).toBeVisible();
+	await expect(schematic.locator('[data-node-id="OUT"]')).toBeVisible();
 	await expect(schematic.locator('[data-node-id="C1"]')).toHaveAttribute(
 		'data-orientation',
 		'down'
@@ -121,6 +123,10 @@ test('RC laboratory uses native primitives and updates derived physics without r
 
 	await page.getByRole('slider', { name: /Stimulus frequency/ }).fill('5');
 	await expect(page.getByText(/\|H\| =/).first()).not.toContainText('|H| = 0.847');
+	await expect(page.locator('.cutoff-overlay .bode-curve')).toHaveAttribute(
+		'style',
+		/stroke-width:/
+	);
 	expect(await svgHandle?.evaluate((element) => element.isConnected)).toBe(true);
 });
 
@@ -131,14 +137,14 @@ test('release timeline and sitemap expose current and historical platform contex
 	await page.goto('/changelog');
 	await expect(page.getByRole('heading', { name: /v0\.3\.0/ })).toBeVisible();
 	await expect(page.getByText(/release candidate/i)).toBeVisible();
-	await expect(page.getByText('26,398 B')).toBeVisible();
-	await expect(page.getByText('59,188 B')).toBeVisible();
+	await expect(page.getByText('26,512 B')).toBeVisible();
+	await expect(page.getByText('59,709 B')).toBeVisible();
 
 	const sitemap = await request.get('/sitemap.xml');
 	expect(sitemap.status()).toBe(200);
 	const xml = await sitemap.text();
-	expect(xml).toContain('/docs/0.3.0/component-reference');
-	expect(xml).toContain('/docs/0.2.1/component-reference');
+	expect(xml).toContain('/docs/0.3/component-reference');
+	expect(xml).toContain('/docs/0.2/component-reference');
 	expect(xml).toContain('/simulations/0.3.0/rc');
 });
 
@@ -156,4 +162,35 @@ test('mobile docs expose an accessible index and compiled-example bottom sheet',
 	await expect(exampleToggle).toBeVisible();
 	await exampleToggle.click();
 	await expect(page.getByRole('complementary', { name: /Compiled example/ })).toHaveClass(/open/);
+});
+
+test('every public page shell contains wide content without mobile document overflow', async ({
+	page
+}) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	const routes = [
+		'/',
+		'/docs/0.3.2/overview',
+		'/docs/0.3.2/component-reference',
+		'/playground/0.3.2',
+		'/simulations/0.3.2',
+		'/simulations/0.3.2/adder',
+		'/simulations/0.3.2/rc',
+		'/examples',
+		'/coverage',
+		'/changelog'
+	] as const;
+
+	for (const route of routes) {
+		await page.goto(route);
+		await expect(page.locator('main')).toBeVisible();
+		const widths = await page.evaluate(() => ({
+			viewport: document.documentElement.clientWidth,
+			page: document.documentElement.scrollWidth
+		}));
+		expect(widths, `${route} must not create document-level horizontal scroll`).toEqual({
+			viewport: 390,
+			page: 390
+		});
+	}
 });

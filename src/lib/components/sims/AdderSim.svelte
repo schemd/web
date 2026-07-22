@@ -7,14 +7,17 @@
 	 * high-signal nets glow via the shared `.net-optics` system, idle nets stay
 	 * muted. One click listener on the root SVG container does all delegation.
 	 */
-	import { delegatedNodeId, setNetLevel, setNodeActive } from '$lib/sim-dom';
+	import { delegatedNodeId, setNetLevels, setNodeActive } from '$lib/sim-dom';
+	import {
+		SIMULATION_TIMELINE_EVENT,
+		type SimulationTimelineDetail
+	} from '$lib/simulation-timelines';
 	import { playTick } from '$lib/audio';
 	import { ui } from '$lib/ui.svelte';
 	import Oscilloscope from './Oscilloscope.svelte';
 	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
-	import { SvelteSet } from 'svelte/reactivity';
 
 	interface Props {
 		svg: string;
@@ -23,19 +26,23 @@
 	let { svg }: Props = $props();
 
 	let host = $state<HTMLElement | undefined>();
-	let a = $state(0b0010_1011);
-	let b = $state(0b0101_0110);
+	const INITIAL_A = 0b0010_1011;
+	const INITIAL_B = 0b0101_0110;
+	let a = $state(INITIAL_A);
+	let b = $state(INITIAL_B);
 	let cin = $state(0);
 	let scope = $state<number[]>(Array.from({ length: 96 }, () => 0));
 	let faults = $state({ stuckCarry: false });
-	/** Per-gate propagation delay (ns). The whole point of "ripple" is this delay. */
-	let gateDelay = $state(6);
 	/** How many bit positions have settled since the last input change. */
 	let frontier = $state(8);
+	/** Last result that reached the output register; pending inputs cannot jump it. */
+	let committedSum = $state(INITIAL_A + INITIAL_B);
+	let committedCarry = $state(0);
 
 	const BITS = 8;
 	/** Worst-case critical path: two gate delays of carry per cell, plus the final sum. */
-	const criticalNs = $derived((2 * BITS + 1) * gateDelay);
+	const MODEL_GATE_DELAY_NS = 6;
+	const criticalNs = (2 * BITS + 1) * MODEL_GATE_DELAY_NS;
 	const settling = $derived(frontier < BITS);
 
 	/** One combinational pass, mirroring the gate network exactly. */
@@ -71,6 +78,9 @@
 		return total;
 	});
 	const carryOut = $derived(nets[`O1_${BITS - 1}.out`] ?? 0);
+	const settledMask = $derived(frontier <= 0 ? 0 : (1 << Math.min(frontier, BITS)) - 1);
+	const visibleSum = $derived((sum & settledMask) | (committedSum & ~settledMask & 0xff));
+	const visibleCarry = $derived(frontier >= BITS ? carryOut : committedCarry);
 
 	/** Which bit position an endpoint belongs to, for the ripple front gate. */
 	function endpointBit(endpoint: string): number {
@@ -78,20 +88,21 @@
 		return indexed ? Number(indexed[1]) : 0;
 	}
 
-	/* Animate the carry front bit-by-bit after every input change, so the ripple
-	 * is a physical event in time rather than an instantaneous truth table. */
+	/* The shared causal timeline is the only animation clock. This keeps manual
+	 * Previous/Next, autoplay, the delay slider, SVG lighting, and numerical state
+	 * on the exact same frame boundary. */
 	$effect(() => {
-		void a;
-		void b;
-		void cin;
-		void faults.stuckCarry;
-		frontier = 0;
-		const stepMs = Math.max(40, gateDelay * 12);
-		const timer = setInterval(() => {
-			frontier += 1;
-			if (frontier >= BITS) clearInterval(timer);
-		}, stepMs);
-		return () => clearInterval(timer);
+		const onStage = (event: Event): void => {
+			const detail = (event as CustomEvent<SimulationTimelineDetail>).detail;
+			if (detail.simulationId !== 'adder') return;
+			frontier = detail.step >= BITS + 1 ? BITS : Math.min(detail.step, BITS - 1);
+			if (detail.step >= BITS + 1) {
+				committedSum = sum;
+				committedCarry = carryOut;
+			}
+		};
+		window.addEventListener(SIMULATION_TIMELINE_EVENT, onStage);
+		return () => window.removeEventListener(SIMULATION_TIMELINE_EVENT, onStage);
 	});
 
 	/* Paint the settled portion of the logic pass into the compiled SVG by
@@ -100,31 +111,37 @@
 	$effect(() => {
 		const root = host;
 		if (!root) return;
-		const painted = new SvelteSet<string>();
-		for (const wire of root.querySelectorAll('[data-net-id]')) {
-			const netId = wire.getAttribute('data-net-id');
-			if (netId === null || painted.has(netId)) continue;
-			painted.add(netId);
-			const source = wire.getAttribute('data-wire-source');
-			const value = source === null ? undefined : nets[source];
-			const lit = value === 1 && endpointBit(source ?? '') < frontier;
-			setNetLevel(root, netId, lit ? 'high' : 'off');
-		}
+		setNetLevels(root, (_netId, source) => {
+			const value = source === undefined ? undefined : nets[source];
+			const input = source ? /^(?:A|B)\d\.out$|^CIN\.out$/.test(source) : false;
+			return value === 1 && (input || endpointBit(source ?? '') < frontier) ? 'high' : 'off';
+		});
 		for (const [endpoint, value] of Object.entries(nets)) {
-			setNodeActive(root, endpoint.split('.')[0]!, value === 1 && endpointBit(endpoint) < frontier);
+			const input = /^(?:A|B)\d\.out$|^CIN\.out$/.test(endpoint);
+			setNodeActive(
+				root,
+				endpoint.split('.')[0]!,
+				value === 1 && (input || endpointBit(endpoint) < frontier)
+			);
 		}
 		for (let bit = 0; bit < BITS; bit += 1) {
-			setNodeActive(root, `S${bit}`, ((sum >> bit) & 1) === 1 && bit < frontier);
+			setNodeActive(root, `S${bit}`, ((visibleSum >> bit) & 1) === 1 && bit < frontier);
 		}
-		setNodeActive(root, 'COUT', carryOut === 1 && frontier >= BITS);
+		setNodeActive(root, 'COUT', visibleCarry === 1 && frontier >= BITS);
 	});
 
 	/* Feed the oscilloscope a rolling logic trace of the sum's LSB rail. */
 	$effect(() => {
-		const next = [...scope.slice(1), (sum & 1) === 1 ? 0.85 : 0.15];
-		const timer = setTimeout(() => (scope = next), 80);
-		return () => clearTimeout(timer);
+		const sample = (visibleSum & 1) === 1 ? 0.85 : 0.15;
+		const timer = setInterval(() => (scope = [...scope.slice(1), sample]), 80);
+		return () => clearInterval(timer);
 	});
+
+	function preserveVisibleResult(): void {
+		committedSum = visibleSum;
+		committedCarry = visibleCarry;
+		frontier = 0;
+	}
 
 	function onStageClick(event: MouseEvent): void {
 		if (!(event.target instanceof Element)) return;
@@ -135,11 +152,13 @@
 		if (!id) return;
 		const bitMatch = id.match(/^([AB])(\d)$/);
 		if (bitMatch) {
+			preserveVisibleResult();
 			const bit = Number(bitMatch[2]);
 			if (bitMatch[1] === 'A') a ^= 1 << bit;
 			else b ^= 1 << bit;
 			if (ui.audio) playTick(500 + bit * 40);
 		} else if (id === 'CIN') {
+			preserveVisibleResult();
 			cin ^= 1;
 			if (ui.audio) playTick(460);
 		}
@@ -153,12 +172,14 @@
 	}
 
 	function randomize(): void {
+		preserveVisibleResult();
 		a = Math.floor(Math.random() * 256);
 		b = Math.floor(Math.random() * 256);
 		if (ui.audio) playTick(560);
 	}
 
 	function clearInputs(): void {
+		preserveVisibleResult();
 		a = 0;
 		b = 0;
 		cin = 0;
@@ -191,6 +212,12 @@
 		if (!Number.isFinite(value)) return 0;
 		return Math.max(0, Math.min(255, Math.trunc(value)));
 	}
+
+	function setOperand(which: 'a' | 'b', raw: string): void {
+		preserveVisibleResult();
+		if (which === 'a') a = clampByte(raw);
+		else b = clampByte(raw);
+	}
 </script>
 
 <LabShell {controls} {canvas} {instruments} />
@@ -211,7 +238,7 @@
 					min="0"
 					max="255"
 					value={a}
-					oninput={(event) => (a = clampByte(event.currentTarget.value))}
+					oninput={(event) => setOperand('a', event.currentTarget.value)}
 				/>
 			</label>
 			<label>
@@ -221,21 +248,13 @@
 					min="0"
 					max="255"
 					value={b}
-					oninput={(event) => (b = clampByte(event.currentTarget.value))}
+					oninput={(event) => setOperand('b', event.currentTarget.value)}
 				/>
 			</label>
 		</div>
-		<label>
-			<span class="microlabel">gate delay = {gateDelay} ns · critical path ≈ {criticalNs} ns</span>
-			<input
-				type="range"
-				min="2"
-				max="16"
-				step="1"
-				bind:value={gateDelay}
-				aria-label="Gate delay"
-			/>
-		</label>
+		<p class="microlabel">
+			physical model · {MODEL_GATE_DELAY_NS} ns/gate · critical path ≈ {criticalNs} ns
+		</p>
 		<div class="button-row">
 			<button type="button" class="btn" onclick={randomize}>randomize A,B</button>
 			<button type="button" class="btn" onclick={clearInputs}>clear</button>
@@ -268,10 +287,10 @@
 		<span class="readout">B = {bitString(b)} ({b})</span>
 		<span class="readout">C_in = {cin}</span>
 		<span class="readout sum" class:faulted={faults.stuckCarry}>
-			Σ = {bitString(sum)}
+			Σ = {bitString(visibleSum)}
 		</span>
 		<span class="readout sum" class:faulted={faults.stuckCarry}>
-			= {sum + (carryOut << 8)} · C_out = {carryOut}
+			= {visibleSum + (visibleCarry << 8)} · C_out = {visibleCarry}
 		</span>
 		<span class="readout ripple" class:settling>
 			{settling ? `carry front @ bit ${frontier}…` : `settled · ${criticalNs} ns worst case`}
@@ -322,10 +341,6 @@
 		background: var(--bg-inset);
 		border: 1px solid var(--line);
 		color: var(--ink);
-	}
-
-	.stack input[type='range'] {
-		accent-color: var(--accent);
 	}
 
 	.readouts {

@@ -296,5 +296,26 @@
 		.pane-right[data-open='false'] {
 			display: none;
 		}
+
+		.pane {
+			min-block-size: min(68vh, 640px);
+		}
+
+		.pane-left,
+		.pane-right {
+			min-block-size: min(50vh, 480px);
+		}
+
+		.statusbar {
+			min-block-size: var(--statusbar-h);
+			block-size: auto;
+			flex-wrap: wrap;
+			padding-block: var(--space-1);
+		}
+
+		.status-extra {
+			flex: 1 1 100%;
+			margin-inline-start: 0;
+		}
 	}
 </style>

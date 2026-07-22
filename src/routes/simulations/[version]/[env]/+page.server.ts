@@ -19,5 +19,9 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		error(404, `Unknown simulation environment: ${params.env}`);
 	}
 
-	return { version, simulation, environments: listSimulationEnvironments() };
+	return {
+		version,
+		simulation,
+		environments: listSimulationEnvironments().map(({ id, index, title }) => ({ id, index, title }))
+	};
 };

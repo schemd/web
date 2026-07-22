@@ -8,7 +8,7 @@
 	 * accumulates real Born-rule measurements and streams the empirical
 	 * correlation into the oscilloscope.
 	 */
-	import { delegatedNodeId, setNodeActive } from '$lib/sim-dom';
+	import { delegatedNodeId, setNodeActive, setWiresFrom } from '$lib/sim-dom';
 	import { playTick } from '$lib/audio';
 	import { ui } from '$lib/ui.svelte';
 	import Oscilloscope from './Oscilloscope.svelte';
@@ -173,6 +173,8 @@
 		if (!root) return;
 		setNodeActive(root, 'Q0', q0 === 1);
 		setNodeActive(root, 'Q1', q1 === 1);
+		setWiresFrom(root, 'Q0.out', q0 === 1);
+		setWiresFrom(root, 'Q1.out', q1 === 1);
 		root
 			.querySelector('[data-node-id="CX1"]')
 			?.classList.toggle('is-degraded', faults.brokenEntangler);

@@ -5,9 +5,8 @@
 	 * A single `step` index (bindable) drives any staged transformation — Grover
 	 * rounds, a ripple-carry pass, a teleportation script. The parent renders the
 	 * state for `step`; this bar only owns navigation: Previous, Play/Pause, Next,
-	 * Reset, and a segmented progress track. Play auto-advances on an interval and
-	 * latches at the final step. Svelte 5 runes throughout; the interval depends
-	 * only on `playing`, so stepping never thrashes the timer.
+	 * Reset, and a segmented progress track. A one-shot timer is re-armed after
+	 * each committed step, so stale interval callbacks cannot skip a frame.
 	 */
 	interface Props {
 		/** Current 0-based step (bindable). */
@@ -38,6 +37,7 @@
 	const currentLabel = $derived(labels[step] ?? `Step ${step + 1}`);
 
 	function go(next: number): void {
+		if (count <= 0) return;
 		const clamped = Math.max(0, Math.min(count - 1, next));
 		if (clamped !== step) {
 			step = clamped;
@@ -64,15 +64,17 @@
 		playing = !playing;
 	}
 
-	/* Auto-advance while playing. The effect tracks only `playing`; the interval
-	 * callback reads `step` lazily, so advancing does not re-arm the timer. */
+	/* One pending timeout, one causal transition. Reading `step` before scheduling
+	 * intentionally re-arms the timer after the parent commits the frame. */
 	$effect(() => {
 		if (!playing) return;
-		const timer = setInterval(() => {
-			if (step >= count - 1) playing = false;
-			else next();
-		}, intervalMs);
-		return () => clearInterval(timer);
+		if (step >= count - 1) {
+			playing = false;
+			return;
+		}
+		const nextStep = step + 1;
+		const timer = setTimeout(() => go(nextStep), Math.max(0, intervalMs));
+		return () => clearTimeout(timer);
 	});
 </script>
 
@@ -120,13 +122,7 @@
 		</button>
 	</div>
 
-	<div
-		class="track"
-		role="progressbar"
-		aria-valuemin="1"
-		aria-valuemax={count}
-		aria-valuenow={step + 1}
-	>
+	<div class="track" role="group" aria-label="Choose propagation stage">
 		{#each { length: count } as d, index (`${index}-${d}`)}
 			<button
 				type="button"
@@ -199,25 +195,34 @@
 
 	.track {
 		display: flex;
-		gap: 3px;
+		gap: 1px;
 	}
 
 	.tick {
+		position: relative;
 		flex: 1;
-		block-size: 5px;
+		min-inline-size: 24px;
+		block-size: 24px;
 		padding: 0;
-		background: var(--line);
-		transition: background-color var(--dur-fast) var(--ease-precise);
+		background: transparent;
 
-		&:hover {
+		&::before {
+			content: '';
+			position: absolute;
+			inset: 9px 1px;
+			background: var(--line);
+			transition: background-color var(--dur-fast) var(--ease-precise);
+		}
+
+		&:hover::before {
 			background: var(--ink-faint);
 		}
 
-		&.done {
+		&.done::before {
 			background: color-mix(in srgb, var(--accent) 55%, var(--line));
 		}
 
-		&.current {
+		&.current::before {
 			background: var(--accent);
 			box-shadow: 0 0 6px var(--glow);
 		}

@@ -8,7 +8,11 @@
 	 * real attenuation, and the two-channel oscilloscope overlays the input
 	 * reference against the attenuated, phase-shifted output.
 	 */
-	import { styleWiresFrom, delegatedWireSource } from '$lib/sim-dom';
+	import { styleWiresFrom, delegatedWireSource, setNodeDegraded } from '$lib/sim-dom';
+	import {
+		SIMULATION_TIMELINE_EVENT,
+		type SimulationTimelineDetail
+	} from '$lib/simulation-timelines';
 	import Oscilloscope from './Oscilloscope.svelte';
 	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
@@ -42,16 +46,42 @@
 	/** |H(jω)| for a first-order low-pass. */
 	const magnitude = $derived(1 / Math.sqrt(1 + ratio * ratio));
 	const phaseShift = $derived(-Math.atan(ratio));
-	const attenuationDb = $derived(20 * Math.log10(magnitude));
+
+	/* The controls define the target response immediately, but the observed output
+	 * advances only with the shared source → R → C → probe teaching frames. */
+	const INITIAL_RATIO = 100 * 2 * Math.PI * 10_000 * 100e-9;
+	const INITIAL_MAGNITUDE = 1 / Math.sqrt(1 + INITIAL_RATIO * INITIAL_RATIO);
+	const INITIAL_PHASE_SHIFT = -Math.atan(INITIAL_RATIO);
+	let outputMagnitude = $state(INITIAL_MAGNITUDE);
+	let outputPhaseShift = $state(INITIAL_PHASE_SHIFT);
+	let originMagnitude = INITIAL_MAGNITUDE;
+	let originPhaseShift = INITIAL_PHASE_SHIFT;
+	const attenuationDb = $derived(20 * Math.log10(outputMagnitude));
+
+	$effect(() => {
+		const onStage = (event: Event): void => {
+			const detail = (event as CustomEvent<SimulationTimelineDetail>).detail;
+			if (detail.simulationId !== 'rc') return;
+			if (detail.step === 0) {
+				originMagnitude = outputMagnitude;
+				originPhaseShift = outputPhaseShift;
+			}
+			const progress = [0, 0.2, 0.65, 1][detail.step] ?? 1;
+			outputMagnitude = originMagnitude + (magnitude - originMagnitude) * progress;
+			outputPhaseShift = originPhaseShift + (phaseShift - originPhaseShift) * progress;
+		};
+		window.addEventListener(SIMULATION_TIMELINE_EVENT, onStage);
+		return () => window.removeEventListener(SIMULATION_TIMELINE_EVENT, onStage);
+	});
 
 	/* ---------- Bode cutoff-response overlay geometry ----------
 	 * A first-order magnitude curve |H(f)| across a log-frequency axis
 	 * (10 Hz – 100 kHz), with the cutoff marker, the live operating point, and a
 	 * "cutoff line" whose stroke-width, opacity, and dash all track the current
 	 * attenuation — thinning and fading toward silence as the pole sweeps down. */
-	const PLOT_W = 220;
-	const PLOT_H = 132;
-	const PLOT_PAD = 16;
+	const PLOT_W = 300;
+	const PLOT_H = 164;
+	const PLOT_PAD = 18;
 	const F_MIN_LOG = 1; /* 10 Hz */
 	const F_MAX_LOG = 5; /* 100 kHz */
 
@@ -77,18 +107,19 @@
 	});
 	const cutoffX = $derived(Number.isFinite(cutoff) ? plotX(Math.log10(cutoff)) : PLOT_W - PLOT_PAD);
 	const opX = $derived(plotX(logF));
-	const opY = $derived(plotY(magnitude));
+	const opY = $derived(plotY(outputMagnitude));
 	/** −3 dB reference row (magnitude = 1/√2). */
 	const halfPowerY = plotY(1 / Math.SQRT2);
 
 	/* The cutoff line's optics, driven entirely by the live attenuation. */
-	const cutoffStrokeWidth = $derived((0.8 + magnitude * 2.6).toFixed(2));
-	const cutoffOpacity = $derived((0.25 + magnitude * 0.75).toFixed(2));
+	const cutoffVisibility = $derived(Math.max(0, Math.min(1, outputMagnitude)));
+	const cutoffStrokeWidth = $derived((0.18 + cutoffVisibility ** 0.7 * 4.2).toFixed(2));
+	const cutoffOpacity = $derived((cutoffVisibility ** 0.9).toFixed(3));
 	const cutoffDash = $derived(
-		magnitude > 0.85
-			? 'none'
-			: `${(2 + magnitude * 16).toFixed(1)} ${((1 - magnitude) * 9 + 1).toFixed(1)}`
+		`${(1 + cutoffVisibility * 20).toFixed(1)} ${(5 + (1 - cutoffVisibility) * 24).toFixed(1)}`
 	);
+	const cutoffFlowDuration = $derived(`${(0.7 + (1 - cutoffVisibility) * 2.8).toFixed(2)}s`);
+	const glowOpacity = $derived((cutoffVisibility ** 1.15 * 0.8).toFixed(3));
 
 	function formatSi(value: number, unit: string): string {
 		if (!Number.isFinite(value)) return `∞ ${unit}`;
@@ -111,18 +142,18 @@
 	$effect(() => {
 		const root = host;
 		if (!root) return;
-		const opacity = String(0.25 + 0.75 * magnitude);
+		const opacity = String(0.25 + 0.75 * outputMagnitude);
 		const dash =
-			magnitude > 0.7
+			outputMagnitude > 0.7
 				? 'none'
-				: `${(magnitude * 12 + 2).toFixed(1)} ${((1 - magnitude) * 8 + 1).toFixed(1)}`;
-		for (const source of ['R1.out', 'VOUT_PROBE.node']) {
+				: `${(outputMagnitude * 12 + 2).toFixed(1)} ${((1 - outputMagnitude) * 8 + 1).toFixed(1)}`;
+		for (const source of ['R1.out', 'VOUT.node']) {
 			styleWiresFrom(root, source, 'opacity', opacity);
 			styleWiresFrom(root, source, 'stroke-dasharray', dash);
 		}
 		const capacitorOpacity = faults.openCapacitor ? '0.2' : '1';
-		styleWiresFrom(root, 'VOUT_NODE.node', 'opacity', capacitorOpacity);
 		styleWiresFrom(root, 'C1.out', 'opacity', capacitorOpacity);
+		setNodeDegraded(root, 'C1', faults.openCapacitor);
 	});
 
 	/* 60 FPS waveform: input sine reference vs. attenuated, phase-shifted output. */
@@ -136,7 +167,7 @@
 			for (let index = 0; index < points; index += 1) {
 				const t = (index / points) * Math.PI * 4 + phase;
 				nextIn.push(0.5 + 0.42 * Math.sin(t));
-				nextOut.push(0.5 + 0.42 * magnitude * Math.sin(t + phaseShift));
+				nextOut.push(0.5 + 0.42 * outputMagnitude * Math.sin(t + outputPhaseShift));
 			}
 			scopeIn = nextIn;
 			scopeOut = nextOut;
@@ -151,10 +182,10 @@
 		if (wire === 'VIN.positive' || wire === 'VIN.negative') {
 			return `V_in = 1.000 V_pp @ ${formatSi(frequency, 'Hz')}`;
 		}
-		if (wire === 'R1.out' || wire === 'VOUT_PROBE.node') {
-			return `V_out = ${magnitude.toFixed(3)} V_pp · ${attenuationDb.toFixed(1)} dB · φ ${(phaseShift * 57.2958).toFixed(1)}°`;
+		if (wire === 'R1.out' || wire === 'VOUT.node') {
+			return `V_out = ${outputMagnitude.toFixed(3)} V_pp · ${attenuationDb.toFixed(1)} dB · φ ${(outputPhaseShift * 57.2958).toFixed(1)}°`;
 		}
-		if (wire === 'VOUT_NODE.node' || wire === 'C1.out') {
+		if (wire === 'C1.out') {
 			return faults.openCapacitor
 				? 'C branch OPEN (fault)'
 				: `I_C path · f_c = ${formatSi(cutoff, 'Hz')}`;
@@ -210,10 +241,10 @@
 {#snippet instruments()}
 	<div class="readouts">
 		<span class="readout">f_c = {formatSi(cutoff, 'Hz')}</span>
-		<span class="readout">|H| = {magnitude.toFixed(3)} ({attenuationDb.toFixed(1)} dB)</span>
-		<span class="readout">φ = {(phaseShift * 57.2958).toFixed(1)}°</span>
+		<span class="readout">|H| = {outputMagnitude.toFixed(3)} ({attenuationDb.toFixed(1)} dB)</span>
+		<span class="readout">φ = {(outputPhaseShift * 57.2958).toFixed(1)}°</span>
 	</div>
-	<figure class="bode" aria-label="Frequency response with cutoff marker">
+	<figure class="bode cutoff-overlay" aria-label="Animated frequency response with cutoff marker">
 		<svg
 			viewBox={`0 0 ${PLOT_W} ${PLOT_H}`}
 			role="img"
@@ -229,14 +260,21 @@
 				y2={halfPowerY}
 			/>
 			<!-- Cutoff frequency marker -->
-			<line class="bode-cutoff" x1={cutoffX} x2={cutoffX} y1={PLOT_PAD} y2={PLOT_H - PLOT_PAD} />
+			<line
+				class="bode-cutoff"
+				x1={cutoffX}
+				x2={cutoffX}
+				y1={PLOT_PAD}
+				y2={PLOT_H - PLOT_PAD}
+				style={`stroke-width: ${cutoffStrokeWidth}; opacity: ${cutoffOpacity}; stroke-dasharray: ${cutoffDash}; --cutoff-flow-duration: ${cutoffFlowDuration}`}
+			/>
 			<!-- Glow underlay for the response curve -->
-			<path class="bode-glow" d={responsePath} style={`opacity: ${cutoffOpacity}`} />
+			<path class="bode-glow" d={responsePath} style={`opacity: ${glowOpacity}`} />
 			<!-- The response curve, thinning and fading with attenuation -->
 			<path
 				class="bode-curve"
 				d={responsePath}
-				style={`stroke-width: ${cutoffStrokeWidth}; opacity: ${cutoffOpacity}; stroke-dasharray: ${cutoffDash}`}
+				style={`stroke-width: ${cutoffStrokeWidth}; opacity: ${cutoffOpacity}; stroke-dasharray: ${cutoffDash}; --cutoff-flow-duration: ${cutoffFlowDuration}`}
 			/>
 			<!-- Live operating point at the stimulus frequency -->
 			<circle class="bode-op" cx={opX} cy={opY} r="3.5" />
@@ -284,8 +322,9 @@
 
 		& svg {
 			inline-size: 100%;
-			max-inline-size: 240px;
+			max-inline-size: 320px;
 			background: var(--bg-inset);
+			box-shadow: inset 0 0 24px color-mix(in srgb, var(--accent) 5%, transparent);
 		}
 	}
 
@@ -302,8 +341,9 @@
 
 	.bode-cutoff {
 		stroke: var(--accent-2);
-		stroke-width: 1;
-		stroke-dasharray: 3 2;
+		stroke-linecap: round;
+		filter: drop-shadow(0 0 5px var(--accent-2));
+		animation: cutoff-flow var(--cutoff-flow-duration, 1s) linear infinite;
 		/* The marker glides as R/C move the pole. */
 		transition:
 			x1 var(--dur-med) var(--ease-precise),
@@ -326,6 +366,7 @@
 		stroke-linecap: round;
 		stroke-linejoin: round;
 		filter: drop-shadow(0 0 4px var(--glow));
+		animation: cutoff-flow var(--cutoff-flow-duration, 1s) linear infinite;
 		transition:
 			stroke-width var(--dur-med) var(--ease-precise),
 			opacity var(--dur-med) var(--ease-precise),
@@ -357,12 +398,19 @@
 		fill: var(--accent-2);
 	}
 
+	@keyframes cutoff-flow {
+		to {
+			stroke-dashoffset: -72;
+		}
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		.bode-cutoff,
 		.bode-glow,
 		.bode-curve,
 		.bode-op {
 			transition: none;
+			animation: none;
 		}
 	}
 </style>

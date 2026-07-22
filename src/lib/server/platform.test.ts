@@ -205,12 +205,14 @@ describe('versioned simulation source and compilation', () => {
 		expect(result.svg).toContain('data-orientation="down"');
 	});
 
-	test('uses native 0.3 source, junction, testpoint, and rotated capacitor primitives', () => {
+	test('uses the native first-order RC topology with no probe/junction workaround', () => {
 		expect(RC_SOURCE).toContain('source:VIN');
-		expect(RC_SOURCE).toContain('junction:VOUT_NODE');
-		expect(RC_SOURCE).toContain('testpoint:VOUT_PROBE');
+		expect(RC_SOURCE).toContain('junction:VOUT');
+		expect(RC_SOURCE).toContain('port:OUT');
 		expect(RC_SOURCE).toContain('capacitor:C1');
 		expect(RC_SOURCE).toContain('orientation=down');
+		expect(RC_SOURCE).not.toContain('testpoint:');
+		expect(RC_SOURCE).not.toContain('RETURN_NODE');
 		expect(RC_SOURCE).not.toContain('initial:');
 	});
 
@@ -223,9 +225,15 @@ describe('versioned simulation source and compilation', () => {
 			expect(environment.formulaHtml).not.toContain('katex-error');
 			/* Every environment carries a rendered, error-free "aha" teaching layer. */
 			expect(environment.pedagogy.aha.length).toBeGreaterThan(0);
+			expect(environment.pedagogy.ahaHtml).not.toContain('katex-error');
 			expect(environment.pedagogy.principleHtml).toContain('katex');
 			expect(environment.pedagogy.principleHtml).not.toContain('katex-error');
 			expect(environment.pedagogy.steps.length).toBeGreaterThanOrEqual(3);
+			for (const step of environment.pedagogy.steps) {
+				expect(step.labelHtml).not.toContain('$');
+				expect(step.detailHtml).not.toContain('$');
+				expect(step.detailHtml).not.toContain('katex-error');
+			}
 			const simulation = getSimulation(environment.id);
 			expect(simulation).toBeDefined();
 			expect(simulation?.components).toBeGreaterThan(0);

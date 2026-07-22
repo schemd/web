@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
-	import { goto } from '$app/navigation';
-	import { playSuccess, playTick } from '$lib/audio';
+	import { playTick } from '$lib/audio';
 	import { ui } from '$lib/ui.svelte';
 	import 'katex/dist/katex.min.css';
 
@@ -67,15 +66,6 @@
 		}, 1600);
 		return () => clearInterval(timer);
 	});
-
-	/* ---------- Progress-bar module initialization ---------- */
-	let launching = $state<string | undefined>();
-	function initialize(id: string): void {
-		if (launching) return;
-		launching = id;
-		if (ui.audio) playSuccess();
-		setTimeout(() => goto(`/simulations/${data.version}/${id}`), 640);
-	}
 </script>
 
 <svelte:head>
@@ -232,19 +222,13 @@
 					<span class="fault-note" title="Switchboard fault this lab can inject"
 						>⚠ {environment.fault}</span
 					>
-					<button
-						type="button"
+					<a
 						class="init"
-						class:go={launching === environment.id}
-						disabled={launching !== undefined}
+						href={`/simulations/${data.version}/${environment.id}`}
 						onmouseenter={() => ui.audio && playTick(520 + index * 30)}
-						onclick={() => initialize(environment.id)}
 					>
-						<span class="init-label">
-							{launching === environment.id ? 'initializing…' : 'Initialize module →'}
-						</span>
-						<span class="init-progress" aria-hidden="true"></span>
-					</button>
+						<span class="init-label">Initialize module →</span>
+					</a>
 				</div>
 			</li>
 		{/each}
@@ -593,10 +577,9 @@
 		color: var(--danger);
 	}
 
-	/* ---------- Initialize button with progress bar ---------- */
+	/* A real link keeps catalogue navigation functional before hydration. */
 	.init {
-		position: relative;
-		overflow: hidden;
+		display: block;
 		padding: 0.55rem 0.95rem;
 		border: 1px solid var(--line-strong);
 		background: var(--bg-raised);
@@ -606,32 +589,14 @@
 		text-align: center;
 		transition: border-color var(--dur-fast) var(--ease-precise);
 
-		&:hover:not(:disabled) {
+		&:hover {
 			border-color: var(--accent);
-		}
-
-		&:disabled {
-			cursor: default;
 		}
 	}
 
 	.init-label {
 		position: relative;
 		z-index: 1;
-	}
-
-	.init-progress {
-		position: absolute;
-		inset: 0;
-		transform: scaleX(0);
-		transform-origin: left;
-		background: color-mix(in srgb, var(--accent) 28%, transparent);
-		border-inline-end: 2px solid var(--accent);
-	}
-
-	.init.go .init-progress {
-		transform: scaleX(1);
-		transition: transform var(--dur-kinetic) var(--ease-kinetic);
 	}
 
 	@media (max-width: 940px) {

@@ -73,7 +73,7 @@
 		</a>
 		<button
 			type="button"
-			class="tool"
+			class="tool search-tool"
 			onclick={() => (ui.paletteOpen = true)}
 			aria-label="Open command palette"
 		>
@@ -82,7 +82,7 @@
 		</button>
 		<button
 			type="button"
-			class="tool"
+			class="tool blueprint-tool"
 			onclick={cycleBlueprint}
 			aria-label={`Blueprint mode: ${BLUEPRINT_LABELS[ui.blueprint]}. Activate to switch.`}
 		>
@@ -91,7 +91,7 @@
 		</button>
 		<button
 			type="button"
-			class="tool"
+			class="tool audio-tool"
 			role="switch"
 			aria-checked={ui.audio}
 			onclick={() => {
@@ -101,6 +101,7 @@
 			}}
 			aria-label="Auditory feedback"
 		>
+			<span class="audio-glyph" aria-hidden="true">{ui.audio ? '♫' : '♪'}</span>
 			<span class="microlabel">{ui.audio ? 'audio on' : 'audio off'}</span>
 		</button>
 		<VersionSelect versions={data.versions} latest={data.latest} />
@@ -267,14 +268,89 @@
 		min-block-size: calc(100vh - var(--header-h));
 	}
 
-	@media (max-width: 760px) {
+	@media (max-width: 1040px) {
+		:global(:root) {
+			--header-h: 98px;
+		}
+
 		.site-header {
-			gap: var(--space-3);
+			display: grid;
+			grid-template-columns: auto minmax(0, 1fr);
+			grid-template-rows: 48px 49px;
+			gap: 0 var(--space-3);
+			block-size: var(--header-h);
+			padding-inline: var(--space-3);
+		}
+
+		.site-header > nav {
+			grid-column: 1 / -1;
+			grid-row: 2;
+			min-inline-size: 0;
 			overflow-x: auto;
+			overflow-y: hidden;
+			overscroll-behavior-inline: contain;
+			scrollbar-width: none;
+
+			& a {
+				white-space: nowrap;
+			}
+		}
+
+		.header-tools {
+			grid-column: 2;
+			grid-row: 1;
+			gap: var(--space-2);
+			min-inline-size: 0;
+			justify-self: end;
+		}
+
+		.icon-link,
+		.npm-link {
+			display: none;
 		}
 
 		.brand .brand-ipa {
 			display: none;
+		}
+	}
+
+	@media (max-width: 620px) {
+		.site-header {
+			padding-inline: var(--space-2);
+		}
+
+		.brand {
+			gap: var(--space-1);
+		}
+
+		.brand-name {
+			display: none;
+		}
+
+		.header-tools {
+			gap: 4px;
+		}
+
+		.tool {
+			min-inline-size: 36px;
+			min-block-size: 36px;
+			justify-content: center;
+			padding: 0.3rem;
+		}
+
+		.tool .microlabel,
+		.search-tool kbd {
+			display: none;
+		}
+
+		.search-tool::before {
+			content: '⌕';
+			font-family: var(--font-mono);
+			font-size: var(--text-md);
+		}
+
+		.site-header > nav a {
+			padding-inline: 0.58rem;
 		}
 	}
 </style>

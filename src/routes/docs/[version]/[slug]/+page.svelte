@@ -703,4 +703,30 @@
 			z-index: 61;
 		}
 	}
+
+	@media (max-width: 620px) {
+		.doc-article {
+			padding: var(--space-5) var(--space-3) calc(var(--space-16) + 3rem);
+			overflow: hidden;
+		}
+
+		.doc-header h1 {
+			font-size: clamp(1.55rem, 9vw, var(--text-xl));
+		}
+
+		.doc-summary {
+			font-size: var(--text-base);
+		}
+
+		.doc-rail {
+			block-size: min(82vh, 620px);
+			padding: var(--space-3);
+		}
+
+		.rail-toggle {
+			inset-inline: var(--space-3);
+			inset-block-end: var(--space-3);
+			justify-content: center;
+		}
+	}
 </style>

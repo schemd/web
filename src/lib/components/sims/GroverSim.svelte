@@ -11,11 +11,14 @@
 	 * the diffuser. The active gate lights in the compiled circuit and a HUD shows
 	 * the exact transformation for the current step.
 	 */
-	import { setNodeActive, delegatedNodeId } from '$lib/sim-dom';
+	import { setNodeActive, setWiresFrom, delegatedNodeId } from '$lib/sim-dom';
+	import {
+		SIMULATION_TIMELINE_EVENT,
+		type SimulationTimelineDetail
+	} from '$lib/simulation-timelines';
 	import { playSuccess, playTick } from '$lib/audio';
 	import { ui } from '$lib/ui.svelte';
 	import LabShell from './LabShell.svelte';
-	import Stepper from './Stepper.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
 
@@ -47,12 +50,9 @@
 		list.push({ kind: 'measure', round: OPTIMAL, label: 'Measurement' });
 		return list;
 	})();
-	const STEP_LABELS = PHASES.map((phase) => phase.label);
-
 	let host = $state<HTMLElement | undefined>();
 	let target = $state(0b101); /* the marked item; set by the 3 qubit toggles */
 	let step = $state(0);
-	let playing = $state(false);
 	let faults = $state({ wrongOracle: false });
 
 	const markedIndex = $derived(faults.wrongOracle ? target ^ 0b001 : target);
@@ -87,7 +87,18 @@
 		void target;
 		void faults.wrongOracle;
 		step = 0;
-		playing = false;
+	});
+
+	/* Keep the mathematical replay synchronized with the shared SVG timeline. */
+	$effect(() => {
+		const onStage = (event: Event): void => {
+			const detail = (event as CustomEvent<SimulationTimelineDetail>).detail;
+			if (detail.simulationId !== 'grover') return;
+			step = Math.max(0, Math.min(PHASES.length - 1, detail.step));
+			onStep(step);
+		};
+		window.addEventListener(SIMULATION_TIMELINE_EVENT, onStage);
+		return () => window.removeEventListener(SIMULATION_TIMELINE_EVENT, onStage);
 	});
 
 	/** Toggle one bit of the target. */
@@ -134,7 +145,12 @@
 		const root = host;
 		if (!root) return;
 		const kind = currentPhase.kind;
-		for (let i = 0; i < 3; i += 1) setNodeActive(root, `H${i}`, kind === 'super');
+		for (let i = 0; i < 3; i += 1) {
+			const inputHigh = ((target >> i) & 1) === 1;
+			setNodeActive(root, `Q${i}`, inputHigh);
+			setWiresFrom(root, `Q${i}.out`, inputHigh);
+			setNodeActive(root, `H${i}`, kind === 'super');
+		}
 		setNodeActive(root, 'ORACLE', kind === 'oracle');
 		setNodeActive(root, 'DIFF', kind === 'mean' || kind === 'diffuse');
 		for (let i = 0; i < 3; i += 1) setNodeActive(root, `M${i}`, kind === 'measure');
@@ -178,7 +194,6 @@
 				<span class="target-ket">= |{label(target)}⟩</span>
 			</div>
 		</div>
-		<Stepper bind:step bind:playing count={PHASES.length} labels={STEP_LABELS} onchange={onStep} />
 	</div>
 	<div class="switchboard">
 		<p class="microlabel">switchboard · fault injection</p>

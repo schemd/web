@@ -34,10 +34,11 @@ function escapeHtml(value: string): string {
 		.replace(/"/g, '&quot;');
 }
 
-/** Light inline decoration on already-escaped prose: **bold** and `code`. */
+/** Light inline decoration on already-escaped prose. */
 function decorate(escaped: string): string {
 	return escaped
 		.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+		.replace(/\*([^*]+)\*/g, '<em>$1</em>')
 		.replace(/`([^`]+)`/g, '<code>$1</code>');
 }
 
@@ -51,26 +52,28 @@ function decorate(escaped: string): string {
  */
 function renderProse(text: string): string {
 	const pattern = /\$\$([\s\S]+?)\$\$|\$([^$]+?)\$/g;
-	let html = '';
-	let lastIndex = 0;
-	let match: RegExpExecArray | null;
-	while ((match = pattern.exec(text)) !== null) {
-		html += decorate(escapeHtml(text.slice(lastIndex, match.index)));
-		const display = match[1] !== undefined;
-		html += katex.renderToString(display ? match[1]! : match[2]!, {
+	const renderedMath: string[] = [];
+	const tokenized = text.replace(pattern, (_match, displayTex?: string, inlineTex?: string) => {
+		const display = displayTex !== undefined;
+		const html = katex.renderToString(display ? displayTex : (inlineTex ?? ''), {
 			throwOnError: false,
 			displayMode: display
 		});
-		lastIndex = pattern.lastIndex;
-	}
-	html += decorate(escapeHtml(text.slice(lastIndex)));
-	return html;
+		const index = renderedMath.push(html) - 1;
+		return `\u{e000}${index}\u{e001}`;
+	});
+	return decorate(escapeHtml(tokenized)).replace(
+		/\u{e000}(\d+)\u{e001}/gu,
+		(_match, index: string) => renderedMath[Number(index)] ?? ''
+	);
 }
 
 /** One guided lab action that produces the intended realization. */
 interface PedagogyStep {
 	/** Imperative headline, e.g. "Toggle bit 0." */
 	readonly label: string;
+	/** Headline with every inline equation pre-rendered by KaTeX. */
+	readonly labelHtml: string;
 	/** Pre-rendered explanation of what the reader should now see and why. */
 	readonly detailHtml: string;
 }
@@ -79,6 +82,8 @@ interface PedagogyStep {
 export interface Pedagogy {
 	/** The single realization the lab is built to deliver. */
 	readonly aha: string;
+	/** The realization with inline notation pre-rendered by KaTeX. */
+	readonly ahaHtml: string;
 	/** Voice-driven principle paragraph with typeset math. */
 	readonly principleHtml: string;
 	/** Guided walk-through that earns the aha through direct interaction. */
@@ -129,6 +134,12 @@ export interface CompiledSimulation extends SimEnvironment {
 	readonly svg: string;
 	readonly components: number;
 	readonly connections: number;
+	/** Detail-only technical prose, rendered server-side with KaTeX. */
+	readonly summaryHtml: string;
+	readonly modelHtml: string;
+	readonly inventoryHtml: readonly string[];
+	readonly boundariesHtml: readonly string[];
+	readonly faultHtml: string;
 }
 
 /**
@@ -186,24 +197,20 @@ function adderSource(): { source: string; width: number; height: number } {
 	return { source: lines.join('\n'), width: 1080, height: top + bits * rowHeight + 60 };
 }
 
-export const RC_SOURCE = `// First-order RC low-pass filter using native 0.3 electrical primitives.
-source:VIN "V_{in}" at (80, 140) #blue [type=voltage-ac]
-resistor:R1 "Resistor, R" at (260, 140) #blue
-junction:VOUT_NODE "output node" at (440, 140) #cyan
-testpoint:VOUT_PROBE "V_{out}" at (590, 140) #purple
-port:VOUT "output" at (760, 140) #emerald
-capacitor:C1 "Capacitor, C" at (440, 270) #cyan [orientation=down]
-junction:RETURN_NODE "return" at (440, 370) #slate
-ground:GND "0 V" at (440, 470) #slate
+export const RC_SOURCE = `// Native first-order RC filter — no UML junction workaround.
+source:VIN "V_{in}" at (80, 120) #blue [type=voltage-ac]
+resistor:R1 "10 k\\Omega" at (260, 120) #amber
+junction:VOUT "output node" at (440, 120) #cyan
+capacitor:C1 "100 nF" at (440, 250) #cyan [orientation=down]
+ground:GND "0 V" at (220, 350) #slate
+port:OUT "V_{out}" at (680, 120) #emerald
 
 VIN.positive -> R1.in #blue [line]
-R1.out -> VOUT_NODE.node #slate [line marker-end=arrow label="I"]
-VOUT_NODE.node -> VOUT_PROBE.node #slate [line]
-VOUT_PROBE.node -> VOUT.in #slate [line]
-VOUT_NODE.node -> C1.in #cyan [ortho]
-C1.out -> RETURN_NODE.node #cyan [line]
-VIN.negative -> RETURN_NODE.node #slate [line]
-RETURN_NODE.node -> GND.in #slate [line]`;
+VIN.negative -> GND.in #slate [ortho]
+R1.out -> VOUT.node #amber [line]
+VOUT.node -> C1.in #cyan [ortho]
+C1.out -> GND.in #cyan [ortho]
+VOUT.node -> OUT.in #emerald [line marker-end=arrow]`;
 
 const BELL_SOURCE = `// Bell-state preparation: H then CNOT
 port:Q0 "q_0 = |0⟩" at (80, 90) #blue
@@ -462,7 +469,7 @@ DIFF.o2 -> M2.in #amber [ortho]`;
 /** Bounds + generated DSL keyed by environment id. */
 const SOURCES: Record<string, { source: string; width: number; height: number }> = {
 	adder: adderSource(),
-	rc: { source: RC_SOURCE, width: 840, height: 540 },
+	rc: { source: RC_SOURCE, width: 760, height: 440 },
 	bell: { source: BELL_SOURCE, width: 760, height: 300 },
 	timer: { source: TIMER_SOURCE, width: 700, height: 480 },
 	teleport: { source: TELEPORT_SOURCE, width: 1020, height: 400 },
@@ -1042,6 +1049,183 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<SimEnvironment, 'formulaHtml' | 'peda
 	}
 ];
 
+/**
+ * Detail-page copies add explicit LaTeX boundaries around technical notation.
+ * Catalogue text stays plain and compact; only the opened simulation pays for
+ * these KaTeX spans, and no client-side math renderer is shipped.
+ */
+interface DetailMathCopy {
+	readonly summary?: string;
+	readonly inventory?: readonly string[];
+	readonly boundaries?: readonly string[];
+}
+
+const DETAIL_MATH_COPY: Readonly<Record<string, DetailMathCopy>> = {
+	adder: {
+		inventory: [
+			'$8\\times$ full-adder cell',
+			'$16\\times$ XOR + $16\\times$ AND',
+			'$8\\times$ OR carry merge',
+			'$A/B/C_{in}$ + Sum ports'
+		],
+		boundaries: [
+			'$8$-bit operands · $0$–$255$',
+			'sum $0$–$511$ with carry-out',
+			'per-gate propagation delay'
+		]
+	},
+	rc: {
+		summary:
+			'A first-order shunt-capacitor filter. The cutoff and the $|H(j\\omega)|$ magnitude are derived live; the output wire fades its opacity and stretches its dash pattern to visualise physical damping, and both channels drive the oscilloscope.',
+		inventory: [
+			'input source node',
+			'series resistor $R$',
+			'shunt capacitor $C$',
+			'reference ground'
+		],
+		boundaries: [
+			'$R: 100\\ \\Omega$–$1\\ \\mathrm{M\\Omega}$',
+			'$C: 1\\ \\mathrm{nF}$–$10\\ \\mathrm{\\mu F}$',
+			'sweep $10\\ \\mathrm{Hz}$–$100\\ \\mathrm{kHz}$'
+		]
+	},
+	bell: {
+		summary:
+			'$H$ on $q_0$ followed by $\\operatorname{CNOT}(q_0\\to q_1)$. Toggling the initialization ports selects which Bell pair is prepared; amplitudes and the correlation index are derived, and a measure button accumulates real Born-rule shots.',
+		inventory: [
+			'$2\\times$ qubit register line',
+			'Hadamard gate',
+			'CNOT control/target',
+			'measurement ports'
+		],
+		boundaries: [
+			'$4$ Bell states',
+			'amplitudes $\\pm 1/\\sqrt{2}$',
+			'CHSH witness $S\\in[0,2\\sqrt{2}]$'
+		]
+	},
+	timer: {
+		summary:
+			'The timing capacitor integrates between $\\tfrac{1}{3}V_{cc}$ and $\\tfrac{2}{3}V_{cc}$. The timing-branch stroke weight scales with instantaneous $V_C$, and the LED node flashes in sync with the calculated frequency (time-scaled for visibility).',
+		inventory: [
+			'8-pin 555 IC block',
+			'$R_A + R_B$ timing pair',
+			'timing capacitor $C_T$',
+			'output LED + limiter'
+		],
+		boundaries: [
+			'$V_{cc}=5\\ \\mathrm V$',
+			'threshold $\\tfrac{2}{3}$ · trigger $\\tfrac{1}{3}$',
+			'astable + monostable modes'
+		]
+	},
+	teleport: {
+		summary:
+			'Alice’s state $|\\psi\\rangle$ is parameterised on the Bloch angles. Stepped playback advances the register through entanglement, Bell measurement, and the classically controlled $X^{m_2}/Z^{m_1}$ corrections; hovering any gate reveals its action in Dirac notation.',
+		inventory: [
+			'$3\\times$ qubit trace $(\\psi,A,B)$',
+			'$H$ + CNOT preparation',
+			'Bell-basis measurement',
+			'$X/Z$ correction gates'
+		],
+		boundaries: [
+			'Bloch $\\theta\\in[0,\\pi],\\ \\phi\\in[0,2\\pi]$',
+			'$6$-step protocol',
+			'fidelity $F=|\\langle\\psi|\\psi_{out}\\rangle|^2$'
+		]
+	},
+	buck: {
+		summary:
+			'A synchronous step-down converter with a continuous-time $L$–$C$ state solver and switching-ripple reconstruction. Sweep duty cycle, source voltage, load, inductance, capacitance, and carrier frequency; the laboratory identifies conduction mode, efficiency, ripple, and transient settling in real time.',
+		inventory: [
+			'PWM feedback controller',
+			'PMOS high-side switch',
+			'Schottky freewheel diode',
+			'$L$–$C$ output network'
+		],
+		boundaries: [
+			'$V_{in}: 5$–$36\\ \\mathrm V$',
+			'$f_{sw}: 20$–$500\\ \\mathrm{kHz}$',
+			'CCM / BCM / DCM classification'
+		]
+	},
+	chua: {
+		inventory: [
+			'piecewise-linear Chua diode',
+			'$C_1/C_2$ energy stores',
+			'coupling resistor $R$',
+			'inductor current state'
+		],
+		boundaries: ['$\\alpha: 7$–$18$', '$\\beta: 18$–$35$', 'bifurcation sweep on $\\alpha$']
+	},
+	pll: {
+		inventory: [
+			'phase/frequency detector',
+			'charge pump + loop filter',
+			'voltage-controlled oscillator',
+			'programmable $\\div N$ feedback'
+		],
+		boundaries: [
+			'$N: 2$–$64$',
+			'loop bandwidth $0.2$–$8\\ \\mathrm{kHz}$',
+			'lock threshold $\\pm 50\\ \\mathrm{ppm}$'
+		]
+	},
+	statechart: {
+		boundaries: ['deterministic $\\delta$', 'one active state', 'guarded, timed transitions']
+	},
+	qec: {
+		inventory: [
+			'logical qubit $\\to 3$ physical',
+			'injectable $X$ error',
+			'$2$ ancilla syndrome bits',
+			'majority-vote decoder'
+		],
+		boundaries: [
+			'corrects any single bit-flip',
+			'syndrome $\\in\\{00,01,10,11\\}$',
+			'logical fidelity $0/1$'
+		]
+	},
+	wien: {
+		summary:
+			'A non-inverting op-amp wrapped in a Wien $RC$ network. When the loop gain crosses unity at exactly one frequency, thermal noise is amplified into a clean sinusoid; a nonlinear gain limiter parks the amplitude on a stable limit cycle. The phase portrait shows the oscillation being born — a Hopf bifurcation you can trigger with a knob.',
+		inventory: [
+			'op-amp gain stage',
+			'series + shunt $RC$ bridge',
+			'$R_f/R_g$ gain setting',
+			'amplitude-limiting element'
+		],
+		boundaries: ['gain $2.8$–$3.2$', '$f_0$ from $RC$', 'Hopf onset at gain $=3$']
+	},
+	lfsr: {
+		summary:
+			'A 4-bit Fibonacci linear-feedback shift register with taps at stages 3 and 4 — the primitive polynomial $x^4+x^3+1$. Each clock edge shifts the register and feeds back the XOR of the tapped bits. The result cycles through all 15 non-zero states before repeating: a deterministic sequence wearing the disguise of randomness.',
+		inventory: [
+			'shared clock',
+			'$4\\times$ D flip-flop chain',
+			'XOR feedback taps $3,4$',
+			'serial m-sequence output'
+		],
+		boundaries: ['period $2^4-1=15$', 'all-zero state forbidden', 'primitive polynomial taps']
+	},
+	grover: {
+		summary:
+			'Grover’s algorithm searching an $8$-item space with $3$ qubits. Uniform superposition, then repeated rounds of oracle (phase-flip the target) and diffusion (invert about the mean) rotate the state vector toward the marked item. Real $8$-amplitude linear algebra drives a live bar chart; after the optimal $\\lfloor\\pi\\sqrt{8}/4\\rfloor=2$ rounds the target probability peaks near $94\\%$.',
+		inventory: [
+			'$3$-qubit uniform superposition',
+			'oracle $U_f$ (phase flip)',
+			'diffusion $2|s\\rangle\\langle s|-I$',
+			'$8$-state amplitude readout'
+		],
+		boundaries: [
+			'$N=8$ search space',
+			'optimal $k=2$ rounds',
+			'peak $P(\\mathrm{target})\\approx0.945$'
+		]
+	}
+};
+
 /** Public environment registry with dependency-free escaped model notation. */
 export const SIM_ENVIRONMENTS: readonly SimEnvironment[] = SIM_ENVIRONMENTS_RAW.map(
 	(environment) => ({
@@ -1049,9 +1233,11 @@ export const SIM_ENVIRONMENTS: readonly SimEnvironment[] = SIM_ENVIRONMENTS_RAW.
 		formulaHtml: renderFormula(environment.formula),
 		pedagogy: {
 			aha: environment.pedagogy.aha,
+			ahaHtml: renderProse(environment.pedagogy.aha),
 			principleHtml: renderProse(environment.pedagogy.principle),
 			steps: environment.pedagogy.steps.map((step) => ({
 				label: step.label,
+				labelHtml: renderProse(step.label),
 				detailHtml: renderProse(step.detail)
 			}))
 		}
@@ -1095,12 +1281,18 @@ export function getSimulation(id: string): CompiledSimulation | undefined {
 		mode: 'full',
 		idPrefix: `sim-${id}`
 	});
+	const detailCopy = DETAIL_MATH_COPY[id];
 
 	const result: CompiledSimulation = {
 		...meta,
 		svg: compilation.svg,
 		components: compilation.metrics.components,
-		connections: compilation.metrics.connections
+		connections: compilation.metrics.connections,
+		summaryHtml: renderProse(detailCopy?.summary ?? meta.summary),
+		modelHtml: renderProse(meta.model),
+		inventoryHtml: (detailCopy?.inventory ?? meta.inventory).map(renderProse),
+		boundariesHtml: (detailCopy?.boundaries ?? meta.boundaries).map(renderProse),
+		faultHtml: renderProse(meta.fault)
 	};
 	compiledCache.set(id, result);
 	return result;
