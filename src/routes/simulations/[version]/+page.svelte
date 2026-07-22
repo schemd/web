@@ -16,6 +16,7 @@
 	const frontierCount = $derived(
 		environments.filter((environment) => environment.tier === 'Frontier').length
 	);
+	const domainCount = $derived(new Set(environments.map((environment) => environment.domain)).size);
 
 	const jsonLd = $derived(
 		JSON.stringify({
@@ -32,25 +33,6 @@
 	);
 	const jsonLdMarkup = $derived(`<script type="application/ld+json">${jsonLd}</${'script'}>`);
 
-	/* ---------- Live client canvas performance readout ---------- */
-	let fps = $state(60);
-	$effect(() => {
-		let frame = 0;
-		let last = performance.now();
-		let count = 0;
-		const loop = (now: number): void => {
-			count += 1;
-			if (now - last >= 500) {
-				fps = Math.round((count * 1000) / (now - last));
-				count = 0;
-				last = now;
-			}
-			frame = requestAnimationFrame(loop);
-		};
-		frame = requestAnimationFrame(loop);
-		return () => cancelAnimationFrame(frame);
-	});
-
 	/* ---------- Terminal diagnostics boot sequence ---------- */
 	const BOOT_LINES = [
 		'· mounting @schemd/core full-compilation kernel … ok',
@@ -61,10 +43,15 @@
 	];
 	let bootIndex = $state(0);
 	$effect(() => {
-		const timer = setInterval(() => {
-			bootIndex = (bootIndex + 1) % (BOOT_LINES.length + 1);
-		}, 1600);
-		return () => clearInterval(timer);
+		if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			bootIndex = BOOT_LINES.length;
+			return;
+		}
+		if (bootIndex >= BOOT_LINES.length) return;
+		const timer = setTimeout(() => {
+			bootIndex += 1;
+		}, 520);
+		return () => clearTimeout(timer);
 	});
 </script>
 
@@ -72,12 +59,12 @@
 	<title>Simulation Laboratory · schemd v{data.version}</title>
 	<meta
 		name="description"
-		content="Explore eight interactive circuit laboratories spanning digital logic, analog filters, quantum protocols, power electronics, nonlinear chaos, and phase-locked control systems."
+		content={`Explore ${environments.length} interactive circuit laboratories spanning digital logic, analog filters, quantum protocols, power electronics, nonlinear chaos, and phase-locked control systems.`}
 	/>
 	<meta property="og:title" content="schemd — simulation laboratory" />
 	<meta
 		property="og:description"
-		content="Eight high-fidelity engineering simulations with live physics, fault injection, and instrumentation."
+		content={`${environments.length} high-fidelity engineering simulations with live physics, fault injection, and instrumentation.`}
 	/>
 	<meta property="og:type" content="website" />
 	<meta property="og:image" content="/brand/schemd-logo.svg" />
@@ -136,14 +123,14 @@
 	<header class="terminal panel">
 		<div class="terminal-head">
 			<span class="microlabel">schemd · simulation laboratory</span>
-			<span class="microlabel">v{data.version} · mode=full · adapter-node</span>
+			<span class="microlabel">v{data.version} · {environments.length} environments</span>
 		</div>
 		<h1>Enter the circuit frontier.</h1>
 		<p class="terminal-lede">
-			Eight live experiments now span foundational circuits and frontier systems: switched-mode
-			power, deterministic chaos, phase-lock acquisition, quantum protocols, and classical logic.
-			Every test bed is compiled from the same <code>@schemd/core</code> source and instrumented with
-			fault injection, probes, and live numerical models.
+			{environments.length} live experiments span foundational circuits and frontier systems: switched-mode
+			power, deterministic chaos, phase-lock acquisition, quantum protocols, and classical logic. Every
+			test bed is compiled from the same <code>@schemd/core</code> source and instrumented with fault
+			injection, probes, and live numerical models.
 		</p>
 		<div class="diagnostics" role="status" aria-live="polite">
 			<div class="diag-log">
@@ -157,8 +144,8 @@
 			</div>
 			<dl class="diag-metrics">
 				<div>
-					<dt>client</dt>
-					<dd class="readout">{fps} FPS</dd>
+					<dt>domains</dt>
+					<dd class="readout">{domainCount}</dd>
 				</div>
 				<div>
 					<dt>environments</dt>

@@ -86,6 +86,24 @@ function parseAttrs(raw: string): Record<string, string> {
 	return attrs;
 }
 
+/**
+ * Read section navigation metadata without rendering Markdown or compiling any
+ * schematic fences. Global navigation calls this on every cold process; using
+ * the full renderer there would eagerly compile the entire documentation
+ * corpus before an unrelated landing-page request could complete.
+ */
+export function scanDocSections(source: string): readonly DocSection[] {
+	const sections: DocSection[] = [];
+	SECTION.lastIndex = 0;
+	let match: RegExpExecArray | null;
+	while ((match = SECTION.exec(source)) !== null) {
+		const attrs = parseAttrs(match[1]!);
+		const id = attrs.id ?? `section-${sections.length + 1}`;
+		sections.push({ id, title: attrs.title ?? id });
+	}
+	return sections;
+}
+
 /** Page metadata from the `schemd-doc` header, or undefined when absent. */
 export function parseDocFrontmatter(source: string, slug: string): DocFrontmatter | undefined {
 	const match = DOC_META.exec(source);

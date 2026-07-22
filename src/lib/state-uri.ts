@@ -20,7 +20,7 @@ function base64UrlToBytes(encoded: string): Uint8Array {
 	return bytes;
 }
 
-/** Compress workspace source into a safe URI token. */
+/** Encode workspace source into a safe URI token. */
 export function encodeWorkspaceState(source: string): string {
 	return bytesToBase64Url(new TextEncoder().encode(source));
 }
@@ -32,4 +32,33 @@ export function decodeWorkspaceState(token: string): string | undefined {
 	} catch {
 		return undefined;
 	}
+}
+
+export const WORKSPACE_OUTPUT_MODES = ['default', 'embedded-css', 'full'] as const;
+export type WorkspaceOutputMode = (typeof WORKSPACE_OUTPUT_MODES)[number];
+
+export interface WorkspaceQueryState {
+	readonly source: string;
+	readonly width: number;
+	readonly height: number;
+	readonly title: string;
+	readonly mode: WorkspaceOutputMode;
+}
+
+/** Write the complete reproducible workspace state into an existing URL. */
+export function writeWorkspaceQuery(url: URL, state: WorkspaceQueryState): URL {
+	url.searchParams.set('code', encodeWorkspaceState(state.source));
+	url.searchParams.set('w', String(Math.round(state.width)));
+	url.searchParams.set('h', String(Math.round(state.height)));
+	url.searchParams.set('t', state.title);
+	url.searchParams.set('m', state.mode);
+	return url;
+}
+
+/** Narrow a query-string mode without trusting arbitrary URL input. */
+export function workspaceOutputMode(
+	raw: string | null | undefined,
+	fallback: WorkspaceOutputMode = 'full'
+): WorkspaceOutputMode {
+	return WORKSPACE_OUTPUT_MODES.find((mode) => mode === raw) ?? fallback;
 }

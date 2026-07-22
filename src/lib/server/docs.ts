@@ -8,7 +8,13 @@
  * compiled `schemd` fence) is cached for the lifetime of the `adapter-node`
  * server.
  */
-import { renderMarkdownDoc, parseDocFrontmatter, type RenderedDoc } from './markdown';
+import {
+	renderMarkdownDoc,
+	parseDocFrontmatter,
+	scanDocSections,
+	type DocSection,
+	type RenderedDoc
+} from './markdown';
 import { DOCUMENTED_VERSIONS, LATEST_DOCUMENTED_VERSION, versionedRawSources } from './versions';
 
 /** Ordered navigation manifest for the left index tree. */
@@ -31,11 +37,13 @@ const EXCLUDED = new Set(['tone1', 'tone2']);
 /** Raw markdown keyed by slug, and the ordered manifest — built once per version. */
 interface DocCorpus {
 	readonly rawBySlug: ReadonlyMap<string, string>;
+	readonly sectionsBySlug: ReadonlyMap<string, readonly DocSection[]>;
 	readonly manifest: readonly DocPageMeta[];
 }
 
 function buildCorpus(sources: Readonly<Record<string, string>>): DocCorpus {
 	const rawBySlug = new Map<string, string>();
+	const sectionsBySlug = new Map<string, readonly DocSection[]>();
 	const entries: { meta: DocPageMeta; order: number }[] = [];
 	for (const [path, raw] of Object.entries(sources)) {
 		const slug = slugFromPath(path);
@@ -43,6 +51,7 @@ function buildCorpus(sources: Readonly<Record<string, string>>): DocCorpus {
 		const front = parseDocFrontmatter(raw, slug);
 		if (!front) continue;
 		rawBySlug.set(front.slug, raw);
+		sectionsBySlug.set(front.slug, scanDocSections(raw));
 		entries.push({
 			order: front.order,
 			meta: {
@@ -55,7 +64,7 @@ function buildCorpus(sources: Readonly<Record<string, string>>): DocCorpus {
 		});
 	}
 	entries.sort((a, b) => a.order - b.order);
-	return { rawBySlug, manifest: entries.map((entry) => entry.meta) };
+	return { rawBySlug, sectionsBySlug, manifest: entries.map((entry) => entry.meta) };
 }
 
 /** One corpus per discovered version, built once at module load. */
@@ -98,12 +107,12 @@ export function loadDoc(version: string, slug: string): RenderedDoc | undefined 
 export function docSearchIndex(
 	version: string
 ): readonly { title: string; hint: string; href: string }[] {
+	const corpus = corpusFor(version);
 	return docManifest(version).flatMap((page) => {
-		const doc = loadDoc(version, page.slug);
 		const base = `/docs/${version}/${page.slug}`;
 		const root = { title: page.label, hint: `docs · v${version}`, href: base };
 		const children =
-			doc?.sections.map((section) => ({
+			corpus?.sectionsBySlug.get(page.slug)?.map((section) => ({
 				title: section.title,
 				hint: `docs · v${version} · ${page.label}`,
 				href: `${base}#${section.id}`

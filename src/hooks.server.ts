@@ -45,6 +45,21 @@ export function canonicalDocsTarget(pathname: string): string | undefined {
 	return line === undefined ? undefined : `/docs/${line}${match[2] ?? ''}`;
 }
 
+/** Apply headers that are safe for both the website and cross-origin SVG embeds. */
+export function applySecurityHeaders(response: Response, secure: boolean): Response {
+	response.headers.set('x-content-type-options', 'nosniff');
+	response.headers.set('referrer-policy', 'strict-origin-when-cross-origin');
+	response.headers.set(
+		'permissions-policy',
+		'camera=(), geolocation=(), microphone=(), payment=(), usb=()'
+	);
+	response.headers.set('cross-origin-opener-policy', 'same-origin');
+	response.headers.set('origin-agent-cluster', '?1');
+	if (secure)
+		response.headers.set('strict-transport-security', 'max-age=31536000; includeSubDomains');
+	return response;
+}
+
 /** Sections whose bare (unversioned) paths resolve to the latest release. */
 const VERSIONED_SECTIONS = ['/docs', '/playground', '/simulations'] as const;
 
@@ -69,5 +84,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 		}
 	}
 
-	return resolve(event);
+	const response = await resolve(event);
+	return applySecurityHeaders(response, event.url.protocol === 'https:');
 };

@@ -10,6 +10,7 @@
 import { json } from '@sveltejs/kit';
 import { createHash } from 'node:crypto';
 import type { RequestHandler } from './$types';
+import { clientAddress, consumeRateLimit, readLimitedJson } from '$lib/server/request-guard';
 import {
 	compileSchematic,
 	parseSchematicFence,
@@ -48,6 +49,9 @@ interface CompileFailure {
 
 const MAX_CACHE_ENTRIES = 64;
 const MAX_CACHE_BYTES = 16 * 1024 * 1024;
+/* JSON escaping can nearly double an otherwise valid source payload. Keep the
+ * transport ceiling above the source ceiling without relaxing compiler limits. */
+const MAX_REQUEST_BYTES = 280 * 1024;
 interface CacheEntry {
 	readonly value: CompileSuccess | CompileFailure;
 	readonly bytes: number;
@@ -73,7 +77,13 @@ function parseRequest(body: unknown): CompileRequest | undefined {
 	if (width < 64 || width > 4096 || height < 64 || height > 4096) return undefined;
 	if (typeof title !== 'string' || title.length > 512) return undefined;
 	if (!isOutputMode(mode)) return undefined;
-	return { source, width, height, title, mode };
+	return {
+		source,
+		width: Math.trunc(width),
+		height: Math.trunc(height),
+		title: title.replace(/"/g, '').trim() || 'Playground schematic',
+		mode
+	};
 }
 
 function requestKey(request: CompileRequest): string {
@@ -91,9 +101,7 @@ function requestKey(request: CompileRequest): string {
 }
 
 function responseBytes(value: CompileSuccess | CompileFailure): number {
-	return value.ok
-		? Buffer.byteLength(value.svg) + value.metrics.sourceCharacters + 512
-		: Buffer.byteLength(value.message) + 64;
+	return Buffer.byteLength(JSON.stringify(value));
 }
 
 function cacheResult(key: string, value: CompileSuccess | CompileFailure): void {
@@ -110,12 +118,40 @@ function cacheResult(key: string, value: CompileSuccess | CompileFailure): void 
 	}
 }
 
-export const POST: RequestHandler = async ({ request }) => {
-	const parsed = parseRequest(await request.json().catch(() => undefined));
+function responseHeaders(duration: number, description: 'cache' | 'compile'): HeadersInit {
+	return {
+		'cache-control': 'no-store',
+		'server-timing': `schemd;dur=${duration.toFixed(2)};desc="${description}"`
+	};
+}
+
+export const POST: RequestHandler = async ({ request, getClientAddress }) => {
+	const rate = consumeRateLimit('compile', clientAddress(getClientAddress), {
+		capacity: 80,
+		refillPerSecond: 4
+	});
+	if (!rate.allowed) {
+		return json(
+			{ ok: false, message: 'Compile rate limit exceeded.', line: undefined },
+			{
+				status: 429,
+				headers: { 'cache-control': 'no-store', 'retry-after': String(rate.retryAfterSeconds) }
+			}
+		);
+	}
+
+	const body = await readLimitedJson(request, MAX_REQUEST_BYTES);
+	if (!body.ok) {
+		return json(
+			{ ok: false, message: body.message, line: undefined },
+			{ status: body.status, headers: { 'cache-control': 'no-store' } }
+		);
+	}
+	const parsed = parseRequest(body.value);
 	if (!parsed) {
 		return json(
 			{ ok: false, message: 'Malformed compile request.', line: undefined },
-			{ status: 400 }
+			{ status: 400, headers: { 'cache-control': 'no-store' } }
 		);
 	}
 
@@ -124,13 +160,14 @@ export const POST: RequestHandler = async ({ request }) => {
 	if (hit) {
 		cache.delete(key);
 		cache.set(key, hit);
-		return json(hit.value);
+		return json(hit.value, { headers: responseHeaders(0, 'cache') });
 	}
 
 	let result: CompileSuccess | CompileFailure;
+	const requestStartedAt = performance.now();
 	try {
 		const fence = parseSchematicFence(
-			`schemd bounds="${Math.trunc(parsed.width)}x${Math.trunc(parsed.height)}" title="${parsed.title.replace(/"/g, '').trim() || 'Playground schematic'}"`
+			`schemd bounds="${parsed.width}x${parsed.height}" title="${parsed.title}"`
 		);
 		if (!fence) throw new SchematicSyntaxError('Unreachable: canonical fence.');
 		const startedAt = performance.now();
@@ -155,5 +192,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 
 	cacheResult(key, result);
-	return json(result);
+	return json(result, {
+		headers: responseHeaders(performance.now() - requestStartedAt, 'compile')
+	});
 };

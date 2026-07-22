@@ -29,6 +29,7 @@ for (const route of ROUTES) {
 
 test('command palette modal has no detectable WCAG A/AA violations', async ({ page }) => {
 	await page.goto('/');
+	await expect(page.getByRole('button', { name: 'Open command palette' })).toBeEnabled();
 	await page.keyboard.press('Control+K');
 	await expect(page.getByRole('dialog')).toBeVisible();
 	const results = await new AxeBuilder({ page })

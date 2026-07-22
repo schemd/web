@@ -64,6 +64,7 @@ test('command palette traps focus and keyboard-navigates the versioned search in
 	page
 }) => {
 	await page.goto('/docs/0.3.0/overview');
+	await expect(page.getByRole('button', { name: 'Open command palette' })).toBeEnabled();
 	await page.keyboard.press('Control+K');
 	const dialog = page.getByRole('dialog');
 	await expect(dialog).toBeVisible();
@@ -93,16 +94,38 @@ test('playground opens valid, maps source to vector, preserves URI state, and ex
 
 	await capacitor.locator('[data-port-id="in"]').hover();
 	await expect(page.locator('.gutter-line').nth(4)).toHaveClass(/mapped/);
-	await expect(page).toHaveURL(/\?code=[A-Za-z0-9_-]+$/);
-	const sharedCode = new URL(page.url()).searchParams.get('code');
-	expect(sharedCode).toBeTruthy();
-
 	await page.getByRole('radio', { name: 'raw svg' }).click();
 	await expect(page.locator('.raw-view')).toContainText('<svg');
 	await expect(page.locator('.raw-view')).toContainText('data-orientation="down"');
+	await page.getByRole('radio', { name: 'render' }).click();
+	await expect.poll(() => new URL(page.url()).searchParams.get('m')).toBe('full');
+	const workspaceUrl = new URL(page.url());
+	const sharedCode = workspaceUrl.searchParams.get('code');
+	expect(sharedCode).toBeTruthy();
+
+	await page.getByRole('spinbutton', { name: 'width' }).fill('820');
+	await page.getByRole('spinbutton', { name: 'height' }).fill('500');
+	await page.getByRole('textbox', { name: 'title' }).fill('Shared laboratory');
+	await page.getByRole('radio', { name: 'embedded-css' }).click();
+	await expect.poll(() => new URL(page.url()).searchParams.get('m')).toBe('embedded-css');
+	await page.reload();
+	await expect(page.getByRole('spinbutton', { name: 'width' })).toHaveValue('820');
+	await expect(page.getByRole('spinbutton', { name: 'height' })).toHaveValue('500');
+	await expect(page.getByRole('textbox', { name: 'title' })).toHaveValue('Shared laboratory');
+	await expect(page.getByRole('radio', { name: 'embedded-css' })).toHaveAttribute(
+		'aria-checked',
+		'true'
+	);
+	await expect(preview.locator('svg')).toBeVisible();
 
 	await page.getByRole('combobox', { name: 'Documentation version' }).selectOption('0.2.1');
-	await expect(page).toHaveURL(new RegExp(`/playground/0\\.2\\.1\\?code=${sharedCode}$`));
+	await expect(page).toHaveURL(/\/playground\/0\.2\.1\?/);
+	const versionedUrl = new URL(page.url());
+	expect(versionedUrl.searchParams.get('code')).toBe(sharedCode);
+	expect(versionedUrl.searchParams.get('w')).toBe('820');
+	expect(versionedUrl.searchParams.get('h')).toBe('500');
+	expect(versionedUrl.searchParams.get('t')).toBe('Shared laboratory');
+	expect(versionedUrl.searchParams.get('m')).toBe('embedded-css');
 });
 
 test('RC laboratory uses native primitives and updates derived physics without regenerating SVG', async ({

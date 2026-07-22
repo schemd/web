@@ -1,8 +1,9 @@
 import { defineConfig } from 'vitest/config';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { katexModernFonts } from './src/lib/server/katex-css';
 
 export default defineConfig({
-	plugins: [sveltekit()],
+	plugins: [katexModernFonts(), sveltekit()],
 	test: {
 		expect: { requireAssertions: true },
 		projects: [

@@ -6,14 +6,22 @@
 	import { page } from '$app/state';
 	import WorkspaceShell from '$lib/components/WorkspaceShell.svelte';
 	import CodeEditor from '$lib/components/CodeEditor.svelte';
-	import { decodeWorkspaceState, encodeWorkspaceState } from '$lib/state-uri';
+	import {
+		decodeWorkspaceState,
+		encodeWorkspaceState,
+		WORKSPACE_OUTPUT_MODES,
+		workspaceOutputMode,
+		writeWorkspaceQuery
+	} from '$lib/state-uri';
 	import { playError, playSuccess } from '$lib/audio';
+	import { trackInteraction } from '$lib/telemetry';
 	import { ui } from '$lib/ui.svelte';
 
 	let { data }: PageProps = $props();
 
 	/* ---------- Workspace state ---------- */
 	const params = browser ? page.url.searchParams : undefined;
+	const MODES = WORKSPACE_OUTPUT_MODES;
 	const shared = params?.get('code') ?? null;
 	function initialSource(): string {
 		return (shared !== null ? decodeWorkspaceState(shared) : undefined) ?? data.sample;
@@ -29,8 +37,7 @@
 		return Math.max(64, Math.min(4096, Math.round(value)));
 	}
 	let source = $state(initialSource());
-	const MODES = ['default', 'embedded-css', 'full'] as const;
-	let mode = $state<(typeof MODES)[number]>('full');
+	let mode = $state(workspaceOutputMode(params?.get('m')));
 	let view = $state<'render' | 'raw' | 'fence'>('render');
 	/* Bounds and title follow a shared/opened example so it renders as authored. */
 	let boundsWidth = $state(initialBound('w', 760));
@@ -168,14 +175,22 @@
 		};
 	});
 
-	/* ---------- State-to-URI compression ---------- */
+	/* ---------- Complete reproducible state in the URI ---------- */
 	$effect(() => {
-		const token = encodeWorkspaceState(source);
 		if (!browser) return;
+		/* Read state synchronously so Svelte can track every dependency. Values
+		 * first read inside the timer callback are deliberately not tracked. */
+		const workspace = {
+			source,
+			width: boundsWidth,
+			height: boundsHeight,
+			title,
+			mode
+		};
 		const timer = setTimeout(() => {
 			const url = new URL(location.href);
-			if (url.searchParams.get('code') === token) return;
-			url.searchParams.set('code', token);
+			writeWorkspaceQuery(url, workspace);
+			if (url.href === location.href) return;
 			replaceState(url, page.state);
 		}, 300);
 		return () => clearTimeout(timer);
@@ -260,17 +275,27 @@
 			.join('\n');
 	});
 
-	const shareUrl = $derived(
-		browser
-			? `${location.origin}/playground/${data.version}?code=${encodeWorkspaceState(source)}`
-			: ''
-	);
+	const shareUrl = $derived.by(() => {
+		if (!browser) return '';
+		return writeWorkspaceQuery(new URL(`/playground/${data.version}`, location.origin), {
+			source,
+			width: boundsWidth,
+			height: boundsHeight,
+			title,
+			mode
+		}).href;
+	});
 
 	let copied = $state(false);
 	async function copyShare(): Promise<void> {
-		await navigator.clipboard.writeText(shareUrl);
-		copied = true;
-		setTimeout(() => (copied = false), 1600);
+		try {
+			await navigator.clipboard.writeText(shareUrl);
+			trackInteraction('copy_share');
+			copied = true;
+			setTimeout(() => (copied = false), 1600);
+		} catch {
+			/* The fully selectable URL remains in browser history when clipboard access is denied. */
+		}
 	}
 
 	/* ---------- Fenced-markdown form (for pasting into a Markdown pipeline) ---------- */
@@ -288,9 +313,14 @@
 	);
 	let fenceCopied = $state(false);
 	async function copyFence(): Promise<void> {
-		await navigator.clipboard.writeText(fenceMarkdown);
-		fenceCopied = true;
-		setTimeout(() => (fenceCopied = false), 1600);
+		try {
+			await navigator.clipboard.writeText(fenceMarkdown);
+			trackInteraction('copy_fence');
+			fenceCopied = true;
+			setTimeout(() => (fenceCopied = false), 1600);
+		} catch {
+			/* The fence stays visible and selectable. */
+		}
 	}
 
 	/* ---------- Insert a component template at the caret ---------- */
@@ -355,6 +385,7 @@
 		if (!svg) return;
 		const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
 		triggerDownload(url, 'schemd-schematic.svg');
+		trackInteraction('download_svg');
 		setTimeout(() => URL.revokeObjectURL(url), 1000);
 	}
 
@@ -376,6 +407,7 @@
 					if (blob) {
 						const pngUrl = URL.createObjectURL(blob);
 						triggerDownload(pngUrl, 'schemd-schematic.png');
+						trackInteraction('download_png');
 						setTimeout(() => URL.revokeObjectURL(pngUrl), 1000);
 					}
 				}, 'image/png');
@@ -388,14 +420,19 @@
 	/** Shareable read-only embed URL for the current workspace. */
 	const embedUrl = $derived(
 		browser
-			? `${location.origin}/embed/${data.version}?code=${encodeWorkspaceState(source)}&w=${boundsWidth}&h=${boundsHeight}`
+			? `${location.origin}/embed/${data.version}?code=${encodeWorkspaceState(source)}&w=${boundsWidth}&h=${boundsHeight}&t=${encodeURIComponent(title)}`
 			: ''
 	);
 	let embedCopied = $state(false);
 	async function copyEmbed(): Promise<void> {
-		await navigator.clipboard.writeText(embedUrl);
-		embedCopied = true;
-		setTimeout(() => (embedCopied = false), 1600);
+		try {
+			await navigator.clipboard.writeText(embedUrl);
+			trackInteraction('copy_embed');
+			embedCopied = true;
+			setTimeout(() => (embedCopied = false), 1600);
+		} catch {
+			/* Clipboard policies vary in embedded browsers; do not break the workspace. */
+		}
 	}
 </script>
 

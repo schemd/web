@@ -1,44 +1,52 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
 	import type { Component } from 'svelte';
-	import AdderSim from '$lib/components/sims/AdderSim.svelte';
-	import RcSim from '$lib/components/sims/RcSim.svelte';
-	import BellSim from '$lib/components/sims/BellSim.svelte';
-	import TimerSim from '$lib/components/sims/TimerSim.svelte';
-	import TeleportSim from '$lib/components/sims/TeleportSim.svelte';
-	import BuckSim from '$lib/components/sims/BuckSim.svelte';
-	import ChuaSim from '$lib/components/sims/ChuaSim.svelte';
-	import PllSim from '$lib/components/sims/PllSim.svelte';
-	import StatechartSim from '$lib/components/sims/StatechartSim.svelte';
-	import QecSim from '$lib/components/sims/QecSim.svelte';
-	import WienSim from '$lib/components/sims/WienSim.svelte';
-	import LfsrSim from '$lib/components/sims/LfsrSim.svelte';
-	import GroverSim from '$lib/components/sims/GroverSim.svelte';
 	import SimulationTimeline from '$lib/components/sims/SimulationTimeline.svelte';
 	import { timelineFor } from '$lib/simulation-timelines';
 	import 'katex/dist/katex.min.css';
 
 	let { data }: PageProps = $props();
 
-	/** id → sim component. One place; the route just resolves and mounts. */
-	const COMPONENTS: Record<string, Component<{ svg: string }>> = {
-		adder: AdderSim,
-		rc: RcSim,
-		bell: BellSim,
-		timer: TimerSim,
-		teleport: TeleportSim,
-		buck: BuckSim,
-		chua: ChuaSim,
-		pll: PllSim,
-		statechart: StatechartSim,
-		qec: QecSim,
-		wien: WienSim,
-		lfsr: LfsrSim,
-		grover: GroverSim
+	/**
+	 * One route used to statically import every laboratory, forcing visitors to
+	 * download thirteen numerical models to run one. Keep the registry explicit
+	 * for exhaustiveness, but split every implementation into its own chunk.
+	 */
+	type SimulationComponent = Component<{ svg: string }>;
+	type SimulationModule = { default: SimulationComponent };
+	const COMPONENT_LOADERS: Readonly<Record<string, () => Promise<SimulationModule>>> = {
+		adder: () => import('$lib/components/sims/AdderSim.svelte'),
+		rc: () => import('$lib/components/sims/RcSim.svelte'),
+		bell: () => import('$lib/components/sims/BellSim.svelte'),
+		timer: () => import('$lib/components/sims/TimerSim.svelte'),
+		teleport: () => import('$lib/components/sims/TeleportSim.svelte'),
+		buck: () => import('$lib/components/sims/BuckSim.svelte'),
+		chua: () => import('$lib/components/sims/ChuaSim.svelte'),
+		pll: () => import('$lib/components/sims/PllSim.svelte'),
+		statechart: () => import('$lib/components/sims/StatechartSim.svelte'),
+		qec: () => import('$lib/components/sims/QecSim.svelte'),
+		wien: () => import('$lib/components/sims/WienSim.svelte'),
+		lfsr: () => import('$lib/components/sims/LfsrSim.svelte'),
+		grover: () => import('$lib/components/sims/GroverSim.svelte')
 	};
+	const loadedComponents = Object.create(null) as Record<
+		string,
+		Promise<SimulationComponent> | undefined
+	>;
+
+	function loadComponent(id: string): Promise<SimulationComponent> {
+		const cached = loadedComponents[id];
+		if (cached) return cached;
+		const loader = COMPONENT_LOADERS[id];
+		const pending = loader
+			? loader().then((module) => module.default)
+			: Promise.reject(new Error(`No simulation component registered for ${id}.`));
+		loadedComponents[id] = pending;
+		return pending;
+	}
 
 	const sim = $derived(data.simulation);
-	const SimComponent = $derived(COMPONENTS[sim.id]);
+	const simComponent = $derived(loadComponent(sim.id));
 	const timeline = $derived(timelineFor(sim.id));
 	let simulationHost = $state<HTMLElement | undefined>();
 
@@ -173,7 +181,18 @@
 	<SimulationTimeline simulationId={sim.id} stages={timeline} host={simulationHost} />
 	<div class="simulation-host" bind:this={simulationHost}>
 		{#key sim.id}
-			<SimComponent svg={sim.svg} />
+			{#await simComponent}
+				<div class="simulation-loading panel" role="status">
+					<span class="loading-pulse" aria-hidden="true"></span>
+					<span>Loading {sim.title} model…</span>
+				</div>
+			{:then SimComponent}
+				<SimComponent svg={sim.svg} />
+			{:catch}
+				<div class="simulation-loading simulation-error panel" role="alert">
+					The interactive model could not load. Reload this laboratory to retry.
+				</div>
+			{/await}
 		{/key}
 	</div>
 </div>
@@ -188,6 +207,38 @@
 
 	.simulation-host {
 		min-inline-size: 0;
+	}
+
+	.simulation-loading {
+		min-block-size: min(62vh, 680px);
+		display: grid;
+		place-content: center;
+		grid-auto-flow: column;
+		align-items: center;
+		gap: var(--space-3);
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
+		color: var(--ink-mute);
+	}
+
+	.loading-pulse {
+		inline-size: 0.7rem;
+		block-size: 0.7rem;
+		border-radius: 50%;
+		background: var(--accent);
+		box-shadow: 0 0 10px var(--glow);
+		animation: loading-pulse 900ms ease-in-out infinite alternate;
+	}
+
+	.simulation-error {
+		color: var(--danger);
+	}
+
+	@keyframes loading-pulse {
+		to {
+			opacity: 0.35;
+			transform: scale(0.7);
+		}
 	}
 
 	.lab-head {

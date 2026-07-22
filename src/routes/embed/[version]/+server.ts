@@ -78,10 +78,14 @@ export const GET: RequestHandler = async ({ params, url }) => {
 	const height = clampDimension(url.searchParams.get('h'), 380);
 	const code = url.searchParams.get('code');
 	const source = (code ? decodeWorkspaceState(code) : undefined) ?? FALLBACK_SOURCE;
+	const title =
+		url.searchParams
+			.get('t')
+			?.replace(/["\r\n]/g, '')
+			.trim()
+			.slice(0, 512) || 'Embedded schematic';
 
-	const fence = parseSchematicFence(
-		`schemd bounds="${width}x${height}" title="Embedded schematic"`
-	);
+	const fence = parseSchematicFence(`schemd bounds="${width}x${height}" title="${title}"`);
 	if (!fence) return svgResponse(errorSvg('Invalid bounds.', width, height), 400);
 
 	try {

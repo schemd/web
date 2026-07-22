@@ -85,18 +85,24 @@
 		void data.doc;
 		const el = prose;
 		if (!el) return;
-		const update = (): void => {
+		let frame = 0;
+		const measure = (): void => {
+			frame = 0;
 			const distance = el.offsetHeight - window.innerHeight;
 			const scrolled = -el.getBoundingClientRect().top;
 			readProgress =
 				distance > 0 ? Math.min(1, Math.max(0, scrolled / distance)) : scrolled >= 0 ? 1 : 0;
 		};
-		update();
-		window.addEventListener('scroll', update, { passive: true });
-		window.addEventListener('resize', update);
+		const schedule = (): void => {
+			if (frame === 0) frame = requestAnimationFrame(measure);
+		};
+		measure();
+		window.addEventListener('scroll', schedule, { passive: true });
+		window.addEventListener('resize', schedule);
 		return () => {
-			window.removeEventListener('scroll', update);
-			window.removeEventListener('resize', update);
+			if (frame !== 0) cancelAnimationFrame(frame);
+			window.removeEventListener('scroll', schedule);
+			window.removeEventListener('resize', schedule);
 		};
 	});
 

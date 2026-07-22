@@ -49,7 +49,12 @@
 			restoreFocus =
 				document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
 			query = '';
+			const previousOverflow = document.documentElement.style.overflow;
+			document.documentElement.style.overflow = 'hidden';
 			queueMicrotask(() => input?.focus());
+			return () => {
+				document.documentElement.style.overflow = previousOverflow;
+			};
 		} else if (restoreFocus) {
 			restoreFocus.focus();
 			restoreFocus = undefined;
@@ -188,11 +193,14 @@
 		display: grid;
 		place-items: start center;
 		padding-block-start: 14vh;
+		padding-inline: var(--space-3);
+		overflow-y: auto;
 		animation: crossfade var(--dur-fast) var(--ease-precise) both;
 	}
 
 	.palette {
 		inline-size: min(620px, calc(100vw - 2rem));
+		max-block-size: min(72vh, 42rem);
 		animation: sweep-in var(--dur-fast) var(--ease-precise) both;
 	}
 
@@ -264,5 +272,34 @@
 		gap: var(--space-4);
 		padding: var(--space-2) var(--space-4);
 		border-block-start: 1px solid var(--line);
+	}
+
+	@media (max-width: 480px) {
+		.palette-scrim {
+			place-items: start stretch;
+			padding-block-start: var(--space-3);
+		}
+
+		.palette {
+			inline-size: 100%;
+			max-block-size: calc(100dvh - 2 * var(--space-3));
+		}
+
+		.palette-head {
+			padding-inline: var(--space-3);
+
+			& .microlabel {
+				display: none;
+			}
+		}
+
+		ul {
+			max-block-size: 60dvh;
+		}
+
+		.entry-hint,
+		.palette-foot {
+			display: none;
+		}
 	}
 </style>

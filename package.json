@@ -42,6 +42,7 @@
 		"test:unit": "vitest run --project server",
 		"test:e2e": "playwright test",
 		"test:a11y": "playwright test e2e/accessibility.e2e.ts",
+		"test:budget": "bun run build && bun scripts/check-build-budget.ts",
 		"test": "bun run check && bun run test:unit && bun run test:e2e"
 	},
 	"type": "module",

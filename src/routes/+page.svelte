@@ -1,20 +1,41 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
 	import Pronounce from '$lib/components/Pronounce.svelte';
+	import { trackInteraction } from '$lib/telemetry';
 
 	let { data }: PageProps = $props();
 
 	/* ---------- Interactive multi-domain hero instrument ---------- */
 	let selected = $state(0);
 	let paused = $state(false);
+	let reducedMotion = $state(false);
+	let pageVisible = $state(true);
 	const hero = $derived(data.heroes[selected]!);
 
 	$effect(() => {
-		if (paused || data.heroes.length < 2) return;
-		const timer = setInterval(() => {
+		const media = matchMedia('(prefers-reduced-motion: reduce)');
+		const onMotionChange = (): void => {
+			reducedMotion = media.matches;
+		};
+		const onVisibilityChange = (): void => {
+			pageVisible = document.visibilityState === 'visible';
+		};
+		onMotionChange();
+		onVisibilityChange();
+		media.addEventListener('change', onMotionChange);
+		document.addEventListener('visibilitychange', onVisibilityChange);
+		return () => {
+			media.removeEventListener('change', onMotionChange);
+			document.removeEventListener('visibilitychange', onVisibilityChange);
+		};
+	});
+
+	$effect(() => {
+		if (paused || reducedMotion || !pageVisible || data.heroes.length < 2) return;
+		const timer = setTimeout(() => {
 			selected = (selected + 1) % data.heroes.length;
 		}, 4600);
-		return () => clearInterval(timer);
+		return () => clearTimeout(timer);
 	});
 
 	const bytes = $derived(hero.metrics['svgBytes'] ?? 0);
@@ -35,6 +56,7 @@
 	async function copyInstall(): Promise<void> {
 		try {
 			await navigator.clipboard.writeText(installCmd);
+			trackInteraction('copy_install');
 			copied = true;
 			setTimeout(() => (copied = false), 1500);
 		} catch {
@@ -196,6 +218,8 @@
 			class="instrument panel animate-in"
 			onpointerenter={() => (paused = true)}
 			onpointerleave={() => (paused = false)}
+			onfocusin={() => (paused = true)}
+			onfocusout={() => (paused = false)}
 		>
 			<div class="instrument-tabs" role="tablist" aria-label="Example domains">
 				{#each data.heroes as specimen, index (specimen.id)}

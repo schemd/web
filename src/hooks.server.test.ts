@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { canonicalDocsTarget, legacyTarget } from './hooks.server';
+import { applySecurityHeaders, canonicalDocsTarget, legacyTarget } from './hooks.server';
 import { LATEST_DOCUMENTED_VERSION, OLDEST_DOCUMENTED_VERSION } from '$lib/server/versions';
 
 describe('standalone legacy route mapping', () => {
@@ -37,5 +37,22 @@ describe('canonical docs-line mapping', () => {
 		expect(canonicalDocsTarget(`/docs/${OLDEST_DOCUMENTED_VERSION}/overview`)).toBeUndefined();
 		expect(canonicalDocsTarget('/docs/not-a-version')).toBeUndefined();
 		expect(canonicalDocsTarget('/playground/0.3.0')).toBeUndefined();
+	});
+});
+
+describe('response hardening', () => {
+	test('sets browser isolation and capability headers without blocking embeds', () => {
+		const response = applySecurityHeaders(new Response('ok'), true);
+		expect(response.headers.get('x-content-type-options')).toBe('nosniff');
+		expect(response.headers.get('permissions-policy')).toContain('camera=()');
+		expect(response.headers.get('cross-origin-opener-policy')).toBe('same-origin');
+		expect(response.headers.get('strict-transport-security')).toContain('includeSubDomains');
+		expect(response.headers.has('x-frame-options')).toBe(false);
+		expect(response.headers.has('cross-origin-resource-policy')).toBe(false);
+	});
+
+	test('does not emit HSTS over an insecure local response', () => {
+		const response = applySecurityHeaders(new Response('ok'), false);
+		expect(response.headers.has('strict-transport-security')).toBe(false);
 	});
 });
