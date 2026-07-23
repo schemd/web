@@ -15,6 +15,8 @@
 	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
+	import LiveMath from './LiveMath.svelte';
+	import { reading, type MathReading } from '$lib/simulation-math';
 
 	interface Props {
 		svg: string;
@@ -93,13 +95,22 @@
 		tick();
 	}
 
-	function probe(element: Element): string | undefined {
+	function probe(element: Element): MathReading | undefined {
 		const id = delegatedNodeId(element);
-		if (id === 'CLK') return `clock · ${steps} edges`;
-		if (id === 'FB') return `feedback = stage3 ⊕ stage4 = ${feedback}`;
+		if (id === 'CLK') return reading('lfsr.probe.clock', `${steps} clock edges`, { value: steps });
+		if (id === 'FB')
+			return reading('lfsr.probe.feedback', `feedback ${feedback}`, { value: feedback });
 		const stage = id?.match(/^Q(\d)$/);
-		if (stage) return `stage ${stage[1]} = ${bits[Number(stage[1]) - 1]}`;
-		if (id === 'OUT') return `serial out = ${bits[3]} · sequence bit ${steps}`;
+		if (stage)
+			return reading('lfsr.probe.stage', `stage ${stage[1]} is ${bits[Number(stage[1]) - 1]}`, {
+				stage: stage[1]!,
+				value: bits[Number(stage[1]) - 1]!
+			});
+		if (id === 'OUT')
+			return reading('lfsr.probe.output', `serial output ${bits[3]} at sequence bit ${steps}`, {
+				value: bits[3]!,
+				step: steps
+			});
 		return undefined;
 	}
 </script>
@@ -111,7 +122,13 @@
 	<div class="stack">
 		<p class="control-note">
 			Each clock edge shifts the register right and injects
-			<strong>stage&nbsp;3&nbsp;⊕&nbsp;stage&nbsp;4</strong>. Click the
+			<strong
+				><LiveMath
+					id="lfsr.probe.feedback"
+					label={`stage three xor stage four equals ${feedback}`}
+					values={{ value: feedback }}
+				/></strong
+			>. Click the
 			<strong>clk</strong> symbol to single-step, or run it free.
 		</p>
 		<div class="button-row">
@@ -122,7 +139,13 @@
 			<button type="button" class="btn" onclick={reseed}>reseed 1000</button>
 		</div>
 		<label>
-			<span class="microlabel">clock period = {(logRate * 1000).toFixed(0)} ms</span>
+			<span class="microlabel"
+				><LiveMath
+					id="lfsr.control.period"
+					label={`clock period ${(logRate * 1000).toFixed(0)} milliseconds`}
+					values={{ value: (logRate * 1000).toFixed(0) }}
+				/></span
+			>
 			<input
 				type="range"
 				min="0.06"
@@ -158,14 +181,31 @@
 
 {#snippet instruments()}
 	<div class="readouts">
-		<span class="readout state">state = {stateString} ({registerValue})</span>
-		<span class="readout">clock edges = {steps}</span>
+		<span class="readout state"
+			><LiveMath
+				id="lfsr.readout.state"
+				label={`register state ${stateString}, decimal ${registerValue}`}
+				values={{ bits: stateString, value: registerValue }}
+			/></span
+		>
+		<span class="readout"
+			><LiveMath
+				id="lfsr.readout.edges"
+				label={`${steps} clock edges`}
+				values={{ value: steps }}
+			/></span
+		>
 		<span class="readout" class:locked={period !== undefined} class:short={faults.movedTap}>
-			period = {period ?? '…'}{period !== undefined
-				? period === 15
-					? ' (maximal)'
-					: ' (short)'
-				: ''}
+			<LiveMath
+				id="lfsr.readout.period"
+				label={period === undefined ? 'period searching' : `period ${period}`}
+				values={{
+					value:
+						period === undefined
+							? 'searching…'
+							: `${period}${period === 15 ? ' (maximal)' : ' (short)'}`
+				}}
+			/>
 		</span>
 	</div>
 	<div class="register" aria-label="Register bits">

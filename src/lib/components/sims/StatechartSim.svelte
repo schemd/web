@@ -14,6 +14,8 @@
 	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
+	import LiveMath from './LiveMath.svelte';
+	import { reading, type MathReading } from '$lib/simulation-math';
 
 	interface Props {
 		svg: string;
@@ -109,12 +111,16 @@
 		root.querySelector('[data-node-id="YELLOW"]')?.classList.toggle('is-degraded', deadlocked);
 	});
 
-	function probe(element: Element): string | undefined {
+	function probe(element: Element): MathReading | undefined {
 		const id = delegatedNodeId(element);
 		if (id === 'RED' || id === 'GREEN' || id === 'YELLOW') {
-			return `state ${id} · ${visits[id as State]} visits${id === current ? ' · ACTIVE' : ''}`;
+			return reading(
+				'statechart.probe.state',
+				`state ${id}, ${visits[id as State]} visits${id === current ? ', active' : ''}`,
+				{ name: id, visits: visits[id as State], status: id === current ? 'ACTIVE' : '' }
+			);
 		}
-		if (id === 'START') return 'initial pseudostate';
+		if (id === 'START') return reading('statechart.probe.initial', 'initial pseudostate');
 		return undefined;
 	}
 </script>
@@ -138,7 +144,13 @@
 			<button type="button" class="btn" onclick={reset}>reset</button>
 		</div>
 		<label>
-			<span class="microlabel">time scale = {speed.toFixed(1)}×</span>
+			<span class="microlabel"
+				><LiveMath
+					id="statechart.control.time"
+					label={`time scale ${speed.toFixed(1)} times`}
+					values={{ value: speed.toFixed(1) }}
+				/></span
+			>
 			<input type="range" min="0.3" max="3" step="0.1" bind:value={speed} aria-label="Time scale" />
 		</label>
 		<div class="next-event">
@@ -146,7 +158,13 @@
 			{#if deadlocked}
 				<span class="deadlock">⛔ deadlocked in YELLOW — no guard enabled</span>
 			{:else}
-				<span class="guard">{active.from} —[{active.event}]→ {active.to}</span>
+				<span class="guard"
+					><LiveMath
+						id="statechart.guard"
+						label={`${active.from} to ${active.to} when ${active.event}`}
+						values={{ from: active.from, guard: active.event, to: active.to }}
+					/></span
+				>
 			{/if}
 		</div>
 	</div>

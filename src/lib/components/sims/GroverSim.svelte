@@ -21,6 +21,8 @@
 	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
+	import LiveMath from './LiveMath.svelte';
+	import { reading, type MathReading } from '$lib/simulation-math';
 
 	interface Props {
 		svg: string;
@@ -125,18 +127,35 @@
 	const meanY = $derived(meanValue === undefined ? ZERO_Y : ZERO_Y - meanValue * SCALE);
 
 	/** The live math for the current step, shown in the HUD. */
-	const hudMath = $derived.by(() => {
+	const hudMath = $derived.by<MathReading>(() => {
 		switch (currentPhase.kind) {
 			case 'super':
-				return `|s⟩ = 1/√8 · Σ|x⟩  —  every amplitude = +${UNIFORM.toFixed(3)}`;
+				return reading(
+					'grover.hud.super',
+					`uniform superposition, every amplitude ${UNIFORM.toFixed(3)}`,
+					{ amplitude: `+${UNIFORM.toFixed(3)}` }
+				);
 			case 'oracle':
-				return `U_f : a[${label(markedIndex)}] → −a[${label(markedIndex)}]  (phase flip)`;
+				return reading('grover.hud.oracle', `oracle phase flips state ${label(markedIndex)}`, {
+					state: label(markedIndex),
+					state2: label(markedIndex)
+				});
 			case 'mean':
-				return `⟨a⟩ = ${(meanValue ?? 0).toFixed(3)}  —  reflect every amplitude about this line`;
+				return reading('grover.hud.mean', `mean amplitude ${(meanValue ?? 0).toFixed(3)}`, {
+					value: (meanValue ?? 0).toFixed(3)
+				});
 			case 'diffuse':
-				return `aᵢ → 2⟨a⟩ − aᵢ  ·  P(|${label(target)}⟩) = ${(pTarget * 100).toFixed(1)}%`;
+				return reading(
+					'grover.hud.diffuse',
+					`diffusion raises target probability to ${(pTarget * 100).toFixed(1)} percent`,
+					{ state: label(target), probability: (pTarget * 100).toFixed(1) }
+				);
 			case 'measure':
-				return `measure → P(|${label(target)}⟩) = ${(pTarget * 100).toFixed(1)}%`;
+				return reading(
+					'grover.hud.measure',
+					`measurement probability ${(pTarget * 100).toFixed(1)} percent for state ${label(target)}`,
+					{ state: label(target), probability: (pTarget * 100).toFixed(1) }
+				);
 		}
 	});
 
@@ -156,14 +175,24 @@
 		for (let i = 0; i < 3; i += 1) setNodeActive(root, `M${i}`, kind === 'measure');
 	});
 
-	function probe(element: Element): string | undefined {
+	function probe(element: Element): MathReading | undefined {
 		const id = delegatedNodeId(element);
-		if (id === 'ORACLE') return `U_f marks |${label(markedIndex)}⟩ (phase flip)`;
-		if (id === 'DIFF') return `diffusion: aᵢ → 2⟨a⟩ − aᵢ`;
+		if (id === 'ORACLE')
+			return reading('grover.probe.oracle', `oracle marks state ${label(markedIndex)}`, {
+				state: label(markedIndex)
+			});
+		if (id === 'DIFF')
+			return reading('grover.probe.diffuse', 'diffusion reflects each amplitude about the mean');
 		const measure = id?.match(/^M(\d)$/);
-		if (measure) return `qubit ${measure[1]} · P(target) = ${(pTarget * 100).toFixed(1)}%`;
+		if (measure)
+			return reading(
+				'grover.probe.measure',
+				`qubit ${measure[1]}, target probability ${(pTarget * 100).toFixed(1)} percent`,
+				{ qubit: measure[1]!, probability: (pTarget * 100).toFixed(1) }
+			);
 		const hadamard = id?.match(/^H(\d)$/);
-		if (hadamard) return `H on q${hadamard[1]} — build uniform superposition`;
+		if (hadamard)
+			return reading('grover.probe.h', `Hadamard on qubit ${hadamard[1]}`, { qubit: hadamard[1]! });
 		return undefined;
 	}
 </script>
@@ -178,7 +207,13 @@
 			oracle phase-flip, a mean reflection, and a diffuser rebound — watch the target grow.
 		</p>
 		<div class="target-picker">
-			<span class="microlabel">marked state |q₂q₁q₀⟩</span>
+			<span class="microlabel"
+				><LiveMath
+					id="grover.control.target"
+					label={`marked state ${label(target)}`}
+					values={{ value: label(target) }}
+				/></span
+			>
 			<div class="qubits">
 				{#each [2, 1, 0] as bit (bit)}
 					<button
@@ -191,7 +226,13 @@
 						{(target >> bit) & 1}
 					</button>
 				{/each}
-				<span class="target-ket">= |{label(target)}⟩</span>
+				<span class="target-ket"
+					><LiveMath
+						id="grover.control.target"
+						label={`marked state ${label(target)}`}
+						values={{ value: label(target) }}
+					/></span
+				>
 			</div>
 		</div>
 	</div>
@@ -215,7 +256,9 @@
 {#snippet instruments()}
 	<div class="hud" aria-live="polite">
 		<span class="microlabel">{currentPhase.label}</span>
-		<p class="hud-math">{hudMath}</p>
+		<p class="hud-math">
+			<LiveMath id={hudMath.id} label={hudMath.label} values={hudMath.values} />
+		</p>
 	</div>
 	<svg
 		class="bars"
@@ -248,13 +291,19 @@
 		<!-- mean reflection axis (shown at the mean step) -->
 		{#if meanValue !== undefined}
 			<line class="mean-line" x1="4" x2={CHART_W - 4} y1={meanY} y2={meanY} />
-			<text class="mean-label" x={CHART_W - 6} y={meanY - 3}>⟨a⟩</text>
+			<text class="mean-label" x={CHART_W - 6} y={meanY - 3}>mean</text>
 		{/if}
 	</svg>
 	<div class="legend microlabel">
 		<span><i class="sw target"></i> target</span>
 		<span><i class="sw"></i> others</span>
-		<span class="peak" class:hit={pTarget > 0.9}>P = {(pTarget * 100).toFixed(1)}%</span>
+		<span class="peak" class:hit={pTarget > 0.9}
+			><LiveMath
+				id="grover.readout.peak"
+				label={`probability ${(pTarget * 100).toFixed(1)} percent`}
+				values={{ value: (pTarget * 100).toFixed(1) }}
+			/></span
+		>
 	</div>
 {/snippet}
 

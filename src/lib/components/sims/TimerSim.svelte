@@ -20,6 +20,8 @@
 	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
+	import LiveMath from './LiveMath.svelte';
+	import { reading, type MathReading } from '$lib/simulation-math';
 
 	interface Props {
 		svg: string;
@@ -133,20 +135,43 @@
 		return () => cancelAnimationFrame(frame);
 	});
 
-	function probe(element: Element): string | undefined {
+	function probe(element: Element): MathReading | undefined {
 		const wire = delegatedWireSource(element);
 		if (wire === 'RB.out' || wire === 'CT.in') {
-			return `V_C = ${(vc * VCC).toFixed(2)} V (${charging ? 'charging' : 'discharging'})`;
+			return reading('timer.probe.vc', `capacitor voltage ${(vc * VCC).toFixed(2)} volts`, {
+				value: (vc * VCC).toFixed(2),
+				state: charging ? 'charging' : 'discharging'
+			});
 		}
 		if (wire === 'U1.q')
-			return `OUT = ${output ? 'HIGH (≈Vcc)' : 'LOW (0 V)'} @ ${formatSi(frequency, 'Hz')}`;
-		if (wire === 'VCC.out') return `V_cc = ${VCC.toFixed(1)} V`;
+			return reading(
+				'timer.probe.out',
+				`output ${output ? 'high' : 'low'} at ${formatSi(frequency, 'Hz')}`,
+				{ state: output ? 'HIGH (≈Vcc)' : 'LOW (0 V)', frequency: formatSi(frequency, 'Hz') }
+			);
+		if (wire === 'VCC.out')
+			return reading('timer.probe.vcc', `supply ${VCC.toFixed(1)} volts`, {
+				value: VCC.toFixed(1)
+			});
 		const node = delegatedNodeId(element);
 		if (node === 'U1')
-			return `555 · f = ${formatSi(frequency, 'Hz')} · duty ${(duty * 100).toFixed(0)} %`;
+			return reading(
+				'timer.probe.ic',
+				`frequency ${formatSi(frequency, 'Hz')}, duty ${(duty * 100).toFixed(0)} percent`,
+				{ frequency: formatSi(frequency, 'Hz'), duty: (duty * 100).toFixed(0) }
+			);
 		if (node === 'LED')
-			return `LED ${output ? 'ON' : 'off'} · flashing at ${formatSi(frequency, 'Hz')}`;
-		if (node === 'CT') return `C_T = ${formatSi(c, 'F')} · V_C = ${(vc * VCC).toFixed(2)} V`;
+			return reading(
+				'timer.probe.out',
+				`LED ${output ? 'on' : 'off'} at ${formatSi(frequency, 'Hz')}`,
+				{ state: output ? 'LED ON' : 'LED off', frequency: formatSi(frequency, 'Hz') }
+			);
+		if (node === 'CT')
+			return reading(
+				'timer.probe.ct',
+				`timing capacitance ${formatSi(c, 'F')}; capacitor voltage ${(vc * VCC).toFixed(2)} volts`,
+				{ capacitance: formatSi(c, 'F'), voltage: (vc * VCC).toFixed(2) }
+			);
 		return undefined;
 	}
 </script>
@@ -182,15 +207,33 @@
 	{/if}
 	<div class="controls">
 		<label>
-			<span class="microlabel">R_A = {formatSi(ra, 'Ω')}</span>
+			<span class="microlabel"
+				><LiveMath
+					id="timer.control.ra"
+					label={`R A ${formatSi(ra, 'Ω')}`}
+					values={{ value: formatSi(ra, 'Ω') }}
+				/></span
+			>
 			<input type="range" min="3" max="6" step="0.01" bind:value={logRa} aria-label="R A" />
 		</label>
 		<label>
-			<span class="microlabel">R_B = {formatSi(rb, 'Ω')}</span>
+			<span class="microlabel"
+				><LiveMath
+					id="timer.control.rb"
+					label={`R B ${formatSi(rb, 'Ω')}`}
+					values={{ value: formatSi(rb, 'Ω') }}
+				/></span
+			>
 			<input type="range" min="3" max="6" step="0.01" bind:value={logRb} aria-label="R B" />
 		</label>
 		<label>
-			<span class="microlabel">C_T = {formatSi(c, 'F')}</span>
+			<span class="microlabel"
+				><LiveMath
+					id="timer.control.ct"
+					label={`timing capacitor ${formatSi(c, 'F')}`}
+					values={{ value: formatSi(c, 'F') }}
+				/></span
+			>
 			<input
 				type="range"
 				min="-8"
@@ -216,14 +259,36 @@
 {#snippet instruments()}
 	<div class="readouts">
 		{#if mode === 'astable'}
-			<span class="readout">f = {formatSi(frequency, 'Hz')}</span>
-			<span class="readout">duty = {(duty * 100).toFixed(1)} %</span>
+			<span class="readout"
+				><LiveMath
+					id="timer.readout.f"
+					label={`frequency ${formatSi(frequency, 'Hz')}`}
+					values={{ value: formatSi(frequency, 'Hz') }}
+				/></span
+			>
+			<span class="readout"
+				><LiveMath
+					id="timer.readout.duty"
+					label={`duty ${(duty * 100).toFixed(1)} percent`}
+					values={{ value: (duty * 100).toFixed(1) }}
+				/></span
+			>
 		{:else}
-			<span class="readout">pulse t = {formatSi(pulseWidth, 's')}</span>
+			<span class="readout"
+				><LiveMath
+					id="timer.readout.pulse"
+					label={`pulse width ${formatSi(pulseWidth, 's')}`}
+					values={{ value: formatSi(pulseWidth, 's') }}
+				/></span
+			>
 			<span class="readout" class:on={oneShot}>{oneShot ? 'HIGH (timing)' : 'idle (LOW)'}</span>
 		{/if}
 		<span class="readout" class:on={output}>
-			V_C = {(vc * VCC).toFixed(2)} V
+			<LiveMath
+				id="timer.probe.vc"
+				label={`capacitor voltage ${(vc * VCC).toFixed(2)} volts`}
+				values={{ value: (vc * VCC).toFixed(2), state: charging ? 'charging' : 'discharging' }}
+			/>
 		</span>
 	</div>
 	<Oscilloscope samples={scope} label={mode === 'astable' ? 'pin 3 (OUT)' : 'one-shot pulse'} />

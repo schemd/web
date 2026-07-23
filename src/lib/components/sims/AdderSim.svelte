@@ -18,6 +18,8 @@
 	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
+	import LiveMath from './LiveMath.svelte';
+	import { reading, type MathReading } from '$lib/simulation-math';
 
 	interface Props {
 		svg: string;
@@ -187,18 +189,39 @@
 	}
 
 	/** Probe reading used by the lab-wide diagnostic HUD. */
-	function probe(element: Element): string | undefined {
+	function probe(element: Element): MathReading | undefined {
 		const wire = element.closest('[data-wire-source]')?.getAttribute('data-wire-source');
 		if (wire && wire in nets) {
-			return `${wire} = logic ${nets[wire]} (${nets[wire] === 1 ? '5.0 V' : '0.0 V'})`;
+			return reading('adder.probe.logic', `${wire} is logic ${nets[wire]}`, {
+				name: wire,
+				logic: nets[wire]!,
+				voltage: nets[wire] === 1 ? '5.0' : '0.0'
+			});
 		}
 		const node = delegatedNodeId(element);
 		if (!node) return undefined;
 		const out = nets[`${node}.out`];
-		if (out !== undefined) return `${node}.out = logic ${out}`;
+		if (out !== undefined)
+			return reading('adder.probe.logic', `${node} output is logic ${out}`, {
+				name: `${node}.out`,
+				logic: out,
+				voltage: out === 1 ? '5.0' : '0.0'
+			});
 		const sumBit = node.match(/^S(\d)$/);
-		if (sumBit) return `${node} = logic ${(sum >> Number(sumBit[1])) & 1}`;
-		if (node === 'COUT') return `COUT = logic ${carryOut}`;
+		if (sumBit) {
+			const logic = (sum >> Number(sumBit[1])) & 1;
+			return reading('adder.probe.logic', `${node} is logic ${logic}`, {
+				name: node,
+				logic,
+				voltage: logic === 1 ? '5.0' : '0.0'
+			});
+		}
+		if (node === 'COUT')
+			return reading('adder.probe.logic', `carry output is logic ${carryOut}`, {
+				name: 'COUT',
+				logic: carryOut,
+				voltage: carryOut === 1 ? '5.0' : '0.0'
+			});
 		return undefined;
 	}
 
@@ -227,8 +250,8 @@
 	<div class="stack">
 		<p class="control-note">
 			Type two operands, or click any <strong>A</strong>/<strong>B</strong>/<strong>C_in</strong>
-			port to toggle a bit. Watch the carry <strong>ripple</strong> upward over real gate delay — that
-			travel time is why fast adders exist.
+			<LiveMath id="adder.symbol.cin" label="carry input" /> port to toggle a bit. Watch the carry
+			<strong>ripple</strong> upward over real gate delay — that travel time is why fast adders exist.
 		</p>
 		<div class="operands">
 			<label>
@@ -253,7 +276,12 @@
 			</label>
 		</div>
 		<p class="microlabel">
-			physical model · {MODEL_GATE_DELAY_NS} ns/gate · critical path ≈ {criticalNs} ns
+			<span>physical model · </span>
+			<LiveMath
+				id="adder.control.delay"
+				label={`${MODEL_GATE_DELAY_NS} nanoseconds per gate; critical path approximately ${criticalNs} nanoseconds`}
+				values={{ delay: MODEL_GATE_DELAY_NS, critical: criticalNs }}
+			/>
 		</p>
 		<div class="button-row">
 			<button type="button" class="btn" onclick={randomize}>randomize A,B</button>
@@ -283,20 +311,62 @@
 
 {#snippet instruments()}
 	<div class="readouts">
-		<span class="readout">A = {bitString(a)} ({a})</span>
-		<span class="readout">B = {bitString(b)} ({b})</span>
-		<span class="readout">C_in = {cin}</span>
+		<span class="readout"
+			><LiveMath
+				id="adder.value.a"
+				label={`A equals ${a}`}
+				values={{ bits: bitString(a), value: a }}
+			/></span
+		>
+		<span class="readout"
+			><LiveMath
+				id="adder.value.b"
+				label={`B equals ${b}`}
+				values={{ bits: bitString(b), value: b }}
+			/></span
+		>
+		<span class="readout"
+			><LiveMath
+				id="adder.value.cin"
+				label={`carry input equals ${cin}`}
+				values={{ value: cin }}
+			/></span
+		>
 		<span class="readout sum" class:faulted={faults.stuckCarry}>
-			Σ = {bitString(visibleSum)}
+			<LiveMath
+				id="adder.value.sum"
+				label={`sum equals ${visibleSum}`}
+				values={{ bits: bitString(visibleSum), value: visibleSum }}
+			/>
 		</span>
 		<span class="readout sum" class:faulted={faults.stuckCarry}>
-			= {visibleSum + (visibleCarry << 8)} · C_out = {visibleCarry}
+			<LiveMath
+				id="adder.value.total"
+				label={`nine-bit result equals ${visibleSum + (visibleCarry << 8)}`}
+				values={{
+					bits: `${visibleCarry}${bitString(visibleSum)}`,
+					value: visibleSum + (visibleCarry << 8)
+				}}
+			/>
 		</span>
 		<span class="readout ripple" class:settling>
-			{settling ? `carry front @ bit ${frontier}…` : `settled · ${criticalNs} ns worst case`}
+			<LiveMath
+				id="adder.value.carry"
+				label={settling
+					? `carry front at bit ${frontier}`
+					: `settled after ${criticalNs} nanoseconds worst case`}
+				values={{
+					carry: visibleCarry,
+					state: settling ? `carry front @ bit ${frontier}…` : `${criticalNs} ns worst case`
+				}}
+			/>
 		</span>
 	</div>
-	<Oscilloscope samples={scope} label="S₀ rail" />
+	<Oscilloscope
+		samples={scope}
+		label="sum bit zero rail"
+		labelMath={reading('adder.scope.s0', 'sum bit zero rail')}
+	/>
 {/snippet}
 
 <style>

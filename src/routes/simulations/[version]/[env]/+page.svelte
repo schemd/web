@@ -1,11 +1,12 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
-	import type { Component } from 'svelte';
+	import { setContext, type Component } from 'svelte';
 	import SimulationTimeline from '$lib/components/sims/SimulationTimeline.svelte';
-	import { timelineFor } from '$lib/simulation-timelines';
 	import 'katex/dist/katex.min.css';
+	import { SIMULATION_MATH_CONTEXT, type SimulationMathContext } from '$lib/simulation-math';
 
 	let { data }: PageProps = $props();
+	setContext<SimulationMathContext>(SIMULATION_MATH_CONTEXT, () => data.math);
 
 	/**
 	 * One route used to statically import every laboratory, forcing visitors to
@@ -47,7 +48,7 @@
 
 	const sim = $derived(data.simulation);
 	const simComponent = $derived(loadComponent(sim.id));
-	const timeline = $derived(timelineFor(sim.id));
+	const timeline = $derived(data.timeline);
 	let simulationHost = $state<HTMLElement | undefined>();
 
 	/* Cyclic prev/next across the environment registry. */

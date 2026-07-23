@@ -13,6 +13,8 @@
 	import LabShell from './LabShell.svelte';
 	import Oscilloscope from './Oscilloscope.svelte';
 	import ProbeHud from './ProbeHud.svelte';
+	import LiveMath from './LiveMath.svelte';
+	import { reading, type MathReading } from '$lib/simulation-math';
 
 	interface Props {
 		svg: string;
@@ -147,19 +149,42 @@
 		if (ui.audio) playTick(560);
 	}
 
-	function probe(element: Element): string | undefined {
+	function probe(element: Element): MathReading | undefined {
 		const wire = delegatedWireSource(element);
-		if (wire === 'VIN.positive') return `input rail = ${vin.toFixed(1)} V DC`;
+		if (wire === 'VIN.positive')
+			return reading('buck.probe.input', `input rail ${vin.toFixed(1)} volts DC`, {
+				value: vin.toFixed(1)
+			});
 		if (wire === 'QH.drain' || wire === 'SW.node')
-			return `switch node = PWM ${Math.round(duty * 100)}% @ ${frequencyKilo.toFixed(0)} kHz`;
+			return reading(
+				'buck.probe.pwm',
+				`switch node PWM ${Math.round(duty * 100)} percent at ${frequencyKilo.toFixed(0)} kilohertz`,
+				{ duty: Math.round(duty * 100), frequency: frequencyKilo.toFixed(0) }
+			);
 		if (wire === 'L1.out')
-			return `i_L = ${inductorCurrent.toFixed(3)} A · Δi = ${rippleCurrent.toFixed(3)} A_pp · ${conduction}`;
+			return reading(
+				'buck.probe.inductor',
+				`inductor current ${inductorCurrent.toFixed(3)} amperes, ${conduction}`,
+				{ current: inductorCurrent.toFixed(3), ripple: rippleCurrent.toFixed(3), mode: conduction }
+			);
 		if (wire === 'VOUT_NODE.node' || wire === 'VOUT_PROBE.node')
-			return `V_out = ${outputVoltage.toFixed(3)} V · ripple ${(rippleVoltage * 1e3).toFixed(1)} mV_pp`;
+			return reading('buck.probe.output', `output ${outputVoltage.toFixed(3)} volts`, {
+				voltage: outputVoltage.toFixed(3),
+				ripple: (rippleVoltage * 1e3).toFixed(1)
+			});
 		const id = delegatedNodeId(element);
 		if (id === 'QH')
-			return faults.gateLost ? 'Q_H gate drive LOST' : `Q_H switching · D=${duty.toFixed(3)}`;
-		if (id === 'COUT') return `C_out = ${capacitanceMicro.toFixed(0)} µF`;
+			return reading(
+				'buck.probe.switch',
+				faults.gateLost ? 'high-side gate drive lost' : `high-side switch duty ${duty.toFixed(3)}`,
+				{ state: faults.gateLost ? 'gate drive LOST' : 'switching', duty: duty.toFixed(3) }
+			);
+		if (id === 'COUT')
+			return reading(
+				'buck.probe.cap',
+				`output capacitance ${capacitanceMicro.toFixed(0)} microfarads`,
+				{ value: capacitanceMicro.toFixed(0) }
+			);
 		return undefined;
 	}
 </script>
@@ -171,65 +196,83 @@
 	<div class="presets">
 		<p class="microlabel">operating-point presets</p>
 		<div class="button-row">
-			<button type="button" class="btn" onclick={() => applyPreset(12, 0.42, 5)}>12→5 V</button>
-			<button type="button" class="btn" onclick={() => applyPreset(24, 0.5, 8)}>24→12 V</button>
-			<button type="button" class="btn" onclick={() => applyPreset(5, 0.24, 1.2)}>5→1.2 V</button>
+			<button type="button" class="btn" onclick={() => applyPreset(12, 0.42, 5)}
+				><LiveMath
+					id="buck.preset"
+					label="12 volts to 5 volts"
+					values={{ input: 12, output: 5 }}
+				/></button
+			>
+			<button type="button" class="btn" onclick={() => applyPreset(24, 0.5, 8)}
+				><LiveMath
+					id="buck.preset"
+					label="24 volts to 12 volts"
+					values={{ input: 24, output: 12 }}
+				/></button
+			>
+			<button type="button" class="btn" onclick={() => applyPreset(5, 0.24, 1.2)}
+				><LiveMath
+					id="buck.preset"
+					label="5 volts to 1.2 volts"
+					values={{ input: 5, output: 1.2 }}
+				/></button
+			>
 		</div>
 	</div>
 	<div class="controls">
 		<label
-			><span class="microlabel">V_in = {vin.toFixed(1)} V</span><input
-				type="range"
-				min="5"
-				max="36"
-				step="0.1"
-				bind:value={vin}
-			/></label
+			><span class="microlabel"
+				><LiveMath
+					id="buck.control.vin"
+					label={`input voltage ${vin.toFixed(1)} volts`}
+					values={{ value: vin.toFixed(1) }}
+				/></span
+			><input type="range" min="5" max="36" step="0.1" bind:value={vin} /></label
 		>
 		<label
-			><span class="microlabel">duty = {(duty * 100).toFixed(1)}%</span><input
-				type="range"
-				min="0.05"
-				max="0.95"
-				step="0.005"
-				bind:value={duty}
-			/></label
+			><span class="microlabel"
+				><LiveMath
+					id="buck.control.duty"
+					label={`duty ${(duty * 100).toFixed(1)} percent`}
+					values={{ value: (duty * 100).toFixed(1) }}
+				/></span
+			><input type="range" min="0.05" max="0.95" step="0.005" bind:value={duty} /></label
 		>
 		<label
-			><span class="microlabel">R_load = {load.toFixed(1)} Ω</span><input
-				type="range"
-				min="1"
-				max="30"
-				step="0.1"
-				bind:value={load}
-			/></label
+			><span class="microlabel"
+				><LiveMath
+					id="buck.control.load"
+					label={`load resistance ${load.toFixed(1)} ohms`}
+					values={{ value: load.toFixed(1) }}
+				/></span
+			><input type="range" min="1" max="30" step="0.1" bind:value={load} /></label
 		>
 		<label
-			><span class="microlabel">L = {inductanceMicro.toFixed(0)} µH</span><input
-				type="range"
-				min="10"
-				max="220"
-				step="1"
-				bind:value={inductanceMicro}
-			/></label
+			><span class="microlabel"
+				><LiveMath
+					id="buck.control.l"
+					label={`inductance ${inductanceMicro.toFixed(0)} microhenries`}
+					values={{ value: inductanceMicro.toFixed(0) }}
+				/></span
+			><input type="range" min="10" max="220" step="1" bind:value={inductanceMicro} /></label
 		>
 		<label
-			><span class="microlabel">C = {capacitanceMicro.toFixed(0)} µF</span><input
-				type="range"
-				min="22"
-				max="470"
-				step="1"
-				bind:value={capacitanceMicro}
-			/></label
+			><span class="microlabel"
+				><LiveMath
+					id="buck.control.c"
+					label={`capacitance ${capacitanceMicro.toFixed(0)} microfarads`}
+					values={{ value: capacitanceMicro.toFixed(0) }}
+				/></span
+			><input type="range" min="22" max="470" step="1" bind:value={capacitanceMicro} /></label
 		>
 		<label
-			><span class="microlabel">f_sw = {frequencyKilo.toFixed(0)} kHz</span><input
-				type="range"
-				min="20"
-				max="500"
-				step="1"
-				bind:value={frequencyKilo}
-			/></label
+			><span class="microlabel"
+				><LiveMath
+					id="buck.control.fsw"
+					label={`switching frequency ${frequencyKilo.toFixed(0)} kilohertz`}
+					values={{ value: frequencyKilo.toFixed(0) }}
+				/></span
+			><input type="range" min="20" max="500" step="1" bind:value={frequencyKilo} /></label
 		>
 	</div>
 	<div class="switchboard">
@@ -265,20 +308,46 @@
 	</div>
 	<div class="readouts">
 		<span class="readout"
-			>V_out = {outputVoltage.toFixed(3)} V / ideal {idealOutput.toFixed(2)} V</span
+			><LiveMath
+				id="buck.readout.vout"
+				label={`output ${outputVoltage.toFixed(3)} volts; ideal ${idealOutput.toFixed(2)} volts`}
+				values={{ output: outputVoltage.toFixed(3), ideal: idealOutput.toFixed(2) }}
+			/></span
 		>
 		<span class="readout"
-			>i_L = {inductorCurrent.toFixed(3)} A · load {loadCurrent.toFixed(3)} A</span
+			><LiveMath
+				id="buck.readout.current"
+				label={`load current ${loadCurrent.toFixed(3)} amperes; inductor current ${inductorCurrent.toFixed(3)} amperes`}
+				values={{ load: loadCurrent.toFixed(3), inductor: inductorCurrent.toFixed(3) }}
+			/></span
 		>
-		<span class="readout">Δi_L = {rippleCurrent.toFixed(3)} A_pp</span>
-		<span class="readout">Δv_o = {(rippleVoltage * 1e3).toFixed(1)} mV_pp</span>
-		<span class="readout">η_est = {(efficiency * 100).toFixed(1)}%</span>
+		<span class="readout"
+			><LiveMath
+				id="buck.readout.ripple.i"
+				label={`inductor ripple ${rippleCurrent.toFixed(3)} amperes peak-to-peak`}
+				values={{ value: rippleCurrent.toFixed(3) }}
+			/></span
+		>
+		<span class="readout"
+			><LiveMath
+				id="buck.readout.ripple.v"
+				label={`voltage ripple ${(rippleVoltage * 1e3).toFixed(1)} millivolts peak-to-peak`}
+				values={{ value: (rippleVoltage * 1e3).toFixed(1) }}
+			/></span
+		>
+		<span class="readout"
+			><LiveMath
+				id="buck.readout.efficiency"
+				label={`estimated efficiency ${(efficiency * 100).toFixed(1)} percent`}
+				values={{ value: (efficiency * 100).toFixed(1) }}
+			/></span
+		>
 	</div>
 	<Oscilloscope
 		channels={[
 			{ samples: scopeSwitch, name: 'SW' },
-			{ samples: scopeCurrent, name: 'i_L' },
-			{ samples: scopeOutput, name: 'v_o' }
+			{ samples: scopeCurrent, math: reading('buck.scope.il', 'inductor current') },
+			{ samples: scopeOutput, math: reading('buck.scope.vo', 'output voltage') }
 		]}
 		label="switching reconstruction"
 	/>

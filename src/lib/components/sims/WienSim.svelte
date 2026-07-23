@@ -22,6 +22,8 @@
 	import PhasePortrait from './PhasePortrait.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
+	import LiveMath from './LiveMath.svelte';
+	import { reading, type MathReading } from '$lib/simulation-math';
 
 	interface Props {
 		svg: string;
@@ -125,14 +127,23 @@
 		return () => cancelAnimationFrame(frame);
 	});
 
-	function probe(element: Element): string | undefined {
+	function probe(element: Element): MathReading | undefined {
 		const wire = delegatedWireSource(element);
-		if (wire === 'U1.out' || wire === 'VOUT.node') return `v_o = ${x.toFixed(3)} (normalized)`;
+		if (wire === 'U1.out' || wire === 'VOUT.node')
+			return reading('wien.probe.output', `output ${x.toFixed(3)} normalized`, {
+				value: x.toFixed(3)
+			});
 		if (wire?.startsWith('CS') || wire?.startsWith('RS'))
-			return `positive feedback @ f₀ = ${formatSi(frequency, 'Hz')}`;
+			return reading('wien.probe.feedback', `positive feedback at ${formatSi(frequency, 'Hz')}`, {
+				value: formatSi(frequency, 'Hz')
+			});
 		const id = delegatedNodeId(element);
-		if (id === 'U1') return `op-amp gain = ${gain.toFixed(2)} · μ = ${mu.toFixed(2)}`;
-		if (id === 'RF' || id === 'RG') return `gain-set divider · needs gain = 3 to oscillate`;
+		if (id === 'U1')
+			return reading('wien.probe.gain', `gain ${gain.toFixed(2)}; mu ${mu.toFixed(2)}`, {
+				gain: gain.toFixed(2),
+				mu: mu.toFixed(2)
+			});
+		if (id === 'RF' || id === 'RG') return reading('wien.probe.divider', 'required gain is three');
 		return undefined;
 	}
 </script>
@@ -143,19 +154,38 @@
 {#snippet controls()}
 	<div class="stack">
 		<p class="control-note">
-			The Wien network passes exactly one frequency with zero phase shift and a ⅓ loss — so the
-			amplifier must supply a gain of <strong>3</strong> to close the loop and sing.
+			The Wien network passes exactly one frequency with zero phase shift and a
+			<LiveMath id="wien.control.loss" label="one-third magnitude" /> loss — so the amplifier must supply
+			a gain of <strong>3</strong> to close the loop and sing.
 		</p>
 		<label>
-			<span class="microlabel">amplifier gain = {gain.toFixed(2)}</span>
+			<span class="microlabel"
+				><LiveMath
+					id="wien.control.gain"
+					label={`amplifier gain ${gain.toFixed(2)}`}
+					values={{ value: gain.toFixed(2) }}
+				/></span
+			>
 			<input type="range" min="2.8" max="3.2" step="0.005" bind:value={gain} aria-label="Gain" />
 		</label>
 		<label>
-			<span class="microlabel">R = {formatSi(resistance, 'Ω')}</span>
+			<span class="microlabel"
+				><LiveMath
+					id="wien.control.r"
+					label={`resistance ${formatSi(resistance, 'Ω')}`}
+					values={{ value: formatSi(resistance, 'Ω') }}
+				/></span
+			>
 			<input type="range" min="3" max="5.5" step="0.01" bind:value={logR} aria-label="Bridge R" />
 		</label>
 		<label>
-			<span class="microlabel">C = {formatSi(capacitance, 'F')}</span>
+			<span class="microlabel"
+				><LiveMath
+					id="wien.control.c"
+					label={`capacitance ${formatSi(capacitance, 'F')}`}
+					values={{ value: formatSi(capacitance, 'F') }}
+				/></span
+			>
 			<input type="range" min="-9" max="-6" step="0.01" bind:value={logC} aria-label="Bridge C" />
 		</label>
 		<div class="button-row">
@@ -192,12 +222,41 @@
 		<strong>{regime}</strong>
 	</div>
 	<div class="readouts">
-		<span class="readout">f₀ = {formatSi(frequency, 'Hz')}</span>
-		<span class="readout">loop margin μ = {mu.toFixed(2)}</span>
-		<span class="readout">amplitude ≈ {amplitude.toFixed(2)}</span>
+		<span class="readout"
+			><LiveMath
+				id="wien.readout.f0"
+				label={`frequency ${formatSi(frequency, 'Hz')}`}
+				values={{ value: formatSi(frequency, 'Hz') }}
+			/></span
+		>
+		<span class="readout"
+			><LiveMath
+				id="wien.readout.mu"
+				label={`loop margin ${mu.toFixed(2)}`}
+				values={{ value: mu.toFixed(2) }}
+			/></span
+		>
+		<span class="readout"
+			><LiveMath
+				id="wien.readout.amplitude"
+				label={`amplitude approximately ${amplitude.toFixed(2)}`}
+				values={{ value: amplitude.toFixed(2) }}
+			/></span
+		>
 	</div>
-	<PhasePortrait points={orbit} label="birth of the limit cycle" xLabel="v_o" yLabel="dv_o/dt" />
-	<Oscilloscope samples={scope} label="output v_o(t)" />
+	<PhasePortrait
+		points={orbit}
+		label="birth of the limit cycle"
+		xLabel="output voltage"
+		yLabel="output voltage derivative"
+		xMath={reading('wien.scope.vo', 'output voltage')}
+		yMath={reading('wien.scope.dvo', 'output voltage derivative')}
+	/>
+	<Oscilloscope
+		samples={scope}
+		label="output voltage over time"
+		labelMath={reading('wien.scope.output', 'output voltage over time')}
+	/>
 {/snippet}
 
 <style>

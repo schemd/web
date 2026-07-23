@@ -145,7 +145,10 @@ test('RC laboratory uses native primitives and updates derived physics without r
 	expect(svgHandle).not.toBeNull();
 
 	await page.getByRole('slider', { name: /Stimulus frequency/ }).fill('5');
-	await expect(page.getByText(/\|H\| =/).first()).not.toContainText('|H| = 0.847');
+	await expect(page.locator('[data-math-id="rc.readout.h"]')).not.toHaveAttribute(
+		'aria-label',
+		/magnitude 0\.847/
+	);
 	await expect(page.locator('.cutoff-overlay .bode-curve')).toHaveAttribute(
 		'style',
 		/stroke-width:/

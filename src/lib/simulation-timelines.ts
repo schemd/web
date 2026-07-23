@@ -10,6 +10,12 @@ export interface SimulationStage {
 	readonly highWires?: readonly string[];
 }
 
+/** A stage whose authored notation was pre-rendered by the route server. */
+export interface RenderedSimulationStage extends SimulationStage {
+	readonly labelHtml: string;
+	readonly explanationHtml: string;
+}
+
 export const SIMULATION_TIMELINE_EVENT = 'schemd:simulation-stage';
 
 export interface SimulationTimelineDetail {

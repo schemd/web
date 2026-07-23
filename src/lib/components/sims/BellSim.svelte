@@ -15,6 +15,8 @@
 	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
+	import LiveMath from './LiveMath.svelte';
+	import { reading, type MathReading } from '$lib/simulation-math';
 
 	interface Props {
 		svg: string;
@@ -27,7 +29,7 @@
 	let q1 = $state(0);
 	let counts = $state({ '00': 0, '01': 0, '10': 0, '11': 0 });
 	let scope = $state<number[]>(Array.from({ length: 96 }, () => 0.5));
-	let hover = $state<{ x: number; y: number; math: string } | undefined>();
+	let hover = $state<{ x: number; y: number; math: MathReading } | undefined>();
 	let faults = $state({ brokenEntangler: false });
 
 	const INV_SQRT2 = 1 / Math.SQRT2;
@@ -154,17 +156,18 @@
 		toggleNode(delegatedNodeId(event.target));
 	}
 
-	const GATE_MATH: Record<string, string> = {
-		H1: 'H|q₀⟩ = (|0⟩ + (−1)^{q₀}|1⟩)/√2',
-		CX1: 'CNOT: |a⟩|b⟩ → |a⟩|b ⊕ a⟩',
-		Q0: 'state preparation: |q₀⟩ ∈ {|0⟩, |1⟩} — click to flip',
-		Q1: 'state preparation: |q₁⟩ ∈ {|0⟩, |1⟩} — click to flip'
-	};
+	function gateMath(id: string): MathReading | undefined {
+		if (id === 'H1') return reading('bell.gate.h', `Hadamard on qubit zero`, { q0 });
+		if (id === 'CX1') return reading('bell.gate.cx', 'controlled not entangler');
+		if (id === 'Q0') return reading('bell.gate.q0', `qubit zero equals ${q0}`, { value: q0 });
+		if (id === 'Q1') return reading('bell.gate.q1', `qubit one equals ${q1}`, { value: q1 });
+		return undefined;
+	}
 
 	function onStageMove(event: PointerEvent): void {
 		if (!(event.target instanceof Element)) return;
 		const id = delegatedNodeId(event.target);
-		const math = id ? GATE_MATH[id] : undefined;
+		const math = id ? gateMath(id) : undefined;
 		hover = math ? { x: event.clientX, y: event.clientY, math } : undefined;
 	}
 
@@ -180,12 +183,16 @@
 			?.classList.toggle('is-degraded', faults.brokenEntangler);
 	});
 
-	function probe(element: Element): string | undefined {
+	function probe(element: Element): MathReading | undefined {
 		const id = delegatedNodeId(element);
 		if (id === 'M0' || id === 'M1') {
-			return `⟨Z⊗Z⟩ = ${correlation.toFixed(3)} · ${sampleTotal} shots`;
+			return reading(
+				'bell.correlation',
+				`Z tensor Z correlation ${correlation.toFixed(3)} after ${sampleTotal} shots`,
+				{ value: correlation.toFixed(3), shots: sampleTotal }
+			);
 		}
-		if (id && id in GATE_MATH) return GATE_MATH[id];
+		if (id) return gateMath(id);
 		return undefined;
 	}
 </script>
@@ -196,20 +203,36 @@
 {#snippet controls()}
 	<div class="stack">
 		<p class="control-note">
-			Click the two state-preparation nodes in the test bed to flip <strong>q₀</strong> /
-			<strong>q₁</strong> and select which Bell pair H·CNOT prepares.
+			Click the two state-preparation nodes in the test bed to flip
+			<strong><LiveMath id="bell.symbol.q0" label="qubit zero" /></strong> /
+			<strong><LiveMath id="bell.symbol.q1" label="qubit one" /></strong> and select which Bell pair
+			<LiveMath id="bell.symbol.protocol" label="Hadamard then controlled not" /> prepares.
 		</p>
 		<button type="button" class="btn btn-solid" onclick={() => sample(64)}>measure ×64</button>
-		<span class="readout">⟨Z⊗Z⟩ = {correlation.toFixed(2)} · {sampleTotal} shots</span>
+		<span class="readout"
+			><LiveMath
+				id="bell.correlation"
+				label={`correlation ${correlation.toFixed(2)} after ${sampleTotal} shots`}
+				values={{ value: correlation.toFixed(2), shots: sampleTotal }}
+			/></span
+		>
 	</div>
 	<div class="chsh" class:violates={violatesRealism}>
-		<p class="microlabel">CHSH witness · local realism ≤ 2</p>
+		<p class="microlabel">
+			<LiveMath id="bell.chsh.bound" label="CHSH witness; local realism at most two" />
+		</p>
 		<div class="chsh-gauge" role="img" aria-label={`CHSH S = ${chsh.toFixed(3)}`}>
 			<span class="chsh-fill" style={`width: ${Math.min(100, (chsh / TSIRELSON) * 100)}%`}></span>
 			<span class="chsh-classical" style={`left: ${(2 / TSIRELSON) * 100}%`}></span>
 		</div>
 		<div class="chsh-legend">
-			<strong>S = {chsh.toFixed(3)}</strong>
+			<strong
+				><LiveMath
+					id="bell.chsh.value"
+					label={`CHSH S equals ${chsh.toFixed(3)}`}
+					values={{ value: chsh.toFixed(3) }}
+				/></strong
+			>
 			<span>{violatesRealism ? 'local realism violated' : 'classically explainable'}</span>
 		</div>
 	</div>
@@ -237,7 +260,9 @@
 {/snippet}
 
 {#snippet instruments()}
-	<p class="readout state-line">|ψ⟩ → {bellName}</p>
+	<p class="readout state-line">
+		<LiveMath id="bell.state" label={`state becomes ${bellName}`} values={{ state: bellName }} />
+	</p>
 	<svg class="bars" viewBox="0 0 220 90" role="img" aria-label="Outcome probabilities">
 		{#each outcomes as key, index (key)}
 			<rect
@@ -247,18 +272,26 @@
 				width="30"
 				height={probabilities[key] * 64}
 			/>
-			<text class="bar-label" x={29 + index * 52} y="88">|{key}⟩</text>
+			<foreignObject x={14 + index * 52} y="78" width="30" height="12">
+				<div class="bar-math">
+					<LiveMath id="bell.ket" label={`basis state ${key}`} values={{ value: key }} />
+				</div>
+			</foreignObject>
 			<text class="bar-value" x={29 + index * 52} y={74 - probabilities[key] * 64}>
 				{probabilities[key].toFixed(2)}
 			</text>
 		{/each}
 	</svg>
-	<Oscilloscope samples={scope} label="⟨Z⊗Z⟩ empirical" />
+	<Oscilloscope
+		samples={scope}
+		label="empirical Z tensor Z correlation"
+		labelMath={reading('bell.scope.correlation', 'empirical Z tensor Z correlation')}
+	/>
 {/snippet}
 
 {#if hover}
 	<output class="math-hud" style={`transform: translate(${hover.x + 16}px, ${hover.y + 12}px)`}>
-		{hover.math}
+		<LiveMath id={hover.math.id} label={hover.math.label} values={hover.math.values} />
 	</output>
 {/if}
 
@@ -354,7 +387,6 @@
 		opacity: 0.85;
 	}
 
-	.bar-label,
 	.bar-value {
 		fill: var(--ink-faint);
 		font-family: var(--font-mono);
@@ -364,6 +396,14 @@
 
 	.bar-value {
 		fill: var(--accent);
+	}
+
+	.bar-math {
+		display: grid;
+		place-items: center;
+		block-size: 100%;
+		font-size: 7px;
+		color: var(--ink-faint);
 	}
 
 	.sim-stage {

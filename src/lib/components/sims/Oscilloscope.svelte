@@ -8,12 +8,16 @@
 	 * new frame — path serialization for a few hundred points is far below frame
 	 * budget, and no external charting engine comes anywhere near this.
 	 */
+	import type { MathReading } from '$lib/simulation-math';
+	import LiveMath from './LiveMath.svelte';
+
 	interface Channel {
 		readonly samples: readonly number[];
 		/** CSS color for the trace; defaults to the accent palette by index. */
 		readonly color?: string;
 		/** Optional per-channel legend caption. */
 		readonly name?: string;
+		readonly math?: MathReading;
 	}
 
 	interface Props {
@@ -22,9 +26,10 @@
 		/** Multi-channel input; takes precedence over `samples`. */
 		channels?: readonly Channel[];
 		label?: string;
+		labelMath?: MathReading;
 	}
 
-	let { samples, channels, label = 'scope' }: Props = $props();
+	let { samples, channels, label = 'scope', labelMath }: Props = $props();
 
 	const SIZE = 128;
 	const PADDING = 8;
@@ -53,11 +58,14 @@
 		lines.map((channel, index) => ({
 			d: pathFor(channel.samples),
 			color: channel.color ?? PALETTE[index % PALETTE.length],
-			name: channel.name
+			name: channel.name,
+			math: channel.math
 		}))
 	);
 
-	const legend = $derived(traces.filter((trace) => trace.name !== undefined));
+	const legend = $derived(
+		traces.filter((trace) => trace.name !== undefined || trace.math !== undefined)
+	);
 </script>
 
 <figure class="scope" aria-label={`Oscilloscope: ${label}`}>
@@ -85,12 +93,25 @@
 	</svg>
 	{#if legend.length > 0}
 		<ul class="scope-legend">
-			{#each legend as entry (entry.name)}
-				<li><span class="swatch" style={`background: ${entry.color}`}></span>{entry.name}</li>
+			{#each legend as entry, index (`${entry.name ?? entry.math?.id}-${index}`)}
+				<li>
+					<span class="swatch" style={`background: ${entry.color}`}></span>
+					{#if entry.math}<LiveMath
+							id={entry.math.id}
+							label={entry.math.label}
+							values={entry.math.values}
+						/>{:else}{entry.name}{/if}
+				</li>
 			{/each}
 		</ul>
 	{/if}
-	<figcaption class="microlabel">{label}</figcaption>
+	<figcaption class="microlabel">
+		{#if labelMath}<LiveMath
+				id={labelMath.id}
+				label={labelMath.label}
+				values={labelMath.values}
+			/>{:else}{label}{/if}
+	</figcaption>
 </figure>
 
 <style>

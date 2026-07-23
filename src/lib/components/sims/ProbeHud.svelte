@@ -10,16 +10,18 @@
 	 */
 	import { playTick } from '$lib/audio';
 	import { ui } from '$lib/ui.svelte';
+	import type { MathReading } from '$lib/simulation-math';
+	import LiveMath from './LiveMath.svelte';
 
 	interface Props {
 		/** Resolve a probe reading for a delegated target, or undefined. */
-		read: (element: Element) => string | undefined;
+		read: (element: Element) => MathReading | undefined;
 	}
 
 	let { read }: Props = $props();
 
 	let armed = $state(false);
-	let reading = $state<string | undefined>();
+	let reading = $state<MathReading | undefined>();
 	let x = $state(0);
 	let y = $state(0);
 
@@ -59,13 +61,15 @@
 		{armed ? '● armed — click a node, port, or wire' : '○ arm probe'}
 	</button>
 	{#if reading !== undefined}
-		<output class="probe-inline">{reading}</output>
+		<output class="probe-inline">
+			<LiveMath id={reading.id} label={reading.label} values={reading.values} />
+		</output>
 	{/if}
 </div>
 
 {#if armed && reading !== undefined}
 	<output class="probe-tip" style={`transform: translate(${x + 14}px, ${y - 40}px)`}>
-		{reading}
+		<LiveMath id={reading.id} label={reading.label} values={reading.values} />
 	</output>
 {/if}
 

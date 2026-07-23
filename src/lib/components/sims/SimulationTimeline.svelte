@@ -4,14 +4,15 @@
 	import {
 		cumulativeFrame,
 		SIMULATION_TIMELINE_EVENT,
-		type SimulationStage,
+		type RenderedSimulationStage,
 		type SimulationTimelineDetail
 	} from '$lib/simulation-timelines';
 	import Stepper from './Stepper.svelte';
+	import LiveMath from './LiveMath.svelte';
 
 	interface Props {
 		simulationId: string;
-		stages: readonly SimulationStage[];
+		stages: readonly RenderedSimulationStage[];
 		host?: HTMLElement;
 	}
 
@@ -84,11 +85,17 @@
 				</span>
 			</div>
 			<p class="explanation" aria-live="polite">
-				<strong>{current?.label}</strong>
-				{current?.explanation}
+				<strong>{@html current?.labelHtml}</strong>
+				<span>{@html current?.explanationHtml}</span>
 			</p>
 			<label class="delay-control">
-				<span class="microlabel">stage delay = {(delayMs / 1000).toFixed(2)} s</span>
+				<span class="microlabel"
+					><LiveMath
+						id="timeline.delay"
+						label={`stage delay ${(delayMs / 1000).toFixed(2)} seconds`}
+						values={{ value: (delayMs / 1000).toFixed(2) }}
+					/></span
+				>
 				<input
 					type="range"
 					min="250"

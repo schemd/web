@@ -15,6 +15,8 @@
 	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
+	import LiveMath from './LiveMath.svelte';
+	import { reading, type MathReading } from '$lib/simulation-math';
 
 	interface Props {
 		svg: string;
@@ -95,15 +97,32 @@
 		setNodeActive(root, 'MOUT', corrected && fidelity === 1);
 	});
 
-	function probe(element: Element): string | undefined {
+	function probe(element: Element): MathReading | undefined {
 		const id = delegatedNodeId(element);
-		if (id === 'ENC') return '|ψ⟩ → α|000⟩ + β|111⟩';
+		if (id === 'ENC')
+			return reading('qec.encode', 'encode psi into the three-qubit repetition code');
 		if (id === 'ERR')
-			return error.some((b) => b) ? `bit-flip on q${error.findIndex((b) => b === 1)}` : 'no error';
-		if (id === 'SYN') return `syndrome = ${syndromeLabel} (parity q0⊕q1, q1⊕q2)`;
+			return reading(
+				'qec.error',
+				error.some((b) => b) ? `bit flip on qubit ${error.findIndex((b) => b === 1)}` : 'no error',
+				{
+					qubit: error.some((b) => b) ? error.findIndex((b) => b === 1) : '—',
+					state: error.some((b) => b) ? 'bit flip' : 'no error'
+				}
+			);
+		if (id === 'SYN')
+			return reading('qec.syndrome', `syndrome ${syndromeLabel}`, { value: syndromeLabel });
 		if (id === 'COR')
-			return accused === undefined ? 'no correction needed' : `flip q${accused} back`;
-		if (id === 'MOUT') return `logical fidelity F = ${fidelity}`;
+			return reading(
+				'qec.correction',
+				accused === undefined ? 'no correction needed' : `flip qubit ${accused} back`,
+				{
+					qubit: accused ?? '—',
+					state: accused === undefined ? 'no correction needed' : 'apply correction'
+				}
+			);
+		if (id === 'MOUT')
+			return reading('qec.fidelity', `logical fidelity ${fidelity}`, { value: fidelity });
 		return undefined;
 	}
 </script>
@@ -115,7 +134,8 @@
 	<div class="stack">
 		<p class="control-note">
 			Inject a bit-flip on any physical qubit. The two <strong>parity</strong> checks name the
-			culprit without ever reading <strong>α</strong> or <strong>β</strong>. Then correct and read
+			culprit without ever reading
+			<strong><LiveMath id="qec.amplitudes" label="alpha or beta" /></strong>. Then correct and read
 			the fidelity.
 		</p>
 		<div class="inject-row">
@@ -126,7 +146,7 @@
 					class:flipped={error[qubit] === 1}
 					onclick={() => inject(qubit)}
 				>
-					X · q{qubit}
+					<LiveMath id="qec.error" label={`X on qubit ${qubit}`} values={{ qubit, state: '' }} />
 				</button>
 			{/each}
 		</div>
@@ -156,7 +176,9 @@
 	<div class="qubits" aria-label="Physical qubit states">
 		{#each error as bit, index (index)}
 			<div class="qwire" class:flipped={bit === 1 && !corrected}>
-				<span class="microlabel">q{index}</span>
+				<span class="microlabel"
+					><LiveMath id="qec.qubit" label={`qubit ${index}`} values={{ value: index }} /></span
+				>
 				<span class="qstate">{bit === 1 && !corrected ? 'X' : '·'}</span>
 			</div>
 		{/each}
@@ -164,12 +186,31 @@
 	<div class="syndrome">
 		<span class="microlabel">syndrome</span>
 		<div class="syn-bits">
-			<span class="syn" class:hot={syndrome[0] === 1}>s₀ = {syndrome[0]}</span>
-			<span class="syn" class:hot={syndrome[1] === 1}>s₁ = {syndrome[1]}</span>
+			<span class="syn" class:hot={syndrome[0] === 1}
+				><LiveMath
+					id="qec.syndrome.bit"
+					label={`syndrome bit zero ${syndrome[0]}`}
+					values={{ index: 0, value: syndrome[0] }}
+				/></span
+			>
+			<span class="syn" class:hot={syndrome[1] === 1}
+				><LiveMath
+					id="qec.syndrome.bit"
+					label={`syndrome bit one ${syndrome[1]}`}
+					values={{ index: 1, value: syndrome[1] }}
+				/></span
+			>
 		</div>
-		<span class="decode">
-			{accused === undefined ? 'no error detected' : `→ flip q${accused}`}
-		</span>
+		<span class="decode"
+			><LiveMath
+				id="qec.decode"
+				label={accused === undefined ? 'no error detected' : `flip qubit ${accused}`}
+				values={{
+					state: accused === undefined ? 'no error detected' : 'correction',
+					qubit: accused ?? '—'
+				}}
+			/></span
+		>
 	</div>
 	<div
 		class="fidelity"
@@ -178,7 +219,13 @@
 	>
 		<span class="microlabel">logical fidelity</span>
 		<div class="fid-bar"><span style={`width: ${fidelity * 100}%`}></span></div>
-		<strong>F = {corrected ? fidelity.toFixed(0) : '—'}</strong>
+		<strong
+			><LiveMath
+				id="qec.fidelity"
+				label={corrected ? `logical fidelity ${fidelity}` : 'logical fidelity unavailable'}
+				values={{ value: corrected ? fidelity.toFixed(0) : '—' }}
+			/></strong
+		>
 	</div>
 {/snippet}
 

@@ -15,6 +15,8 @@
 	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
+	import LiveMath from './LiveMath.svelte';
+	import { reading, type MathReading } from '$lib/simulation-math';
 
 	interface Props {
 		svg: string;
@@ -28,7 +30,7 @@
 	let step = $state(0);
 	let m1 = $state<number | undefined>();
 	let m2 = $state<number | undefined>();
-	let hover = $state<{ x: number; y: number; math: string } | undefined>();
+	let hover = $state<{ x: number; y: number; math: MathReading } | undefined>();
 	let faults = $state({ lostClassicalBit: false });
 	let playing = $state(false);
 	let scopeAlpha = $state<number[]>([]);
@@ -49,10 +51,10 @@
 	const STEPS = [
 		{ id: 0, label: 'initialize', active: ['PSI', 'A', 'B'] },
 		{ id: 1, label: 'entangle A↔B', active: ['H1', 'CX1'] },
-		{ id: 2, label: 'Bell basis on ψ,A', active: ['CX2', 'H2'] },
-		{ id: 3, label: 'measure m₁, m₂', active: ['MZ1', 'MZ2'] },
-		{ id: 4, label: 'apply X^{m₂}, Z^{m₁}', active: ['XC', 'ZC'] },
-		{ id: 5, label: '|ψ⟩ reconstructed', active: ['OUT'] }
+		{ id: 2, label: 'Bell-basis rotation', active: ['CX2', 'H2'] },
+		{ id: 3, label: 'measure classical bits', active: ['MZ1', 'MZ2'] },
+		{ id: 4, label: 'apply Pauli corrections', active: ['XC', 'ZC'] },
+		{ id: 5, label: 'state reconstructed', active: ['OUT'] }
 	] as const;
 
 	/**
@@ -156,36 +158,74 @@
 		return () => cancelAnimationFrame(frame);
 	});
 
-	const GATE_MATH: Record<string, () => string> = {
-		PSI: () => `|ψ⟩ = ${alpha.toFixed(3)}|0⟩ + (${betaText})|1⟩`,
-		H1: () => 'H|0⟩ = (|0⟩ + |1⟩)/√2',
-		CX1: () => 'CNOT: (|00⟩ + |10⟩)/√2 → (|00⟩ + |11⟩)/√2 = |Φ⁺⟩',
-		CX2: () => 'CNOT(ψ→A): |a⟩|b⟩ → |a⟩|b ⊕ a⟩',
-		H2: () => 'H rotates ψ into the Bell basis before measurement',
-		MZ1: () => `M_Z on ψ → m₁ ${m1 === undefined ? '∈ {0,1}' : `= ${m1}`}`,
-		MZ2: () => `M_Z on A → m₂ ${m2 === undefined ? '∈ {0,1}' : `= ${m2}`}`,
-		XC: () =>
-			`X^{m₂}: applied ${m2 === undefined ? 'iff m₂ = 1' : m2 === 1 ? '(m₂ = 1 → flip)' : '(m₂ = 0 → identity)'}`,
-		ZC: () =>
-			`Z^{m₁}: applied ${m1 === undefined ? 'iff m₁ = 1' : m1 === 1 ? '(m₁ = 1 → phase flip)' : '(m₁ = 0 → identity)'}`,
-		OUT: () =>
-			`Bob holds α|0⟩ + β|1⟩ — fidelity F = ${fidelity === undefined ? '…' : fidelity.toFixed(3)}`
-	};
+	function gateMath(id: string): MathReading | undefined {
+		if (id === 'PSI')
+			return reading('teleport.state', 'input quantum state', {
+				alpha: alpha.toFixed(3),
+				beta: betaText
+			});
+		if (id === 'H1') return reading('teleport.gate.h', 'Hadamard creates a superposition');
+		if (id === 'CX1')
+			return reading('teleport.gate.entangle', 'controlled not creates the Bell pair');
+		if (id === 'CX2')
+			return reading('teleport.gate.bell', 'controlled not rotates toward the Bell basis');
+		if (id === 'H2')
+			return reading('teleport.gate.basis', 'Hadamard completes the Bell-basis rotation');
+		if (id === 'MZ1')
+			return reading('teleport.gate.measure', `measurement bit one ${m1 ?? 'unknown'}`, {
+				bit: 1,
+				result: m1 === undefined ? '∈ {0,1}' : `= ${m1}`
+			});
+		if (id === 'MZ2')
+			return reading('teleport.gate.measure', `measurement bit two ${m2 ?? 'unknown'}`, {
+				bit: 2,
+				result: m2 === undefined ? '∈ {0,1}' : `= ${m2}`
+			});
+		if (id === 'XC')
+			return reading('teleport.gate.correct', 'conditional X correction', {
+				gate: 'X',
+				bit: 2,
+				action:
+					m2 === undefined ? 'apply iff m₂ = 1' : m2 === 1 ? 'm₂ = 1 → flip' : 'm₂ = 0 → identity'
+			});
+		if (id === 'ZC')
+			return reading('teleport.gate.correct', 'conditional Z correction', {
+				gate: 'Z',
+				bit: 1,
+				action:
+					m1 === undefined
+						? 'apply iff m₁ = 1'
+						: m1 === 1
+							? 'm₁ = 1 → phase flip'
+							: 'm₁ = 0 → identity'
+			});
+		if (id === 'OUT')
+			return reading(
+				'teleport.gate.output',
+				`output fidelity ${fidelity === undefined ? 'unavailable' : fidelity.toFixed(3)}`,
+				{ fidelity: fidelity === undefined ? '…' : fidelity.toFixed(3) }
+			);
+		return undefined;
+	}
 
 	function onStageMove(event: PointerEvent): void {
 		if (!(event.target instanceof Element)) return;
 		const id = delegatedNodeId(event.target);
-		const math = id ? GATE_MATH[id]?.() : undefined;
+		const math = id ? gateMath(id) : undefined;
 		hover = math ? { x: event.clientX, y: event.clientY, math } : undefined;
 	}
 
-	function probe(element: Element): string | undefined {
+	function probe(element: Element): MathReading | undefined {
 		const id = delegatedNodeId(element);
 		if (!id) return undefined;
 		if (id === 'PSI' || id === 'OUT') {
-			return `α = ${alpha.toFixed(3)} · β = ${betaText} · P(0) = ${p0.toFixed(3)}, P(1) = ${p1.toFixed(3)}`;
+			return reading(
+				'teleport.probe.state',
+				`alpha ${alpha.toFixed(3)}, beta ${betaText}, probabilities ${p0.toFixed(3)} and ${p1.toFixed(3)}`,
+				{ alpha: alpha.toFixed(3), beta: betaText, p0: p0.toFixed(3), p1: p1.toFixed(3) }
+			);
 		}
-		return GATE_MATH[id]?.();
+		return gateMath(id);
 	}
 </script>
 
@@ -195,14 +235,32 @@
 {#snippet controls()}
 	<div class="controls">
 		<label>
-			<span class="microlabel">θ = {(theta / Math.PI).toFixed(2)}π</span>
+			<span class="microlabel"
+				><LiveMath
+					id="teleport.control.theta"
+					label={`theta ${(theta / Math.PI).toFixed(2)} pi`}
+					values={{ value: (theta / Math.PI).toFixed(2) }}
+				/></span
+			>
 			<input type="range" min="0" max={Math.PI} step="0.01" bind:value={theta} aria-label="Theta" />
 		</label>
 		<label>
-			<span class="microlabel">φ = {(phi / Math.PI).toFixed(2)}π</span>
+			<span class="microlabel"
+				><LiveMath
+					id="teleport.control.phi"
+					label={`phi ${(phi / Math.PI).toFixed(2)} pi`}
+					values={{ value: (phi / Math.PI).toFixed(2) }}
+				/></span
+			>
 			<input type="range" min="0" max={Math.PI * 2} step="0.01" bind:value={phi} aria-label="Phi" />
 		</label>
-		<p class="readout">|ψ⟩ = {alpha.toFixed(3)}|0⟩ + ({betaText})|1⟩</p>
+		<p class="readout">
+			<LiveMath
+				id="teleport.state"
+				label="input quantum state"
+				values={{ alpha: alpha.toFixed(3), beta: betaText }}
+			/>
+		</p>
 	</div>
 
 	<div class="playback">
@@ -230,7 +288,11 @@
 				<li class:done={step >= protocolStep.id} class:now={step === protocolStep.id}>
 					{protocolStep.label}
 					{#if protocolStep.id === 3 && m1 !== undefined}
-						· m₁={m1}, m₂={m2}
+						· <LiveMath
+							id="teleport.step.bits"
+							label={`measurement bits ${m1} and ${m2}`}
+							values={{ m1, m2: m2 ?? '—' }}
+						/>
 					{/if}
 				</li>
 			{/each}
@@ -258,16 +320,41 @@
 
 {#snippet instruments()}
 	<div class="readouts">
-		<span class="readout">P(0) = {p0.toFixed(3)}</span>
-		<span class="readout">P(1) = {p1.toFixed(3)}</span>
+		<span class="readout"
+			><LiveMath
+				id="teleport.probability"
+				label={`probability of zero ${p0.toFixed(3)}`}
+				values={{ state: 0, value: p0.toFixed(3) }}
+			/></span
+		>
+		<span class="readout"
+			><LiveMath
+				id="teleport.probability"
+				label={`probability of one ${p1.toFixed(3)}`}
+				values={{ state: 1, value: p1.toFixed(3) }}
+			/></span
+		>
 	</div>
 	<div class="fidelity" class:ok={fidelity !== undefined && !corrupted} class:bad={corrupted}>
-		<span class="microlabel">teleportation fidelity · F = |⟨ψ|ψ_out⟩|²</span>
+		<span class="microlabel"
+			>teleportation fidelity · <LiveMath
+				id="teleport.fidelity.label"
+				label="fidelity is the squared overlap of input and output states"
+			/></span
+		>
 		<div class="fid-bar">
 			<span style={`width: ${(fidelity ?? 0) * 100}%`}></span>
 		</div>
 		<div class="fid-legend">
-			<strong>F = {fidelity === undefined ? '—' : fidelity.toFixed(3)}</strong>
+			<strong
+				><LiveMath
+					id="teleport.fidelity.value"
+					label={fidelity === undefined
+						? 'fidelity unavailable'
+						: `fidelity ${fidelity.toFixed(3)}`}
+					values={{ value: fidelity === undefined ? '—' : fidelity.toFixed(3) }}
+				/></strong
+			>
 			<span>
 				{fidelity === undefined
 					? 'run the protocol'
@@ -279,8 +366,8 @@
 	</div>
 	<Oscilloscope
 		channels={[
-			{ samples: scopeAlpha, name: 'α' },
-			{ samples: scopeBeta, name: 'β∠φ' }
+			{ samples: scopeAlpha, math: reading('teleport.scope.alpha', 'alpha') },
+			{ samples: scopeBeta, math: reading('teleport.scope.beta', 'beta at phase phi') }
 		]}
 		label="state phasor"
 	/>
@@ -288,7 +375,7 @@
 
 {#if hover}
 	<output class="math-hud" style={`transform: translate(${hover.x + 16}px, ${hover.y + 12}px)`}>
-		{hover.math}
+		<LiveMath id={hover.math.id} label={hover.math.label} values={hover.math.values} />
 	</output>
 {/if}
 

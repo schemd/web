@@ -17,6 +17,8 @@
 	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
+	import LiveMath from './LiveMath.svelte';
+	import { reading, type MathReading } from '$lib/simulation-math';
 
 	interface Props {
 		svg: string;
@@ -177,18 +179,37 @@
 		return () => cancelAnimationFrame(frame);
 	});
 
-	function probe(element: Element): string | undefined {
+	function probe(element: Element): MathReading | undefined {
 		const wire = delegatedWireSource(element);
 		if (wire === 'VIN.positive' || wire === 'VIN.negative') {
-			return `V_in = 1.000 V_pp @ ${formatSi(frequency, 'Hz')}`;
+			return reading(
+				'rc.probe.input',
+				`input is 1 volt peak-to-peak at ${formatSi(frequency, 'Hz')}`,
+				{ frequency: formatSi(frequency, 'Hz') }
+			);
 		}
 		if (wire === 'R1.out' || wire === 'VOUT.node') {
-			return `V_out = ${outputMagnitude.toFixed(3)} V_pp · ${attenuationDb.toFixed(1)} dB · φ ${(outputPhaseShift * 57.2958).toFixed(1)}°`;
+			return reading(
+				'rc.probe.output',
+				`output is ${outputMagnitude.toFixed(3)} volts peak-to-peak`,
+				{
+					voltage: outputMagnitude.toFixed(3),
+					db: attenuationDb.toFixed(1),
+					phase: (outputPhaseShift * 57.2958).toFixed(1)
+				}
+			);
 		}
 		if (wire === 'C1.out') {
-			return faults.openCapacitor
-				? 'C branch OPEN (fault)'
-				: `I_C path · f_c = ${formatSi(cutoff, 'Hz')}`;
+			return reading(
+				'rc.probe.cap',
+				faults.openCapacitor
+					? 'capacitor branch open'
+					: `capacitor current path; cutoff ${formatSi(cutoff, 'Hz')}`,
+				{
+					state: faults.openCapacitor ? 'C branch OPEN (fault)' : 'I_C path',
+					cutoff: formatSi(cutoff, 'Hz')
+				}
+			);
 		}
 		return undefined;
 	}
@@ -200,11 +221,23 @@
 {#snippet controls()}
 	<div class="controls">
 		<label>
-			<span class="microlabel">R = {formatSi(resistance, 'Ω')}</span>
+			<span class="microlabel"
+				><LiveMath
+					id="rc.control.r"
+					label={`resistance ${formatSi(resistance, 'Ω')}`}
+					values={{ value: formatSi(resistance, 'Ω') }}
+				/></span
+			>
 			<input type="range" min="2" max="6" step="0.01" bind:value={logR} aria-label="Resistance" />
 		</label>
 		<label>
-			<span class="microlabel">C = {formatSi(capacitance, 'F')}</span>
+			<span class="microlabel"
+				><LiveMath
+					id="rc.control.c"
+					label={`capacitance ${formatSi(capacitance, 'F')}`}
+					values={{ value: formatSi(capacitance, 'F') }}
+				/></span
+			>
 			<input
 				type="range"
 				min="-9"
@@ -215,7 +248,13 @@
 			/>
 		</label>
 		<label>
-			<span class="microlabel">f = {formatSi(frequency, 'Hz')}</span>
+			<span class="microlabel"
+				><LiveMath
+					id="rc.control.f"
+					label={`frequency ${formatSi(frequency, 'Hz')}`}
+					values={{ value: formatSi(frequency, 'Hz') }}
+				/></span
+			>
 			<input
 				type="range"
 				min="1"
@@ -240,9 +279,27 @@
 
 {#snippet instruments()}
 	<div class="readouts">
-		<span class="readout">f_c = {formatSi(cutoff, 'Hz')}</span>
-		<span class="readout">|H| = {outputMagnitude.toFixed(3)} ({attenuationDb.toFixed(1)} dB)</span>
-		<span class="readout">φ = {(outputPhaseShift * 57.2958).toFixed(1)}°</span>
+		<span class="readout"
+			><LiveMath
+				id="rc.readout.fc"
+				label={`cutoff frequency ${formatSi(cutoff, 'Hz')}`}
+				values={{ value: formatSi(cutoff, 'Hz') }}
+			/></span
+		>
+		<span class="readout"
+			><LiveMath
+				id="rc.readout.h"
+				label={`magnitude ${outputMagnitude.toFixed(3)}, ${attenuationDb.toFixed(1)} decibels`}
+				values={{ magnitude: outputMagnitude.toFixed(3), db: attenuationDb.toFixed(1) }}
+			/></span
+		>
+		<span class="readout"
+			><LiveMath
+				id="rc.readout.phase"
+				label={`phase ${(outputPhaseShift * 57.2958).toFixed(1)} degrees`}
+				values={{ value: (outputPhaseShift * 57.2958).toFixed(1) }}
+			/></span
+		>
 	</div>
 	<figure class="bode cutoff-overlay" aria-label="Animated frequency response with cutoff marker">
 		<svg
@@ -278,18 +335,34 @@
 			/>
 			<!-- Live operating point at the stimulus frequency -->
 			<circle class="bode-op" cx={opX} cy={opY} r="3.5" />
-			<text class="bode-axis" x={PLOT_PAD} y={PLOT_H - 4}>10 Hz</text>
-			<text class="bode-axis end" x={PLOT_W - PLOT_PAD} y={PLOT_H - 4}>100 kHz</text>
-			<text class="bode-fc" x={Math.min(PLOT_W - 24, cutoffX + 3)} y={PLOT_PAD + 8}>f_c</text>
+			<foreignObject x={PLOT_PAD - 4} y={PLOT_H - 15} width="44" height="12"
+				><div class="bode-math"><LiveMath id="rc.axis.low" label="10 hertz" /></div></foreignObject
+			>
+			<foreignObject x={PLOT_W - PLOT_PAD - 54} y={PLOT_H - 15} width="58" height="12"
+				><div class="bode-math end">
+					<LiveMath id="rc.axis.high" label="100 kilohertz" />
+				</div></foreignObject
+			>
+			<foreignObject x={Math.min(PLOT_W - 34, cutoffX + 3)} y={PLOT_PAD} width="30" height="14"
+				><div class="bode-math fc">
+					<LiveMath id="rc.axis.fc" label="cutoff frequency" />
+				</div></foreignObject
+			>
 		</svg>
-		<figcaption class="microlabel">|H(jω)| · cutoff line damps as the pole falls</figcaption>
+		<figcaption class="microlabel">
+			<LiveMath
+				id="rc.caption.response"
+				label="magnitude response; cutoff line damps as the pole falls"
+			/>
+		</figcaption>
 	</figure>
 	<Oscilloscope
 		channels={[
-			{ samples: scopeIn, name: 'V_in' },
-			{ samples: scopeOut, name: 'V_out' }
+			{ samples: scopeIn, math: reading('rc.scope.vin', 'input voltage') },
+			{ samples: scopeOut, math: reading('rc.scope.vout', 'output voltage') }
 		]}
-		label="V_in vs V_out"
+		label="input versus output voltage"
+		labelMath={reading('rc.scope.compare', 'input versus output voltage')}
 	/>
 {/snippet}
 
@@ -331,6 +404,20 @@
 	.bode-bezel {
 		fill: none;
 		stroke: var(--line-strong);
+	}
+
+	.bode-math {
+		font-size: 7px;
+		color: var(--ink-faint);
+		white-space: nowrap;
+
+		&.end {
+			text-align: end;
+		}
+
+		&.fc {
+			color: var(--accent-2);
+		}
 	}
 
 	.bode-halfpower {
@@ -381,21 +468,6 @@
 		transition:
 			cx var(--dur-fast) var(--ease-precise),
 			cy var(--dur-fast) var(--ease-precise);
-	}
-
-	.bode-axis,
-	.bode-fc {
-		fill: var(--ink-faint);
-		font-family: var(--font-mono);
-		font-size: 7px;
-	}
-
-	.bode-axis.end {
-		text-anchor: end;
-	}
-
-	.bode-fc {
-		fill: var(--accent-2);
 	}
 
 	@keyframes cutoff-flow {

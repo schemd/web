@@ -14,6 +14,8 @@
 	import Oscilloscope from './Oscilloscope.svelte';
 	import PhasePortrait from './PhasePortrait.svelte';
 	import ProbeHud from './ProbeHud.svelte';
+	import LiveMath from './LiveMath.svelte';
+	import { reading, type MathReading } from '$lib/simulation-math';
 
 	interface Props {
 		svg: string;
@@ -216,19 +218,41 @@
 		return () => cancelAnimationFrame(frame);
 	});
 
-	function probe(element: Element): string | undefined {
+	function probe(element: Element): MathReading | undefined {
 		const wire = delegatedWireSource(element);
 		if (wire === 'X_NODE.node' || wire === 'X_PROBE.node')
-			return `x = v_C1 = ${trajectory[0].toFixed(4)} (normalized)`;
+			return reading(
+				'chua.probe.state',
+				`x equals capacitor one voltage ${trajectory[0].toFixed(4)} normalized`,
+				{ axis: 'x', physical: 'v_C1', value: trajectory[0].toFixed(4) }
+			);
 		if (wire === 'Y_NODE.node' || wire === 'Y_PROBE.node')
-			return `y = v_C2 = ${trajectory[1].toFixed(4)} (normalized)`;
-		if (wire === 'L1.out') return `z = i_L = ${trajectory[2].toFixed(4)} (normalized)`;
+			return reading(
+				'chua.probe.state',
+				`y equals capacitor two voltage ${trajectory[1].toFixed(4)} normalized`,
+				{ axis: 'y', physical: 'v_C2', value: trajectory[1].toFixed(4) }
+			);
+		if (wire === 'L1.out')
+			return reading(
+				'chua.probe.state',
+				`z equals inductor current ${trajectory[2].toFixed(4)} normalized`,
+				{ axis: 'z', physical: 'i_L', value: trajectory[2].toFixed(4) }
+			);
 		const id = delegatedNodeId(element);
 		if (id === 'NR')
-			return faults.bypassedNonlinearity
-				? 'g(v) BYPASSED — positive damping only'
-				: `g(v): m₀=${m0.toFixed(3)}, m₁=${m1.toFixed(3)}`;
-		if (id === 'R1') return `coupling gain α = ${alpha.toFixed(2)}`;
+			return reading(
+				'chua.probe.nonlinearity',
+				faults.bypassedNonlinearity ? 'nonlinearity bypassed' : 'piecewise-linear nonlinearity',
+				{
+					value: faults.bypassedNonlinearity ? 'BYPASSED' : nonlinearity(trajectory[0]).toFixed(4),
+					m0: m0.toFixed(3),
+					m1: m1.toFixed(3)
+				}
+			);
+		if (id === 'R1')
+			return reading('chua.probe.alpha', `coupling gain ${alpha.toFixed(2)}`, {
+				value: alpha.toFixed(2)
+			});
 		return undefined;
 	}
 </script>
@@ -240,45 +264,48 @@
 	<div class="intro">
 		<p>
 			Move the normalized coupling and inductor ratios across a bifurcation boundary. The shadow
-			trajectory begins only 10⁻⁵ away and estimates local divergence.
+			trajectory begins only <LiveMath
+				id="chua.shadow"
+				label="an initial separation of ten to the negative fifth"
+			/> away and estimates local divergence.
 		</p>
 	</div>
 	<div class="controls">
 		<label
-			><span class="microlabel">α = {alpha.toFixed(2)}</span><input
-				type="range"
-				min="7"
-				max="18"
-				step="0.02"
-				bind:value={alpha}
-			/></label
+			><span class="microlabel"
+				><LiveMath
+					id="chua.control.alpha"
+					label={`alpha ${alpha.toFixed(2)}`}
+					values={{ value: alpha.toFixed(2) }}
+				/></span
+			><input type="range" min="7" max="18" step="0.02" bind:value={alpha} /></label
 		>
 		<label
-			><span class="microlabel">β = {beta.toFixed(2)}</span><input
-				type="range"
-				min="18"
-				max="35"
-				step="0.05"
-				bind:value={beta}
-			/></label
+			><span class="microlabel"
+				><LiveMath
+					id="chua.control.beta"
+					label={`beta ${beta.toFixed(2)}`}
+					values={{ value: beta.toFixed(2) }}
+				/></span
+			><input type="range" min="18" max="35" step="0.05" bind:value={beta} /></label
 		>
 		<label
-			><span class="microlabel">m₀ = {m0.toFixed(3)}</span><input
-				type="range"
-				min="-1.5"
-				max="-0.8"
-				step="0.002"
-				bind:value={m0}
-			/></label
+			><span class="microlabel"
+				><LiveMath
+					id="chua.control.m0"
+					label={`m zero ${m0.toFixed(3)}`}
+					values={{ value: m0.toFixed(3) }}
+				/></span
+			><input type="range" min="-1.5" max="-0.8" step="0.002" bind:value={m0} /></label
 		>
 		<label
-			><span class="microlabel">time scale = {timeScale.toFixed(2)}×</span><input
-				type="range"
-				min="0.25"
-				max="2"
-				step="0.05"
-				bind:value={timeScale}
-			/></label
+			><span class="microlabel"
+				><LiveMath
+					id="chua.control.time"
+					label={`time scale ${timeScale.toFixed(2)} times`}
+					values={{ value: timeScale.toFixed(2) }}
+				/></span
+			><input type="range" min="0.25" max="2" step="0.05" bind:value={timeScale} /></label
 		>
 	</div>
 	<div class="button-row">
@@ -286,9 +313,14 @@
 			>{paused ? 'resume' : 'pause'}</button
 		>
 		<button type="button" class="btn" onclick={() => reset()}>reset orbit</button>
-		<button type="button" class="btn" onclick={perturb}>perturb 10⁻²</button>
+		<button type="button" class="btn" onclick={perturb}
+			><LiveMath id="chua.perturb" label="perturb by about ten to the negative second" /></button
+		>
 		<button type="button" class="btn" onclick={computeBifurcation} disabled={computingBif}>
-			{computingBif ? 'sweeping…' : 'sweep α → bifurcation'}
+			{#if computingBif}sweeping…{:else}<LiveMath
+					id="chua.sweep"
+					label="sweep alpha to produce the bifurcation diagram"
+				/>{/if}
 		</button>
 	</div>
 	<div class="switchboard">
@@ -320,12 +352,43 @@
 		<span class="microlabel">orbit classifier</span><strong>{regime}</strong>
 	</div>
 	<div class="readouts">
-		<span class="readout">x = {trajectory[0].toFixed(4)}</span>
-		<span class="readout">y = {trajectory[1].toFixed(4)}</span>
-		<span class="readout">z = {trajectory[2].toFixed(4)}</span>
-		<span class="readout">λ_local ≈ {lyapunov.toFixed(4)}</span>
+		<span class="readout"
+			><LiveMath
+				id="chua.readout.xyz"
+				label={`x ${trajectory[0].toFixed(4)}`}
+				values={{ axis: 'x', value: trajectory[0].toFixed(4) }}
+			/></span
+		>
+		<span class="readout"
+			><LiveMath
+				id="chua.readout.xyz"
+				label={`y ${trajectory[1].toFixed(4)}`}
+				values={{ axis: 'y', value: trajectory[1].toFixed(4) }}
+			/></span
+		>
+		<span class="readout"
+			><LiveMath
+				id="chua.readout.xyz"
+				label={`z ${trajectory[2].toFixed(4)}`}
+				values={{ axis: 'z', value: trajectory[2].toFixed(4) }}
+			/></span
+		>
+		<span class="readout"
+			><LiveMath
+				id="chua.readout.lyapunov"
+				label={`local Lyapunov exponent approximately ${lyapunov.toFixed(4)}`}
+				values={{ value: lyapunov.toFixed(4) }}
+			/></span
+		>
 	</div>
-	<PhasePortrait points={orbit} label="double-scroll phase portrait" xLabel="v_C1" yLabel="v_C2" />
+	<PhasePortrait
+		points={orbit}
+		label="double-scroll phase portrait"
+		xLabel="capacitor one voltage"
+		yLabel="capacitor two voltage"
+		xMath={reading('chua.scope.vc1', 'capacitor one voltage')}
+		yMath={reading('chua.scope.vc2', 'capacitor two voltage')}
+	/>
 	<figure class="bifurcation" aria-label="Bifurcation diagram: orbit maxima against α">
 		<svg viewBox="0 0 240 150" role="img" aria-label="Bifurcation diagram">
 			<rect class="bif-bezel" x="0.5" y="0.5" width="239" height="149" />
@@ -338,12 +401,18 @@
 				>
 			{/if}
 		</svg>
-		<figcaption class="microlabel">orbit maxima vs α ({BIF_MIN}–{BIF_MAX})</figcaption>
+		<figcaption class="microlabel">
+			<LiveMath
+				id="chua.caption.bifurcation"
+				label={`orbit maxima versus alpha from ${BIF_MIN} to ${BIF_MAX}`}
+				values={{ min: BIF_MIN, max: BIF_MAX }}
+			/>
+		</figcaption>
 	</figure>
 	<Oscilloscope
 		channels={[
-			{ samples: scopeX, name: 'v_C1' },
-			{ samples: scopeY, name: 'v_C2' }
+			{ samples: scopeX, math: reading('chua.scope.vc1', 'capacitor one voltage') },
+			{ samples: scopeY, math: reading('chua.scope.vc2', 'capacitor two voltage') }
 		]}
 		label="state traces"
 	/>

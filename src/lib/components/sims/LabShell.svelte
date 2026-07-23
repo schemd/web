@@ -28,21 +28,29 @@
 <div class="lab-shell">
 	<section class="region console" aria-label="Control console">
 		<p class="region-tag microlabel">control console</p>
-		<div class="region-body">
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex (keyboard-focusable scroll region) -->
+		<div class="region-body" role="region" aria-label="Scrollable control console" tabindex="0">
 			{@render controls()}
 		</div>
 	</section>
 
 	<section class="region testbed" aria-label="Test bed workspace">
 		<p class="region-tag microlabel">test bed · mode=full</p>
-		<div class="region-body">
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex (keyboard-focusable scroll region) -->
+		<div class="region-body" role="region" aria-label="Scrollable test bed" tabindex="0">
 			{@render canvas()}
 		</div>
 	</section>
 
 	<section class="region rack" aria-label="Instrumentation rack">
 		<p class="region-tag microlabel">instrumentation rack</p>
-		<div class="region-body">
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex (keyboard-focusable scroll region) -->
+		<div
+			class="region-body"
+			role="region"
+			aria-label="Scrollable instrumentation rack"
+			tabindex="0"
+		>
 			{@render instruments()}
 		</div>
 	</section>
@@ -75,6 +83,11 @@
 		display: grid;
 		gap: var(--space-3);
 		align-content: start;
+	}
+
+	.region-body:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: -2px;
 	}
 
 	/* Side rails stay locked to the viewport with their own overflow. */

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import type { MathReading } from '$lib/simulation-math';
+	import LiveMath from './LiveMath.svelte';
 	interface Point {
 		x: number;
 		y: number;
@@ -9,9 +11,18 @@
 		label?: string;
 		xLabel?: string;
 		yLabel?: string;
+		xMath?: MathReading;
+		yMath?: MathReading;
 	}
 
-	let { points, label = 'phase portrait', xLabel = 'x', yLabel = 'y' }: Props = $props();
+	let {
+		points,
+		label = 'phase portrait',
+		xLabel = 'x',
+		yLabel = 'y',
+		xMath,
+		yMath
+	}: Props = $props();
 
 	const SIZE = 180;
 	const PAD = 12;
@@ -43,9 +54,23 @@
 		<line class="axis" x1={SIZE / 2} x2={SIZE / 2} y1={PAD} y2={SIZE - PAD} />
 		<path class="orbit-glow" d={projected} />
 		<path class="orbit" d={projected} />
-		<text class="axis-label" x={SIZE - PAD} y={SIZE / 2 - 4}>{xLabel}</text>
-		<text class="axis-label" x={SIZE / 2 + 4} y={PAD}>{yLabel}</text>
 	</svg>
+	<div class="axis-legend">
+		<span
+			>x: {#if xMath}<LiveMath
+					id={xMath.id}
+					label={xMath.label}
+					values={xMath.values}
+				/>{:else}{xLabel}{/if}</span
+		>
+		<span
+			>y: {#if yMath}<LiveMath
+					id={yMath.id}
+					label={yMath.label}
+					values={yMath.values}
+				/>{:else}{yLabel}{/if}</span
+		>
+	</div>
 	<figcaption class="microlabel">{label}</figcaption>
 </figure>
 
@@ -91,9 +116,11 @@
 		filter: blur(1px);
 	}
 
-	.axis-label {
-		fill: var(--ink-faint);
+	.axis-legend {
+		display: flex;
+		gap: var(--space-3);
+		color: var(--ink-faint);
 		font-family: var(--font-mono);
-		font-size: 7px;
+		font-size: var(--text-2xs);
 	}
 </style>

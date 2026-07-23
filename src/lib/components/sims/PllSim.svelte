@@ -13,6 +13,8 @@
 	import LabShell from './LabShell.svelte';
 	import Oscilloscope from './Oscilloscope.svelte';
 	import ProbeHud from './ProbeHud.svelte';
+	import LiveMath from './LiveMath.svelte';
+	import { reading, type MathReading } from '$lib/simulation-math';
 
 	interface Props {
 		svg: string;
@@ -135,25 +137,53 @@
 		queueMicrotask(reacquire);
 	}
 
-	function probe(element: Element): string | undefined {
+	function probe(element: Element): MathReading | undefined {
 		const wire = delegatedWireSource(element);
 		if (wire === 'REF.out')
-			return faults.referenceLost
-				? 'reference clock LOST'
-				: `f_ref = ${referenceKilo.toFixed(2)} kHz`;
+			return reading(
+				'pll.probe.reference',
+				faults.referenceLost
+					? 'reference clock lost'
+					: `reference ${referenceKilo.toFixed(2)} kilohertz`,
+				{ value: faults.referenceLost ? 'reference lost' : `${referenceKilo.toFixed(2)} kHz` }
+			);
 		if (wire === 'PFD.up' || wire === 'PFD.down')
-			return `phase error = ${((phaseError * 180) / Math.PI).toFixed(2)}°`;
+			return reading(
+				'pll.readout.phase',
+				`phase error ${((phaseError * 180) / Math.PI).toFixed(2)} degrees`,
+				{ value: ((phaseError * 180) / Math.PI).toFixed(2) }
+			);
 		if (wire === 'VCTRL.node' || wire === 'RLP.out')
-			return `V_ctrl = ${controlVoltage.toFixed(3)} V`;
+			return reading('pll.readout.control', `control voltage ${controlVoltage.toFixed(3)} volts`, {
+				value: controlVoltage.toFixed(3)
+			});
 		if (wire === 'VCO.clk')
-			return `f_out = ${(vcoFrequency / 1e3).toFixed(3)} kHz · ${ppmError.toFixed(0)} ppm`;
+			return reading(
+				'pll.probe.output',
+				`output ${(vcoFrequency / 1e3).toFixed(3)} kilohertz, error ${ppmError.toFixed(0)} parts per million`,
+				{ frequency: (vcoFrequency / 1e3).toFixed(3), ppm: ppmError.toFixed(0) }
+			);
 		if (wire === 'DIV.fb')
-			return `feedback = ${(dividedFrequency / 1e3).toFixed(3)} kHz · ÷${divider}`;
+			return reading(
+				'pll.probe.feedback',
+				`feedback ${(dividedFrequency / 1e3).toFixed(3)} kilohertz divided by ${divider}`,
+				{ value: (dividedFrequency / 1e3).toFixed(3), divider }
+			);
 		const id = delegatedNodeId(element);
-		if (id === 'PFD') return `PFD · Δφ ${((phaseError * 180) / Math.PI).toFixed(2)}°`;
+		if (id === 'PFD')
+			return reading(
+				'pll.readout.phase',
+				`phase detector error ${((phaseError * 180) / Math.PI).toFixed(2)} degrees`,
+				{ value: ((phaseError * 180) / Math.PI).toFixed(2) }
+			);
 		if (id === 'VCO')
-			return `VCO · ${(vcoFrequency / 1e3).toFixed(3)} kHz @ ${controlVoltage.toFixed(2)} V`;
-		if (id === 'DIV') return `programmable divider N=${divider}`;
+			return reading(
+				'pll.probe.vco',
+				`VCO ${(vcoFrequency / 1e3).toFixed(3)} kilohertz at ${controlVoltage.toFixed(2)} volts`,
+				{ frequency: (vcoFrequency / 1e3).toFixed(3), voltage: controlVoltage.toFixed(2) }
+			);
+		if (id === 'DIV')
+			return reading('pll.probe.divider', `programmable divider ${divider}`, { value: divider });
 		return undefined;
 	}
 </script>
@@ -178,40 +208,40 @@
 	</div>
 	<div class="controls">
 		<label
-			><span class="microlabel">f_ref = {referenceKilo.toFixed(2)} kHz</span><input
-				type="range"
-				min="1"
-				max="20"
-				step="0.05"
-				bind:value={referenceKilo}
-			/></label
+			><span class="microlabel"
+				><LiveMath
+					id="pll.control.ref"
+					label={`reference frequency ${referenceKilo.toFixed(2)} kilohertz`}
+					values={{ value: referenceKilo.toFixed(2) }}
+				/></span
+			><input type="range" min="1" max="20" step="0.05" bind:value={referenceKilo} /></label
 		>
 		<label
-			><span class="microlabel">feedback N = {divider}</span><input
-				type="range"
-				min="2"
-				max="64"
-				step="1"
-				bind:value={divider}
-			/></label
+			><span class="microlabel"
+				><LiveMath
+					id="pll.control.n"
+					label={`feedback divider ${divider}`}
+					values={{ value: divider }}
+				/></span
+			><input type="range" min="2" max="64" step="1" bind:value={divider} /></label
 		>
 		<label
-			><span class="microlabel">loop BW = {bandwidthKilo.toFixed(2)} kHz</span><input
-				type="range"
-				min="0.2"
-				max="8"
-				step="0.05"
-				bind:value={bandwidthKilo}
-			/></label
+			><span class="microlabel"
+				><LiveMath
+					id="pll.control.bw"
+					label={`loop bandwidth ${bandwidthKilo.toFixed(2)} kilohertz`}
+					values={{ value: bandwidthKilo.toFixed(2) }}
+				/></span
+			><input type="range" min="0.2" max="8" step="0.05" bind:value={bandwidthKilo} /></label
 		>
 		<label
-			><span class="microlabel">ζ = {damping.toFixed(2)}</span><input
-				type="range"
-				min="0.25"
-				max="1.6"
-				step="0.01"
-				bind:value={damping}
-			/></label
+			><span class="microlabel"
+				><LiveMath
+					id="pll.control.zeta"
+					label={`damping ratio ${damping.toFixed(2)}`}
+					values={{ value: damping.toFixed(2) }}
+				/></span
+			><input type="range" min="0.25" max="1.6" step="0.01" bind:value={damping} /></label
 		>
 	</div>
 	<button type="button" class="btn btn-solid" onclick={reacquire}>force reacquisition</button>
@@ -240,18 +270,54 @@
 		<div><span class="microlabel">loop state</span><strong>{lockState}</strong></div>
 	</div>
 	<div class="readouts">
-		<span class="readout">f_target = {(targetFrequency / 1e3).toFixed(3)} kHz</span>
-		<span class="readout">f_vco = {(vcoFrequency / 1e3).toFixed(3)} kHz</span>
-		<span class="readout">error = {ppmError.toFixed(1)} ppm</span>
-		<span class="readout">Δφ = {((phaseError * 180) / Math.PI).toFixed(2)}°</span>
-		<span class="readout">V_ctrl = {controlVoltage.toFixed(3)} V</span>
-		<span class="readout">cycle slips = {cycleSlips}</span>
+		<span class="readout"
+			><LiveMath
+				id="pll.readout.target"
+				label={`target frequency ${(targetFrequency / 1e3).toFixed(3)} kilohertz`}
+				values={{ value: (targetFrequency / 1e3).toFixed(3) }}
+			/></span
+		>
+		<span class="readout"
+			><LiveMath
+				id="pll.readout.vco"
+				label={`VCO frequency ${(vcoFrequency / 1e3).toFixed(3)} kilohertz`}
+				values={{ value: (vcoFrequency / 1e3).toFixed(3) }}
+			/></span
+		>
+		<span class="readout"
+			><LiveMath
+				id="pll.readout.error"
+				label={`frequency error ${ppmError.toFixed(1)} parts per million`}
+				values={{ value: ppmError.toFixed(1) }}
+			/></span
+		>
+		<span class="readout"
+			><LiveMath
+				id="pll.readout.phase"
+				label={`phase error ${((phaseError * 180) / Math.PI).toFixed(2)} degrees`}
+				values={{ value: ((phaseError * 180) / Math.PI).toFixed(2) }}
+			/></span
+		>
+		<span class="readout"
+			><LiveMath
+				id="pll.readout.control"
+				label={`control voltage ${controlVoltage.toFixed(3)} volts`}
+				values={{ value: controlVoltage.toFixed(3) }}
+			/></span
+		>
+		<span class="readout"
+			><LiveMath
+				id="pll.readout.slips"
+				label={`${cycleSlips} cycle slips`}
+				values={{ value: cycleSlips }}
+			/></span
+		>
 	</div>
 	<Oscilloscope
 		channels={[
 			{ samples: scopePhase, name: 'phase' },
-			{ samples: scopeControl, name: 'V_ctrl' },
-			{ samples: scopeFrequency, name: 'Δf' }
+			{ samples: scopeControl, math: reading('pll.scope.vctrl', 'control voltage') },
+			{ samples: scopeFrequency, math: reading('pll.scope.df', 'frequency difference') }
 		]}
 		label="loop acquisition"
 	/>
