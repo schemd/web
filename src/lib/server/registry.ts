@@ -57,6 +57,10 @@ const FETCH_TIMEOUT_MS = 6_000;
  * Documentation lines are discovered separately from content folders.
  */
 const RELEASE_NOTES: Readonly<Record<string, { unpackedSize?: number; notes?: string }>> = {
+	'0.3.4': {
+		notes:
+			'Connectivity became a first-class artifact. `buildNetlist` returns the nodes, nets, and edges behind a validated document, `verifyNetlist` checks seven design rules against them — shorted supply rails, conflicting bus widths, mixed signal domains, unconnected components, duplicate connections, contended digital drivers, disconnected subcircuits — and `inspectSchematic` does both. Orthogonal routing resolves obstacle participation once per route instead of once per segment query, and every component sheds the duplicated label paint it used to carry.'
+	},
 	'0.3.3': {
 		notes:
 			'CNOT is now an intrinsic two-track controlled-X gate: the control rail enters at `in1` and leaves unchanged at `out1`, while the target rail enters at `in2` and leaves at `out2`. The renderer preserves both quantum tracks through one compact symbol, the compiler rejects missing or oversubscribed rails, legacy `control`/`target` aliases remain accepted, and the website examples and simulation timelines use the canonical indexed ports.'

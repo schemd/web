@@ -5,7 +5,7 @@
     "": {
       "name": "schemd-web",
       "dependencies": {
-        "@schemd/core": "^0.3.3",
+        "@schemd/core": "0.3.4",
         "katex": "^0.18.1",
         "marked": "^18.0.7",
       },
@@ -192,7 +192,7 @@
 
     "@rollup/rollup-win32-x64-msvc": ["@rollup/rollup-win32-x64-msvc@4.62.2", "", { "os": "win32", "cpu": "x64" }, "sha512-BfzEnDJOt9T8M989/lA37EcJgat01wLRnoi5dQf3QzOH7jzpqTAzdDbVfRljVr5r+jzKqpbHeyOfAaXxAd0PAA=="],
 
-    "@schemd/core": ["@schemd/core@0.3.3", "", {}, "sha512-n41oB1EOzj2Cc+kP4oB0FvZ2nn5Ag0hhmVAxEralzXe4lGhqyJIRnvIzMn4TJU2Rk5i5Nb98so7TFj/MVbHyfg=="],
+    "@schemd/core": ["@schemd/core@0.3.4", "", {}, "sha512-0RR/qezbEjQyABONUML8DaVJe5Hb/floZMQXgvKgKY+cQPbHBB1LyIRMF3M25JLdu5KHj2pz0DwuyPKdPEHIcg=="],
 
     "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
 

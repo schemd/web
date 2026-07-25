@@ -15,7 +15,7 @@
  * field, so a diagram compiled locally is byte-identical to the same diagram
  * compiled on the server — shared links and embeds must not drift.
  */
-import type { SchematicSourceMap } from '@schemd/core';
+import type { SchematicDiagnostic, SchematicNetlist, SchematicSourceMap } from '@schemd/core';
 
 export interface CompileRequest {
 	readonly source: string;
@@ -82,6 +82,61 @@ function normalize(request: CompileRequest): CompileRequest | undefined {
 		title: title.replace(/"/g, '').trim() || 'Playground schematic',
 		mode
 	};
+}
+
+/**
+ * Compile *and* inspect in the browser.
+ *
+ * The review route needs the picture and the topology behind it; doing both
+ * from one parse keeps them describing the same document.
+ *
+ * @returns SVG, netlist, and design-rule diagnostics, or a failure — and
+ * `undefined` when this browser cannot compile locally.
+ */
+export async function inspectInBrowser(
+	request: CompileRequest
+): Promise<
+	| {
+			readonly ok: true;
+			readonly svg: string;
+			readonly netlist: SchematicNetlist;
+			readonly diagnostics: readonly SchematicDiagnostic[];
+	  }
+	| CompileFailure
+	| undefined
+> {
+	const core = await loadCore();
+	if (!core) return undefined;
+
+	const normalized = normalize(request);
+	if (!normalized) return { ok: false, message: 'Malformed compile request.', line: undefined };
+
+	const {
+		parseSchematic,
+		parseSchematicFence,
+		renderSchematic,
+		inspectSchematic,
+		SchematicSyntaxError
+	} = core;
+	try {
+		const fence = parseSchematicFence(
+			`schemd bounds="${normalized.width}x${normalized.height}" title="${normalized.title}"`
+		);
+		if (!fence) return { ok: false, message: 'Malformed compile request.', line: undefined };
+		const document = parseSchematic(normalized.source, fence);
+		const svg = renderSchematic(document, {
+			...fence,
+			mode: normalized.mode as Parameters<typeof renderSchematic>[1]['mode'],
+			idPrefix: 'review'
+		});
+		const { netlist, diagnostics } = inspectSchematic(document);
+		return { ok: true, svg, netlist, diagnostics };
+	} catch (failure) {
+		if (failure instanceof SchematicSyntaxError) {
+			return { ok: false, message: failure.message, line: failure.line };
+		}
+		return { ok: false, message: 'Inspection failed unexpectedly.', line: undefined };
+	}
 }
 
 /**

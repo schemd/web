@@ -13,6 +13,14 @@ interface ManifestEntry {
 const CLIENT_ROOT = join(process.cwd(), '.svelte-kit/output/client');
 const MANIFEST_PATH = join(CLIENT_ROOT, '.vite/manifest.json');
 const MAX_SINGLE_JS_GZIP = 22 * 1024;
+/*
+ * The compiler is the one chunk allowed to be large, because it is the one
+ * chunk nobody downloads unless they open the playground. It must stay lazily
+ * imported and off every other route's critical path — the budget below checks
+ * exactly that, rather than trusting a size number on its own.
+ */
+const COMPILER_MODULE = 'node_modules/@schemd/core/dist/index.js';
+const MAX_COMPILER_JS_GZIP = 34 * 1024;
 const MAX_ALL_JS_GZIP = 180 * 1024;
 const MAX_SIMULATION_SHELL_RAW = 20 * 1024;
 const MAX_MODERN_MATH_FONTS = 320 * 1024;
@@ -44,16 +52,39 @@ const javascript = [...new Set(Object.values(manifest).map((entry) => entry.file
 	file.endsWith('.js')
 );
 
+const compilerEntry = manifest[COMPILER_MODULE];
+assertBudget(compilerEntry, `${COMPILER_MODULE} is no longer in the client manifest`);
+assertBudget(
+	compilerEntry.isDynamicEntry,
+	'the schemd compiler is no longer a dynamic entry; the playground would ship it to every route'
+);
+const staticallyImportedBy = Object.entries(manifest)
+	.filter(([, entry]) => entry.imports?.includes(COMPILER_MODULE))
+	.map(([key]) => key);
+assertBudget(
+	staticallyImportedBy.length === 0,
+	`the schemd compiler is statically imported by ${staticallyImportedBy.join(', ')}`
+);
+
 let allJavascriptGzip = 0;
+let compilerGzip = 0;
 let largestJavascript = { file: '', gzip: 0 };
 for (const file of javascript) {
 	const compressed = gzipSync(await readFile(join(CLIENT_ROOT, file))).byteLength;
 	allJavascriptGzip += compressed;
+	if (file === compilerEntry.file) {
+		compilerGzip = compressed;
+		continue;
+	}
 	if (compressed > largestJavascript.gzip) largestJavascript = { file, gzip: compressed };
 }
 assertBudget(
 	largestJavascript.gzip <= MAX_SINGLE_JS_GZIP,
 	`${largestJavascript.file} is ${kib(largestJavascript.gzip)} gzip; limit ${kib(MAX_SINGLE_JS_GZIP)}`
+);
+assertBudget(
+	compilerGzip <= MAX_COMPILER_JS_GZIP,
+	`the lazily loaded compiler chunk is ${kib(compilerGzip)} gzip; limit ${kib(MAX_COMPILER_JS_GZIP)}`
 );
 assertBudget(
 	allJavascriptGzip <= MAX_ALL_JS_GZIP,
@@ -103,7 +134,8 @@ console.info(
 	[
 		`Build budgets passed: ${kib(clientBytes)} client output`,
 		`${kib(allJavascriptGzip)} total JS gzip`,
-		`${kib(largestJavascript.gzip)} largest JS chunk`,
+		`${kib(largestJavascript.gzip)} largest eager JS chunk`,
+		`${kib(compilerGzip)} lazy compiler chunk`,
 		`${simulationImports.length} lazy simulation chunks`,
 		`${kib(modernMathFontBytes)} WOFF2 math fonts`
 	].join(' · ')
