@@ -16,7 +16,9 @@ A.out -> R.in #blue [ortho]
 R.out -> B.in #emerald [ortho]
 ```
 
-The 0.3.2 release measures **101,672 B minified**, **30,348 B gzip**, **68,779 B npm tarball**, and **298,854 B unpacked**. The hard compiler gate is 30,720 B gzip, enforced by `bun run size`.
+Two budgets are enforced, because there are two honest answers to how big schemd is. Tree-shaken to `compileSchematic` — what a host that only compiles actually ships — the 0.3.5 release measures **103,084 B minified** and **30,806 B gzip** against a 31,744 B gate. The whole public entry with nothing shaken away, which is what registry size tools report because they bundle every export, measures **110,542 B minified** and **33,572 B gzip** against a 34,816 B gate. On disk that is a **75,637 B npm tarball** and **324,306 B unpacked**. Both gates run in `bun run size`.
+
+Tracking only the first figure is how the published number moved 1.8 KB in 0.3.4 with nothing noticing.
 
 <!-- /schemd-section -->
 
@@ -33,5 +35,7 @@ N.out1 -> Q.in #emerald [digital line]
 ```
 
 On Node.js 26.4.0 / Apple Silicon, Phase 5 warm medians were 0.202 ms for the representative RC compile, 6.583 ms for 512 rotated components, and 2.982 ms for a dense 16×16 crossing fixture. Their SVG outputs were 6,019 B, 279,243 B, and 44,604 B. A repeated-symbol fixture emitted 1,353 B for one resistor and 35,463 B for 64 labeled mixed-orientation instances.
+
+Absolute milliseconds belong to the machine that measured them, so read the ratios. Routing cost in 0.3.5 falls to **0.53×** on the dense crossing fixture and **0.40×** on a 512-component chain that wires one connection per component. The gap between those two is the point: the old obstacle index was keyed on x alone, so a column held every obstacle stacked along it and cost grew with the document's height rather than with what a segment could actually hit. Documents whose connection count grows with their component count gained most; a sparse document was already cheap and is unchanged. Run `bun run benchmark` to get the numbers for your own hardware.
 
 <!-- /schemd-section -->
