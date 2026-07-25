@@ -1,5 +1,8 @@
 <!-- schemd-doc: id=component-reference; label=Component API; title=Use every 0.3 primitive deliberately; summary=Exhaustive families, variants, options, semantic ports, and canonical orientations.; category=Author diagrams; order=40 -->
 
+<!-- schemd-expect-page: unconnected-component, disconnected-subcircuit -->
+<!-- A reference shows each primitive in isolation; wiring every example would obscure the symbol it demonstrates. -->
+
 Every direction-sensitive family defaults to `orientation=right`. `junction` and other rotationally symmetric nodes reject the option. Aliases remain accepted for compatibility, but the port names below are the stable names emitted in full-mode metadata.
 
 <!-- schemd-section: id=electrical; eyebrow=01 / Electrical; title=Sources, connectivity, switching, and instruments; example-title=Typed analog signal chain -->

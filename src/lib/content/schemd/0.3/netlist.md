@@ -47,6 +47,8 @@ Diagnostics carry a code you can assert against, a severity, the subjects involv
 
 The diagram below ties the supply straight to ground through a shared net name. It renders — the geometry is legal — but it does not pass:
 
+<!-- schemd-expect: shorted-supply -->
+
 ```schemd bounds="900x400" title="A shorted rail"
 source:V1 "AC" at (110, 150) #blue [type=voltage-ac]
 resistor:R1 "1 k\Omega" at (390, 150) #amber
@@ -69,6 +71,8 @@ A checker that cries wolf is worse than no checker, so each rule is deliberately
 A source's `negative` terminal sharing a node with ground is the return path of nearly every circuit ever drawn — so only two _rails_ on one net count as a short, never a rail and a return. Two analog terminals sharing a node is ordinary topology, not contention — so `multiple-drivers` applies to digital domains only. A component with unused ports is normal; only a component that takes part in no connection at all is worth mentioning.
 
 The diagram below is contention, because the domain says so:
+
+<!-- schemd-expect: multiple-drivers -->
 
 ```schemd bounds="900x460" title="Two outputs, one node"
 port:A "A" at (110, 150) #blue

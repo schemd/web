@@ -1,5 +1,8 @@
 <!-- schemd-doc: id=roadmap; label=Roadmap; title=Ship 0.3 without hiding its boundaries; summary=What is complete, what remains release metadata, and what is explicitly out of scope.; category=Contribute; order=110 -->
 
+<!-- schemd-expect-page: unconnected-component, disconnected-subcircuit -->
+<!-- Roadmap illustrations sketch shape, not a complete circuit. -->
+
 <!-- schemd-section: id=complete; eyebrow=01 / 0.3; title=Primitive and rotation work is complete; example-title=Cross-domain 0.3 specimen -->
 
 Quarter-turn transforms, typed primitive families, polished `qgate`, semantic ports, bus-width checks, expanded UML relations, deterministic fuzzing, exact resource ceilings, and 100% core coverage are complete.

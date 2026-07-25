@@ -1,5 +1,8 @@
 <!-- schemd-doc: id=math-labels; label=Math labels; title=Keep engineering labels crisp; summary=Use bounded micro-math scripts and Unicode without a browser text-measurement pass.; category=Author diagrams; order=30 -->
 
+<!-- schemd-expect-page: unconnected-component, disconnected-subcircuit -->
+<!-- These examples demonstrate label typography, not connectivity. -->
+
 <!-- schemd-section: id=scripts; eyebrow=01 / Text; title=Compose scripts without baseline drift; example-title=Rotated components with upright math -->
 
 Labels support grouped `_` and `^` scripts plus bounded commands such as `\Omega`, `\pi`, `\theta`, and `\infty`. Every generated `tspan` carries an explicit baseline correction; component rotation never rotates the outer label.

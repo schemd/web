@@ -1,5 +1,8 @@
 <!-- schemd-doc: id=performance; label=Performance; title=Keep compilation bounded and measurable; summary=Use fixed resource ceilings, deterministic caches, and exact output-byte regressions.; category=Operate safely; order=100 -->
 
+<!-- schemd-expect-page: unconnected-component, disconnected-subcircuit -->
+<!-- These examples measure geometry throughput, not connectivity. -->
+
 <!-- schemd-section: id=budgets; eyebrow=01 / Limits; title=Reject hostile work before allocation; example-title=Bounded rotated route -->
 
 The compiler caps source length, components, connections, wire crossings, UML rows, pins, label lengths, routing states, and SVG output. Orthogonal routing remains bounded even when rotated AABBs create tight corridors.

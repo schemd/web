@@ -1,5 +1,8 @@
 <!-- schemd-doc: id=grammar; label=Grammar; title=Use the strict 0.3 grammar; summary=Place typed nodes, rotate canonical geometry, and connect validated semantic ports.; category=Author diagrams; order=20 -->
 
+<!-- schemd-expect-page: unconnected-component, disconnected-subcircuit -->
+<!-- Grammar fragments show one declaration at a time. -->
+
 <!-- schemd-section: id=declarations; eyebrow=01 / Nodes; title=Declare one bounded component per line; example-title=Four exact orientations -->
 
 The declaration grammar is `kind:ID "label" at (x, y) #color [options]`. Identifiers are stable source-map keys. Unknown, duplicated, or kind-incompatible options fail with a one-based line diagnostic.

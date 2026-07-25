@@ -93,9 +93,7 @@ function normalize(request: CompileRequest): CompileRequest | undefined {
  * @returns SVG, netlist, and design-rule diagnostics, or a failure — and
  * `undefined` when this browser cannot compile locally.
  */
-export async function inspectInBrowser(
-	request: CompileRequest
-): Promise<
+export async function inspectInBrowser(request: CompileRequest): Promise<
 	| {
 			readonly ok: true;
 			readonly svg: string;
