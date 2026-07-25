@@ -35,16 +35,16 @@ const KIND_GROUPS = [
 /** Default workspace program shown before the visitor types or shares. */
 export const _PLAYGROUND_SAMPLE = `// Native first-order RC filter — no UML junction workaround.
 source:VIN "V_{in}" at (80, 120) #blue [type=voltage-ac]
-resistor:R1 "10 k\\Omega" at (260, 120) #amber
+resistor:R1 "10 kΩ" at (260, 120) #amber
 junction:VOUT "output node" at (440, 120) #cyan
-capacitor:C1 "100 nF" at (440, 250) #cyan [orientation=down]
+capacitor:C1 "100 nF" at (440, 242) #cyan [orientation=down]
 ground:GND "0 V" at (220, 350) #slate
 port:OUT "V_{out}" at (680, 120) #emerald
 
 VIN.positive -> R1.in #blue [line]
 VIN.negative -> GND.in #slate [ortho]
 R1.out -> VOUT.node #amber [line]
-VOUT.node -> C1.in #cyan [ortho]
+VOUT.node -> C1.in #cyan [line]
 C1.out -> GND.in #cyan [ortho]
 VOUT.node -> OUT.in #emerald [line marker-end=arrow]`;
 
