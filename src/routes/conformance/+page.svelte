@@ -103,6 +103,28 @@
 		</section>
 	{/if}
 
+	<section aria-labelledby="service-heading">
+		<h2 id="service-heading">Check your own diagrams</h2>
+		<p class="lede">
+			The same rules run as a service, so a project can gate its own build without installing the
+			compiler. Nothing is stored and no source leaves the request.
+		</p>
+		<pre class="usage"><code
+				>curl -X POST https://schemd.johnowolabiidogun.dev/api/verify \
+  -H 'content-type: application/json' \
+  -d '&lbrace;"source": "source:V1 \"AC\" at (100,150) #blue [type=voltage-ac]\n..."&rbrace;'
+
+&lbrace;"ok": false, "counts": &lbrace;"errors": 1, "warnings": 0, "notes": 0&rbrace;,
+ "diagnostics": [&lbrace;"code": "shorted-supply", "severity": "error", "line": 4, ...&rbrace;]&rbrace;</code
+			></pre>
+		<p class="lede">
+			<code>ok</code> answers the only question a build asks. The badge below reports this corpus:
+		</p>
+		<p>
+			<img src="/badge/conformance.svg" alt="schemd conformance badge" width="228" height="20" />
+		</p>
+	</section>
+
 	<section aria-labelledby="flagged-heading">
 		<h2 id="flagged-heading">Flagged diagrams</h2>
 		{#if clean}
@@ -280,5 +302,14 @@
 	.clean {
 		margin: 0;
 		color: var(--accent);
+	}
+	.usage {
+		overflow-x: auto;
+		margin: var(--space-3) 0;
+		padding: var(--space-3);
+		border: 1px solid var(--line);
+		background: var(--bg-inset);
+		font-size: 0.82rem;
+		line-height: 1.6;
 	}
 </style>
