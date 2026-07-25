@@ -190,7 +190,7 @@ test('mobile docs expose an accessible index and compiled-example bottom sheet',
 	await expect(page.getByRole('complementary', { name: /Compiled example/ })).toHaveClass(/open/);
 });
 
-test('every public page shell contains wide content without mobile document overflow', async ({
+test('every public page shell fits the mobile viewport without horizontal scroll', async ({
 	page
 }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
@@ -209,14 +209,59 @@ test('every public page shell contains wide content without mobile document over
 
 	for (const route of routes) {
 		await page.goto(route);
-		await expect(page.locator('main')).toBeVisible();
-		const widths = await page.evaluate(() => ({
-			viewport: document.documentElement.clientWidth,
-			page: document.documentElement.scrollWidth
-		}));
-		expect(widths, `${route} must not create document-level horizontal scroll`).toEqual({
-			viewport: 390,
-			page: 390
+		await expect(page.locator('#main')).toBeVisible();
+		/*
+		 * Measured element by element, not from documentElement.scrollWidth.
+		 *
+		 * The shell sets `overflow-x: clip` on html and body, so the document
+		 * can never report a scrolling area wider than the viewport — a
+		 * scrollWidth assertion passes even with a 600px element on the page,
+		 * which is how this guard silently stopped guarding. Clipping also made
+		 * the old equality fail from the other side: headless Linux reported a
+		 * 380px area inside a 390px viewport, and a shell that leaves ten pixels
+		 * unused is not a layout bug.
+		 *
+		 * What matters on a phone is that nothing is cut off, so ask each
+		 * element whether it stayed inside the viewport.
+		 */
+		const escapes = await page.evaluate(() => {
+			const viewport = document.documentElement.clientWidth;
+			const scrollsSideways = (element: Element) => {
+				const overflowX = getComputedStyle(element).overflowX;
+				return overflowX === 'auto' || overflowX === 'scroll';
+			};
+			const escaped: string[] = [];
+			for (const element of document.querySelectorAll('body *')) {
+				const box = element.getBoundingClientRect();
+				if (box.width === 0 || box.height === 0) continue;
+				if (box.left >= -1 && box.right <= viewport + 1) continue;
+				/*
+				 * KaTeX ships a screen-reader-only MathML twin of every formula
+				 * that lays out at its unwrapped width, and an SVG clips to its
+				 * own viewBox. Neither is visible overflow.
+				 */
+				if (element.closest('.katex-mathml') || element.parentElement?.closest('svg')) continue;
+				/* Wide content is fine once something above it can scroll. */
+				let ancestor = element.parentElement;
+				let scrollable = false;
+				while (ancestor && ancestor !== document.body) {
+					if (scrollsSideways(ancestor)) {
+						scrollable = true;
+						break;
+					}
+					ancestor = ancestor.parentElement;
+				}
+				if (scrollable) continue;
+				const classes = element.getAttribute('class')?.trim().split(/\s+/)[0];
+				escaped.push(
+					`${element.tagName.toLowerCase()}${classes ? `.${classes}` : ''} spans ${Math.round(box.left)}–${Math.round(box.right)}px`
+				);
+			}
+			return { viewport, escaped };
 		});
+		expect(
+			escapes.escaped,
+			`${route} must keep every element within the ${escapes.viewport}px viewport or inside a horizontal scroll container`
+		).toEqual([]);
 	}
 });
