@@ -83,8 +83,13 @@ describe('versioned registry and documentation', () => {
 	test('keeps complete, distinct current and historical line corpora', () => {
 		const current = docManifest(LATEST_DOCUMENTED_VERSION);
 		const historical = docManifest('0.2');
-		expect(current.map(({ slug }) => slug)).toEqual(historical.map(({ slug }) => slug));
-		expect(current).toHaveLength(11);
+		/* The current line must still document everything the historical line
+		   did; it may document more, because a release can add an API the older
+		   line never had (0.3.4 added the netlist). */
+		const currentSlugs = current.map(({ slug }) => slug);
+		for (const { slug } of historical) expect(currentSlugs).toContain(slug);
+		expect(new Set(currentSlugs).size).toBe(current.length);
+		expect(current).toHaveLength(12);
 
 		for (const version of DOCUMENTATION_VERSIONS) {
 			for (const page of docManifest(version)) {

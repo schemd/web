@@ -746,6 +746,11 @@ pre.codeblock {
 	*::after {
 		animation-duration: 0.01ms !important;
 		transition-duration: 0.01ms !important;
+		/* Collapsing only the duration still left staggered reveals waiting out
+		   their delay at opacity 0 — motion the visitor asked not to see, and a
+		   half-faded colour for anything auditing contrast. */
+		animation-delay: 0ms !important;
+		transition-delay: 0ms !important;
 	}
 }
 
