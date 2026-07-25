@@ -6,6 +6,7 @@
 	import { page } from '$app/state';
 	import WorkspaceShell from '$lib/components/WorkspaceShell.svelte';
 	import CodeEditor from '$lib/components/CodeEditor.svelte';
+	import { compileInBrowser, prefetchCompiler } from '$lib/compile-client';
 	import {
 		decodeWorkspaceState,
 		encodeWorkspaceState,
@@ -21,6 +22,8 @@
 
 	/* ---------- Workspace state ---------- */
 	const params = browser ? page.url.searchParams : undefined;
+	/* Fetch the compiler while the page is still painting, not on first keystroke. */
+	if (browser) prefetchCompiler();
 	const MODES = WORKSPACE_OUTPUT_MODES;
 	const shared = params?.get('code') ?? null;
 	function initialSource(): string {
@@ -105,6 +108,10 @@
 		};
 	}
 
+	/* One frame is enough for a local compile; the endpoint fallback keeps the
+	   old cadence only because it pays for a round trip. */
+	const COMPILE_DEBOUNCE_MS = 24;
+
 	let result = $state<CompileState>({ svg: '' });
 	let compiling = $state(false);
 	let caretLine = $state(0);
@@ -112,7 +119,13 @@
 	let previewHost = $state<HTMLElement | undefined>();
 	let compileGeneration = 0;
 
-	/* ---------- Debounced server compilation ---------- */
+	/* ---------- Debounced compilation ----------
+	 * The compiler runs in this tab whenever the browser can load it: the
+	 * endpoint runs the very same installed engine, so a round trip per
+	 * keystroke bought latency and server CPU and nothing else. The endpoint
+	 * remains the fallback, and the debounce shortens to roughly one frame when
+	 * compiling locally — a sub-millisecond compile needs no waiting.
+	 */
 	$effect(() => {
 		const payload = {
 			source,
@@ -126,14 +139,19 @@
 		compiling = true;
 		const timer = setTimeout(async () => {
 			try {
-				const response = await fetch('/api/compile', {
-					method: 'POST',
-					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify(payload),
-					signal: controller.signal
-				});
+				const local = await compileInBrowser(payload);
 				if (generation !== compileGeneration) return;
-				const body: unknown = await response.json();
+				const body: unknown =
+					local ??
+					(await (
+						await fetch('/api/compile', {
+							method: 'POST',
+							headers: { 'content-type': 'application/json' },
+							body: JSON.stringify(payload),
+							signal: controller.signal
+						})
+					).json());
+				if (generation !== compileGeneration) return;
 				const record = isRecord(body) ? body : {};
 				if (record['ok'] === true) {
 					const raw = isRecord(record['metrics']) ? record['metrics'] : {};
@@ -168,7 +186,7 @@
 			} finally {
 				if (generation === compileGeneration) compiling = false;
 			}
-		}, 220);
+		}, COMPILE_DEBOUNCE_MS);
 		return () => {
 			clearTimeout(timer);
 			controller.abort();
@@ -572,6 +590,11 @@
 			</div>
 			<CodeEditor
 				bind:value={source}
+				vocabulary={{
+					kinds: data.kindGroups.flatMap((group) => group.kinds),
+					colors: data.colors,
+					orientations: data.orientations
+				}}
 				{mappedLine}
 				errorLine={result.error?.line !== undefined ? result.error.line - 1 : undefined}
 				oncaretline={(line) => (caretLine = line)}
