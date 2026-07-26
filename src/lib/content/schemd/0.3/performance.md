@@ -16,7 +16,9 @@ A.out -> R.in #blue [ortho]
 R.out -> B.in #emerald [ortho]
 ```
 
-Two budgets are enforced, because there are two honest answers to how big schemd is. Tree-shaken to `compileSchematic` — what a host that only compiles actually ships — the 0.3.5 release measures **103,084 B minified** and **30,806 B gzip** against a 31,744 B gate. The whole public entry with nothing shaken away, which is what registry size tools report because they bundle every export, measures **110,542 B minified** and **33,572 B gzip** against a 34,816 B gate. On disk that is a **75,637 B npm tarball** and **324,306 B unpacked**. Both gates run in `bun run size`.
+Two budgets are enforced, because there are two honest answers to how big schemd is. Tree-shaken to `compileSchematic` — what a host that only compiles actually ships — the 0.3.6 release measures **103,084 B minified** and **30,806 B gzip** against a 31,744 B gate. The whole public entry with nothing shaken away, which is what registry size tools report because they bundle every export, measures **110,542 B minified** and **33,572 B gzip** against a 34,816 B gate. On disk that is a **77,670 B npm tarball** and **330,916 B unpacked**. Both gates run in `bun run size`.
+
+Neither gzip figure moved in 0.3.6 even though the release adds a module: `@schemd/core/describe` sits outside the package entry, so nothing that only compiles can reach it. The tarball grew by the two files it ships.
 
 Tracking only the first figure is how the published number moved 1.8 KB in 0.3.4 with nothing noticing.
 

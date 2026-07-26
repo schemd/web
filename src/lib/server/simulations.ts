@@ -12,6 +12,7 @@
  */
 import { compileSchematic, parseSchematicFence } from '@schemd/core';
 import katex from 'katex';
+import { RC_FILTER_BOUNDS, RC_FILTER_SOURCE } from '$lib/diagrams';
 
 /**
  * Pre-render a LaTeX governing model to static KaTeX HTML at module load.
@@ -197,20 +198,8 @@ function adderSource(): { source: string; width: number; height: number } {
 	return { source: lines.join('\n'), width: 1080, height: top + bits * rowHeight + 60 };
 }
 
-export const RC_SOURCE = `// Native first-order RC filter — no UML junction workaround.
-source:VIN "V_{in}" at (80, 120) #blue [type=voltage-ac]
-resistor:R1 "10 kΩ" at (260, 120) #amber
-junction:VOUT "output node" at (440, 120) #cyan
-capacitor:C1 "100 nF" at (440, 242) #cyan [orientation=down]
-ground:GND "0 V" at (220, 350) #slate
-port:OUT "V_{out}" at (680, 120) #emerald
-
-VIN.positive -> R1.in #blue [line]
-VIN.negative -> GND.in #slate [ortho]
-R1.out -> VOUT.node #amber [line]
-VOUT.node -> C1.in #cyan [line]
-C1.out -> GND.in #cyan [ortho]
-VOUT.node -> OUT.in #emerald [line marker-end=arrow]`;
+/** Re-exported so existing importers keep one name for one diagram. */
+export const RC_SOURCE = RC_FILTER_SOURCE;
 
 const BELL_SOURCE = `// Bell-state preparation: H then CNOT
 prepare:Q0 "q_0 = |0⟩" at (80, 90) #blue
@@ -469,7 +458,7 @@ DIFF.o2 -> M2.in #amber [ortho]`;
 /** Bounds + generated DSL keyed by environment id. */
 const SOURCES: Record<string, { source: string; width: number; height: number }> = {
 	adder: adderSource(),
-	rc: { source: RC_SOURCE, width: 760, height: 440 },
+	rc: { source: RC_FILTER_SOURCE, ...RC_FILTER_BOUNDS },
 	bell: { source: BELL_SOURCE, width: 760, height: 300 },
 	timer: { source: TIMER_SOURCE, width: 700, height: 480 },
 	teleport: { source: TELEPORT_SOURCE, width: 1020, height: 400 },

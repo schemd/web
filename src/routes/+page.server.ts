@@ -2,6 +2,7 @@ import type { PageServerLoad } from './$types';
 import { compileSchematic, parseSchematicFence, SCHEMATIC_LIMITS } from '@schemd/core';
 import { getRegistry } from '$lib/server/registry';
 import { highlightSourceHtml } from '$lib/tokenizer';
+import { RC_FILTER_BOUNDS, RC_FILTER_SOURCE } from '$lib/diagrams';
 
 /** One compiled hero specimen — proof the same grammar spans every domain. */
 interface HeroSpec {
@@ -17,21 +18,8 @@ export const _HERO_SPECS: readonly HeroSpec[] = [
 		id: 'circuit',
 		domain: 'Analog',
 		title: 'Mixed-signal input stage',
-		bounds: '760x440',
-		source: `// Native first-order RC filter — no UML junction workaround.
-source:VIN "V_{in}" at (80, 120) #blue [type=voltage-ac]
-resistor:R1 "10 kΩ" at (260, 120) #amber
-junction:VOUT "output node" at (440, 120) #cyan
-capacitor:C1 "100 nF" at (440, 242) #cyan [orientation=down]
-ground:GND "0 V" at (220, 350) #slate
-port:OUT "V_{out}" at (680, 120) #emerald
-
-VIN.positive -> R1.in #blue [line]
-VIN.negative -> GND.in #slate [ortho]
-R1.out -> VOUT.node #amber [line]
-VOUT.node -> C1.in #cyan [line]
-C1.out -> GND.in #cyan [ortho]
-VOUT.node -> OUT.in #emerald [line marker-end=arrow]`
+		bounds: `${RC_FILTER_BOUNDS.width}x${RC_FILTER_BOUNDS.height}`,
+		source: RC_FILTER_SOURCE
 	},
 	{
 		id: 'logic',

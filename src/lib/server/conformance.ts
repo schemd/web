@@ -19,6 +19,7 @@ import {
 } from '@schemd/core';
 import { encodeWorkspaceState } from '$lib/state-uri';
 import { latestRawSources } from './versions';
+import { fencedDiagrams } from '$lib/schemd-fence';
 
 /**
  * Documentation deliberately contains diagrams that break rules — a page that
@@ -70,8 +71,6 @@ export interface ConformanceReport {
 	}[];
 }
 
-const SCHEMD_FENCE = /```(schemd[^\n]*)\n([\s\S]*?)\n```/g;
-
 const docSlug = (path: string): string => path.split('/').pop()!.replace(/\.md$/, '');
 
 /** Worst severity wins: an error outranks a warning outranks a note. */
@@ -104,13 +103,11 @@ export function loadConformance(): ConformanceReport {
 				match[1]!.split(',').map((code) => code.trim())
 			)
 		);
-		let index = 0;
-		for (const match of raw.matchAll(SCHEMD_FENCE)) {
-			const fence = parseSchematicFence(match[1]!.trim());
+		for (const { spec, source, offset, ordinal } of fencedDiagrams(raw)) {
+			const fence = parseSchematicFence(spec);
 			if (!fence) continue;
-			const source = match[2]!.trim();
-			index += 1;
-			const preamble = raw.slice(0, match.index ?? 0);
+			const index = ordinal;
+			const preamble = raw.slice(0, offset);
 			const fenceExpected = new Set([
 				...pageExpected,
 				...(FENCE_EXPECT.exec(preamble.trimEnd())?.[1]

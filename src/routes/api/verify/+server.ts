@@ -11,7 +11,13 @@
  */
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { clientAddress, consumeRateLimit, readLimitedJson } from '$lib/server/request-guard';
+import {
+	clientAddress,
+	consumeRateLimit,
+	NO_STORE,
+	rateLimitHeaders,
+	readLimitedJson
+} from '$lib/server/request-guard';
 import {
 	inspectSchematic,
 	parseSchematic,
@@ -76,7 +82,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 			{ ok: false, error: 'rate-limited', message: 'Verification rate limit exceeded.' },
 			{
 				status: 429,
-				headers: { 'cache-control': 'no-store', 'retry-after': String(rate.retryAfterSeconds) }
+				headers: rateLimitHeaders(rate.retryAfterSeconds)
 			}
 		);
 	}
@@ -85,14 +91,14 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 	if (!body.ok) {
 		return json(
 			{ ok: false, error: 'malformed', message: body.message },
-			{ status: body.status, headers: { 'cache-control': 'no-store' } }
+			{ status: body.status, headers: NO_STORE }
 		);
 	}
 	const parsed = parseRequest(body.value);
 	if (!parsed) {
 		return json(
 			{ ok: false, error: 'malformed', message: 'Malformed verify request.' },
-			{ status: 400, headers: { 'cache-control': 'no-store' } }
+			{ status: 400, headers: NO_STORE }
 		);
 	}
 
@@ -113,7 +119,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 				},
 				rules: SCHEMATIC_RULES
 			},
-			{ headers: { 'cache-control': 'no-store' } }
+			{ headers: NO_STORE }
 		);
 	} catch (failure) {
 		/* A document that does not compile cannot be checked; say which line. */
@@ -127,12 +133,12 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 					counts: { errors: 1, warnings: 0, notes: 0 },
 					diagnostics: []
 				},
-				{ status: 422, headers: { 'cache-control': 'no-store' } }
+				{ status: 422, headers: NO_STORE }
 			);
 		}
 		return json(
 			{ ok: false, error: 'internal', message: 'Verification failed unexpectedly.' },
-			{ status: 500, headers: { 'cache-control': 'no-store' } }
+			{ status: 500, headers: NO_STORE }
 		);
 	}
 };

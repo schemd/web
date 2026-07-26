@@ -12,6 +12,7 @@ import { Marked } from 'marked';
 import { compileSchematic, parseSchematicFence, SchematicSyntaxError } from '@schemd/core';
 import { highlightSourceHtml } from '$lib/tokenizer';
 import mathExtension from './math-extension';
+import { schemdFencePattern } from '$lib/schemd-fence';
 
 /** One `h2` navigation section extracted while rendering. */
 export interface DocSection {
@@ -72,7 +73,6 @@ marked.use({
 
 const DOC_META = /<!--\s*schemd-doc:\s*([\s\S]*?)-->/;
 const SECTION = /<!--\s*schemd-section:\s*([\s\S]*?)-->([\s\S]*?)<!--\s*\/schemd-section\s*-->/g;
-const SCHEMD_FENCE = /```(schemd[^\n]*)\n([\s\S]*?)\n```/g;
 
 /** Parse a `k=v; k=v` directive body into a lookup. */
 function parseAttrs(raw: string): Record<string, string> {
@@ -141,7 +141,7 @@ function extractSchemdFences(
 ): FenceExtraction {
 	const examples: DocExample[] = [];
 	const figures = new Map<string, string>();
-	const markdown = body.replace(SCHEMD_FENCE, (whole, info: string, code: string) => {
+	const markdown = body.replace(schemdFencePattern(), (whole, info: string, code: string) => {
 		const fence = parseSchematicFence(info.trim());
 		if (!fence) return whole;
 		counter.value += 1;

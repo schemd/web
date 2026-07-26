@@ -6,6 +6,7 @@
 import { compileSchematic, parseSchematicFence } from '@schemd/core';
 import { encodeWorkspaceState } from '$lib/state-uri';
 import { latestRawSources } from './versions';
+import { fencedDiagrams } from '$lib/schemd-fence';
 
 export interface GalleryItem {
 	readonly id: string;
@@ -18,7 +19,6 @@ export interface GalleryItem {
 	readonly height: number;
 }
 
-const SCHEMD_FENCE = /```(schemd[^\n]*)\n([\s\S]*?)\n```/g;
 const BOUNDS = /bounds="(\d+)x(\d+)"/;
 
 /** Always build the gallery from the latest documented corpus. */
@@ -38,16 +38,13 @@ export function loadGallery(): readonly GalleryItem[] {
 	for (const [path, raw] of Object.entries(docSources)) {
 		const slug = docSlug(path);
 		if (slug === 'tone1' || slug === 'tone2') continue;
-		let index = 0;
-		for (const match of raw.matchAll(SCHEMD_FENCE)) {
-			const fence = parseSchematicFence(match[1]!.trim());
+		for (const { spec, source, ordinal } of fencedDiagrams(raw)) {
+			const fence = parseSchematicFence(spec);
 			if (!fence) continue;
-			const source = match[2]!.trim();
-			index += 1;
-			const id = `${slug}-${index}`;
+			const id = `${slug}-${ordinal}`;
 			try {
 				const compiled = compileSchematic(source, { ...fence, mode: 'default', idPrefix: id });
-				const bounds = BOUNDS.exec(match[1]!);
+				const bounds = BOUNDS.exec(spec);
 				items.push({
 					id,
 					title: fence.title,

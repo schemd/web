@@ -4,19 +4,11 @@
  * `schemd` fences in the docs corpus, so when 0.3.0 adds a primitive it appears
  * here automatically — uncovered until an example demonstrates it.
  */
-import {
-	PASSIVE_KINDS,
-	ANALOG_KINDS,
-	ELECTRICAL_COMPONENT_KINDS,
-	CLASSICAL_GATE_KINDS,
-	DIGITAL_COMPONENT_KINDS,
-	QUANTUM_GATE_KINDS,
-	QUANTUM_SPECIAL_KINDS,
-	UML_COMPONENT_KINDS,
-	COMPONENT_KINDS
-} from '@schemd/core';
+import { COMPONENT_KINDS } from '@schemd/core';
 import { latestRawSources } from './versions';
 import { COMPONENT_CATALOG } from './component-catalog';
+import { KIND_GROUPS } from './kinds';
+import { fencedDiagrams } from '$lib/schemd-fence';
 
 /** Coverage for one component kind. */
 export interface KindCoverage {
@@ -43,21 +35,10 @@ export interface LanguageCoverage {
 	readonly examples: number;
 }
 
-const CATEGORIES: readonly { readonly label: string; readonly kinds: readonly string[] }[] = [
-	{ label: 'passive', kinds: PASSIVE_KINDS },
-	{ label: 'analog', kinds: ANALOG_KINDS },
-	{ label: 'electrical', kinds: ELECTRICAL_COMPONENT_KINDS },
-	{ label: 'logic', kinds: CLASSICAL_GATE_KINDS },
-	{ label: 'digital', kinds: DIGITAL_COMPONENT_KINDS },
-	{ label: 'quantum', kinds: QUANTUM_GATE_KINDS },
-	{ label: 'quantum systems', kinds: QUANTUM_SPECIAL_KINDS },
-	{ label: 'uml', kinds: UML_COMPONENT_KINDS },
-	{ label: 'ic', kinds: ['ic'] }
-];
+const CATEGORIES = KIND_GROUPS;
 
 const KIND_SET = new Set<string>(COMPONENT_KINDS);
 const DECLARATION = /^([a-z][a-z-]*):/;
-const SCHEMD_FENCE = /```schemd[^\n]*\n([\s\S]*?)\n```/g;
 
 const CATALOG_BY_KIND = new Map(COMPONENT_CATALOG.map((entry) => [entry.kind, entry]));
 
@@ -81,9 +62,9 @@ export function languageCoverage(): LanguageCoverage {
 
 	for (const [path, raw] of Object.entries(latestRawSources())) {
 		if (path.endsWith('/tone1.md') || path.endsWith('/tone2.md')) continue;
-		for (const fence of raw.matchAll(SCHEMD_FENCE)) {
+		for (const { source } of fencedDiagrams(raw)) {
 			examples += 1;
-			for (const line of fence[1]!.split('\n')) {
+			for (const line of source.split('\n')) {
 				const match = DECLARATION.exec(line.trim());
 				const kind = match?.[1];
 				if (kind && KIND_SET.has(kind)) counts.set(kind, (counts.get(kind) ?? 0) + 1);

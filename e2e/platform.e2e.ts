@@ -1,13 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
-
-function failOnClientErrors(page: Page): void {
-	page.on('pageerror', (failure) => {
-		throw failure;
-	});
-	page.on('console', (message) => {
-		if (message.type() === 'error') throw new Error(`Browser console: ${message.text()}`);
-	});
-}
+import { expect, test } from '@playwright/test';
+import { failOnClientErrors } from './support';
 
 test.beforeEach(async ({ page }) => {
 	failOnClientErrors(page);

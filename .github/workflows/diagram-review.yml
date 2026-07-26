@@ -1,0 +1,75 @@
+name: Diagram review
+
+# Comments the *topological* delta of every schemd diagram a pull request
+# touches: which components appeared, which nets gained terminals, which
+# connections were rerouted. Pixels move for a hundred uninteresting reasons and
+# a reviewer cannot tell those apart by eye; topology is the reviewable part.
+#
+# This reports, it never gates. A fence that fails to compile already fails the
+# documentation build, and a diagram is allowed to change.
+
+on:
+  pull_request:
+    paths:
+      - '**/*.md'
+
+# One review per branch; a superseded run has nothing useful left to say.
+concurrency:
+  group: diagram-review-${{ github.head_ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The script diffs against the base, so it needs both sides.
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Compare diagram topology
+        run: |
+          node scripts/diagram-review.mjs "origin/${{ github.base_ref }}" --out=diagram-review.md
+          cat diagram-review.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment the delta
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { readFileSync } = require('node:fs');
+            const body = readFileSync('diagram-review.md', 'utf8');
+            const marker = '## Diagram review';
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            // Update the existing review in place rather than stacking a new
+            // comment on every push.
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number
+            });
+            const mine = comments.find(
+              (comment) => comment.user.type === 'Bot' && comment.body.startsWith(marker)
+            );
+            if (mine) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }

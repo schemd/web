@@ -110,3 +110,17 @@ export function clientAddress(getClientAddress: () => string): string {
 		return 'unknown';
 	}
 }
+
+/**
+ * Headers every uncacheable API answer carries.
+ *
+ * Each public endpoint spelled `{ 'cache-control': 'no-store' }` inline at
+ * every exit, which is the kind of detail that stays right until one branch
+ * quietly forgets it.
+ */
+export const NO_STORE = { 'cache-control': 'no-store' } as const;
+
+/** Headers for a rate-limited answer, including how long to wait. */
+export function rateLimitHeaders(retryAfterSeconds: number): Record<string, string> {
+	return { ...NO_STORE, 'retry-after': String(retryAfterSeconds) };
+}

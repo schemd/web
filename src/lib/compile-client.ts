@@ -11,46 +11,27 @@
  * for the compiler; the endpoint stays exactly as it was for SSR, embeds, and
  * as the fallback when a browser cannot load the module.
  *
- * Request normalization here mirrors `parseRequest` in `/api/compile` field for
- * field, so a diagram compiled locally is byte-identical to the same diagram
- * compiled on the server — shared links and embeds must not drift.
+ * Requests are normalized through the shared contract in `compile-contract.ts`,
+ * the same function `/api/compile` uses, so a diagram compiled locally is
+ * byte-identical to the same diagram compiled on the server — shared links and
+ * embeds must not drift.
  */
-import type { SchematicDiagnostic, SchematicNetlist, SchematicSourceMap } from '@schemd/core';
+import type { SchematicDiagnostic, SchematicNetlist } from '@schemd/core';
+import {
+	compileFenceSpec,
+	MALFORMED_COMPILE_REQUEST,
+	normalizeCompileRequest,
+	type CompileFailure,
+	type CompileOutcome,
+	type CompileRequest
+} from '$lib/compile-contract';
 
-export interface CompileRequest {
-	readonly source: string;
-	readonly width: number;
-	readonly height: number;
-	readonly title: string;
-	readonly mode: string;
-}
-
-export interface CompileSuccess {
-	readonly ok: true;
-	readonly svg: string;
-	readonly metrics: {
-		readonly sourceCharacters: number;
-		readonly components: number;
-		readonly connections: number;
-		readonly svgBytes: number;
-	};
-	readonly sourceMap: SchematicSourceMap;
-	readonly ms: number;
-}
-
-export interface CompileFailure {
-	readonly ok: false;
-	readonly message: string;
-	readonly line: number | undefined;
-}
-
-export type CompileOutcome = CompileSuccess | CompileFailure;
-
-/** Same ceilings the endpoint enforces before it reaches the compiler. */
-const MAX_SOURCE_CHARACTERS = 131_072;
-const MIN_DIMENSION = 64;
-const MAX_DIMENSION = 4096;
-const MAX_TITLE_CHARACTERS = 512;
+export type {
+	CompileFailure,
+	CompileOutcome,
+	CompileRequest,
+	CompileSuccess
+} from '$lib/compile-contract';
 
 type CoreModule = typeof import('@schemd/core');
 
@@ -65,23 +46,6 @@ function loadCore(): Promise<CoreModule | undefined> {
 /** Warm the module while the visitor is still reading, not while typing. */
 export function prefetchCompiler(): void {
 	void loadCore();
-}
-
-/** Reject anything the endpoint would reject, with the same normalization. */
-function normalize(request: CompileRequest): CompileRequest | undefined {
-	const { source, width, height, title, mode } = request;
-	if (typeof source !== 'string' || source.length > MAX_SOURCE_CHARACTERS) return undefined;
-	if (!Number.isFinite(width) || !Number.isFinite(height)) return undefined;
-	if (width < MIN_DIMENSION || width > MAX_DIMENSION) return undefined;
-	if (height < MIN_DIMENSION || height > MAX_DIMENSION) return undefined;
-	if (typeof title !== 'string' || title.length > MAX_TITLE_CHARACTERS) return undefined;
-	return {
-		source,
-		width: Math.trunc(width),
-		height: Math.trunc(height),
-		title: title.replace(/"/g, '').trim() || 'Playground schematic',
-		mode
-	};
 }
 
 /**
@@ -106,8 +70,8 @@ export async function inspectInBrowser(request: CompileRequest): Promise<
 	const core = await loadCore();
 	if (!core) return undefined;
 
-	const normalized = normalize(request);
-	if (!normalized) return { ok: false, message: 'Malformed compile request.', line: undefined };
+	const normalized = normalizeCompileRequest(request);
+	if (!normalized) return MALFORMED_COMPILE_REQUEST;
 
 	const {
 		parseSchematic,
@@ -117,16 +81,10 @@ export async function inspectInBrowser(request: CompileRequest): Promise<
 		SchematicSyntaxError
 	} = core;
 	try {
-		const fence = parseSchematicFence(
-			`schemd bounds="${normalized.width}x${normalized.height}" title="${normalized.title}"`
-		);
-		if (!fence) return { ok: false, message: 'Malformed compile request.', line: undefined };
+		const fence = parseSchematicFence(compileFenceSpec(normalized));
+		if (!fence) return MALFORMED_COMPILE_REQUEST;
 		const document = parseSchematic(normalized.source, fence);
-		const svg = renderSchematic(document, {
-			...fence,
-			mode: normalized.mode as Parameters<typeof renderSchematic>[1]['mode'],
-			idPrefix: 'review'
-		});
+		const svg = renderSchematic(document, { ...fence, mode: normalized.mode, idPrefix: 'review' });
 		const { netlist, diagnostics } = inspectSchematic(document);
 		return { ok: true, svg, netlist, diagnostics };
 	} catch (failure) {
@@ -149,23 +107,17 @@ export async function compileInBrowser(
 	const core = await loadCore();
 	if (!core) return undefined;
 
-	const normalized = normalize(request);
-	if (!normalized) return { ok: false, message: 'Malformed compile request.', line: undefined };
+	const normalized = normalizeCompileRequest(request);
+	if (!normalized) return MALFORMED_COMPILE_REQUEST;
 
-	const { compileSchematic, parseSchematicFence, SCHEMD_OUTPUT_MODES, SchematicSyntaxError } = core;
-	if (!SCHEMD_OUTPUT_MODES.some((mode) => mode === normalized.mode)) {
-		return { ok: false, message: 'Malformed compile request.', line: undefined };
-	}
-
+	const { compileSchematic, parseSchematicFence, SchematicSyntaxError } = core;
 	try {
-		const fence = parseSchematicFence(
-			`schemd bounds="${normalized.width}x${normalized.height}" title="${normalized.title}"`
-		);
-		if (!fence) return { ok: false, message: 'Malformed compile request.', line: undefined };
+		const fence = parseSchematicFence(compileFenceSpec(normalized));
+		if (!fence) return MALFORMED_COMPILE_REQUEST;
 		const startedAt = performance.now();
 		const compiled = compileSchematic(normalized.source, {
 			...fence,
-			mode: normalized.mode as Parameters<typeof compileSchematic>[1]['mode'],
+			mode: normalized.mode,
 			idPrefix: 'play'
 		});
 		return {

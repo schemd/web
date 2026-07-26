@@ -10,81 +10,32 @@
 import { json } from '@sveltejs/kit';
 import { createHash } from 'node:crypto';
 import type { RequestHandler } from './$types';
-import { clientAddress, consumeRateLimit, readLimitedJson } from '$lib/server/request-guard';
 import {
-	compileSchematic,
-	parseSchematicFence,
-	SCHEMD_OUTPUT_MODES,
-	SchematicSyntaxError,
-	type SchemdOutputMode,
-	type SchematicSourceMap
-} from '@schemd/core';
-
-interface CompileRequest {
-	readonly source: string;
-	readonly width: number;
-	readonly height: number;
-	readonly title: string;
-	readonly mode: SchemdOutputMode;
-}
-
-interface CompileSuccess {
-	readonly ok: true;
-	readonly svg: string;
-	readonly metrics: {
-		readonly sourceCharacters: number;
-		readonly components: number;
-		readonly connections: number;
-		readonly svgBytes: number;
-	};
-	readonly sourceMap: SchematicSourceMap;
-	readonly ms: number;
-}
-
-interface CompileFailure {
-	readonly ok: false;
-	readonly message: string;
-	readonly line: number | undefined;
-}
+	clientAddress,
+	consumeRateLimit,
+	NO_STORE,
+	rateLimitHeaders,
+	readLimitedJson
+} from '$lib/server/request-guard';
+import { compileSchematic, parseSchematicFence, SchematicSyntaxError } from '@schemd/core';
+import {
+	COMPILE_LIMITS,
+	compileFenceSpec,
+	normalizeCompileRequest,
+	type CompileFailure,
+	type CompileRequest,
+	type CompileSuccess
+} from '$lib/compile-contract';
 
 const MAX_CACHE_ENTRIES = 64;
 const MAX_CACHE_BYTES = 16 * 1024 * 1024;
-/* JSON escaping can nearly double an otherwise valid source payload. Keep the
- * transport ceiling above the source ceiling without relaxing compiler limits. */
-const MAX_REQUEST_BYTES = 280 * 1024;
+const MAX_REQUEST_BYTES = COMPILE_LIMITS.maxRequestBytes;
 interface CacheEntry {
 	readonly value: CompileSuccess | CompileFailure;
 	readonly bytes: number;
 }
 const cache = new Map<string, CacheEntry>();
 let cacheBytes = 0;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null;
-}
-
-function isOutputMode(value: unknown): value is SchemdOutputMode {
-	return typeof value === 'string' && SCHEMD_OUTPUT_MODES.some((mode) => mode === value);
-}
-
-function parseRequest(body: unknown): CompileRequest | undefined {
-	if (!isRecord(body)) return undefined;
-	const candidate = body;
-	const { source, width, height, title, mode } = candidate;
-	if (typeof source !== 'string' || source.length > 131_072) return undefined;
-	if (typeof width !== 'number' || typeof height !== 'number') return undefined;
-	if (!Number.isFinite(width) || !Number.isFinite(height)) return undefined;
-	if (width < 64 || width > 4096 || height < 64 || height > 4096) return undefined;
-	if (typeof title !== 'string' || title.length > 512) return undefined;
-	if (!isOutputMode(mode)) return undefined;
-	return {
-		source,
-		width: Math.trunc(width),
-		height: Math.trunc(height),
-		title: title.replace(/"/g, '').trim() || 'Playground schematic',
-		mode
-	};
-}
 
 function requestKey(request: CompileRequest): string {
 	return createHash('sha256')
@@ -135,7 +86,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 			{ ok: false, message: 'Compile rate limit exceeded.', line: undefined },
 			{
 				status: 429,
-				headers: { 'cache-control': 'no-store', 'retry-after': String(rate.retryAfterSeconds) }
+				headers: rateLimitHeaders(rate.retryAfterSeconds)
 			}
 		);
 	}
@@ -144,14 +95,14 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 	if (!body.ok) {
 		return json(
 			{ ok: false, message: body.message, line: undefined },
-			{ status: body.status, headers: { 'cache-control': 'no-store' } }
+			{ status: body.status, headers: NO_STORE }
 		);
 	}
-	const parsed = parseRequest(body.value);
+	const parsed = normalizeCompileRequest(body.value);
 	if (!parsed) {
 		return json(
 			{ ok: false, message: 'Malformed compile request.', line: undefined },
-			{ status: 400, headers: { 'cache-control': 'no-store' } }
+			{ status: 400, headers: NO_STORE }
 		);
 	}
 
@@ -166,9 +117,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 	let result: CompileSuccess | CompileFailure;
 	const requestStartedAt = performance.now();
 	try {
-		const fence = parseSchematicFence(
-			`schemd bounds="${parsed.width}x${parsed.height}" title="${parsed.title}"`
-		);
+		const fence = parseSchematicFence(compileFenceSpec(parsed));
 		if (!fence) throw new SchematicSyntaxError('Unreachable: canonical fence.');
 		const startedAt = performance.now();
 		const compiled = compileSchematic(parsed.source, {
