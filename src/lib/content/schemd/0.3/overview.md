@@ -4,10 +4,10 @@
 
 <!-- schemd-section: id=install; eyebrow=01 / Install; title=Compile on the server; example-title=Native RC low-pass filter -->
 
-Install the exact release and compile without a DOM, Canvas, `getBBox()`, or browser layout:
+Install the latest release and compile without a DOM, Canvas, `getBBox()`, or browser layout:
 
 ```sh
-npm i @schemd/core@0.3.2
+npm i @schemd/core # or bun add @schemd/core or pnpm add @schemd/core or yarn add @schemd/core
 ```
 
 ```ts
