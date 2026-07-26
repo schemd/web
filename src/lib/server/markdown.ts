@@ -13,6 +13,7 @@ import { compileSchematic, parseSchematicFence, SchematicSyntaxError } from '@sc
 import { highlightSourceHtml } from '$lib/tokenizer';
 import mathExtension from './math-extension';
 import { schemdFencePattern } from '$lib/schemd-fence';
+import { describedDiagram } from './schemd-figure';
 
 /** One `h2` navigation section extracted while rendering. */
 export interface DocSection {
@@ -155,7 +156,7 @@ function extractSchemdFences(
 			title: exampleTitle || fence.title,
 			source,
 			sourceHtml,
-			svg: compiled.svg
+			svg: describedDiagram(compiled)
 		});
 		const placeholder = `%%SCHEMD_FENCE_${counter.value}%%`;
 		figures.set(

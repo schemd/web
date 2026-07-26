@@ -433,6 +433,19 @@ kbd {
 		padding: var(--space-1) var(--space-2);
 		border-block-start: 1px solid var(--line);
 	}
+
+	/* The sentence @schemd/core/describe derives from the diagram's topology.
+	   It reads as prose rather than a label, because assistive technology
+	   announces it as the figure's description. */
+	& figcaption .schematic-summary {
+		display: block;
+		margin-block-start: var(--space-1);
+		font-family: var(--font-sans);
+		font-size: var(--text-xs);
+		letter-spacing: normal;
+		text-transform: none;
+		color: var(--ink-mute);
+	}
 }
 
 /* ---------- Net-topology signal optics ----------

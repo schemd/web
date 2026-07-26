@@ -7,6 +7,7 @@ import { compileSchematic, parseSchematicFence } from '@schemd/core';
 import { encodeWorkspaceState } from '$lib/state-uri';
 import { latestRawSources } from './versions';
 import { fencedDiagrams } from '$lib/schemd-fence';
+import { describedDiagram } from './schemd-figure';
 
 export interface GalleryItem {
 	readonly id: string;
@@ -50,7 +51,7 @@ export function loadGallery(): readonly GalleryItem[] {
 					title: fence.title,
 					doc: slug,
 					source,
-					svg: compiled.svg,
+					svg: describedDiagram(compiled),
 					code: encodeWorkspaceState(source),
 					width: Number(bounds?.[1] ?? 640),
 					height: Number(bounds?.[2] ?? 320)
