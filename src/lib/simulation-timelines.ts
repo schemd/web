@@ -16,14 +16,6 @@ export interface RenderedSimulationStage extends SimulationStage {
 	readonly explanationHtml: string;
 }
 
-export const SIMULATION_TIMELINE_EVENT = 'schemd:simulation-stage';
-
-export interface SimulationTimelineDetail {
-	readonly simulationId: string;
-	readonly step: number;
-	readonly delayMs: number;
-}
-
 const stage = (
 	label: string,
 	explanation: string,
@@ -63,14 +55,16 @@ const adderStages: readonly SimulationStage[] = [
 			`Resolve bit ${bit}${bit === 0 ? ' (LSB)' : ''}`,
 			`A${bit} ⊕ B${bit} combines with the incoming carry; the generated and propagated carries then determine S${bit}.`,
 			[`X1_${bit}`, `N1_${bit}`, `X2_${bit}`, `N2_${bit}`, `O1_${bit}`, `S${bit}`],
-			[`X1_${bit}.out`, `N1_${bit}.out`, `N2_${bit}.out`, `X2_${bit}.out`, `O1_${bit}.out`]
+			/* Gate outputs are `out1` in the AST: `@schemd/core` 0.4 reports the
+			   canonical terminal an alias addresses, and `data-wire-source` follows it. */
+			[`X1_${bit}.out1`, `N1_${bit}.out1`, `N2_${bit}.out1`, `X2_${bit}.out1`, `O1_${bit}.out1`]
 		)
 	),
 	stage(
 		'Commit Cₒᵤₜ and Σ',
 		'Only after the eighth full-adder cell settles is the byte result and final carry committed.',
 		['O1_7', 'S7', 'COUT'],
-		['O1_7.out', 'X2_7.out']
+		['O1_7.out1', 'X2_7.out1']
 	)
 ];
 
@@ -119,8 +113,26 @@ const groverStages: readonly SimulationStage[] = [
 		['ORACLE.o0', 'ORACLE.o1', 'ORACLE.o2', 'DIFF.o0', 'DIFF.o1', 'DIFF.o2']
 	),
 	stage(
+		'Round 3 · oracle',
+		'The deliberately extra oracle pass starts rotating the state beyond the optimal two-round stopping point.',
+		['ORACLE'],
+		['H0.out', 'H1.out', 'H2.out', 'ORACLE.o0', 'ORACLE.o1', 'ORACLE.o2']
+	),
+	stage(
+		'Round 3 · mean',
+		'The reflection axis has moved with the amplified distribution; another pass no longer points toward certainty.',
+		['DIFF'],
+		['ORACLE.o0', 'ORACLE.o1', 'ORACLE.o2']
+	),
+	stage(
+		'Round 3 · over-rotation',
+		'The third inversion rotates amplitude away from the marked state, exposing why Grover iterations must stop near the optimum.',
+		['DIFF'],
+		['ORACLE.o0', 'ORACLE.o1', 'ORACLE.o2', 'DIFF.o0', 'DIFF.o1', 'DIFF.o2']
+	),
+	stage(
 		'Measurement',
-		'The register is sampled only after both Grover rounds have transformed the amplitudes.',
+		'The register is sampled after the deliberately over-rotated third round so its lower success probability is observable.',
 		['M0', 'M1', 'M2'],
 		['DIFF.o0', 'DIFF.o1', 'DIFF.o2']
 	)
@@ -199,7 +211,7 @@ export const SIMULATION_TIMELINES: Readonly<Record<string, readonly SimulationSt
 		),
 		stage(
 			'Drive and discharge',
-			'The output lights the LED while the discharge transistor resets the capacitor for the next cycle.',
+			'The output is high during the charge interval; after the upper threshold trips, it goes low while the discharge transistor returns Cₜ toward ⅓ Vcc.',
 			['LED', 'RL', 'G1'],
 			['U1.q', 'LED.cathode']
 		)
@@ -420,40 +432,22 @@ export const SIMULATION_TIMELINES: Readonly<Record<string, readonly SimulationSt
 	],
 	lfsr: [
 		stage(
-			'Clock the register',
-			'One clock edge samples every D input simultaneously.',
-			['CLK'],
-			['CLK.out']
-		),
-		stage(
 			'Form the feedback bit',
-			'The selected Q3 and Q4 taps XOR to produce the next entering bit.',
+			'Before the edge, the selected Q3 and Q4 taps XOR to establish the next D input.',
 			['Q3', 'Q4', 'FB'],
-			['Q3.q', 'Q4.q', 'FB.out']
+			['Q3.q', 'Q4.q', 'FB.out1']
 		),
 		stage(
-			'Load Q1',
-			'The feedback bit enters the first flip-flop.',
-			['Q1'],
-			['FB.out', 'CLK.out', 'Q1.q']
+			'Clock the register',
+			'One clock edge samples the prepared feedback and all four D inputs simultaneously.',
+			['CLK', 'FB'],
+			['FB.out1', 'CLK.out']
 		),
 		stage(
-			'Shift through Q2',
-			'The previous Q1 value advances one stage.',
-			['Q2'],
-			['Q1.q', 'CLK.out', 'Q2.q']
-		),
-		stage(
-			'Shift through Q3',
-			'The previous Q2 value advances and becomes a feedback tap.',
-			['Q3'],
-			['Q2.q', 'CLK.out', 'Q3.q']
-		),
-		stage(
-			'Shift through Q4',
-			'The previous Q3 value reaches the final stage and output tap.',
-			['Q4'],
-			['Q3.q', 'CLK.out', 'Q4.q']
+			'Commit all four stages',
+			'Q1 accepts feedback while Q2, Q3, and Q4 accept the previous neighboring bits on the same edge—not as a serial ripple.',
+			['Q1', 'Q2', 'Q3', 'Q4'],
+			['FB.out1', 'Q1.q', 'Q2.q', 'Q3.q', 'Q4.q', 'CLK.out']
 		),
 		stage(
 			'Emit the sequence bit',

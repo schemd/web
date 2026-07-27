@@ -6,12 +6,20 @@
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import VersionSelect from '$lib/components/VersionSelect.svelte';
 	import Telemetry from '$lib/components/Telemetry.svelte';
-	import { BLUEPRINT_MODES, BLUEPRINT_LABELS, setAudio, setBlueprint, ui } from '$lib/ui.svelte';
+	import {
+		BLUEPRINT_MODES,
+		BLUEPRINT_LABELS,
+		hydrateUiPreferences,
+		setAudio,
+		setBlueprint,
+		ui
+	} from '$lib/ui.svelte';
 	import { playTick } from '$lib/audio';
 
 	let { data, children }: LayoutProps = $props();
 	let clientReady = $state(false);
 	onMount(() => {
+		hydrateUiPreferences();
 		clientReady = true;
 	});
 

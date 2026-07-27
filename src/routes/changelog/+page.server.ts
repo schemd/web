@@ -52,13 +52,6 @@ export const load: PageServerLoad = async () => {
 		latest: registry.latest,
 		live: registry.live,
 		syncedAt: registry.syncedAt,
-		benchmark: runBenchmark(WEBSITE_CORE_VERSION),
-		releaseMetrics: {
-			minifiedBytes: 90_401,
-			gzipBytes: 26_512,
-			tarballBytes: 59_709,
-			unpackedBytes: 258_900,
-			gzipHeadroomBytes: 4_208
-		}
+		benchmark: runBenchmark(WEBSITE_CORE_VERSION)
 	};
 };

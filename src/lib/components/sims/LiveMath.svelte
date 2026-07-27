@@ -19,9 +19,33 @@
 	let host = $state<HTMLElement>();
 	let cachedHost: HTMLElement | undefined;
 	let cachedHtml: string | undefined;
-	let slotLeaves: Array<readonly [string, HTMLElement]> = [];
+	let slotLeaves: Array<
+		readonly [
+			name: string,
+			visual: HTMLElement,
+			accessible: Element | undefined,
+			monospace: boolean
+		]
+	> = [];
+	const accessibleLabel = $derived.by(() => {
+		const normalizedLabel = label.toLocaleLowerCase();
+		const omitted = Object.entries(values).filter(([, value]) => {
+			const rendered = String(value).trim();
+			return rendered !== '' && !normalizedLabel.includes(rendered.toLocaleLowerCase());
+		});
+		if (omitted.length === 0) return label;
+		return `${label}; live values ${omitted
+			.map(([name, value]) => `${name.replace(/[_-]+/g, ' ')} ${String(value)}`)
+			.join(', ')}`;
+	});
 
-	/* KaTeX owns the immutable structure; animation updates only slot text. */
+	/**
+	 * Bind each trusted HTML-data slot to the corresponding MathML placeholder.
+	 *
+	 * KaTeX deliberately applies `\htmlData` only to its visual tree. Matching
+	 * the static placeholder once lets high-frequency updates patch two text
+	 * leaves without shipping KaTeX or rebuilding either tree in the browser.
+	 */
 	$effect(() => {
 		const root = host;
 		const slots = values;
@@ -31,18 +55,44 @@
 			cachedHost = root;
 			cachedHtml = markup;
 			slotLeaves = [];
+			const usedMathLeaves: Element[] = [];
+			const mathCandidates = [
+				...root.querySelectorAll(
+					'.katex-mathml mi, .katex-mathml mn, .katex-mathml mtext, .katex-mathml mrow'
+				)
+			];
 			for (const element of root.querySelectorAll<HTMLElement>('[data-math-slot]')) {
 				const name = element.dataset.mathSlot;
 				if (name !== undefined) {
-					const candidates = element.querySelectorAll<HTMLElement>('.mord');
-					slotLeaves.push([name, candidates[candidates.length - 1] ?? element]);
+					const placeholder = element.textContent ?? '';
+					const accessible = mathCandidates
+						.filter(
+							(candidate) =>
+								!usedMathLeaves.includes(candidate) && candidate.textContent === placeholder
+						)
+						.sort((left, right) => left.childElementCount - right.childElementCount)[0];
+					if (accessible) {
+						accessible.setAttribute('data-math-slot', name);
+						usedMathLeaves.push(accessible);
+					}
+					slotLeaves.push([name, element, accessible, element.querySelector('.mathtt') !== null]);
 				}
 			}
 		}
-		for (const [name, leaf] of slotLeaves) {
+		for (const [name, visual, accessible, monospace] of slotLeaves) {
 			if (!(name in slots)) continue;
 			const value = String(slots[name]);
-			if (leaf.textContent !== value) leaf.textContent = value;
+			if (visual.textContent !== value) {
+				if (monospace) {
+					const leaf = document.createElement('span');
+					leaf.className = 'mord mathtt';
+					leaf.textContent = value;
+					visual.replaceChildren(leaf);
+				} else {
+					visual.textContent = value;
+				}
+			}
+			if (accessible && accessible.textContent !== value) accessible.textContent = value;
 		}
 	});
 </script>
@@ -51,7 +101,7 @@
 	bind:this={host}
 	class={['live-math', className]}
 	role="math"
-	aria-label={label}
+	aria-label={accessibleLabel}
 	data-math-id={id}
 	data-math-missing={html === undefined ? id : undefined}
 >
@@ -71,6 +121,10 @@
 
 	.live-math :global(.katex) {
 		font-size: 1em;
+	}
+
+	.live-math :global([data-math-slot]) {
+		font-family: var(--font-mono);
 	}
 
 	.math-fallback {

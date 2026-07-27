@@ -22,8 +22,11 @@ describe('standalone legacy route mapping', () => {
 
 describe('canonical docs-line mapping', () => {
 	test.each([
-		['/docs/0.3.2/grammar', `/docs/${LATEST_DOCUMENTED_VERSION}/grammar`],
-		['/docs/0.3.0', `/docs/${LATEST_DOCUMENTED_VERSION}`],
+		/* A patch snaps to *its own* line, not to the newest one — the whole point
+		   of keeping older corpora served. These read as `latest` only while 0.3
+		   was the newest line, which is why they are pinned to '0.3' now. */
+		['/docs/0.3.2/grammar', '/docs/0.3/grammar'],
+		['/docs/0.3.0', '/docs/0.3'],
 		['/docs/0.2.1/overview', `/docs/${OLDEST_DOCUMENTED_VERSION}/overview`],
 		['/docs/0.1.0/grammar', `/docs/${OLDEST_DOCUMENTED_VERSION}/grammar`],
 		['/docs/9.9.9/grammar', `/docs/${LATEST_DOCUMENTED_VERSION}/grammar`],
@@ -45,6 +48,7 @@ describe('response hardening', () => {
 		const response = applySecurityHeaders(new Response('ok'), true);
 		expect(response.headers.get('x-content-type-options')).toBe('nosniff');
 		expect(response.headers.get('permissions-policy')).toContain('camera=()');
+		expect(response.headers.get('referrer-policy')).toBe('origin');
 		expect(response.headers.get('cross-origin-opener-policy')).toBe('same-origin');
 		expect(response.headers.get('strict-transport-security')).toContain('includeSubDomains');
 		expect(response.headers.has('x-frame-options')).toBe(false);

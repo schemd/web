@@ -1,7 +1,17 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
+	import { onMount } from 'svelte';
 	import { playTick } from '$lib/audio';
 	import { ui } from '$lib/ui.svelte';
+	import {
+		SIMULATION_PROGRESS_EVENT,
+		browserSimulationProgressStorage,
+		completedLabCount,
+		emptySimulationProgress,
+		isLabComplete,
+		readSimulationProgress,
+		type SimulationProgress
+	} from '$lib/simulation-progress';
 	import 'katex/dist/katex.min.css';
 
 	let { data }: PageProps = $props();
@@ -17,6 +27,30 @@
 		environments.filter((environment) => environment.tier === 'Frontier').length
 	);
 	const domainCount = $derived(new Set(environments.map((environment) => environment.domain)).size);
+	const environmentIds = $derived(environments.map((environment) => environment.id));
+	let progress = $state<SimulationProgress>(emptySimulationProgress());
+	const completionCount = $derived(completedLabCount(progress, environmentIds));
+
+	function titleFor(id: string): string {
+		return environments.find((environment) => environment.id === id)?.title ?? id;
+	}
+
+	onMount(() => {
+		const storage = browserSimulationProgressStorage();
+		progress = readSimulationProgress(storage, data.version);
+		const refresh = (event: Event): void => {
+			if (event instanceof StorageEvent && event.key && !event.key.endsWith(`:${data.version}`)) {
+				return;
+			}
+			progress = readSimulationProgress(storage, data.version);
+		};
+		window.addEventListener('storage', refresh);
+		window.addEventListener(SIMULATION_PROGRESS_EVENT, refresh);
+		return () => {
+			window.removeEventListener('storage', refresh);
+			window.removeEventListener(SIMULATION_PROGRESS_EVENT, refresh);
+		};
+	});
 
 	const jsonLd = $derived(
 		JSON.stringify({
@@ -161,8 +195,11 @@
 
 	<div class="catalog-bar panel">
 		<div>
-			<span class="microlabel">experiment catalogue</span>
+			<span class="microlabel">recommended curriculum · local progress</span>
 			<p>{visibleEnvironments.length} of {environments.length} laboratories online</p>
+			<p class="completion-summary" role="status" aria-live="polite">
+				{completionCount} of {environments.length} experiments completed on this device
+			</p>
 		</div>
 		<div class="tier-filters" role="group" aria-label="Filter simulations by complexity tier">
 			{#each tiers as option (option)}
@@ -190,6 +227,18 @@
 						<h2>{environment.title}</h2>
 					</a>
 					<p class="tagline">{environment.tagline}</p>
+					<p class="curriculum-objective">
+						<span>Lab {environment.curriculum.order} · objective</span>
+						{environment.curriculum.objective}
+					</p>
+					<p class="curriculum-prerequisites">
+						{#if environment.curriculum.prerequisites.length === 0}
+							No prerequisite
+						{:else}
+							Builds on
+							{environment.curriculum.prerequisites.map(titleFor).join(', ')}
+						{/if}
+					</p>
 					<div class="model-line">
 						<span class:frontier={environment.tier === 'Frontier'}>{environment.tier}</span>
 						<code>{environment.model}</code>
@@ -206,15 +255,23 @@
 				</div>
 
 				<div class="lab-action">
-					<span class="fault-note" title="Switchboard fault this lab can inject"
-						>⚠ {environment.fault}</span
+					<span
+						class="completion-state"
+						class:is-complete={isLabComplete(progress, environment.id)}
 					>
+						{isLabComplete(progress, environment.id) ? '✓ completed locally' : '○ not completed'}
+					</span>
+					<span class="fault-note">diagnosis challenge · fault identity withheld</span>
 					<a
 						class="init"
 						href={`/simulations/${data.version}/${environment.id}`}
 						onmouseenter={() => ui.audio && playTick(520 + index * 30)}
 					>
-						<span class="init-label">Initialize module →</span>
+						<span class="init-label"
+							>{isLabComplete(progress, environment.id)
+								? 'Revisit experiment →'
+								: 'Initialize module →'}</span
+						>
 					</a>
 				</div>
 			</li>
@@ -483,6 +540,35 @@
 		color: var(--ink-mute);
 	}
 
+	.curriculum-objective,
+	.curriculum-prerequisites,
+	.completion-summary {
+		margin: 0;
+		font-size: var(--text-xs);
+		color: var(--ink-mute);
+	}
+
+	.curriculum-objective {
+		display: grid;
+		gap: 2px;
+		padding-inline-start: var(--space-3);
+		border-inline-start: 2px solid var(--accent);
+
+		& span {
+			font-family: var(--font-mono);
+			font-size: var(--text-2xs);
+			letter-spacing: var(--tracking-wide);
+			text-transform: uppercase;
+			color: var(--accent);
+		}
+	}
+
+	.curriculum-prerequisites {
+		font-family: var(--font-mono);
+		font-size: var(--text-2xs);
+		color: var(--ink-faint);
+	}
+
 	.model-line {
 		display: flex;
 		align-items: center;
@@ -561,7 +647,17 @@
 	.fault-note {
 		font-family: var(--font-mono);
 		font-size: var(--text-2xs);
-		color: var(--danger);
+		color: var(--ink-faint);
+	}
+
+	.completion-state {
+		font-family: var(--font-mono);
+		font-size: var(--text-2xs);
+		color: var(--ink-faint);
+
+		&.is-complete {
+			color: var(--ok);
+		}
 	}
 
 	/* A real link keeps catalogue navigation functional before hydration. */

@@ -16,7 +16,11 @@
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
+	import SimulationMotionControl from './SimulationMotionControl.svelte';
+	import { createSimulationMotion } from './simulation-motion.svelte';
 	import { reading, type MathReading } from '$lib/simulation-math';
+	import { teleportFidelity, teleportState } from '$lib/simulation-models';
+	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 
 	interface Props {
 		svg: string;
@@ -28,21 +32,25 @@
 	let theta = $state(Math.PI / 3);
 	let phi = $state(Math.PI / 4);
 	let step = $state(0);
-	let m1 = $state<number | undefined>();
-	let m2 = $state<number | undefined>();
+	let m1 = $state<0 | 1 | undefined>();
+	let m2 = $state<0 | 1 | undefined>();
 	let hover = $state<{ x: number; y: number; math: MathReading } | undefined>();
 	let faults = $state({ lostClassicalBit: false });
-	let playing = $state(false);
 	let scopeAlpha = $state<number[]>([]);
 	let scopeBeta = $state<number[]>([]);
 	let wavePhase = $state(0);
+	const motion = createSimulationMotion('Quantum-state phasor animation');
+	const timeline = useSimulationTimelineModel();
+	const playing = $derived(timeline.playing);
+	let measurementRunId = -1;
 
-	const alpha = $derived(Math.cos(theta / 2));
-	const betaMagnitude = $derived(Math.sin(theta / 2));
-	const betaReal = $derived(betaMagnitude * Math.cos(phi));
-	const betaImaginary = $derived(betaMagnitude * Math.sin(phi));
-	const p0 = $derived(alpha * alpha);
-	const p1 = $derived(betaMagnitude * betaMagnitude);
+	const quantumState = $derived(teleportState(theta, phi));
+	const alpha = $derived(quantumState.alpha);
+	const betaMagnitude = $derived(quantumState.betaMagnitude);
+	const betaReal = $derived(quantumState.betaReal);
+	const betaImaginary = $derived(quantumState.betaImaginary);
+	const p0 = $derived(quantumState.p0);
+	const p1 = $derived(quantumState.p1);
 
 	const betaText = $derived(
 		`${betaReal.toFixed(3)}${betaImaginary >= 0 ? ' + ' : ' − '}${Math.abs(betaImaginary).toFixed(3)}i`
@@ -65,13 +73,7 @@
 	 */
 	const fidelity = $derived.by(() => {
 		if (step < 4) return undefined;
-		if (!faults.lostClassicalBit) return 1;
-		const mm1 = m1 ?? 0;
-		const mm2 = m2 ?? 0;
-		if (mm1 === 0 && mm2 === 0) return 1; /* no correction needed */
-		if (mm1 === 1 && mm2 === 0) return (alpha * alpha - betaMagnitude * betaMagnitude) ** 2;
-		if (mm1 === 0 && mm2 === 1) return (2 * alpha * betaReal) ** 2;
-		return (2 * alpha * betaImaginary) ** 2; /* X·Z uncorrected */
+		return teleportFidelity(quantumState, m1 ?? 0, m2 ?? 0, faults.lostClassicalBit);
 	});
 	const corrupted = $derived(fidelity !== undefined && fidelity < 0.999);
 
@@ -80,33 +82,36 @@
 			reset();
 			return;
 		}
-		step += 1;
-		if (step === 3) {
+		timeline.command('next');
+	}
+
+	function reset(): void {
+		timeline.command('reset');
+	}
+
+	/*
+	 * The universal timeline owns the protocol clock. Measurement bits are sampled
+	 * once per causal run, retained across Previous/Next, and discarded only when
+	 * an input/fault change or Reset begins a new run.
+	 */
+	$effect(() => {
+		const runId = timeline.runId;
+		const next = Math.max(0, Math.min(STEPS.length - 1, timeline.step));
+		if (runId !== measurementRunId) {
+			measurementRunId = runId;
+			m1 = undefined;
+			m2 = undefined;
+		}
+		if (next >= 3 && m1 === undefined) {
 			/* Bell-measurement outcomes are uniform — each pair with P = 1/4. */
 			m1 = Math.random() < 0.5 ? 0 : 1;
 			m2 = Math.random() < 0.5 ? 0 : 1;
 		}
-		if (ui.audio) {
-			if (step === 5) playSuccess();
-			else playTick(480 + step * 60);
+		if (next !== step && ui.audio) {
+			if (next === 5) playSuccess();
+			else playTick(480 + next * 60);
 		}
-	}
-
-	function reset(): void {
-		step = 0;
-		m1 = undefined;
-		m2 = undefined;
-		playing = false;
-	}
-
-	/* Auto-playback: advance one step per beat, then latch at reconstruction. */
-	$effect(() => {
-		if (!playing) return;
-		const beat = setInterval(() => {
-			if (step >= 5) playing = false;
-			else advance();
-		}, 1100);
-		return () => clearInterval(beat);
+		step = next;
 	});
 
 	$effect(() => {
@@ -139,8 +144,11 @@
 
 	/* 60 FPS phasor scope: α reference (real) vs β at phase φ. */
 	$effect(() => {
+		if (motion.animationBlocked) return;
 		let frame = 0;
+		let stopped = false;
 		const loop = (): void => {
+			if (stopped) return;
 			wavePhase += 0.05;
 			const points = 96;
 			const nextAlpha: number[] = [];
@@ -155,7 +163,10 @@
 			frame = requestAnimationFrame(loop);
 		};
 		frame = requestAnimationFrame(loop);
-		return () => cancelAnimationFrame(frame);
+		return () => {
+			stopped = true;
+			cancelAnimationFrame(frame);
+		};
 	});
 
 	function gateMath(id: string): MathReading | undefined {
@@ -274,8 +285,7 @@
 				class="btn"
 				aria-pressed={playing}
 				onclick={() => {
-					if (step >= 5) reset();
-					playing = !playing;
+					timeline.command(playing ? 'pause' : 'play');
 				}}
 				title={playing ? 'Pause' : 'Play'}
 			>
@@ -287,7 +297,7 @@
 			{#each STEPS as protocolStep (protocolStep.id)}
 				<li class:done={step >= protocolStep.id} class:now={step === protocolStep.id}>
 					{protocolStep.label}
-					{#if protocolStep.id === 3 && m1 !== undefined}
+					{#if protocolStep.id === 3 && step >= 3 && m1 !== undefined}
 						· <LiveMath
 							id="teleport.step.bits"
 							label={`measurement bits ${m1} and ${m2}`}
@@ -299,6 +309,7 @@
 		</ol>
 	</div>
 
+	<SimulationMotionControl {motion} label="quantum-state phasor animation" />
 	<div class="switchboard">
 		<p class="microlabel">switchboard · fault injection</p>
 		<FaultSwitch label="classical correction link cut" bind:active={faults.lostClassicalBit} />
@@ -312,6 +323,7 @@
 		onpointermove={onStageMove}
 		onpointerleave={() => (hover = undefined)}
 		role="group"
+		data-model-stage={timeline.step}
 		aria-label="Quantum teleportation register. Hover gates for their Dirac-notation action."
 	>
 		{@html svg}
@@ -335,7 +347,13 @@
 			/></span
 		>
 	</div>
-	<div class="fidelity" class:ok={fidelity !== undefined && !corrupted} class:bad={corrupted}>
+	<div
+		class="fidelity"
+		class:ok={fidelity !== undefined && !corrupted}
+		class:bad={corrupted}
+		aria-live="polite"
+		aria-atomic="true"
+	>
 		<span class="microlabel"
 			>teleportation fidelity · <LiveMath
 				id="teleport.fidelity.label"
@@ -362,6 +380,9 @@
 						? 'correction lost — state degraded'
 						: 'state reconstructed exactly'}
 			</span>
+			<span class="visually-hidden"
+				>Protocol stage {step + 1} of {STEPS.length}: {STEPS[step]?.label}. {motion.status}</span
+			>
 		</div>
 	</div>
 	<Oscilloscope

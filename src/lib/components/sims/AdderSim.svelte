@@ -3,15 +3,11 @@
 	 * 8-bit ripple-carry adder simulation.
 	 *
 	 * Clicking an input port toggles its bit; a synchronous logic pass then
-	 * recomputes every net and lights it through the 0.3.2 `data-net-id` hooks —
+	 * recomputes every net and lights it through the compiler's `data-net-id` hooks —
 	 * high-signal nets glow via the shared `.net-optics` system, idle nets stay
 	 * muted. One click listener on the root SVG container does all delegation.
 	 */
 	import { delegatedNodeId, setNetLevels, setNodeActive } from '$lib/sim-dom';
-	import {
-		SIMULATION_TIMELINE_EVENT,
-		type SimulationTimelineDetail
-	} from '$lib/simulation-timelines';
 	import { playTick } from '$lib/audio';
 	import { ui } from '$lib/ui.svelte';
 	import Oscilloscope from './Oscilloscope.svelte';
@@ -20,6 +16,9 @@
 	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
 	import { reading, type MathReading } from '$lib/simulation-math';
+	import { rippleCarry } from '$lib/simulation-models';
+	import { untrack } from 'svelte';
+	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 
 	interface Props {
 		svg: string;
@@ -40,46 +39,37 @@
 	/** Last result that reached the output register; pending inputs cannot jump it. */
 	let committedSum = $state(INITIAL_A + INITIAL_B);
 	let committedCarry = $state(0);
+	const timeline = useSimulationTimelineModel();
 
 	const BITS = 8;
 	/** Worst-case critical path: two gate delays of carry per cell, plus the final sum. */
 	const MODEL_GATE_DELAY_NS = 6;
 	const criticalNs = (2 * BITS + 1) * MODEL_GATE_DELAY_NS;
 	const settling = $derived(frontier < BITS);
+	const logic = $derived(rippleCarry(a, b, cin as 0 | 1, BITS, faults.stuckCarry));
 
 	/** One combinational pass, mirroring the gate network exactly. */
 	const nets = $derived.by(() => {
 		const values: Record<string, number> = {};
-		let carry = faults.stuckCarry ? 0 : cin;
 		values['CIN.out'] = cin;
-		for (let bit = 0; bit < BITS; bit += 1) {
-			const av = (a >> bit) & 1;
-			const bv = (b >> bit) & 1;
-			const axb = av ^ bv;
-			const sum = axb ^ carry;
-			const c1 = av & bv;
-			const c2 = axb & carry;
-			const cout = faults.stuckCarry ? 0 : c1 | c2;
-			values[`A${bit}.out`] = av;
-			values[`B${bit}.out`] = bv;
-			values[`X1_${bit}.out`] = axb;
-			values[`X2_${bit}.out`] = sum;
-			values[`N1_${bit}.out`] = c1;
-			values[`N2_${bit}.out`] = c2;
-			values[`O1_${bit}.out`] = cout;
-			carry = cout;
+		for (const [bit, stage] of logic.stages.entries()) {
+			values[`A${bit}.out`] = stage.a;
+			values[`B${bit}.out`] = stage.b;
+			/* Core 0.4 resolves the legacy `out` alias on classical gates to its
+			 * canonical indexed terminal in full-mode SVG metadata. The live
+			 * model must key the same identity or the math changes while the
+			 * corresponding nets remain dark. */
+			values[`X1_${bit}.out1`] = stage.xor;
+			values[`X2_${bit}.out1`] = stage.sum;
+			values[`N1_${bit}.out1`] = stage.a & stage.b;
+			values[`N2_${bit}.out1`] = stage.xor & stage.carryIn;
+			values[`O1_${bit}.out1`] = stage.carryOut;
 		}
 		return values;
 	});
 
-	const sum = $derived.by(() => {
-		let total = 0;
-		for (let bit = 0; bit < BITS; bit += 1) {
-			total |= (nets[`X2_${bit}.out`] ?? 0) << bit;
-		}
-		return total;
-	});
-	const carryOut = $derived(nets[`O1_${BITS - 1}.out`] ?? 0);
+	const sum = $derived(logic.sum);
+	const carryOut = $derived(logic.carry);
 	const settledMask = $derived(frontier <= 0 ? 0 : (1 << Math.min(frontier, BITS)) - 1);
 	const visibleSum = $derived((sum & settledMask) | (committedSum & ~settledMask & 0xff));
 	const visibleCarry = $derived(frontier >= BITS ? carryOut : committedCarry);
@@ -94,17 +84,15 @@
 	 * Previous/Next, autoplay, the delay slider, SVG lighting, and numerical state
 	 * on the exact same frame boundary. */
 	$effect(() => {
-		const onStage = (event: Event): void => {
-			const detail = (event as CustomEvent<SimulationTimelineDetail>).detail;
-			if (detail.simulationId !== 'adder') return;
-			frontier = detail.step >= BITS + 1 ? BITS : Math.min(detail.step, BITS - 1);
-			if (detail.step >= BITS + 1) {
-				committedSum = sum;
-				committedCarry = carryOut;
-			}
-		};
-		window.addEventListener(SIMULATION_TIMELINE_EVENT, onStage);
-		return () => window.removeEventListener(SIMULATION_TIMELINE_EVENT, onStage);
+		const stage = timeline.step;
+		/* Stage 0 samples inputs; stages 1…8 settle bits 0…7; stage 9
+		 * commits the byte and carry. Keeping bit 7 at frontier 7 during its own
+		 * authored stage was a one-frame lie hidden by the final commit. */
+		frontier = Math.min(BITS, stage);
+		if (stage >= BITS + 1) {
+			committedSum = sum;
+			committedCarry = carryOut;
+		}
 	});
 
 	/* Paint the settled portion of the logic pass into the compiled SVG by
@@ -132,11 +120,11 @@
 		setNodeActive(root, 'COUT', visibleCarry === 1 && frontier >= BITS);
 	});
 
-	/* Feed the oscilloscope a rolling logic trace of the sum's LSB rail. */
+	/* Sample only when the observed result changes. A timer-driven digital trace
+	 * added no information and created indefinite motion before any interaction. */
 	$effect(() => {
 		const sample = (visibleSum & 1) === 1 ? 0.85 : 0.15;
-		const timer = setInterval(() => (scope = [...scope.slice(1), sample]), 80);
-		return () => clearInterval(timer);
+		scope = [...untrack(() => scope).slice(1), sample];
 	});
 
 	function preserveVisibleResult(): void {
@@ -200,10 +188,11 @@
 		}
 		const node = delegatedNodeId(element);
 		if (!node) return undefined;
-		const out = nets[`${node}.out`];
+		const endpoint = `${node}.${/^(?:X[12]|N[12]|O1)_/.test(node) ? 'out1' : 'out'}`;
+		const out = nets[endpoint];
 		if (out !== undefined)
 			return reading('adder.probe.logic', `${node} output is logic ${out}`, {
-				name: `${node}.out`,
+				name: endpoint,
 				logic: out,
 				voltage: out === 1 ? '5.0' : '0.0'
 			});
@@ -284,8 +273,10 @@
 			/>
 		</p>
 		<div class="button-row">
-			<button type="button" class="btn" onclick={randomize}>randomize A,B</button>
-			<button type="button" class="btn" onclick={clearInputs}>clear</button>
+			<button type="button" class="btn" data-timeline-input onclick={randomize}
+				>randomize A,B</button
+			>
+			<button type="button" class="btn" data-timeline-input onclick={clearInputs}>clear</button>
 		</div>
 	</div>
 	<div class="switchboard">
@@ -303,6 +294,7 @@
 		onclick={onStageClick}
 		onkeydown={onStageKeydown}
 		role="group"
+		data-model-stage={timeline.step}
 		aria-label="Interactive 8-bit adder schematic. Click input ports to toggle bits."
 	>
 		{@html svg}
@@ -310,6 +302,10 @@
 {/snippet}
 
 {#snippet instruments()}
+	<p class="visually-hidden" aria-live="polite" aria-atomic="true">
+		Adder {faults.stuckCarry ? 'degraded: carry chain is forced low' : 'nominal'}; input A {a},
+		input B {b}, carry input {cin}; computed sum {sum}, carry output {carryOut}.
+	</p>
 	<div class="readouts">
 		<span class="readout"
 			><LiveMath

@@ -17,15 +17,20 @@ import {
 	rateLimitHeaders,
 	readLimitedJson
 } from '$lib/server/request-guard';
-import { compileSchematic, parseSchematicFence, SchematicSyntaxError } from '@schemd/core';
 import {
 	COMPILE_LIMITS,
-	compileFenceSpec,
+	HOST_COMPILER_LIMITS,
 	normalizeCompileRequest,
 	type CompileFailure,
 	type CompileRequest,
 	type CompileSuccess
 } from '$lib/compile-contract';
+import {
+	compileExecutor,
+	SERVER_COMPILE_DEADLINE_MS,
+	type CompileExecution
+} from '$lib/server/compile-executor';
+import type { SchematicLimitOptions } from '@schemd/core';
 
 const MAX_CACHE_ENTRIES = 64;
 const MAX_CACHE_BYTES = 16 * 1024 * 1024;
@@ -36,6 +41,11 @@ interface CacheEntry {
 }
 const cache = new Map<string, CacheEntry>();
 let cacheBytes = 0;
+
+/** Focused regression seam; the cache itself remains module-private. */
+export function _compileCacheSnapshot(): { readonly entries: number; readonly bytes: number } {
+	return { entries: cache.size, bytes: cacheBytes };
+}
 
 function requestKey(request: CompileRequest): string {
 	return createHash('sha256')
@@ -58,6 +68,10 @@ function responseBytes(value: CompileSuccess | CompileFailure): number {
 function cacheResult(key: string, value: CompileSuccess | CompileFailure): void {
 	const bytes = responseBytes(value);
 	if (bytes > MAX_CACHE_BYTES) return;
+	const previous = cache.get(key);
+	if (previous) cacheBytes -= previous.bytes;
+	/* Refresh insertion order when two identical misses complete concurrently. */
+	cache.delete(key);
 	cache.set(key, { value, bytes });
 	cacheBytes += bytes;
 	while (cache.size > MAX_CACHE_ENTRIES || cacheBytes > MAX_CACHE_BYTES) {
@@ -76,72 +90,106 @@ function responseHeaders(duration: number, description: 'cache' | 'compile'): He
 	};
 }
 
-export const POST: RequestHandler = async ({ request, getClientAddress }) => {
-	const rate = consumeRateLimit('compile', clientAddress(getClientAddress), {
-		capacity: 80,
-		refillPerSecond: 4
-	});
-	if (!rate.allowed) {
-		return json(
-			{ ok: false, message: 'Compile rate limit exceeded.', line: undefined },
-			{
-				status: 429,
-				headers: rateLimitHeaders(rate.retryAfterSeconds)
-			}
-		);
-	}
+interface CompileRunner {
+	run(request: CompileRequest, limits: SchematicLimitOptions): Promise<CompileExecution>;
+}
 
-	const body = await readLimitedJson(request, MAX_REQUEST_BYTES);
-	if (!body.ok) {
-		return json(
-			{ ok: false, message: body.message, line: undefined },
-			{ status: body.status, headers: NO_STORE }
-		);
-	}
-	const parsed = normalizeCompileRequest(body.value);
-	if (!parsed) {
-		return json(
-			{ ok: false, message: 'Malformed compile request.', line: undefined },
-			{ status: 400, headers: NO_STORE }
-		);
-	}
+/** Handler factory keeps timeout/capacity/cache branches unit-testable. */
+export function _createCompileHandler(runner: CompileRunner = compileExecutor): RequestHandler {
+	/* Collapse identical concurrent misses before they consume another worker
+	 * slot. The map belongs to this handler instance so injected test runners
+	 * and independently constructed servers can never share promises. */
+	const inFlight = new Map<string, Promise<CompileExecution>>();
 
-	const key = requestKey(parsed);
-	const hit = cache.get(key);
-	if (hit) {
-		cache.delete(key);
-		cache.set(key, hit);
-		return json(hit.value, { headers: responseHeaders(0, 'cache') });
-	}
-
-	let result: CompileSuccess | CompileFailure;
-	const requestStartedAt = performance.now();
-	try {
-		const fence = parseSchematicFence(compileFenceSpec(parsed));
-		if (!fence) throw new SchematicSyntaxError('Unreachable: canonical fence.');
-		const startedAt = performance.now();
-		const compiled = compileSchematic(parsed.source, {
-			...fence,
-			mode: parsed.mode,
-			idPrefix: 'play'
+	return async ({ request, getClientAddress }) => {
+		const rate = consumeRateLimit('compile', clientAddress(getClientAddress), {
+			capacity: 80,
+			refillPerSecond: 4
 		});
-		result = {
-			ok: true,
-			svg: compiled.svg,
-			metrics: { ...compiled.metrics },
-			sourceMap: compiled.sourceMap,
-			ms: Math.round((performance.now() - startedAt) * 100) / 100
-		};
-	} catch (failure) {
-		if (failure instanceof SchematicSyntaxError) {
-			result = { ok: false, message: failure.message, line: failure.line };
-		} else {
-			result = { ok: false, message: 'Compilation failed unexpectedly.', line: undefined };
+		if (!rate.allowed) {
+			return json(
+				{ ok: false, message: 'Compile rate limit exceeded.', line: undefined },
+				{
+					status: 429,
+					headers: rateLimitHeaders(rate.retryAfterSeconds)
+				}
+			);
 		}
-	}
 
-	cacheResult(key, result);
-	return json(result, {
-		headers: responseHeaders(performance.now() - requestStartedAt, 'compile')
-	});
-};
+		const body = await readLimitedJson(request, MAX_REQUEST_BYTES);
+		if (!body.ok) {
+			return json(
+				{ ok: false, message: body.message, line: undefined },
+				{ status: body.status, headers: NO_STORE }
+			);
+		}
+		const parsed = normalizeCompileRequest(body.value);
+		if (!parsed) {
+			return json(
+				{ ok: false, message: 'Malformed compile request.', line: undefined },
+				{ status: 400, headers: NO_STORE }
+			);
+		}
+
+		const key = requestKey(parsed);
+		const hit = cache.get(key);
+		if (hit) {
+			cache.delete(key);
+			cache.set(key, hit);
+			return json(hit.value, { headers: responseHeaders(0, 'cache') });
+		}
+
+		const requestStartedAt = performance.now();
+		let pending = inFlight.get(key);
+		if (!pending) {
+			pending = runner
+				.run(parsed, HOST_COMPILER_LIMITS)
+				.catch((): CompileExecution => ({ kind: 'failed' }));
+			inFlight.set(key, pending);
+			void pending.finally(() => {
+				if (inFlight.get(key) === pending) inFlight.delete(key);
+			});
+		}
+		const execution = await pending;
+		if (execution.kind === 'timeout') {
+			return json(
+				{
+					ok: false,
+					message: `Compilation exceeded the ${SERVER_COMPILE_DEADLINE_MS} ms server deadline.`,
+					line: undefined
+				},
+				{
+					status: 503,
+					headers: {
+						...responseHeaders(performance.now() - requestStartedAt, 'compile'),
+						'retry-after': '1'
+					}
+				}
+			);
+		}
+		if (execution.kind === 'busy') {
+			return json(
+				{ ok: false, message: 'Compiler is at capacity. Retry shortly.', line: undefined },
+				{ status: 503, headers: { ...NO_STORE, 'retry-after': '1' } }
+			);
+		}
+		if (execution.kind === 'failed') {
+			return json(
+				{ ok: false, message: 'Compilation failed unexpectedly.', line: undefined },
+				{
+					status: 500,
+					headers: responseHeaders(performance.now() - requestStartedAt, 'compile')
+				}
+			);
+		}
+
+		const result: CompileSuccess | CompileFailure = execution.outcome;
+
+		cacheResult(key, result);
+		return json(result, {
+			headers: responseHeaders(performance.now() - requestStartedAt, 'compile')
+		});
+	};
+}
+
+export const POST: RequestHandler = _createCompileHandler();

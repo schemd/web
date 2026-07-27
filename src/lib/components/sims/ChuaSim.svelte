@@ -15,12 +15,19 @@
 	import PhasePortrait from './PhasePortrait.svelte';
 	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
+	import SimulationMotionControl from './SimulationMotionControl.svelte';
+	import { createSimulationMotion } from './simulation-motion.svelte';
 	import { reading, type MathReading } from '$lib/simulation-math';
+	import {
+		chuaNonlinearity,
+		chuaStep,
+		type ChuaState as StateVector
+	} from '$lib/simulation-models';
+	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 
 	interface Props {
 		svg: string;
 	}
-	type StateVector = readonly [number, number, number];
 	type Point = { x: number; y: number };
 	let { svg }: Props = $props();
 
@@ -36,10 +43,11 @@
 	let scopeX = $state<number[]>([]);
 	let scopeY = $state<number[]>([]);
 	let lyapunov = $state(0);
-	let paused = $state(false);
 	let faults = $state({ bypassedNonlinearity: false });
 	let bifurcation = $state<{ a: number; x: number }[]>([]);
 	let computingBif = $state(false);
+	const motion = createSimulationMotion('Chua-attractor animation');
+	const timeline = useSimulationTimelineModel();
 
 	const regime = $derived.by(() => {
 		if (faults.bypassedNonlinearity) return 'DAMPED LINEAR';
@@ -48,31 +56,14 @@
 		if (alpha < 11) return 'LIMIT CYCLE';
 		return 'TRANSIENT / CHAOTIC';
 	});
-
-	function nonlinearity(x: number): number {
-		if (faults.bypassedNonlinearity) return x;
-		return m1 * x + 0.5 * (m0 - m1) * (Math.abs(x + 1) - Math.abs(x - 1));
-	}
-
-	function derivative([x, y, z]: StateVector): StateVector {
-		return [alpha * (y - x - nonlinearity(x)), x - y + z, -beta * y];
-	}
-
-	function add(base: StateVector, slope: StateVector, scale: number): StateVector {
-		return [base[0] + slope[0] * scale, base[1] + slope[1] * scale, base[2] + slope[2] * scale];
-	}
-
-	function rk4(value: StateVector, dt: number): StateVector {
-		const k1 = derivative(value);
-		const k2 = derivative(add(value, k1, dt / 2));
-		const k3 = derivative(add(value, k2, dt / 2));
-		const k4 = derivative(add(value, k3, dt));
-		return [
-			value[0] + (dt / 6) * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]),
-			value[1] + (dt / 6) * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]),
-			value[2] + (dt / 6) * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2])
-		];
-	}
+	const timelineProjection = $derived(
+		[
+			chuaNonlinearity(trajectory[0], m0, m1, faults.bypassedNonlinearity),
+			trajectory[0] - trajectory[1],
+			Math.hypot(trajectory[0], trajectory[1]),
+			trajectory[2]
+		][timeline.step] ?? 0
+	);
 
 	const BIF_MIN = 7;
 	const BIF_MAX = 18;
@@ -92,11 +83,12 @@
 			for (let column = 0; column <= columns; column += 1) {
 				const sweepAlpha = BIF_MIN + ((BIF_MAX - BIF_MIN) * column) / columns;
 				let state: StateVector = [0.1, 0, 0];
-				for (let step = 0; step < 1800; step += 1) state = rk4WithAlpha(state, dt, sweepAlpha);
+				for (let step = 0; step < 1800; step += 1)
+					state = chuaStep(state, dt, sweepAlpha, beta, m0, m1, faults.bypassedNonlinearity);
 				let previousSlope = 0;
 				let recorded = 0;
 				for (let step = 0; step < 4200 && recorded < 24; step += 1) {
-					const next = rk4WithAlpha(state, dt, sweepAlpha);
+					const next = chuaStep(state, dt, sweepAlpha, beta, m0, m1, faults.bypassedNonlinearity);
 					const slope = next[0] - state[0];
 					if (previousSlope > 0 && slope <= 0 && Number.isFinite(state[0])) {
 						points.push({ a: sweepAlpha, x: state[0] });
@@ -110,24 +102,6 @@
 			computingBif = false;
 			if (ui.audio) playTick(620);
 		}, 30);
-	}
-
-	/** RK4 step at an explicit α (β, m₀, m₁ from the live controls). */
-	function rk4WithAlpha(value: StateVector, dt: number, sweepAlpha: number): StateVector {
-		const f = ([x, y, z]: StateVector): StateVector => [
-			sweepAlpha * (y - x - nonlinearity(x)),
-			x - y + z,
-			-beta * y
-		];
-		const k1 = f(value);
-		const k2 = f(add(value, k1, dt / 2));
-		const k3 = f(add(value, k2, dt / 2));
-		const k4 = f(add(value, k3, dt));
-		return [
-			value[0] + (dt / 6) * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]),
-			value[1] + (dt / 6) * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]),
-			value[2] + (dt / 6) * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2])
-		];
 	}
 
 	/** Bifurcation scatter as one dotted path (round caps draw the points). */
@@ -164,32 +138,33 @@
 	}
 
 	$effect(() => {
+		if (motion.animationBlocked) return;
 		let frame = 0;
+		let stopped = false;
 		const loop = (): void => {
-			if (!paused) {
-				const dt = 0.0045 * timeScale;
-				let next = trajectory;
-				let nextShadow = shadow;
-				for (let index = 0; index < 12; index += 1) {
-					next = rk4(next, dt);
-					nextShadow = rk4(nextShadow, dt);
-				}
-				if (next.every(Number.isFinite) && next.every((value) => Math.abs(value) < 80)) {
-					trajectory = next;
-					const dx = nextShadow[0] - next[0];
-					const dy = nextShadow[1] - next[1];
-					const dz = nextShadow[2] - next[2];
-					const separation = Math.max(Math.hypot(dx, dy, dz), 1e-12);
-					const localExponent = Math.log(separation / 0.00001) / (dt * 12);
-					lyapunov = lyapunov * 0.985 + Math.max(-2, Math.min(2, localExponent)) * 0.015;
-					const scale = 0.00001 / separation;
-					shadow = [next[0] + dx * scale, next[1] + dy * scale, next[2] + dz * scale];
-					orbit = [...orbit.slice(-319), { x: next[0], y: next[1] }];
-					scopeX = [...scopeX.slice(-95), Math.max(0.03, Math.min(0.97, 0.5 + next[0] / 7))];
-					scopeY = [...scopeY.slice(-95), Math.max(0.03, Math.min(0.97, 0.5 + next[1] / 1.3))];
-				} else {
-					reset([0.11, 0, 0]);
-				}
+			if (stopped) return;
+			const dt = 0.0045 * timeScale;
+			let next = trajectory;
+			let nextShadow = shadow;
+			for (let index = 0; index < 12; index += 1) {
+				next = chuaStep(next, dt, alpha, beta, m0, m1, faults.bypassedNonlinearity);
+				nextShadow = chuaStep(nextShadow, dt, alpha, beta, m0, m1, faults.bypassedNonlinearity);
+			}
+			if (next.every(Number.isFinite) && next.every((value) => Math.abs(value) < 80)) {
+				trajectory = next;
+				const dx = nextShadow[0] - next[0];
+				const dy = nextShadow[1] - next[1];
+				const dz = nextShadow[2] - next[2];
+				const separation = Math.max(Math.hypot(dx, dy, dz), 1e-12);
+				const localExponent = Math.log(separation / 0.00001) / (dt * 12);
+				lyapunov = lyapunov * 0.985 + Math.max(-2, Math.min(2, localExponent)) * 0.015;
+				const scale = 0.00001 / separation;
+				shadow = [next[0] + dx * scale, next[1] + dy * scale, next[2] + dz * scale];
+				orbit = [...orbit.slice(-319), { x: next[0], y: next[1] }];
+				scopeX = [...scopeX.slice(-95), Math.max(0.03, Math.min(0.97, 0.5 + next[0] / 7))];
+				scopeY = [...scopeY.slice(-95), Math.max(0.03, Math.min(0.97, 0.5 + next[1] / 1.3))];
+			} else {
+				reset([0.11, 0, 0]);
 			}
 
 			const root = host;
@@ -215,7 +190,10 @@
 			frame = requestAnimationFrame(loop);
 		};
 		frame = requestAnimationFrame(loop);
-		return () => cancelAnimationFrame(frame);
+		return () => {
+			stopped = true;
+			cancelAnimationFrame(frame);
+		};
 	});
 
 	function probe(element: Element): MathReading | undefined {
@@ -244,7 +222,9 @@
 				'chua.probe.nonlinearity',
 				faults.bypassedNonlinearity ? 'nonlinearity bypassed' : 'piecewise-linear nonlinearity',
 				{
-					value: faults.bypassedNonlinearity ? 'BYPASSED' : nonlinearity(trajectory[0]).toFixed(4),
+					value: faults.bypassedNonlinearity
+						? 'BYPASSED'
+						: chuaNonlinearity(trajectory[0], m0, m1).toFixed(4),
 					m0: m0.toFixed(3),
 					m1: m1.toFixed(3)
 				}
@@ -309,11 +289,11 @@
 		>
 	</div>
 	<div class="button-row">
-		<button type="button" class="btn" aria-pressed={paused} onclick={() => (paused = !paused)}
-			>{paused ? 'resume' : 'pause'}</button
+		<SimulationMotionControl {motion} label="Chua attractor and waveform animation" />
+		<button type="button" class="btn" data-timeline-input onclick={() => reset()}
+			>reset orbit</button
 		>
-		<button type="button" class="btn" onclick={() => reset()}>reset orbit</button>
-		<button type="button" class="btn" onclick={perturb}
+		<button type="button" class="btn" data-timeline-input onclick={perturb}
 			><LiveMath id="chua.perturb" label="perturb by about ten to the negative second" /></button
 		>
 		<button type="button" class="btn" onclick={computeBifurcation} disabled={computingBif}>
@@ -337,7 +317,9 @@
 		class="sim-stage schemd-frame"
 		bind:this={host}
 		role="group"
-		aria-label="Chua nonlinear oscillator circuit"
+		data-model-stage={timeline.step}
+		data-model-value={timelineProjection}
+		aria-label="Chua oscillator model"
 	>
 		{@html svg}
 	</div>
@@ -348,8 +330,16 @@
 		class="regime"
 		class:chaotic={regime === 'CHAOTIC'}
 		class:faulted={faults.bypassedNonlinearity}
+		aria-live="polite"
+		aria-atomic="true"
 	>
 		<span class="microlabel">orbit classifier</span><strong>{regime}</strong>
+		<span class="visually-hidden"
+			>{faults.bypassedNonlinearity
+				? 'Nonlinear branch degraded: negative-resistance path bypassed.'
+				: 'Nonlinear branch active.'}
+			{motion.status}</span
+		>
 	</div>
 	<div class="readouts">
 		<span class="readout"
@@ -441,10 +431,6 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-1);
-	}
-	.button-row .btn[aria-pressed='true'] {
-		border-color: var(--accent);
-		color: var(--accent);
 	}
 	.regime {
 		display: grid;

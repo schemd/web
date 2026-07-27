@@ -18,7 +18,7 @@
  * compiler's own union at type level, which costs nothing at runtime and still
  * fails the build if upstream adds a mode.
  */
-import type { SchemdOutputMode, SchematicSourceMap } from '@schemd/core';
+import type { SchemdOutputMode, SchematicLimitOptions, SchematicSourceMap } from '@schemd/core';
 
 /** Ceilings the compiler enforces, applied before it is ever reached. */
 export const COMPILE_LIMITS = {
@@ -29,6 +29,22 @@ export const COMPILE_LIMITS = {
 	/** JSON escaping can nearly double a valid source payload in transport. */
 	maxRequestBytes: 280 * 1024
 } as const;
+
+/**
+ * Host budgets for source the public playground did not write.
+ *
+ * Core 0.4 intentionally defaults component and connection counts to
+ * unlimited. That is appropriate for a trusted CLI and reckless for a public
+ * endpoint. These limits still allow diagrams far beyond a readable browser
+ * canvas while bounding parser, routing, crossing, and response amplification.
+ */
+export const HOST_COMPILER_LIMITS = {
+	components: 1_024,
+	connections: 4_096,
+	sourceCharacters: COMPILE_LIMITS.maxSourceCharacters,
+	wireCrossings: 4_096,
+	svgOutputBytes: 2 * 1024 * 1024
+} as const satisfies SchematicLimitOptions;
 
 /** Title used when a request omits one or supplies only quotes and spaces. */
 export const DEFAULT_COMPILE_TITLE = 'Playground schematic';
@@ -124,9 +140,4 @@ export function normalizeCompileRequest(body: unknown): CompileRequest | undefin
 		title: title.replace(/"/g, '').trim() || DEFAULT_COMPILE_TITLE,
 		mode
 	};
-}
-
-/** The fence spec a normalized request compiles under. */
-export function compileFenceSpec(request: CompileRequest): string {
-	return `schemd bounds="${request.width}x${request.height}" title="${request.title}"`;
 }

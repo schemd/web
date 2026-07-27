@@ -1,38 +1,51 @@
 # schemd web
 
-The standalone SvelteKit 5 platform for
-[`@schemd/core`](https://github.com/schemd/core): versioned documentation, a zero-runtime-dependency
-playground, eight instrumented simulation laboratories, registry-backed release history, and native
-SVG benchmark charts.
+The SvelteKit 5 documentation, IDE, and simulation laboratory for
+[`@schemd/core`](https://github.com/schemd/core). Schemd is pronounced _“skemd”_
+(`/skɛmd/`).
 
-Schemd is pronounced like _“skemd”_ (`/skɛmd/`).
+The site serves three independent documentation lines, a dependency-free browser IDE, release and
+coverage reports, and thirteen instrumented laboratories spanning digital, analog, quantum, power,
+nonlinear, and control systems.
 
-## Runtime
+## Run it
 
-- SvelteKit with Svelte 5 runes
-- `@sveltejs/adapter-node` on Node.js 24 or newer
-- strict TypeScript
-- pure nested vanilla CSS
-- exact `@schemd/core` compiler pin (0.2.1 until 0.3.0 is published; the validated release tarball is installed locally during release verification)
-- no browser editor, chart, simulation, audio, or state-serialization dependencies
+Requirements: Node.js 24 or newer and Bun.
 
 ```sh
-bun run ci
+bun install --frozen-lockfile
 bun run dev
 ```
 
-The production process is a long-running Node server:
+The production target is a long-running adapter-node process:
 
 ```sh
 bun run build
 HOST=0.0.0.0 PORT=3000 bun run start
 ```
 
-Behind a trusted reverse proxy, adapter-node also supports `ORIGIN`, `PROTOCOL_HEADER`,
-`HOST_HEADER`, `ADDRESS_HEADER`, `XFF_DEPTH`, `BODY_SIZE_LIMIT`, and `SHUTDOWN_TIMEOUT`. Configure
-only headers overwritten by that proxy.
+Only trust proxy headers that your reverse proxy overwrites. Adapter-node supports `ORIGIN`,
+`PROTOCOL_HEADER`, `HOST_HEADER`, `ADDRESS_HEADER`, `XFF_DEPTH`, `BODY_SIZE_LIMIT`, and
+`SHUTDOWN_TIMEOUT`.
 
-## Verification
+## Architecture
+
+- Svelte 5 runes, strict TypeScript, native CSS, and `@sveltejs/adapter-node`
+- `@schemd/core` 0.4 with current, `0.3`, and immutable `0.2` documentation corpora
+- a native-textarea IDE with syntax paint, completion, diagnostics, find/replace, keyboard editing,
+  command palette, shareable URLs, and crash-safe local drafts—no editor framework
+- thirteen route-split simulation models; server-rendered KaTeX supplies both visual HTML and
+  accessible MathML
+- explicit reduced-motion policy and pause controls for every continuously animated laboratory
+- bounded, isolated server compilation with host-supplied compiler limits, a wall-clock worker
+  deadline, a finite queue, rate limiting, and a byte-bounded LRU
+- registry and documentation caches with finite keys, stale fallback, single-flight refresh, and
+  abort deadlines
+
+The browser loads the compiler only on playground and review routes. Every other route keeps it out
+of the eager client graph.
+
+## Verify it
 
 ```sh
 bun run format:check
@@ -40,37 +53,35 @@ bun run lint
 bun run check
 bun run test:unit
 bun run test:e2e
+bun run test:a11y
+bun run test:budget
+# or run the complete sequence:
+bun run release:check
 ```
 
-The unit suite compiles every current and historical documentation fence, validates the registry,
-URI codec, hero programs, and all eight full-mode simulation sources. Playwright exercises the
-production adapter-node bundle, current/historical switching, invalid routes, source/vector mapping,
-raw SVG parity, URI persistence, mobile documentation, command-palette focus containment, zero-CLS
-landing structure, simulation reactivity, sitemap inventory, and automated axe WCAG A/AA checks.
+`release:check` starts with a frozen install. It rejects a dependency manifest and lockfile that
+disagree instead of silently validating whichever local link happens to be present.
 
-## Server boundaries
+The suites compile every fence in every documentation line, validate all simulation sources and
+reference models, exercise editor operations and persistence as pure functions, enforce curriculum
+contracts, run the production Node bundle in Chromium, scan public routes with axe, assert accessible
+MathML and reduced-motion behavior, check mobile containment, and gate eager/lazy JavaScript, fonts,
+simulation chunks, and total client output.
 
-`src/lib/server/registry.ts` maintains a bounded, single-flight registry snapshot. A deterministic
-0.3.0 release-candidate record and the last stable historical release are always available; npm and
-GitHub refresh the process cache with abort deadlines and a stale fallback. Publish dates and git
-hashes remain explicitly pending until the real release exists.
+## Content and routes
 
-Public compilation runs through `src/routes/api/compile/+server.ts`. It validates source, dimensions,
-title, and mode before compilation, hashes cache keys with native SHA-256, and enforces both entry and
-byte ceilings on its process-local LRU cache. The compiler itself enforces bounded declarations,
-geometry, crossings, and SVG output.
+Documentation lives under `src/lib/content/schemd/{0.2,0.3,0.4}/`; never backfill newer syntax into a
+historical line. Adding a documented line means adding a folder—the manifest, search index, version
+selector, sitemap, and fence compiler discover it.
 
-Documentation prose and metadata live in `src/lib/content/schemd/`. The immutable 0.2.1 corpus is
-kept separate from `0.3.0/`; `src/lib/server/docs.ts` and `markdown.ts` parse, compile, and cache them
-on the server. Schematic fences compile during SSR, and every fence is compiled again in tests.
+- `/docs/0.4/[slug]` — current documentation
+- `/playground/0.4.0` — dependency-free source/vector IDE
+- `/embed/0.4.0` — standalone compiled SVG
+- `/simulations/0.4.0` and `/simulations/0.4.0/[environment]` — curriculum and laboratories
+- `/examples`, `/coverage`, and `/changelog` — compiled corpus, vocabulary coverage, and releases
+- `/api/compile` — bounded compilation fallback
+- `/sitemap.xml` — generated route inventory
 
-## Routes
-
-- `/` — SSR product surface and compiler proof
-- `/docs/0.3.0/[slug]` and `/docs/0.2.1/[slug]` — versioned 3-column documentation
-- `/playground/0.3.0` — resizable source/render workspace with shareable `?code=` state
-- `/embed/0.3.0` — standalone SVG response for shared workspace source
-- `/simulations/0.3.0/[adder|rc|bell|timer|teleport]` — isolated engineering laboratories
-- `/changelog` — registry timeline and native SVG metrics
-- `/api/compile` — bounded compilation endpoint
-- `/sitemap.xml` — automated route inventory
+Do not derive the engine version from editorial release notes. Server routes read the installed
+`@schemd/core` package manifest; documentation versions are discovered separately from content
+folders.

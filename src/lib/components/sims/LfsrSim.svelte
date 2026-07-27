@@ -17,6 +17,8 @@
 	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
 	import { reading, type MathReading } from '$lib/simulation-math';
+	import { lfsrFeedback, lfsrPeriod, lfsrStep, type LfsrBits } from '$lib/simulation-models';
+	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 
 	interface Props {
 		svg: string;
@@ -24,48 +26,70 @@
 
 	let { svg }: Props = $props();
 
-	const SEED: readonly number[] = [1, 0, 0, 0];
+	const SEED: LfsrBits = [1, 0, 0, 0];
 
 	let host = $state<HTMLElement | undefined>();
 	/** Stages 1…4 (index 0 = stage 1, the feedback entry point). */
-	let bits = $state<number[]>([...SEED]);
+	let bits = $state<LfsrBits>(SEED);
 	let steps = $state(0);
 	let period = $state<number | undefined>();
-	let running = $state(false);
-	let logRate = $state(0.4); /* seconds per clock */
 	let scope = $state<number[]>(Array.from({ length: 96 }, () => 0.15));
 	let faults = $state({ movedTap: false });
+	let preEdge = $state<LfsrBits>(SEED);
+	let postEdge = $state<LfsrBits>(lfsrStep(SEED));
+	let capturedRunId = -1;
+	let committedRunId = -1;
+	let capturedFault = false;
+	const timeline = useSimulationTimelineModel();
+	const running = $derived(timeline.playing);
 
 	/** Feedback bit: XOR of the tapped stages. Primitive taps are {3,4}. */
-	const feedback = $derived(faults.movedTap ? bits[1]! ^ bits[3]! : bits[2]! ^ bits[3]!);
-	const registerValue = $derived(bits.reduce((acc, bit, index) => acc | (bit << index), 0));
-	const stateString = $derived(bits.map((bit) => bit).join(''));
+	const visibleBits = $derived(timeline.step >= 2 ? postEdge : preEdge);
+	const feedback = $derived(lfsrFeedback(preEdge, faults.movedTap));
+	const modelPeriod = $derived(lfsrPeriod(SEED, faults.movedTap));
+	const registerValue = $derived(
+		visibleBits.reduce<number>((acc, bit, index) => acc | (bit << index), 0)
+	);
+	const stateString = $derived(visibleBits.map((bit) => bit).join(''));
 
-	/** One clock edge: shift right, inject feedback at stage 1. */
+	/** Begin one causal edge; the shared timeline commits it at the output stage. */
 	function tick(): void {
-		const injected = feedback;
-		bits = [injected, bits[0]!, bits[1]!, bits[2]!];
-		steps += 1;
-		/* Period detection: first return to the seed after ≥1 step. */
-		if (period === undefined && bits.every((bit, index) => bit === SEED[index])) {
-			period = steps;
-		}
-		scope = [...scope.slice(1), bits[3] === 1 ? 0.85 : 0.15];
-		if (ui.audio) playTick(440 + feedback * 180);
+		timeline.command('reset');
+		timeline.command('play');
 	}
 
 	function reseed(): void {
-		bits = [...SEED];
+		bits = SEED;
 		steps = 0;
 		period = undefined;
+		timeline.command('reset');
 		if (ui.audio) playTick(560);
 	}
 
-	/* Autorun clock. */
+	/* Snapshot the pre-edge register once per run. Previous/Next then derives
+	 * every frame from that immutable pair, and the final stage commits once. */
 	$effect(() => {
-		if (!running) return;
-		const timer = setInterval(tick, Math.max(60, logRate * 1000));
-		return () => clearInterval(timer);
+		const runId = timeline.runId;
+		if (faults.movedTap !== capturedFault) {
+			capturedFault = faults.movedTap;
+			bits = SEED;
+			steps = 0;
+			period = undefined;
+		}
+		if (runId !== capturedRunId) {
+			capturedRunId = runId;
+			committedRunId = -1;
+			preEdge = bits;
+			postEdge = lfsrStep(bits, faults.movedTap);
+		}
+		if (timeline.step >= 3 && committedRunId !== runId) {
+			committedRunId = runId;
+			bits = postEdge;
+			steps += 1;
+			if (period === undefined && steps >= modelPeriod) period = modelPeriod;
+			scope = [...scope.slice(1), postEdge[3] === 1 ? 0.85 : 0.15];
+			if (ui.audio) playTick(440 + lfsrFeedback(preEdge, faults.movedTap) * 180);
+		}
 	});
 
 	/* Paint register state into the compiled schematic. */
@@ -74,17 +98,22 @@
 		if (!root) return;
 		const ids = ['Q1', 'Q2', 'Q3', 'Q4'];
 		for (const [index, id] of ids.entries()) {
-			setNodeActive(root, id, bits[index] === 1);
-			setWiresFrom(root, `${id}.q`, bits[index] === 1);
+			setNodeActive(root, id, visibleBits[index] === 1);
+			setWiresFrom(root, `${id}.q`, visibleBits[index] === 1);
 		}
 		setNodeActive(root, 'FB', feedback === 1);
-		setWiresFrom(root, 'FB.out', feedback === 1);
-		setNodeActive(root, 'OUT', bits[3] === 1);
+		/* `xor.out` is a compatibility alias; full-mode metadata exposes the
+		 * canonical indexed terminal used by timeline and live-state tooling. */
+		setWiresFrom(root, 'FB.out1', feedback === 1);
+		setNodeActive(root, 'OUT', visibleBits[3] === 1);
 	});
 
 	function onStageClick(event: MouseEvent): void {
 		if (!(event.target instanceof Element)) return;
-		if (delegatedNodeId(event.target) === 'CLK') tick();
+		if (delegatedNodeId(event.target) === 'CLK') {
+			event.stopPropagation();
+			tick();
+		}
 	}
 
 	function onStageKeydown(event: KeyboardEvent): void {
@@ -92,6 +121,7 @@
 		if (!(event.target instanceof Element)) return;
 		if (delegatedNodeId(event.target) !== 'CLK') return;
 		event.preventDefault();
+		event.stopPropagation();
 		tick();
 	}
 
@@ -102,15 +132,23 @@
 			return reading('lfsr.probe.feedback', `feedback ${feedback}`, { value: feedback });
 		const stage = id?.match(/^Q(\d)$/);
 		if (stage)
-			return reading('lfsr.probe.stage', `stage ${stage[1]} is ${bits[Number(stage[1]) - 1]}`, {
-				stage: stage[1]!,
-				value: bits[Number(stage[1]) - 1]!
-			});
+			return reading(
+				'lfsr.probe.stage',
+				`stage ${stage[1]} is ${visibleBits[Number(stage[1]) - 1]}`,
+				{
+					stage: stage[1]!,
+					value: visibleBits[Number(stage[1]) - 1]!
+				}
+			);
 		if (id === 'OUT')
-			return reading('lfsr.probe.output', `serial output ${bits[3]} at sequence bit ${steps}`, {
-				value: bits[3]!,
-				step: steps
-			});
+			return reading(
+				'lfsr.probe.output',
+				`serial output ${visibleBits[3]} at sequence bit ${steps}`,
+				{
+					value: visibleBits[3]!,
+					step: steps
+				}
+			);
 		return undefined;
 	}
 </script>
@@ -132,29 +170,18 @@
 			<strong>clk</strong> symbol to single-step, or run it free.
 		</p>
 		<div class="button-row">
-			<button type="button" class="btn" aria-pressed={running} onclick={() => (running = !running)}>
+			<button
+				type="button"
+				class="btn"
+				aria-pressed={running}
+				onclick={() => timeline.command(running ? 'pause' : 'play')}
+			>
 				{running ? 'pause' : 'run'}
 			</button>
 			<button type="button" class="btn" onclick={tick} disabled={running}>step</button>
 			<button type="button" class="btn" onclick={reseed}>reseed 1000</button>
 		</div>
-		<label>
-			<span class="microlabel"
-				><LiveMath
-					id="lfsr.control.period"
-					label={`clock period ${(logRate * 1000).toFixed(0)} milliseconds`}
-					values={{ value: (logRate * 1000).toFixed(0) }}
-				/></span
-			>
-			<input
-				type="range"
-				min="0.06"
-				max="1"
-				step="0.02"
-				bind:value={logRate}
-				aria-label="Clock rate"
-			/>
-		</label>
+		<p class="control-note">Clock timing follows the causal stage delay configured above.</p>
 	</div>
 	<div class="switchboard">
 		<p class="microlabel">switchboard · fault injection</p>
@@ -173,13 +200,21 @@
 		onclick={onStageClick}
 		onkeydown={onStageKeydown}
 		role="group"
-		aria-label="4-bit LFSR. Click the clock to advance the register."
+		data-model-stage={timeline.step}
+		aria-label="LFSR register. Click the clock to advance it."
 	>
 		{@html svg}
 	</div>
 {/snippet}
 
 {#snippet instruments()}
+	<p class="visually-hidden" aria-live="polite" aria-atomic="true">
+		LFSR {running ? 'running' : 'paused'}; feedback network {faults.movedTap
+			? 'degraded with a moved tap'
+			: 'nominal'}; {period === undefined
+			? 'period not yet observed'
+			: `observed period ${period}`}.
+	</p>
 	<div class="readouts">
 		<span class="readout state"
 			><LiveMath
@@ -243,15 +278,6 @@
 	.button-row .btn[aria-pressed='true'] {
 		border-color: var(--accent);
 		color: var(--accent);
-	}
-
-	label {
-		display: grid;
-		gap: 2px;
-	}
-
-	input[type='range'] {
-		accent-color: var(--accent);
 	}
 
 	.readouts {

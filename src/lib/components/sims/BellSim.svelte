@@ -17,6 +17,8 @@
 	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
 	import { reading, type MathReading } from '$lib/simulation-math';
+	import { bellAmplitudesAtStage, bellChsh } from '$lib/simulation-models';
+	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 
 	interface Props {
 		svg: string;
@@ -31,28 +33,21 @@
 	let scope = $state<number[]>(Array.from({ length: 96 }, () => 0.5));
 	let hover = $state<{ x: number; y: number; math: MathReading } | undefined>();
 	let faults = $state({ brokenEntangler: false });
-
-	const INV_SQRT2 = 1 / Math.SQRT2;
+	const timeline = useSimulationTimelineModel();
 
 	/**
 	 * Amplitudes over the computational basis after H on q0 then CNOT(q0→q1),
 	 * starting from |q0 q1⟩. With a faulted entangler the CNOT is skipped —
 	 * the product state that results is exactly what "no entanglement" means.
 	 */
-	const amplitudes = $derived.by(() => {
-		const state: Record<'00' | '01' | '10' | '11', number> = { '00': 0, '01': 0, '10': 0, '11': 0 };
-		const sign = q0 === 1 ? -1 : 1;
-		if (faults.brokenEntangler) {
-			/* (|0⟩ ± |1⟩)/√2 ⊗ |q1⟩ */
-			state[q1 === 0 ? '00' : '01'] = INV_SQRT2;
-			state[q1 === 0 ? '10' : '11'] = sign * INV_SQRT2;
-		} else {
-			/* CNOT flips the target on the |1x⟩ branch. */
-			state[q1 === 0 ? '00' : '01'] = INV_SQRT2;
-			state[q1 === 0 ? '11' : '10'] = sign * INV_SQRT2;
-		}
-		return state;
-	});
+	const amplitudes = $derived(
+		bellAmplitudesAtStage(
+			q0 as 0 | 1,
+			q1 as 0 | 1,
+			Math.min(timeline.step, 2),
+			faults.brokenEntangler
+		)
+	);
 
 	const outcomes = ['00', '01', '10', '11'] as const;
 	const probabilities = $derived({
@@ -68,49 +63,16 @@
 	);
 
 	/**
-	 * CHSH correlator E(θ_a, θ_b) = ⟨ψ| M(θ_a) ⊗ M(θ_b) |ψ⟩ for the real state,
-	 * where M(θ) = cos θ·Z + sin θ·X is a ±1-outcome measurement in the x–z plane.
+	 * Optimized CHSH witness. Local hidden variables cap |S| ≤ 2; a maximally
+	 * entangled state reaches Tsirelson's bound 2√2 ≈ 2.83.
 	 */
-	function correlator(thetaA: number, thetaB: number): number {
-		const opA = [
-			[Math.cos(thetaA), Math.sin(thetaA)],
-			[Math.sin(thetaA), -Math.cos(thetaA)]
-		];
-		const opB = [
-			[Math.cos(thetaB), Math.sin(thetaB)],
-			[Math.sin(thetaB), -Math.cos(thetaB)]
-		];
-		const psi = [amplitudes['00'], amplitudes['01'], amplitudes['10'], amplitudes['11']];
-		let expectation = 0;
-		for (let i = 0; i < 2; i += 1)
-			for (let j = 0; j < 2; j += 1)
-				for (let k = 0; k < 2; k += 1)
-					for (let l = 0; l < 2; l += 1)
-						expectation += psi[i * 2 + j]! * opA[i]![k]! * opB[j]![l]! * psi[k * 2 + l]!;
-		return expectation;
-	}
-
-	/**
-	 * CHSH witness S at the optimal angles. Local hidden variables cap |S| ≤ 2;
-	 * an entangled state reaches Tsirelson's bound 2√2 ≈ 2.83.
-	 */
-	const chsh = $derived.by(() => {
-		const a0 = 0;
-		const aPrime = Math.PI / 2;
-		const b0 = Math.PI / 4;
-		const bPrime = -Math.PI / 4;
-		const s =
-			correlator(a0, b0) +
-			correlator(a0, bPrime) +
-			correlator(aPrime, b0) -
-			correlator(aPrime, bPrime);
-		return Math.abs(s);
-	});
+	const chsh = $derived(bellChsh(amplitudes));
 	const TSIRELSON = 2 * Math.SQRT2;
 	const violatesRealism = $derived(chsh > 2 + 1e-6);
 
 	const bellName = $derived.by(() => {
-		if (faults.brokenEntangler) return 'product state (no entanglement)';
+		if (timeline.step === 0) return `|${q0}${q1}⟩`;
+		if (timeline.step === 1 || faults.brokenEntangler) return 'post-H product state';
 		const names = { '00': 'Φ⁺', '01': 'Ψ⁺', '10': 'Φ⁻', '11': 'Ψ⁻' } as const;
 		return `|${names[`${q0}${q1}` as keyof typeof names]}⟩`;
 	});
@@ -253,13 +215,20 @@
 		onpointermove={onStageMove}
 		onpointerleave={() => (hover = undefined)}
 		role="group"
-		aria-label="Bell state circuit. Click the state-preparation nodes to flip qubits."
+		data-model-stage={timeline.step}
+		aria-label="Bell-state model. Click the state-preparation nodes to flip qubits."
 	>
 		{@html svg}
 	</div>
 {/snippet}
 
 {#snippet instruments()}
+	<p class="visually-hidden" aria-live="polite" aria-atomic="true">
+		Bell laboratory {faults.brokenEntangler
+			? 'degraded: entangler offline and state is separable'
+			: 'nominal: entangler online'}; prepared state {bellName}; CHSH value {chsh.toFixed(3)};
+		{sampleTotal} measurement samples.
+	</p>
 	<p class="readout state-line">
 		<LiveMath id="bell.state" label={`state becomes ${bellName}`} values={{ state: bellName }} />
 	</p>

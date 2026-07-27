@@ -1,27 +1,37 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
 	import type { SchematicSourceMap } from '@schemd/core';
+	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/state';
 	import WorkspaceShell from '$lib/components/WorkspaceShell.svelte';
 	import CodeEditor from '$lib/components/CodeEditor.svelte';
+	import IdeCommandPalette from './IdeCommandPalette.svelte';
 	import { compileInBrowser, prefetchCompiler } from '$lib/compile-client';
+	import { COMPILE_LIMITS } from '$lib/compile-contract';
+	import { rasterExportScale } from '$lib/playground-export';
 	import {
 		decodeWorkspaceState,
-		encodeWorkspaceState,
+		shareableWorkspaceUrl,
 		WORKSPACE_OUTPUT_MODES,
-		workspaceOutputMode,
-		writeWorkspaceQuery
+		workspaceOutputMode
 	} from '$lib/state-uri';
 	import { playError, playSuccess } from '$lib/audio';
 	import { trackInteraction } from '$lib/telemetry';
 	import { ui } from '$lib/ui.svelte';
+	import {
+		isPlaygroundWorkspaceId,
+		parsePlaygroundDraft,
+		playgroundDraftKey,
+		PLAYGROUND_DRAFT_SESSION_KEY,
+		serializePlaygroundDraft
+	} from '$lib/playground-draft';
 
 	let { data }: PageProps = $props();
 
 	/* ---------- Workspace state ---------- */
-	const params = browser ? page.url.searchParams : undefined;
+	const params = page.url.searchParams;
 	/* Fetch the compiler while the page is still painting, not on first keystroke. */
 	if (browser) prefetchCompiler();
 	const MODES = WORKSPACE_OUTPUT_MODES;
@@ -45,7 +55,103 @@
 	/* Bounds and title follow a shared/opened example so it renders as authored. */
 	let boundsWidth = $state(initialBound('w', 760));
 	let boundsHeight = $state(initialBound('h', 440));
-	let title = $state(params?.get('t') ?? 'Workspace schematic');
+	let title = $state(
+		(params?.get('t') ?? 'Workspace schematic').slice(0, COMPILE_LIMITS.maxTitleCharacters)
+	);
+	let draftReady = $state(false);
+	let draftState = $state<'loading' | 'recovered' | 'dirty' | 'saved' | 'shared' | 'unavailable'>(
+		'loading'
+	);
+	let savedSharedSnapshot = $state<string | undefined>();
+	let notice = $state('');
+	let draftWorkspaceId = $state('');
+	const draftStorageKey = $derived(
+		draftWorkspaceId === '' ? undefined : playgroundDraftKey(data.version, draftWorkspaceId)
+	);
+
+	interface EditorApi {
+		focus(): void;
+		focusLine(line: number): void;
+		openFind(withReplace?: boolean): void;
+		toggleComment(): void;
+		indent(): void;
+		outdent(): void;
+	}
+	interface PaletteApi {
+		open(): void;
+	}
+	let editorApi = $state<EditorApi | undefined>();
+	let paletteApi = $state<PaletteApi | undefined>();
+	let cursor = $state({ line: 0, column: 0 });
+
+	function initializeDraftWorkspace(): string | undefined {
+		try {
+			const existing = sessionStorage.getItem(PLAYGROUND_DRAFT_SESSION_KEY);
+			if (isPlaygroundWorkspaceId(existing)) return existing;
+			const id =
+				typeof crypto.randomUUID === 'function'
+					? crypto.randomUUID()
+					: `tab_${Array.from(crypto.getRandomValues(new Uint32Array(4)), (part) =>
+							part.toString(36)
+						).join('_')}`;
+			sessionStorage.setItem(PLAYGROUND_DRAFT_SESSION_KEY, id);
+			return id;
+		} catch {
+			return undefined;
+		}
+	}
+
+	onMount(() => {
+		const workspaceId = initializeDraftWorkspace();
+		if (!workspaceId) {
+			draftState = shared === null ? 'unavailable' : 'shared';
+			draftReady = true;
+			return;
+		}
+		draftWorkspaceId = workspaceId;
+		const key = playgroundDraftKey(data.version, workspaceId);
+		if (!key) {
+			draftState = 'unavailable';
+			draftReady = true;
+			return;
+		}
+		/* Shared URLs are explicit and always win over a local crash draft. */
+		if (shared === null) {
+			try {
+				const draft = parsePlaygroundDraft(localStorage.getItem(key));
+				if (draft) {
+					const changed =
+						draft.source !== source ||
+						draft.width !== boundsWidth ||
+						draft.height !== boundsHeight ||
+						draft.title !== title ||
+						draft.mode !== mode;
+					source = draft.source;
+					boundsWidth = draft.width;
+					boundsHeight = draft.height;
+					title = draft.title;
+					mode = draft.mode;
+					if (changed) {
+						draftState = 'recovered';
+						notice = 'Recovered the last local draft.';
+					} else {
+						draftState = 'saved';
+					}
+				} else {
+					draftState = 'saved';
+				}
+			} catch {
+				/* Storage can throw in locked-down/private browser contexts. */
+				draftState = 'unavailable';
+			}
+		} else {
+			/* Merely opening someone else's share link must not overwrite this
+			 * browser's unrelated recovery draft. Shared work is persisted only
+			 * after an explicit save command. */
+			draftState = 'shared';
+		}
+		draftReady = true;
+	});
 
 	/**
 	 * Accept a pasted Markdown ```schemd fence: hoist its bounds and title out of
@@ -59,7 +165,9 @@
 		if (!match) return false;
 		boundsWidth = Math.max(64, Math.min(4096, Number(match[1])));
 		boundsHeight = Math.max(64, Math.min(4096, Number(match[2])));
-		if (match[3] !== undefined && match[3] !== '') title = match[3];
+		if (match[3] !== undefined && match[3] !== '') {
+			title = match[3].slice(0, COMPILE_LIMITS.maxTitleCharacters);
+		}
 		source = match[4]!;
 		return true;
 	}
@@ -108,16 +216,19 @@
 		};
 	}
 
-	/* One frame is enough for a local compile; the endpoint fallback keeps the
-	   old cadence only because it pays for a round trip. */
-	const COMPILE_DEBOUNCE_MS = 24;
-
 	let result = $state<CompileState>({ svg: '' });
 	let compiling = $state(false);
 	let caretLine = $state(0);
 	let mappedLine = $state<number | undefined>();
 	let previewHost = $state<HTMLElement | undefined>();
 	let compileGeneration = 0;
+	let compileNonce = $state(0);
+	let handledCompileNonce = 0;
+	let compileAnnouncement = $state('');
+
+	function requestCompile(): void {
+		compileNonce += 1;
+	}
 
 	/* ---------- Debounced compilation ----------
 	 * The compiler runs in this tab whenever the browser can load it: the
@@ -127,6 +238,8 @@
 	 * compiling locally — a sub-millisecond compile needs no waiting.
 	 */
 	$effect(() => {
+		if (browser && !draftReady) return;
+		void compileNonce;
 		const payload = {
 			source,
 			width: boundsWidth,
@@ -135,11 +248,14 @@
 			mode
 		};
 		const generation = ++compileGeneration;
+		const manual = compileNonce > handledCompileNonce;
+		handledCompileNonce = compileNonce;
 		const controller = new AbortController();
 		compiling = true;
+		const debounceMs = manual ? 0 : source.length > 50_000 ? 220 : source.length > 10_000 ? 90 : 24;
 		const timer = setTimeout(async () => {
 			try {
-				const local = await compileInBrowser(payload);
+				const local = await compileInBrowser(payload, controller.signal);
 				if (generation !== compileGeneration) return;
 				const body: unknown =
 					local ??
@@ -166,7 +282,10 @@
 						sourceMap: parseSourceMap(record['sourceMap']),
 						ms: Number(record['ms'] ?? 0)
 					};
-					if (ui.audio) playSuccess();
+					if (manual) {
+						compileAnnouncement = `Compilation complete. ${result.metrics.components} components and ${result.metrics.connections} connections.`;
+					}
+					if (manual && ui.audio) playSuccess();
 				} else {
 					result = {
 						...result,
@@ -175,7 +294,10 @@
 							line: typeof record['line'] === 'number' ? record['line'] : undefined
 						}
 					};
-					if (ui.audio) playError();
+					if (manual) {
+						compileAnnouncement = `Compilation error${result.error.line === undefined ? '' : ` on line ${result.error.line}`}: ${result.error.message}`;
+					}
+					if (manual && ui.audio) playError();
 				}
 			} catch {
 				if (controller.signal.aborted || generation !== compileGeneration) return;
@@ -186,7 +308,7 @@
 			} finally {
 				if (generation === compileGeneration) compiling = false;
 			}
-		}, COMPILE_DEBOUNCE_MS);
+		}, debounceMs);
 		return () => {
 			clearTimeout(timer);
 			controller.abort();
@@ -207,12 +329,101 @@
 		};
 		const timer = setTimeout(() => {
 			const url = new URL(location.href);
-			writeWorkspaceQuery(url, workspace);
+			const shareable = shareableWorkspaceUrl(url, workspace);
+			if (shareable) {
+				if (shareable.href === location.href) return;
+				replaceState(shareable, page.state);
+				return;
+			}
+			/* A local document may legitimately exceed practical URL limits.
+			 * Remove stale workspace fields rather than leaving the address bar
+			 * pointing at an older, different program. */
+			for (const key of ['code', 'w', 'h', 't', 'm']) url.searchParams.delete(key);
 			if (url.href === location.href) return;
 			replaceState(url, page.state);
 		}, 300);
 		return () => clearTimeout(timer);
 	});
+
+	/* ---------- Crash-safe local draft ---------- */
+
+	function showNotice(message: string): void {
+		notice = message;
+		const snapshot = message;
+		setTimeout(() => {
+			if (notice === snapshot) notice = '';
+		}, 2200);
+	}
+
+	function saveDraftNow(): void {
+		const key = draftStorageKey;
+		if (!browser || !draftReady || !key) {
+			draftState = 'unavailable';
+			return;
+		}
+		try {
+			localStorage.setItem(
+				key,
+				serializePlaygroundDraft({
+					source,
+					width: boundsWidth,
+					height: boundsHeight,
+					title,
+					mode
+				})
+			);
+			if (shared !== null) {
+				savedSharedSnapshot = JSON.stringify({
+					source,
+					boundsWidth,
+					boundsHeight,
+					title,
+					mode
+				});
+			}
+			draftState = 'saved';
+		} catch {
+			draftState = 'unavailable';
+		}
+	}
+
+	$effect(() => {
+		if (!browser || !draftReady) return;
+		/* Read the complete snapshot synchronously so every field is tracked. */
+		const snapshot = { source, boundsWidth, boundsHeight, title, mode };
+		if (shared !== null) {
+			draftState = JSON.stringify(snapshot) === savedSharedSnapshot ? 'saved' : 'shared';
+			return;
+		}
+		draftState = 'dirty';
+		const timer = setTimeout(saveDraftNow, 450);
+		return () => clearTimeout(timer);
+	});
+
+	function resetWorkspace(): void {
+		const confirmed = (() => {
+			try {
+				return window.confirm('Discard this draft and restore the verified starter schematic?');
+			} catch {
+				return false;
+			}
+		})();
+		if (!confirmed) return;
+		const key = draftStorageKey;
+		try {
+			if (key) localStorage.removeItem(key);
+		} catch {
+			draftState = 'unavailable';
+		}
+		source = data.sample;
+		boundsWidth = 760;
+		boundsHeight = 440;
+		title = 'Workspace schematic';
+		mode = 'full';
+		view = 'render';
+		showNotice('Starter schematic restored.');
+		queueMicrotask(() => editorApi?.focus());
+	}
 
 	/* ---------- Source ↔ vector mapping (driven by the compiler source map) ---------- */
 
@@ -294,18 +505,22 @@
 	});
 
 	const shareUrl = $derived.by(() => {
-		if (!browser) return '';
-		return writeWorkspaceQuery(new URL(`/playground/${data.version}`, location.origin), {
+		if (!browser) return undefined;
+		return shareableWorkspaceUrl(new URL(`/playground/${data.version}`, location.origin), {
 			source,
 			width: boundsWidth,
 			height: boundsHeight,
 			title,
 			mode
-		}).href;
+		})?.href;
 	});
 
 	let copied = $state(false);
 	async function copyShare(): Promise<void> {
+		if (shareUrl === undefined) {
+			showNotice('Workspace is too large for a reliable URL. Download the source instead.');
+			return;
+		}
 		try {
 			await navigator.clipboard.writeText(shareUrl);
 			trackInteraction('copy_share');
@@ -313,6 +528,18 @@
 			setTimeout(() => (copied = false), 1600);
 		} catch {
 			/* The fully selectable URL remains in browser history when clipboard access is denied. */
+		}
+	}
+
+	let sourceCopied = $state(false);
+	async function copySource(): Promise<void> {
+		try {
+			await navigator.clipboard.writeText(source);
+			sourceCopied = true;
+			showNotice('Source copied.');
+			setTimeout(() => (sourceCopied = false), 1600);
+		} catch {
+			showNotice('Clipboard access was denied.');
 		}
 	}
 
@@ -324,7 +551,7 @@
 			'x' +
 			boundsHeight +
 			'" title="' +
-			(title.replace(/"/g, '').trim() || 'Playground schematic') +
+			(title.replace(/["\r\n]/g, '').trim() || 'Playground schematic') +
 			'"\n' +
 			source +
 			'\n```'
@@ -395,14 +622,32 @@
 		const anchor = document.createElement('a');
 		anchor.href = href;
 		anchor.download = filename;
+		document.body.append(anchor);
 		anchor.click();
+		anchor.remove();
+	}
+
+	function safeFilename(): string {
+		const stem = title
+			.toLocaleLowerCase()
+			.replace(/[^a-z0-9]+/g, '-')
+			.replace(/^-|-$/g, '')
+			.slice(0, 64);
+		return stem || 'schemd-schematic';
+	}
+
+	function downloadSource(): void {
+		const url = URL.createObjectURL(new Blob([fenceMarkdown + '\n'], { type: 'text/markdown' }));
+		triggerDownload(url, `${safeFilename()}.schemd.md`);
+		setTimeout(() => URL.revokeObjectURL(url), 1000);
+		showNotice('Source downloaded.');
 	}
 
 	function downloadSvg(): void {
 		const svg = themedSvg();
 		if (!svg) return;
 		const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
-		triggerDownload(url, 'schemd-schematic.svg');
+		triggerDownload(url, `${safeFilename()}.svg`);
 		trackInteraction('download_svg');
 		setTimeout(() => URL.revokeObjectURL(url), 1000);
 	}
@@ -412,37 +657,65 @@
 		if (!svg) return;
 		const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
 		const image = new Image();
-		image.onload = () => {
-			const scale = 2;
-			const canvas = document.createElement('canvas');
-			canvas.width = boundsWidth * scale;
-			canvas.height = boundsHeight * scale;
-			const context = canvas.getContext('2d');
-			if (context) {
-				context.scale(scale, scale);
-				context.drawImage(image, 0, 0, boundsWidth, boundsHeight);
-				canvas.toBlob((blob) => {
-					if (blob) {
-						const pngUrl = URL.createObjectURL(blob);
-						triggerDownload(pngUrl, 'schemd-schematic.png');
-						trackInteraction('download_png');
-						setTimeout(() => URL.revokeObjectURL(pngUrl), 1000);
-					}
-				}, 'image/png');
-			}
+		let sourceUrlLive = true;
+		const releaseSource = (): void => {
+			if (!sourceUrlLive) return;
+			sourceUrlLive = false;
 			URL.revokeObjectURL(url);
 		};
+		setTimeout(releaseSource, 30_000);
+		image.onload = () => {
+			try {
+				const scale = rasterExportScale(boundsWidth, boundsHeight);
+				if (scale === 0) throw new Error('Invalid raster dimensions.');
+				const canvas = document.createElement('canvas');
+				canvas.width = Math.round(boundsWidth * scale);
+				canvas.height = Math.round(boundsHeight * scale);
+				const context = canvas.getContext('2d');
+				if (!context) throw new Error('Canvas unavailable.');
+				context.scale(scale, scale);
+				context.drawImage(image, 0, 0, boundsWidth, boundsHeight);
+				releaseSource();
+				canvas.toBlob((blob) => {
+					if (!blob) {
+						showNotice('PNG export is unavailable in this browser.');
+						return;
+					}
+					const pngUrl = URL.createObjectURL(blob);
+					triggerDownload(pngUrl, `${safeFilename()}.png`);
+					trackInteraction('download_png');
+					setTimeout(() => URL.revokeObjectURL(pngUrl), 1000);
+				}, 'image/png');
+			} catch {
+				releaseSource();
+				showNotice('PNG export failed safely. Download SVG instead.');
+			}
+		};
+		image.onerror = () => {
+			releaseSource();
+			showNotice('PNG export could not decode the generated SVG.');
+		};
+		image.decoding = 'async';
 		image.src = url;
 	}
 
 	/** Shareable read-only embed URL for the current workspace. */
-	const embedUrl = $derived(
-		browser
-			? `${location.origin}/embed/${data.version}?code=${encodeWorkspaceState(source)}&w=${boundsWidth}&h=${boundsHeight}&t=${encodeURIComponent(title)}`
-			: ''
-	);
+	const embedUrl = $derived.by(() => {
+		if (!browser) return undefined;
+		return shareableWorkspaceUrl(new URL(`/embed/${data.version}`, location.origin), {
+			source,
+			width: boundsWidth,
+			height: boundsHeight,
+			title,
+			mode
+		})?.href;
+	});
 	let embedCopied = $state(false);
 	async function copyEmbed(): Promise<void> {
+		if (embedUrl === undefined) {
+			showNotice('Workspace is too large for a reliable embed URL. Download the source instead.');
+			return;
+		}
 		try {
 			await navigator.clipboard.writeText(embedUrl);
 			trackInteraction('copy_embed');
@@ -452,7 +725,164 @@
 			/* Clipboard policies vary in embedded browsers; do not break the workspace. */
 		}
 	}
+
+	const ideCommands = $derived.by(() => {
+		const commands = [
+			{
+				id: 'focus-source',
+				label: 'Focus source editor',
+				detail: 'Return the caret to Schemd source',
+				run: () => editorApi?.focus()
+			},
+			{
+				id: 'find',
+				label: 'Find',
+				detail: 'Literal search in source',
+				shortcut: '⌘F',
+				run: () => editorApi?.openFind(false)
+			},
+			{
+				id: 'replace',
+				label: 'Find and replace',
+				detail: 'Replace one or every literal match',
+				shortcut: '⌘H',
+				run: () => editorApi?.openFind(true)
+			},
+			{
+				id: 'toggle-comment',
+				label: 'Toggle line comment',
+				detail: 'Comment or uncomment the selection',
+				shortcut: '⌘/',
+				run: () => editorApi?.toggleComment()
+			},
+			{
+				id: 'compile',
+				label: 'Compile now',
+				detail: 'Bypass the edit debounce',
+				shortcut: '⌘↵',
+				run: requestCompile
+			},
+			{
+				id: 'render',
+				label: 'Show rendered preview',
+				detail: 'Switch the output pane to SVG',
+				run: () => {
+					view = 'render';
+				}
+			},
+			{
+				id: 'raw',
+				label: 'Show raw SVG',
+				detail: 'Inspect compiler markup',
+				run: () => {
+					view = 'raw';
+				}
+			},
+			{
+				id: 'fence',
+				label: 'Show Markdown fence',
+				detail: 'Inspect the portable fenced source',
+				run: () => {
+					view = 'fence';
+				}
+			},
+			{
+				id: 'copy-source',
+				label: 'Copy source',
+				detail: 'Copy plain Schemd source',
+				run: copySource
+			},
+			{
+				id: 'copy-fence',
+				label: 'Copy Markdown fence',
+				detail: 'Copy bounds, title, and source',
+				run: copyFence
+			},
+			{
+				id: 'copy-share',
+				label: 'Copy share link',
+				detail:
+					shareUrl === undefined
+						? 'Document is too large for a reliable URL'
+						: 'Encode this workspace in a URL',
+				run: copyShare
+			},
+			{
+				id: 'download-source',
+				label: 'Download source',
+				detail: 'Save a self-describing .schemd.md file',
+				run: downloadSource
+			},
+			{
+				id: 'download-svg',
+				label: 'Download SVG',
+				detail: 'Save a standalone themed vector',
+				run: downloadSvg
+			},
+			{
+				id: 'download-png',
+				label: 'Download PNG',
+				detail: 'Rasterize a 2× preview locally',
+				run: downloadPng
+			},
+			{
+				id: 'toggle-reference',
+				label: `${leftOpen ? 'Hide' : 'Show'} reference`,
+				detail: 'Toggle the component vocabulary pane',
+				run: () => {
+					leftOpen = !leftOpen;
+				}
+			},
+			{
+				id: 'toggle-preview',
+				label: `${rightOpen ? 'Hide' : 'Show'} preview`,
+				detail: 'Toggle the compiler output pane',
+				run: () => {
+					rightOpen = !rightOpen;
+				}
+			},
+			{
+				id: 'save',
+				label: 'Save recovery draft',
+				detail: 'Persist this workspace in this browser',
+				shortcut: '⌘S',
+				run: () => {
+					saveDraftNow();
+					showNotice('Recovery draft saved.');
+				}
+			},
+			{
+				id: 'reset',
+				label: 'Restore starter schematic',
+				detail: 'Discard the local draft after confirmation',
+				run: resetWorkspace
+			}
+		];
+		if (result.error?.line !== undefined) {
+			commands.unshift({
+				id: 'diagnostic',
+				label: `Go to error on line ${result.error.line}`,
+				detail: result.error.message,
+				shortcut: 'F8',
+				run: () => editorApi?.focusLine(result.error!.line! - 1)
+			});
+		}
+		return commands;
+	});
+
+	function onWindowKeydown(event: KeyboardEvent): void {
+		if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === 's') {
+			event.preventDefault();
+			saveDraftNow();
+			showNotice('Recovery draft saved.');
+		} else if (event.key === 'F8' && result.error?.line !== undefined) {
+			event.preventDefault();
+			editorApi?.focusLine(result.error.line - 1);
+		}
+	}
 </script>
+
+<svelte:window onkeydown={onWindowKeydown} />
 
 <svelte:head>
 	<title>Playground · schemd v{data.version}</title>
@@ -575,21 +1005,36 @@
 						</span>
 					{/if}
 				</span>
-				{#if result.error}
-					<span class="diagnostic" role="alert">
-						{result.error.message}
+				<div class="compile-summary">
+					<span class="microlabel">
+						{result.error
+							? `error${result.error.line ? ` · line ${result.error.line}` : ''}`
+							: compiling
+								? 'compiling…'
+								: result.metrics
+									? 'compiled'
+									: 'ready'}
 					</span>
-				{:else if compiling}
-					<span class="microlabel">compiling…</span>
-				{:else if result.metrics}
-					<span class="readout">
-						{result.metrics.components} nodes · {result.metrics.connections} wires ·
-						{result.metrics.svgBytes.toLocaleString('en-US')} B · {result.ms} ms
-					</span>
-				{/if}
+					{#if result.metrics && !result.error}
+						<span class="readout">
+							{result.metrics.components} nodes · {result.metrics.connections} wires ·
+							{result.metrics.svgBytes.toLocaleString('en-US')} B · {result.ms} ms
+						</span>
+					{/if}
+					<button
+						type="button"
+						class="command-trigger"
+						onclick={() => paletteApi?.open()}
+						aria-label="Open playground command palette"
+						title="Playground commands (F1 or Command/Control Shift P)"
+					>
+						commands <kbd>F1</kbd>
+					</button>
+				</div>
 			</div>
 			<CodeEditor
 				bind:value={source}
+				onready={(api) => (editorApi = api)}
 				vocabulary={{
 					kinds: data.kindGroups.flatMap((group) => group.kinds),
 					colors: data.colors,
@@ -598,7 +1043,25 @@
 				{mappedLine}
 				errorLine={result.error?.line !== undefined ? result.error.line - 1 : undefined}
 				oncaretline={(line) => (caretLine = line)}
+				onpositionchange={(position) => (cursor = position)}
+				oncompile={requestCompile}
+				maxLength={COMPILE_LIMITS.maxSourceCharacters}
 			/>
+			{#if result.error}
+				<section
+					id="compiler-diagnostic"
+					class="diagnostic-panel"
+					aria-label="Compiler diagnostics"
+				>
+					<span class="diagnostic-severity">error</span>
+					<p>{result.error.message}</p>
+					{#if result.error.line !== undefined}
+						<button type="button" onclick={() => editorApi?.focusLine(result.error!.line! - 1)}>
+							Go to line {result.error.line} <kbd>F8</kbd>
+						</button>
+					{/if}
+				</section>
+			{/if}
 		</div>
 	{/snippet}
 
@@ -686,21 +1149,63 @@
 	{/snippet}
 
 	{#snippet statusExtra()}
+		<span class="microlabel">Ln {cursor.line + 1}, Col {cursor.column + 1}</span>
+		<span class="draft-status" data-state={draftState}>
+			{draftState === 'dirty'
+				? '● unsaved'
+				: draftState === 'unavailable'
+					? 'local save unavailable'
+					: draftState === 'shared'
+						? 'shared · save manually'
+						: draftState === 'recovered'
+							? 'recovered'
+							: 'saved locally'}
+		</span>
 		<span class="microlabel">mode={mode}</span>
+		<button type="button" class="status-action" onclick={copySource}>
+			{sourceCopied ? '✓ source copied' : '⧉ source'}
+		</button>
+		<button type="button" class="status-action" onclick={downloadSource} title="Download source"
+			>↓ source</button
+		>
 		<button type="button" class="status-action" onclick={downloadSvg} title="Download themed SVG"
 			>↓ svg</button
 		>
 		<button type="button" class="status-action" onclick={downloadPng} title="Download 2× PNG"
 			>↓ png</button
 		>
-		<button type="button" class="status-action" onclick={copyEmbed} aria-live="polite">
+		<button
+			type="button"
+			class="status-action"
+			onclick={copyEmbed}
+			aria-live="polite"
+			disabled={embedUrl === undefined}
+			title={embedUrl === undefined
+				? 'Document is too large for a reliable embed URL'
+				: 'Copy embed URL'}
+		>
 			{embedCopied ? '✓ embed copied' : '⧉ embed'}
 		</button>
-		<button type="button" class="status-action" onclick={copyShare} aria-live="polite">
+		<button
+			type="button"
+			class="status-action"
+			onclick={copyShare}
+			aria-live="polite"
+			disabled={shareUrl === undefined}
+			title={shareUrl === undefined
+				? 'Document is too large for a reliable share URL'
+				: 'Copy share URL'}
+		>
 			{copied ? '✓ link copied' : '⧉ share'}
 		</button>
 	{/snippet}
 </WorkspaceShell>
+
+<IdeCommandPalette commands={ideCommands} onready={(api) => (paletteApi = api)} />
+<p class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
+	{compileAnnouncement}
+</p>
+<div class="workspace-notice" aria-live="polite" aria-atomic="true">{notice}</div>
 
 <style>
 	.ref {
@@ -762,6 +1267,12 @@
 
 		&:hover {
 			color: var(--ink);
+		}
+
+		&:disabled {
+			color: var(--ink-faint);
+			cursor: not-allowed;
+			opacity: 0.55;
 		}
 	}
 
@@ -896,8 +1407,15 @@
 	.editor-pane,
 	.preview-pane {
 		display: grid;
-		grid-template-rows: auto minmax(0, 1fr);
 		min-block-size: 0;
+	}
+
+	.editor-pane {
+		grid-template-rows: auto minmax(0, 1fr) auto;
+	}
+
+	.preview-pane {
+		grid-template-rows: auto minmax(0, 1fr);
 	}
 
 	.editor-toolbar,
@@ -920,6 +1438,35 @@
 		flex-wrap: wrap;
 	}
 
+	.compile-summary {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: var(--space-2);
+		min-inline-size: 0;
+		flex-wrap: wrap;
+
+		& output {
+			color: var(--accent);
+		}
+	}
+
+	.command-trigger {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+		padding: 0.2rem 0.45rem;
+		color: var(--ink-mute);
+		border: 1px solid var(--line);
+		font-family: var(--font-mono);
+		font-size: var(--text-2xs);
+
+		&:hover {
+			color: var(--accent);
+			border-color: var(--line-strong);
+		}
+	}
+
 	/* Truth-in-labelling: the preview is always the installed engine's output,
 	   even when the visitor navigates to a historical version in the header. */
 	.engine-note {
@@ -933,10 +1480,39 @@
 		cursor: help;
 	}
 
-	.diagnostic {
+	.diagnostic-panel {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-2) var(--space-3);
+		background: color-mix(in srgb, var(--danger) 9%, var(--bg-raised));
+		border-block-start: 1px solid color-mix(in srgb, var(--danger) 55%, var(--line));
 		font-family: var(--font-mono);
 		font-size: var(--text-xs);
-		color: var(--danger);
+
+		& p {
+			min-inline-size: 0;
+			margin: 0;
+			overflow-wrap: anywhere;
+		}
+
+		& button {
+			padding: 0.2rem 0.45rem;
+			color: var(--danger);
+			border: 1px solid color-mix(in srgb, var(--danger) 50%, var(--line));
+			white-space: nowrap;
+		}
+	}
+
+	.diagnostic-severity {
+		padding: 0.05rem 0.4rem;
+		color: var(--accent-ink);
+		background: var(--danger);
+		text-transform: uppercase;
+		font-size: var(--text-2xs);
+		font-weight: 700;
+		letter-spacing: 0.08em;
 	}
 
 	.preview-stage {
@@ -965,6 +1541,65 @@
 
 		&:hover {
 			color: var(--ink);
+		}
+	}
+
+	.draft-status {
+		color: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: var(--text-2xs);
+
+		&[data-state='dirty'] {
+			color: var(--amber, var(--accent));
+		}
+
+		&[data-state='unavailable'] {
+			color: var(--danger);
+		}
+	}
+
+	.workspace-notice {
+		position: fixed;
+		inset-inline-start: 50%;
+		inset-block-end: calc(var(--statusbar-h) + var(--space-3));
+		z-index: 80;
+		max-inline-size: min(32rem, calc(100vw - 2rem));
+		padding: var(--space-2) var(--space-3);
+		transform: translateX(-50%);
+		color: var(--ink);
+		background: var(--bg-raised);
+		border: 1px solid var(--line-strong);
+		box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+
+		&:empty {
+			display: none;
+		}
+	}
+
+	@media (max-width: 620px) {
+		.editor-toolbar,
+		.preview-toolbar {
+			align-items: stretch;
+		}
+
+		.compile-summary {
+			justify-content: space-between;
+			inline-size: 100%;
+		}
+
+		.readout {
+			display: none;
+		}
+
+		.diagnostic-panel {
+			grid-template-columns: auto minmax(0, 1fr);
+
+			& button {
+				grid-column: 1 / -1;
+				justify-self: start;
+			}
 		}
 	}
 </style>

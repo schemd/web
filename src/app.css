@@ -757,7 +757,10 @@ pre.codeblock {
 	*,
 	*::before,
 	*::after {
-		animation-duration: 0.01ms !important;
+		/* Shortening an infinite animation creates an ultra-fast infinite loop.
+		   Remove CSS motion outright; the simulation RAF policy is handled by
+		   the shared motion controller. */
+		animation: none !important;
 		transition-duration: 0.01ms !important;
 		/* Collapsing only the duration still left staggered reveals waiting out
 		   their delay at opacity 0 — motion the visitor asked not to see, and a

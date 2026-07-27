@@ -54,13 +54,17 @@
 		return `${(bytes / 1024).toFixed(1)} KiB`;
 	}
 
+	const taggedRelease = $derived(
+		data.releases.find((release) => release.version === data.latest && release.released)
+	);
+
 	const stats = $derived([
-		{ label: 'latest release', value: `v${data.latest}` },
+		{ label: data.live ? 'npm latest' : 'seed default', value: `v${data.latest}` },
+		{ label: 'installed engine', value: `v${data.benchmark.version}` },
 		{ label: 'releases tracked', value: String(data.releases.length) },
 		{ label: 'median compile', value: `${data.benchmark.medianMs} ms` },
 		{ label: 'workload output', value: `${data.benchmark.svgBytes.toLocaleString('en-US')} B` },
-		{ label: 'compiler gzip', value: `${data.releaseMetrics.gzipBytes.toLocaleString('en-US')} B` },
-		{ label: 'npm tarball', value: `${data.releaseMetrics.tarballBytes.toLocaleString('en-US')} B` }
+		{ label: 'latest install', value: formatBytes(taggedRelease?.unpackedSize) }
 	]);
 </script>
 
@@ -78,14 +82,14 @@
 			<span class="sync-dot" aria-hidden="true"></span>
 			{data.live
 				? `registry synced ${dateFormat.format(new Date(data.syncedAt))}`
-				: 'registry unreachable — serving seeded snapshot'}
+				: 'serving seed — registry refresh runs in the background'}
 		</p>
 		<h1>Changelog</h1>
 		<p class="lede">
-			The server merges npm and GitHub metadata into a bounded process cache. Until 0.3.0 is
-			published, its deterministic release-candidate entry keeps the new documentation routable
-			without inventing a publish date or git hash. Every milestone links into its matching docs,
-			playground, and laboratory context.
+			The server returns a deterministic snapshot immediately, then refreshes npm and GitHub in the
+			background. npm’s <code>latest</code> tag identifies the public release after a live refresh; the
+			installed engine version is read independently from its package manifest. Unpublished local builds
+			and cold-start seeds remain explicitly marked as publication-unconfirmed.
 		</p>
 	</header>
 
@@ -167,15 +171,17 @@
 						<h2>
 							v{release.version}
 							{#if release.version === data.latest}
-								<span class="latest-tag">latest</span>
+								<span class="latest-tag">{data.live ? 'npm latest' : 'seed default'}</span>
 							{/if}
 							{#if !release.released}
-								<span class="latest-tag">release candidate</span>
+								<span class="latest-tag">publication unconfirmed</span>
 							{/if}
 						</h2>
 						<span class="microlabel">
 							{release.publishedAt.startsWith('1970')
-								? 'publish date and git hash pending release'
+								? release.released
+									? 'publish metadata unavailable in seed'
+									: 'publication not confirmed'
 								: dateFormat.format(new Date(release.publishedAt))}
 							{#if release.gitHead}
 								· <code>{release.gitHead}</code>

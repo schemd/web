@@ -17,7 +17,10 @@ describe('server-rendered live simulation math', () => {
 			for (const [templateId, html] of Object.entries(rendered)) {
 				expect(html, `${templateId}: KaTeX output`).toContain('class="katex"');
 				expect(html, `${templateId}: no render errors`).not.toContain('katex-error');
-				expect(html, `${templateId}: HTML-only output`).not.toContain('<math');
+				expect(html, `${templateId}: accessible MathML copy`).toContain('<math');
+				expect(html, `${templateId}: visual HTML is hidden from assistive technology`).toContain(
+					'class="katex-html" aria-hidden="true"'
+				);
 				expect(html, `${templateId}: no executable markup`).not.toMatch(/<script|onerror=/i);
 			}
 			/* A lab receives only its own templates, not the entire 13-lab catalogue. */
@@ -37,6 +40,7 @@ describe('server-rendered live simulation math', () => {
 		const adder = renderSimulationTimeline(timelineFor('adder'));
 		expect(adder[0]?.labelHtml).toContain('class="katex"');
 		expect(adder.at(-1)?.labelHtml).toContain('class="katex"');
+		expect(adder.at(-1)?.labelHtml).toContain('<math');
 		expect(
 			adder.flatMap((stage) => [stage.labelHtml, stage.explanationHtml]).join('')
 		).not.toContain('katex-error');

@@ -21,6 +21,8 @@
 		intervalMs?: number;
 		/** Fired after any navigation, with the new step. */
 		onchange?: (step: number) => void;
+		/** Fired when Reset/Play begins a logically new run from the first stage. */
+		onrestart?: () => void;
 	}
 
 	let {
@@ -29,7 +31,8 @@
 		labels = [],
 		playing = $bindable(false),
 		intervalMs = 1200,
-		onchange
+		onchange,
+		onrestart
 	}: Props = $props();
 
 	const atStart = $derived(step <= 0);
@@ -56,11 +59,15 @@
 
 	function reset(): void {
 		playing = false;
+		onrestart?.();
 		go(0);
 	}
 
 	function toggle(): void {
-		if (atEnd) go(0); /* replay from the top */
+		if (atEnd) {
+			onrestart?.();
+			go(0); /* replay from the top */
+		}
 		playing = !playing;
 	}
 

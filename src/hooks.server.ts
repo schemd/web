@@ -48,7 +48,9 @@ export function canonicalDocsTarget(pathname: string): string | undefined {
 /** Apply headers that are safe for both the website and cross-origin SVG embeds. */
 export function applySecurityHeaders(response: Response, secure: boolean): Response {
 	response.headers.set('x-content-type-options', 'nosniff');
-	response.headers.set('referrer-policy', 'strict-origin-when-cross-origin');
+	/* Playground source is intentionally encoded in the query string. Sending a
+	 * full same-origin Referer would copy that source into API/access logs. */
+	response.headers.set('referrer-policy', 'origin');
 	response.headers.set(
 		'permissions-policy',
 		'camera=(), geolocation=(), microphone=(), payment=(), usb=()'

@@ -15,8 +15,11 @@
 	}
 
 	let { label, active = $bindable() }: Props = $props();
+	/* The diagnosis is intentionally withheld from this control's rendered DOM.
+	 * Keep the prop contract while the central hypothesis flow owns disclosure. */
 
 	function toggle(): void {
+		void label;
 		active = !active;
 		if (!ui.audio) return;
 		if (active) playError();
@@ -24,13 +27,22 @@
 	}
 </script>
 
-<label class="fault-switch">
-	<input type="checkbox" role="switch" checked={active} onchange={toggle} />
-	<span class="fault-lever" aria-hidden="true"></span>
-	<span class="fault-label">{label}</span>
-</label>
+<div class="fault-control">
+	<label class="fault-switch">
+		<input type="checkbox" role="switch" checked={active} onchange={toggle} />
+		<span class="fault-lever" aria-hidden="true"></span>
+		<span class="fault-label"
+			>{active ? 'hidden fault active · restore circuit' : 'inject hidden fault'}</span
+		>
+	</label>
+</div>
 
 <style>
+	.fault-control {
+		display: grid;
+		gap: var(--space-1);
+	}
+
 	.fault-switch {
 		display: flex;
 		align-items: center;
