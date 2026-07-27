@@ -11,6 +11,7 @@
 	import { untrack } from 'svelte';
 	import CodeEditor from '$lib/components/CodeEditor.svelte';
 	import { inspectInBrowser, prefetchCompiler } from '$lib/compile-client';
+	import { COMPILE_LIMITS } from '$lib/compile-contract';
 	import { diffNetlists, type DiagramDelta } from '$lib/diagram-diff';
 	import type { PageProps } from './$types';
 
@@ -31,14 +32,18 @@
 	const BOUNDS = { width: 820, height: 460 };
 
 	/** Compile one revision and return its netlist, or record the diagnostic. */
-	async function compile(source: string, side: 'before' | 'after') {
-		const result = await inspectInBrowser({
-			source,
-			width: BOUNDS.width,
-			height: BOUNDS.height,
-			title: side === 'before' ? 'Before' : 'After',
-			mode: 'embedded-css'
-		});
+	async function compile(source: string, side: 'before' | 'after', signal: AbortSignal) {
+		const result = await inspectInBrowser(
+			{
+				source,
+				width: BOUNDS.width,
+				height: BOUNDS.height,
+				title: side === 'before' ? 'Before' : 'After',
+				mode: 'embedded-css'
+			},
+			signal
+		);
+		if (signal.aborted) return undefined;
 		if (!result || !result.ok) {
 			const message = result?.ok === false ? result.message : 'Compiler unavailable.';
 			if (side === 'before') beforeError = message;
@@ -58,15 +63,19 @@
 	$effect(() => {
 		const sources = { before, after };
 		const mine = ++generation;
+		const controller = new AbortController();
 		const timer = setTimeout(async () => {
 			const [left, right] = await Promise.all([
-				compile(sources.before, 'before'),
-				compile(sources.after, 'after')
+				compile(sources.before, 'before', controller.signal),
+				compile(sources.after, 'after', controller.signal)
 			]);
 			if (mine !== generation) return;
 			delta = left && right ? diffNetlists(left, right) : undefined;
 		}, 40);
-		return () => clearTimeout(timer);
+		return () => {
+			clearTimeout(timer);
+			controller.abort();
+		};
 	});
 
 	const badge = (kind: string) => kind.split('-')[0] ?? kind;
@@ -96,9 +105,17 @@
 				<h2>{pane.label}</h2>
 				<div class="editor">
 					{#if pane.side === 'before'}
-						<CodeEditor bind:value={before} ariaLabel="Before revision source" />
+						<CodeEditor
+							bind:value={before}
+							ariaLabel="Before revision source"
+							maxLength={COMPILE_LIMITS.maxSourceCharacters}
+						/>
 					{:else}
-						<CodeEditor bind:value={after} ariaLabel="After revision source" />
+						<CodeEditor
+							bind:value={after}
+							ariaLabel="After revision source"
+							maxLength={COMPILE_LIMITS.maxSourceCharacters}
+						/>
 					{/if}
 				</div>
 				{#if pane.side === 'before' ? beforeError : afterError}

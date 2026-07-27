@@ -23,7 +23,11 @@
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
+	import SimulationMotionControl from './SimulationMotionControl.svelte';
+	import { createSimulationMotion } from './simulation-motion.svelte';
 	import { reading, type MathReading } from '$lib/simulation-math';
+	import { wienDamping, wienFrequency, wienRegime } from '$lib/simulation-models';
+	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 
 	interface Props {
 		svg: string;
@@ -39,15 +43,14 @@
 	let v = $state(0); /* dx/dt */
 	let orbit = $state<{ x: number; y: number }[]>([]);
 	let scope = $state<number[]>(Array.from({ length: 96 }, () => 0.5));
-	let paused = $state(false);
 	let faults = $state({ openGainResistor: false });
+	const motion = createSimulationMotion('Wien-oscillator animation');
+	const timeline = useSimulationTimelineModel();
 
 	const resistance = $derived(10 ** logR);
 	const capacitance = $derived(10 ** logC);
-	/** Real Barkhausen frequency f₀ = 1/(2πRC); the sim animates at a visual ω. */
-	const frequency = $derived(1 / (2 * Math.PI * resistance * capacitance));
-	/** Nonlinear damping coefficient. Positive ⇒ oscillation grows then limits. */
-	const mu = $derived(faults.openGainResistor ? 9 : (gain - 3) * 6);
+	const frequency = $derived(wienFrequency(resistance, capacitance));
+	const mu = $derived(wienDamping(gain, faults.openGainResistor));
 	const amplitude = $derived.by(() => {
 		if (orbit.length < 20) return 0;
 		let peak = 0;
@@ -55,12 +58,8 @@
 		return peak;
 	});
 
-	const regime = $derived.by(() => {
-		if (faults.openGainResistor) return 'CLIPPING (rail latch)';
-		if (mu < -0.02) return 'DECAYING → silence';
-		if (Math.abs(mu) <= 0.02) return 'MARGINAL (Barkhausen)';
-		return 'OSCILLATING (limit cycle)';
-	});
+	const regime = $derived(wienRegime(mu, faults.openGainResistor));
+	const timelineProjection = $derived([x, frequency, 1 / 3, mu, amplitude][timeline.step] ?? 0);
 
 	function formatSi(value: number, unit: string): string {
 		if (value >= 1e6) return `${(value / 1e6).toFixed(2)} M${unit}`;
@@ -93,24 +92,25 @@
 
 	/* Fixed-step RK4 integrator driving the traces. */
 	$effect(() => {
+		if (motion.animationBlocked) return;
 		let frame = 0;
+		let stopped = false;
 		const loop = (): void => {
-			if (!paused) {
-				const dt = 0.05;
-				for (let step = 0; step < 3; step += 1) {
-					const [k1x, k1v] = derivative(x, v);
-					const [k2x, k2v] = derivative(x + (dt / 2) * k1x, v + (dt / 2) * k1v);
-					const [k3x, k3v] = derivative(x + (dt / 2) * k2x, v + (dt / 2) * k2v);
-					const [k4x, k4v] = derivative(x + dt * k3x, v + dt * k3v);
-					x += (dt / 6) * (k1x + 2 * k2x + 2 * k3x + k4x);
-					v += (dt / 6) * (k1v + 2 * k2v + 2 * k3v + k4v);
-				}
-				if (!Number.isFinite(x) || Math.abs(x) > 20) {
-					reset();
-				} else {
-					orbit = [...orbit.slice(-259), { x, y: v }];
-					scope = [...scope.slice(1), Math.max(0.02, Math.min(0.98, 0.5 + x / 3))];
-				}
+			if (stopped) return;
+			const dt = 0.05;
+			for (let step = 0; step < 3; step += 1) {
+				const [k1x, k1v] = derivative(x, v);
+				const [k2x, k2v] = derivative(x + (dt / 2) * k1x, v + (dt / 2) * k1v);
+				const [k3x, k3v] = derivative(x + (dt / 2) * k2x, v + (dt / 2) * k2v);
+				const [k4x, k4v] = derivative(x + dt * k3x, v + dt * k3v);
+				x += (dt / 6) * (k1x + 2 * k2x + 2 * k3x + k4x);
+				v += (dt / 6) * (k1v + 2 * k2v + 2 * k3v + k4v);
+			}
+			if (!Number.isFinite(x) || Math.abs(x) > 20) {
+				reset();
+			} else {
+				orbit = [...orbit.slice(-259), { x, y: v }];
+				scope = [...scope.slice(1), Math.max(0.02, Math.min(0.98, 0.5 + x / 3))];
 			}
 
 			const root = host;
@@ -124,7 +124,10 @@
 			frame = requestAnimationFrame(loop);
 		};
 		frame = requestAnimationFrame(loop);
-		return () => cancelAnimationFrame(frame);
+		return () => {
+			stopped = true;
+			cancelAnimationFrame(frame);
+		};
 	});
 
 	function probe(element: Element): MathReading | undefined {
@@ -189,10 +192,10 @@
 			<input type="range" min="-9" max="-6" step="0.01" bind:value={logC} aria-label="Bridge C" />
 		</label>
 		<div class="button-row">
-			<button type="button" class="btn" aria-pressed={paused} onclick={() => (paused = !paused)}>
-				{paused ? 'resume' : 'pause'}
-			</button>
-			<button type="button" class="btn" onclick={reset}>reset (seed noise)</button>
+			<SimulationMotionControl {motion} label="Wien oscillator and waveform animation" />
+			<button type="button" class="btn" data-timeline-input onclick={reset}
+				>reset (seed noise)</button
+			>
 		</div>
 	</div>
 	<div class="switchboard">
@@ -206,7 +209,9 @@
 		class="sim-stage schemd-frame"
 		bind:this={host}
 		role="group"
-		aria-label="Wien-bridge oscillator circuit"
+		data-model-stage={timeline.step}
+		data-model-value={timelineProjection}
+		aria-label="Wien oscillator model"
 	>
 		{@html svg}
 	</div>
@@ -217,9 +222,17 @@
 		class="regime"
 		class:oscillating={regime.startsWith('OSC')}
 		class:faulted={faults.openGainResistor}
+		aria-live="polite"
+		aria-atomic="true"
 	>
 		<span class="microlabel">Barkhausen classifier</span>
 		<strong>{regime}</strong>
+		<span class="visually-hidden"
+			>{faults.openGainResistor
+				? 'Amplifier feedback degraded: gain resistor open.'
+				: 'Amplifier feedback active.'}
+			{motion.status}</span
+		>
 	</div>
 	<div class="readouts">
 		<span class="readout"
@@ -291,11 +304,6 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-2);
-	}
-
-	.button-row .btn[aria-pressed='true'] {
-		border-color: var(--accent);
-		color: var(--accent);
 	}
 
 	.regime {

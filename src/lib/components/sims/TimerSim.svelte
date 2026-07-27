@@ -21,7 +21,16 @@
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
+	import SimulationMotionControl from './SimulationMotionControl.svelte';
+	import { createSimulationMotion } from './simulation-motion.svelte';
 	import { reading, type MathReading } from '$lib/simulation-math';
+	import {
+		timer555,
+		timer555AstableWaveform,
+		timer555MonostableCapacitor,
+		timer555PresentationFrequency
+	} from '$lib/simulation-models';
+	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 
 	interface Props {
 		svg: string;
@@ -41,22 +50,29 @@
 	let mode = $state<'astable' | 'monostable'>('astable');
 	/** In monostable mode: true while the single output pulse is in flight. */
 	let oneShot = $state(false);
+	let oneShotElapsed = 0;
+	let cyclePhase = 0;
+	const motion = createSimulationMotion('555 timer animation');
+	const timeline = useSimulationTimelineModel();
 
 	const VCC = 5;
 	const ra = $derived(10 ** logRa);
 	const rb = $derived(10 ** logRb);
 	const c = $derived(10 ** logC);
 
-	const frequency = $derived(faults.shortedThreshold ? 0 : 1.44 / ((ra + 2 * rb) * c));
-	const duty = $derived((ra + rb) / (ra + 2 * rb));
-	const period = $derived(frequency > 0 ? 1 / frequency : Number.POSITIVE_INFINITY);
-	/** Monostable output pulse width t = 1.1·R_A·C. */
-	const pulseWidth = $derived(1.1 * ra * c);
+	const timing = $derived(timer555(ra, rb, c, faults.shortedThreshold));
+	const frequency = $derived(timing.frequency);
+	const duty = $derived(timing.duty);
+	const pulseWidth = $derived(timing.pulseWidth);
+	const timelineProjection = $derived(
+		[VCC, vc * VCC, vc * VCC, output ? VCC : 0][timeline.step] ?? 0
+	);
 
 	/** Fire the one-shot: only starts a pulse if the timer is idle. */
 	function trigger(): void {
 		if (mode !== 'monostable' || oneShot || faults.shortedThreshold) return;
-		vc = 1 / 3;
+		vc = 0;
+		oneShotElapsed = 0;
 		oneShot = true;
 		output = true;
 		if (ui.audio) playPulse(1 / Math.max(pulseWidth, 1e-6));
@@ -72,24 +88,33 @@
 		return `${(value * 1e9).toFixed(2)} n${unit}`;
 	}
 
-	/* The state loop. Simulation time is scaled so ≥2 visual cycles/s max. */
+	/*
+	 * Physical state loop with a presentation-only frequency ceiling.
+	 *
+	 * The normalized waveform remains the exact exponential charge/discharge
+	 * solution. Only the phase clock is slowed above 1.5 Hz so a 48 kHz setting
+	 * remains inspectable instead of aliasing into arbitrary frame-rate pulses.
+	 */
 	$effect(() => {
+		if (motion.animationBlocked) return;
 		let frame = 0;
+		let stopped = false;
 		let last = performance.now();
 		const loop = (now: number): void => {
+			if (stopped) return;
 			const dtReal = Math.min(0.05, (now - last) / 1000);
 			last = now;
 			if (faults.shortedThreshold) {
 				/* Threshold shorted to ground: the comparator latches, C charges to Vcc. */
-				vc = Math.min(1, vc + dtReal * 0.4);
+				vc = 1 - (1 - vc) * Math.exp(-dtReal * 0.4);
 				output = false;
 			} else if (mode === 'monostable') {
-				/* One-shot: charge to ⅔·Vcc exactly once per trigger, then rest low. */
+				/* One-shot: Vc=Vcc(1-e^-t/RC), ending at t≈ln(3)RC=1.1RC. */
 				if (oneShot) {
-					const rate = dtReal / Math.max(pulseWidth * 0.6, 0.02);
-					vc += rate;
-					if (vc >= 2 / 3) {
-						vc = 1 / 3;
+					oneShotElapsed += dtReal;
+					vc = timer555MonostableCapacitor(oneShotElapsed, ra, c);
+					if (oneShotElapsed >= pulseWidth) {
+						vc = 0;
 						oneShot = false;
 						output = false;
 					} else {
@@ -97,27 +122,17 @@
 					}
 				} else {
 					output = false;
-					vc = 1 / 3;
+					vc = 0;
 				}
 			} else {
-				const timeScale = Math.max(1, frequency / 1.5);
-				const dt = (dtReal * timeScale) / Math.max(period, 1e-9);
-				/* Piecewise-linear approximation of the RC segments, per period share. */
-				if (charging) {
-					vc += dt / Math.max(duty, 0.05);
-					if (vc >= 2 / 3) {
-						vc = 2 / 3;
-						charging = false;
-						if (ui.audio) playPulse(frequency);
-					}
-				} else {
-					vc -= dt / Math.max(1 - duty, 0.05);
-					if (vc <= 1 / 3) {
-						vc = 1 / 3;
-						charging = true;
-					}
-				}
-				output = charging;
+				const visualFrequency = timer555PresentationFrequency(frequency);
+				cyclePhase = (cyclePhase + dtReal * visualFrequency) % 1;
+				const previousCharging = charging;
+				const waveform = timer555AstableWaveform(cyclePhase, ra, rb);
+				vc = waveform.capacitorRatio;
+				charging = waveform.charging;
+				output = waveform.outputHigh;
+				if (previousCharging && !charging && ui.audio) playPulse(frequency);
 			}
 			scope = [...scope.slice(1), output ? 0.85 : 0.15];
 
@@ -132,7 +147,10 @@
 			frame = requestAnimationFrame(loop);
 		};
 		frame = requestAnimationFrame(loop);
-		return () => cancelAnimationFrame(frame);
+		return () => {
+			stopped = true;
+			cancelAnimationFrame(frame);
+		};
 	});
 
 	function probe(element: Element): MathReading | undefined {
@@ -183,6 +201,7 @@
 	<div class="mode-row" role="radiogroup" aria-label="Timer mode">
 		<button
 			type="button"
+			data-timeline-input
 			role="radio"
 			aria-checked={mode === 'astable'}
 			class="mode"
@@ -192,6 +211,7 @@
 		</button>
 		<button
 			type="button"
+			data-timeline-input
 			role="radio"
 			aria-checked={mode === 'monostable'}
 			class="mode"
@@ -201,7 +221,13 @@
 		</button>
 	</div>
 	{#if mode === 'monostable'}
-		<button type="button" class="btn btn-solid trigger" onclick={trigger} disabled={oneShot}>
+		<button
+			type="button"
+			class="btn btn-solid trigger"
+			data-timeline-input
+			onclick={trigger}
+			disabled={oneShot}
+		>
 			{oneShot ? 'pulse in flight…' : 'trigger one-shot'}
 		</button>
 	{/if}
@@ -244,6 +270,7 @@
 			/>
 		</label>
 	</div>
+	<SimulationMotionControl {motion} label="555 timer state and waveform animation" />
 	<div class="switchboard">
 		<p class="microlabel">switchboard · fault injection</p>
 		<FaultSwitch label="THRES shorted to ground" bind:active={faults.shortedThreshold} />
@@ -251,12 +278,25 @@
 {/snippet}
 
 {#snippet canvas()}
-	<div class="sim-stage schemd-frame" bind:this={host}>
+	<div
+		class="sim-stage schemd-frame"
+		bind:this={host}
+		role="group"
+		data-model-stage={timeline.step}
+		data-model-value={timelineProjection}
+		aria-label="555 timer model"
+	>
 		{@html svg}
 	</div>
 {/snippet}
 
 {#snippet instruments()}
+	<p class="visually-hidden" aria-live="polite" aria-atomic="true">
+		{faults.shortedThreshold
+			? 'Timer degraded: threshold input is shorted to ground.'
+			: `Timer ${mode} mode active.`}
+		{motion.status}
+	</p>
 	<div class="readouts">
 		{#if mode === 'astable'}
 			<span class="readout"
@@ -283,6 +323,7 @@
 			>
 			<span class="readout" class:on={oneShot}>{oneShot ? 'HIGH (timing)' : 'idle (LOW)'}</span>
 		{/if}
+		<span class="readout" class:on={output}>pin 3 output: {output ? 'HIGH' : 'LOW'}</span>
 		<span class="readout" class:on={output}>
 			<LiveMath
 				id="timer.probe.vc"

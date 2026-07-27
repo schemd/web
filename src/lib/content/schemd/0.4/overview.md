@@ -40,11 +40,19 @@ OUT.node -> LOAD.in #emerald [line]
 
 <!-- /schemd-section -->
 
-<!-- schemd-section: id=migrate; eyebrow=02 / Migration; title=Move from 0.2.x deliberately; example-title=Legacy-compatible source -->
+<!-- schemd-section: id=migrate; eyebrow=02 / Migration; title=Move to 0.4 deliberately; example-title=Legacy-compatible source -->
 
 Existing declarations remain valid. Omitted `orientation` is byte-compatible with the canonical right-facing form when a stable `idPrefix` is supplied. New 0.3 and 0.4 syntax must not be copied into historical 0.2.x documents.
 
 - Keep `in`, `out`, `left/l`, and `right/r` aliases where they already existed.
+- **Do not treat an accepted alias as emitted identity.** Version 0.4 canonicalizes
+  `SchematicEndpoint.port`, source-map terminals, and full-mode wire metadata before topology
+  analysis. A UI keyed on `X1.out` must follow the emitted `X1.out1` (or call
+  `canonicalPortName`) even though the source spelling still compiles. This is an observable
+  compatibility break for overlays and simulation timelines.
+- `MAX_SCHEMATIC_COMPONENTS`, `MAX_SCHEMATIC_CONNECTIONS`, and their
+  `SCHEMATIC_LIMITS` fields were removed. Set explicit `limits` at untrusted call sites rather than
+  importing the retired global ceilings.
 - Replace UML-pseudostate junction workarounds with `junction`.
 - Replace horizontal shunt workarounds with `[orientation=down]` or `[orientation=up]`.
 - Use explicit `[width=N]` for buses and bus-capable ports.
@@ -57,7 +65,7 @@ IN.out -> R1.in #blue [line]
 R1.out -> OUT.in #emerald [line]
 ```
 
-Continue with the [grammar](/docs/0.4/grammar), [component API](/docs/0.4/component-reference), [playground](/playground/latest), and [release timeline](/changelog).
+Continue with the [grammar](/docs/0.4/grammar), [component API](/docs/0.4/component-reference), [0.4 playground](/playground/0.4.0), and [release timeline](/changelog).
 
 <!-- /schemd-section -->
 
@@ -66,7 +74,7 @@ Continue with the [grammar](/docs/0.4/grammar), [component API](/docs/0.4/compon
 A document that compiles is a drawing the compiler could place and route. It is not a claim that the circuit works. These are the boundaries, stated plainly, because the failure mode of a tool like this is a confident picture of something wrong.
 
 - **`verifyNetlist` is structural linting, not verification.** It runs deterministic rules over a flat connectivity model. It cannot establish analog correctness, timing, impedance, drive strength, metastability, quantum validity, or functional behaviour. A clean result means no rule fired — not that a circuit is correct or safe. The name predates that distinction and is kept for compatibility.
-- **Routing is greedy, in source order, and never rips up.** Each trace is placed against the ones already laid and is never moved to make room for a later one, so congestion is order-dependent: a trace can be unroutable because of a choice an earlier one made, not because no arrangement exists. Terminal approaches are reserved before any wire is placed, which removes the common cases; a full reversal bus compiles to ten wires and is rejected beyond that. Reordering the declarations, spreading the endpoints, or widening the fence resolves it.
+- **Routing is greedy, in source order, and never rips up.** Each trace is placed against the ones already laid and is never moved to make room for a later one, so congestion is order-dependent: a trace can be unroutable because of a choice an earlier one made, not because no arrangement exists. Terminal approaches are reserved before any wire is placed, and a ten-wire reversal fixture compiles; that is a regression case, not a guarantee for arbitrarily large or dense buses. Reordering the declarations, spreading the endpoints, or widening the fence can free a route.
 - **The model is flat.** No hierarchy, no sub-sheets, no behavioural simulation, no timing analysis, no analog solving, no standards certification. The compiler is linear in components and connections — sixty-four thousand components compile in about a second — but a flat drawing is still a drawing. This suits documentation, teaching, and schematics rather than large engineering designs.
 - **Descriptions report connectivity, not intent.** `describeSchematic` states what the netlist proves and deliberately names no circuit archetypes, because a confident wrong label is worse for a screen-reader user than an accurate structural one. `headline` belongs in an `alt` attribute; `text` grows with the net count, so expose it as a separate long description.
 - **Legacy CNOT spellings address different things.** `control` and `target` name gate-marker positions; `in1`/`out1` and `in2`/`out2` are the composable rails. Both are accepted, and mixing the two models produces valid syntax with a topology you did not intend.

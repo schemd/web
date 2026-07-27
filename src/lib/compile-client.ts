@@ -7,9 +7,10 @@
  * version. Sending every keystroke over the network to run that same compiler
  * therefore bought nothing and cost a round trip per edit.
  *
- * The module is loaded on demand, so only visitors who open the playground pay
- * for the compiler; the endpoint stays exactly as it was for SSR, embeds, and
- * as the fallback when a browser cannot load the module.
+ * The module is loaded inside a native browser worker, so only visitors who
+ * open an authoring surface pay for the compiler and a large valid diagram
+ * cannot block typing, selection, or assistive technology on the main thread.
+ * The endpoint remains the fallback when a browser cannot start that worker.
  *
  * Requests are normalized through the shared contract in `compile-contract.ts`,
  * the same function `/api/compile` uses, so a diagram compiled locally is
@@ -18,7 +19,6 @@
  */
 import type { SchematicDiagnostic, SchematicNetlist } from '@schemd/core';
 import {
-	compileFenceSpec,
 	MALFORMED_COMPILE_REQUEST,
 	normalizeCompileRequest,
 	type CompileFailure,
@@ -33,19 +33,121 @@ export type {
 	CompileSuccess
 } from '$lib/compile-contract';
 
-type CoreModule = typeof import('@schemd/core');
+type InspectionOutcome =
+	| {
+			readonly ok: true;
+			readonly svg: string;
+			readonly netlist: SchematicNetlist;
+			readonly diagnostics: readonly SchematicDiagnostic[];
+	  }
+	| CompileFailure;
 
-let corePromise: Promise<CoreModule | undefined> | undefined;
+interface WorkerResponse {
+	readonly id: number;
+	readonly result: unknown;
+}
 
-/** Load the compiler once per session; `undefined` means "use the endpoint". */
-function loadCore(): Promise<CoreModule | undefined> {
-	corePromise ??= import('@schemd/core').catch(() => undefined);
-	return corePromise;
+interface PendingWorkerRequest {
+	readonly resolve: (value: unknown) => void;
+	readonly timer: ReturnType<typeof setTimeout>;
+	readonly signal?: AbortSignal;
+	readonly abort?: () => void;
+}
+
+const BROWSER_COMPILE_DEADLINE_MS = 1_000;
+let compilerWorker: Worker | undefined;
+let workerUnavailable = false;
+let requestId = 0;
+const pending = new Map<number, PendingWorkerRequest>();
+
+function settleAll(): void {
+	for (const [id, request] of pending) {
+		clearTimeout(request.timer);
+		if (request.signal && request.abort) request.signal.removeEventListener('abort', request.abort);
+		pending.delete(id);
+		request.resolve(undefined);
+	}
+}
+
+function resetWorker(permanently = false): void {
+	compilerWorker?.terminate();
+	compilerWorker = undefined;
+	workerUnavailable ||= permanently;
+	settleAll();
+}
+
+/** Start one lazy, reusable native worker; undefined means "use the endpoint". */
+function loadWorker(): Worker | undefined {
+	if (workerUnavailable || typeof Worker === 'undefined') return undefined;
+	if (compilerWorker) return compilerWorker;
+	try {
+		const worker = new Worker(new URL('./compile-browser.worker.ts', import.meta.url), {
+			type: 'module',
+			name: 'schemd-compiler'
+		});
+		worker.onmessage = (event: MessageEvent<unknown>): void => {
+			const message = event.data as WorkerResponse;
+			if (typeof message !== 'object' || message === null || typeof message.id !== 'number') {
+				return;
+			}
+			const request = pending.get(message.id);
+			if (!request) return;
+			pending.delete(message.id);
+			clearTimeout(request.timer);
+			if (request.signal && request.abort) {
+				request.signal.removeEventListener('abort', request.abort);
+			}
+			request.resolve(message.result);
+		};
+		worker.onerror = (event): void => {
+			event.preventDefault();
+			resetWorker(true);
+		};
+		compilerWorker = worker;
+		return worker;
+	} catch {
+		workerUnavailable = true;
+		return undefined;
+	}
+}
+
+function runWorker<T>(
+	kind: 'compile' | 'inspect',
+	request: CompileRequest,
+	signal?: AbortSignal
+): Promise<T | undefined> {
+	if (signal?.aborted) return Promise.resolve(undefined);
+	const worker = loadWorker();
+	if (!worker) return Promise.resolve(undefined);
+	const id = ++requestId;
+	return new Promise((resolve) => {
+		const abort = signal
+			? (): void => {
+					/* Synchronous compiler work cannot be cancelled by a message.
+					 * Terminate the stale worker so the replacement can start the
+					 * newest edit immediately rather than queue behind it. */
+					resetWorker();
+				}
+			: undefined;
+		const timer = setTimeout(() => resetWorker(), BROWSER_COMPILE_DEADLINE_MS);
+		pending.set(id, {
+			resolve: (value) => resolve(value as T | undefined),
+			timer,
+			signal,
+			abort
+		});
+		if (signal && abort) signal.addEventListener('abort', abort, { once: true });
+		try {
+			worker.postMessage({ id, kind, request });
+		} catch {
+			resetWorker(true);
+		}
+	});
 }
 
 /** Warm the module while the visitor is still reading, not while typing. */
 export function prefetchCompiler(): void {
-	void loadCore();
+	loadWorker();
 }
 
 /**
@@ -57,42 +159,13 @@ export function prefetchCompiler(): void {
  * @returns SVG, netlist, and design-rule diagnostics, or a failure — and
  * `undefined` when this browser cannot compile locally.
  */
-export async function inspectInBrowser(request: CompileRequest): Promise<
-	| {
-			readonly ok: true;
-			readonly svg: string;
-			readonly netlist: SchematicNetlist;
-			readonly diagnostics: readonly SchematicDiagnostic[];
-	  }
-	| CompileFailure
-	| undefined
-> {
-	const core = await loadCore();
-	if (!core) return undefined;
-
+export async function inspectInBrowser(
+	request: CompileRequest,
+	signal?: AbortSignal
+): Promise<InspectionOutcome | undefined> {
 	const normalized = normalizeCompileRequest(request);
 	if (!normalized) return MALFORMED_COMPILE_REQUEST;
-
-	const {
-		parseSchematic,
-		parseSchematicFence,
-		renderSchematic,
-		inspectSchematic,
-		SchematicSyntaxError
-	} = core;
-	try {
-		const fence = parseSchematicFence(compileFenceSpec(normalized));
-		if (!fence) return MALFORMED_COMPILE_REQUEST;
-		const document = parseSchematic(normalized.source, fence);
-		const svg = renderSchematic(document, { ...fence, mode: normalized.mode, idPrefix: 'review' });
-		const { netlist, diagnostics } = inspectSchematic(document);
-		return { ok: true, svg, netlist, diagnostics };
-	} catch (failure) {
-		if (failure instanceof SchematicSyntaxError) {
-			return { ok: false, message: failure.message, line: failure.line };
-		}
-		return { ok: false, message: 'Inspection failed unexpectedly.', line: undefined };
-	}
+	return runWorker<InspectionOutcome>('inspect', normalized, signal);
 }
 
 /**
@@ -102,35 +175,10 @@ export async function inspectInBrowser(request: CompileRequest): Promise<
  * browser cannot compile locally — the caller then falls back to the endpoint.
  */
 export async function compileInBrowser(
-	request: CompileRequest
+	request: CompileRequest,
+	signal?: AbortSignal
 ): Promise<CompileOutcome | undefined> {
-	const core = await loadCore();
-	if (!core) return undefined;
-
 	const normalized = normalizeCompileRequest(request);
 	if (!normalized) return MALFORMED_COMPILE_REQUEST;
-
-	const { compileSchematic, parseSchematicFence, SchematicSyntaxError } = core;
-	try {
-		const fence = parseSchematicFence(compileFenceSpec(normalized));
-		if (!fence) return MALFORMED_COMPILE_REQUEST;
-		const startedAt = performance.now();
-		const compiled = compileSchematic(normalized.source, {
-			...fence,
-			mode: normalized.mode,
-			idPrefix: 'play'
-		});
-		return {
-			ok: true,
-			svg: compiled.svg,
-			metrics: { ...compiled.metrics },
-			sourceMap: compiled.sourceMap,
-			ms: Math.round((performance.now() - startedAt) * 100) / 100
-		};
-	} catch (failure) {
-		if (failure instanceof SchematicSyntaxError) {
-			return { ok: false, message: failure.message, line: failure.line };
-		}
-		return { ok: false, message: 'Compilation failed unexpectedly.', line: undefined };
-	}
+	return runWorker<CompileOutcome>('compile', normalized, signal);
 }

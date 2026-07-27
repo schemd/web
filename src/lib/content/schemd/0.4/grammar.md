@@ -1,4 +1,4 @@
-<!-- schemd-doc: id=grammar; label=Grammar; title=Use the strict 0.3 grammar; summary=Place typed nodes, rotate canonical geometry, and connect validated semantic ports.; category=Author diagrams; order=20 -->
+<!-- schemd-doc: id=grammar; label=Grammar; title=Use the strict 0.4 grammar; summary=Place typed nodes, rotate canonical geometry, and connect validated semantic ports.; category=Author diagrams; order=20 -->
 
 <!-- schemd-expect-page: unconnected-component, disconnected-subcircuit -->
 <!-- Grammar fragments show one declaration at a time. -->

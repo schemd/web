@@ -69,14 +69,56 @@ function renderProse(text: string): string {
 	);
 }
 
+export type PedagogyActionEvent = 'click' | 'input' | 'change';
+
+/**
+ * Machine-checkable contract between one teaching step and the live control
+ * that can produce its evidence. This is intentionally data, not a callback,
+ * so it remains serializable across the SvelteKit server boundary.
+ */
+export interface PedagogyAction {
+	readonly kind: 'control' | 'fault';
+	readonly selector: string;
+	/** Optional ordered selectors for a compound interaction such as A then B. */
+	readonly sequence?: readonly string[];
+	readonly event: PedagogyActionEvent;
+	readonly occurrences: number;
+	readonly instruction: string;
+	/** Optional semantic result that must be reported by the physical model. */
+	readonly outcome?: string;
+}
+
 /** One guided lab action that produces the intended realization. */
-interface PedagogyStep {
+export interface PedagogyStep {
 	/** Imperative headline, e.g. "Toggle bit 0." */
 	readonly label: string;
 	/** Headline with every inline equation pre-rendered by KaTeX. */
 	readonly labelHtml: string;
 	/** Pre-rendered explanation of what the reader should now see and why. */
 	readonly detailHtml: string;
+	/** Exact live interaction required to complete this step. */
+	readonly action: PedagogyAction;
+}
+
+/** One answer in the required commit-before-reveal prediction. */
+export interface PredictionChoice {
+	/** Stable persistence key; deliberately separate from translated copy. */
+	readonly id: string;
+	/** Human-readable answer. */
+	readonly label: string;
+	/** Answer with inline notation pre-rendered by KaTeX. */
+	readonly labelHtml: string;
+	/** Whether the physical model supports this prediction. */
+	readonly correct: boolean;
+	/** Evidence-led response shown only after the learner commits. */
+	readonly feedbackHtml: string;
+}
+
+/** A productive-failure prompt answered before the explanation is revealed. */
+export interface Prediction {
+	readonly prompt: string;
+	readonly promptHtml: string;
+	readonly choices: readonly PredictionChoice[];
 }
 
 /** The "aha" teaching layer attached to every environment, rendered once. */
@@ -87,8 +129,13 @@ export interface Pedagogy {
 	readonly ahaHtml: string;
 	/** Voice-driven principle paragraph with typeset math. */
 	readonly principleHtml: string;
+	/** Commit-before-reveal experiment prompt. */
+	readonly prediction: Prediction;
 	/** Guided walk-through that earns the aha through direct interaction. */
 	readonly steps: readonly PedagogyStep[];
+	/** Transfer task that asks for a diagnosis before naming the injected fault. */
+	readonly diagnosisPrompt: string;
+	readonly diagnosisPromptHtml: string;
 }
 
 /** Author-supplied pedagogy before KaTeX prose rendering. */
@@ -96,6 +143,16 @@ interface PedagogyRaw {
 	readonly aha: string;
 	readonly principle: string;
 	readonly steps: readonly { readonly label: string; readonly detail: string }[];
+}
+
+/** Explicit curricular position; tiers alone are not a learning sequence. */
+export interface SimulationCurriculum {
+	/** Recommended traversal order, independent of catalogue filtering. */
+	readonly order: number;
+	/** Labs whose ideas this laboratory assumes. */
+	readonly prerequisites: readonly string[];
+	/** Observable outcome used in the catalogue and completion summary. */
+	readonly objective: string;
 }
 
 /** Static, compile-free descriptor powering the selector cards and lab headers. */
@@ -128,6 +185,8 @@ export interface SimEnvironment {
 	readonly fault: string;
 	/** The "aha"-first teaching layer shown above the live laboratory. */
 	readonly pedagogy: Pedagogy;
+	/** Prerequisite graph and intended learning outcome. */
+	readonly curriculum: SimulationCurriculum;
 }
 
 /** A resolved environment plus its compiled `full`-mode SVG document. */
@@ -476,7 +535,10 @@ const SOURCES: Record<string, { source: string; width: number; height: number }>
  * Public environment registry. The order here is the order the selector paints
  * its cards, and each `index` mirrors that ordering for the terminal chrome.
  */
-const SIM_ENVIRONMENTS_RAW: readonly (Omit<SimEnvironment, 'formulaHtml' | 'pedagogy'> & {
+const SIM_ENVIRONMENTS_RAW: readonly (Omit<
+	SimEnvironment,
+	'formulaHtml' | 'pedagogy' | 'curriculum'
+> & {
 	readonly pedagogy: PedagogyRaw;
 })[] = [
 	{
@@ -519,9 +581,9 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<SimEnvironment, 'formulaHtml' | 'peda
 						'Flip the lowest bit of $A = 11111111$ and a single carry sweeps all the way to $C_{out}$ — one bit of input, eight cells of consequence. This is the worst case, $t \\propto n$.'
 				},
 				{
-					label: 'Throw the stuck-at-0 fault.',
+					label: 'Diagnose a missing overflow before inspecting the relay.',
 					detail:
-						'Freeze the carry chain and the sum silently loses its overflow. The bits still light up — the *rumour* just never arrives.'
+						'Inject the disturbance, predict the correct nine-bit result, then follow the last active carry. Name the failed information path from evidence before reading the relay label.'
 				}
 			]
 		}
@@ -557,9 +619,9 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<SimEnvironment, 'formulaHtml' | 'peda
 						'Smaller bucket, faster response: $f_c$ doubles. The filter now passes signals it used to block — you moved the verdict by changing one component.'
 				},
 				{
-					label: 'Open the capacitor branch.',
+					label: 'Diagnose why attenuation disappears.',
 					detail:
-						'With nowhere to dump charge, there is no pole at all — the filter stops filtering and the output tracks the input at every frequency.'
+						'Inject the disturbance and sweep frequency. If the output tracks the input everywhere, use the missing pole—not the switch label—to identify which energy-storage path stopped participating.'
 				}
 			]
 		}
@@ -600,9 +662,9 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<SimEnvironment, 'formulaHtml' | 'peda
 						'The empirical $S$ settles near $2\\sqrt 2$. Any glove-in-a-box explanation is capped at $2$; you are past it. That gap is the whole of quantum non-locality.'
 				},
 				{
-					label: 'Take the entangler offline.',
+					label: 'Diagnose the loss of non-classical correlation.',
 					detail:
-						'Skip the CNOT and you get a plain product state — the correlation collapses back below $2$. No entanglement, no violation.'
+						'Inject the disturbance, sample again, and compare both the forbidden outcomes and CHSH witness. Infer which stage failed to turn a product state into an entangled one.'
 				}
 			]
 		}
@@ -637,9 +699,9 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<SimEnvironment, 'formulaHtml' | 'peda
 						'The timing wire thickens with the instantaneous capacitor voltage. It is not a metaphor — that stroke *is* $V_C(t)$ sweeping from $\\tfrac{1}{3}$ to $\\tfrac{2}{3}V_{cc}$.'
 				},
 				{
-					label: 'Grow $R_B$ and watch the duty cycle skew.',
+					label: 'Grow $R_B$ and watch the duty cycle approach 50%.',
 					detail:
-						'Charging goes through $R_A + R_B$ but discharging only through $R_B$, so the waveform is never symmetric — the exponential asymmetry made visible.'
+						'Charging goes through $R_A + R_B$ but discharging only through $R_B$. As $R_B$ dominates, the two times become more alike, so duty approaches—but never reaches—$50\\%$ in this topology.'
 				},
 				{
 					label: 'Switch to monostable and fire a single shot.',
@@ -685,9 +747,9 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<SimEnvironment, 'formulaHtml' | 'peda
 						'After the Bell measurement and Bob’s $X^{m_2}Z^{m_1}$ correction, the output fidelity locks to $F = 1$. The state arrived, exactly, on two classical bits of help.'
 				},
 				{
-					label: 'Cut the classical correction link.',
+					label: 'Diagnose why Bob’s fidelity no longer reaches one.',
 					detail:
-						'Withhold $m_1, m_2$ and Bob’s qubit is left in a random rotation of the original — fidelity collapses. Entanglement alone is not enough; the classical channel is load-bearing.'
+						'Inject the disturbance, preserve Alice’s measurement record, and compare it with Bob’s applied corrections. Infer the missing dependency before inspecting the relay.'
 				}
 			]
 		}
@@ -727,9 +789,9 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<SimEnvironment, 'formulaHtml' | 'peda
 						'Watch the classifier flip CCM → BCM → DCM as the inductor current hits zero each cycle. The simple $D\\,V_{in}$ law quietly stops holding.'
 				},
 				{
-					label: 'Kill the high-side gate drive.',
+					label: 'Diagnose an output rail that coasts to zero.',
 					detail:
-						'With the switch stuck open, the flywheel coasts to zero — the averaging engine has lost its energy source.'
+						'Inject the disturbance and compare commanded duty, switch-node activity, inductor current, and output voltage. Locate where energy stops entering the averaging network.'
 				}
 			]
 		}
@@ -811,9 +873,9 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<SimEnvironment, 'formulaHtml' | 'peda
 						'Underdamp the loop and lock arrives with overshoot and ringing — the same second-order behaviour as a springy suspension. Too little damping and it barely settles.'
 				},
 				{
-					label: 'Disconnect the reference.',
+					label: 'Diagnose loss of frequency truth.',
 					detail:
-						'With nothing to compare against, the loop loses its truth and the VCO drifts back to its free-running frequency. The synthesiser was only ever borrowing accuracy from the reference.'
+						'Inject the disturbance and inspect phase error, control voltage, and VCO drift. Infer which observation the feedback loop can no longer compare.'
 				}
 			]
 		}
@@ -854,9 +916,9 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<SimEnvironment, 'formulaHtml' | 'peda
 						'Nothing happens — and that *nothing* is meaningful. A well-formed machine simply has no arrow for an impossible input; the token holds.'
 				},
 				{
-					label: 'Invert a guard.',
+					label: 'Diagnose the state that cannot make progress.',
 					detail:
-						'Flip one transition’s condition and the machine reaches a state it can never leave — a **deadlock**. You are watching a liveness bug happen, not reading about one.'
+						'Inject the disturbance, drive the token around the cycle, and identify the first state whose exit never becomes enabled. Name the liveness failure from the trace.'
 				}
 			]
 		}
@@ -901,9 +963,9 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<SimEnvironment, 'formulaHtml' | 'peda
 						'The two parity bits light up a unique pattern that names the guilty qubit while learning nothing about $\\alpha, \\beta$. Watch the logical fidelity snap back to $1$ after correction.'
 				},
 				{
-					label: 'Miswire the decoder.',
+					label: 'Diagnose a correction that targets the wrong rail.',
 					detail:
-						'Corrupt the syndrome→correction map and the code "fixes" the wrong qubit, driving fidelity to $0$. A correct decoder is as essential as the code itself.'
+						'Inject the disturbance, record the syndrome, and compare the indicated rail with the applied correction. Infer the broken map from the residual error.'
 				}
 			]
 		}
@@ -943,9 +1005,9 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<SimEnvironment, 'formulaHtml' | 'peda
 						'Just past $3$, the phase portrait blooms from a point into a closed loop: oscillation born from noise. This birth-of-a-cycle is the Hopf bifurcation.'
 				},
 				{
-					label: 'Open the gain-set resistor.',
+					label: 'Diagnose why a pure tone clips against the rails.',
 					detail:
-						'Gain runs away, the op-amp slams into its rails, and the pure tone becomes a clipped square — a real failure mode of under-designed oscillators.'
+						'Inject the disturbance and distinguish a stable limit cycle from saturation. Use the loop-gain evidence to locate the missing amplitude control.'
 				}
 			]
 		}
@@ -986,9 +1048,9 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<SimEnvironment, 'formulaHtml' | 'peda
 						'The sequence returns to its start after $2^4 - 1$ clocks. Fewer flip-flops would give $2^n - 1$; the maximal length is the payoff of primitive taps.'
 				},
 				{
-					label: 'Move a feedback tap.',
+					label: 'Diagnose a sequence that repeats too soon.',
 					detail:
-						'A non-primitive tap set shatters the one long cycle into several short ones — the register gets stuck in a stunted loop of length 5 or 3. Same hardware, ruined sequence.'
+						'Inject the disturbance, count clocks until the first repeated state, and use the shortened cycle to infer which recurrence lost its primitive structure.'
 				}
 			]
 		}
@@ -1029,14 +1091,657 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<SimEnvironment, 'formulaHtml' | 'peda
 						'For $N = 8$ the optimal count is $k = 2$. The target probability peaks near $0.945$. This is $\\sqrt N$ scaling made visible: two rounds, not four guesses.'
 				},
 				{
-					label: 'Over-rotate, or point the oracle at the wrong state.',
+					label: 'Diagnose why the requested target is not amplified.',
 					detail:
-						'A third round rotates *past* the target and the bar shrinks — more work, worse answer. A miswired oracle amplifies the wrong item entirely. The geometry is unforgiving.'
+						'Separate two hypotheses with evidence: a third round rotates past the correct target, while a disturbed oracle makes a different bar grow after the optimal two rounds.'
 				}
 			]
 		}
 	}
 ];
+
+interface LearningDesignRaw {
+	readonly curriculum: SimulationCurriculum;
+	readonly actions: readonly PedagogyAction[];
+	readonly prediction: {
+		readonly prompt: string;
+		readonly choices: readonly {
+			readonly id: string;
+			readonly label: string;
+			readonly correct: boolean;
+			readonly feedback: string;
+		}[];
+	};
+	readonly diagnosisPrompt: string;
+}
+
+function action(
+	selector: string,
+	event: PedagogyActionEvent,
+	instruction: string,
+	occurrences = 1,
+	kind: PedagogyAction['kind'] = 'control',
+	outcome?: string
+): PedagogyAction {
+	return outcome === undefined
+		? { selector, event, instruction, occurrences, kind }
+		: { selector, event, instruction, occurrences, kind, outcome };
+}
+
+function sequenceAction(
+	sequence: readonly string[],
+	event: PedagogyActionEvent,
+	instruction: string,
+	kind: PedagogyAction['kind'] = 'control'
+): PedagogyAction {
+	if (sequence.length === 0) throw new Error('A pedagogy action sequence cannot be empty.');
+	return {
+		selector: sequence.join(', '),
+		sequence,
+		event,
+		instruction,
+		occurrences: sequence.length,
+		kind
+	};
+}
+
+/**
+ * Productive-failure prompts and the prerequisite graph live beside, but not
+ * inside, the circuit descriptions. This keeps the physics copy reviewable and
+ * makes omission detectable: the build below rejects any lab with no design.
+ */
+const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
+	adder: {
+		curriculum: {
+			order: 1,
+			prerequisites: [],
+			objective: 'Trace a carry dependency through a combinational gate network.'
+		},
+		actions: [
+			sequenceAction(
+				[
+					'.operands label:nth-child(1) input[type="number"]',
+					'.operands label:nth-child(2) input[type="number"]'
+				],
+				'input',
+				'enter an A value, then a B value'
+			),
+			action(
+				'.sim-stage [data-node-id="A0"] [role="button"]',
+				'click',
+				'toggle the A₀ input port in the schematic'
+			),
+			action(
+				'.fault-switch [role="switch"]',
+				'change',
+				'inject the hidden carry disturbance and inspect the changed evidence',
+				1,
+				'fault'
+			)
+		],
+		prediction: {
+			prompt: 'Before running $11111111_2 + 1_2$: which part of the result can settle first?',
+			choices: [
+				{
+					id: 'ripple-up',
+					label: 'The low bit settles first; the decision ripples upward.',
+					correct: true,
+					feedback:
+						'Yes. Each higher cell waits for $C_i$, so the dependency travels from the least significant bit toward $C_{out}$.'
+				},
+				{
+					id: 'all-at-once',
+					label: 'All nine result bits settle at the same instant.',
+					correct: false,
+					feedback:
+						'That would require carry lookahead. This circuit exposes a serial $C_i\\to C_{i+1}$ dependency, so simultaneous settlement is impossible.'
+				}
+			]
+		},
+		diagnosisPrompt:
+			'Inject the disturbance without reading its label. Compare the expected overflow with the observed sum: which information path stopped carrying evidence forward?'
+	},
+	rc: {
+		curriculum: {
+			order: 2,
+			prerequisites: [],
+			objective: 'Predict how component values move a first-order pole and attenuation.'
+		},
+		actions: [
+			action(
+				'input[aria-label^="Stimulus frequency"]',
+				'change',
+				'sweep the stimulus-frequency control across the cutoff',
+				1,
+				'control',
+				'frequency-above-cutoff'
+			),
+			action(
+				'input[aria-label="Capacitance"]',
+				'change',
+				'change the capacitance control and compare the cutoff'
+			),
+			action(
+				'.fault-switch [role="switch"]',
+				'change',
+				'inject the hidden filter disturbance and inspect the changed evidence',
+				1,
+				'fault'
+			)
+		],
+		prediction: {
+			prompt: 'Keep $R$ fixed and increase $C$. What happens to the cutoff $f_c$?',
+			choices: [
+				{
+					id: 'cutoff-falls',
+					label: '$f_c$ falls, so attenuation begins at a lower frequency.',
+					correct: true,
+					feedback:
+						'Correct: $f_c=1/(2\\pi RC)$. A larger charge reservoir takes longer to respond, moving the pole downward.'
+				},
+				{
+					id: 'cutoff-rises',
+					label: '$f_c$ rises, so more high-frequency signal passes.',
+					correct: false,
+					feedback:
+						'The denominator grows with $C$, so this prediction has the direction reversed. Test it against the moving cutoff marker.'
+				}
+			]
+		},
+		diagnosisPrompt:
+			'Inject the disturbance, then sweep well above the old cutoff. Does the output still show a pole, and which branch would explain the changed frequency response?'
+	},
+	bell: {
+		curriculum: {
+			order: 3,
+			prerequisites: [],
+			objective:
+				'Distinguish an entangled Bell state from a classical mixture using outcomes and CHSH.'
+		},
+		actions: [
+			action('button.btn-solid', 'click', 'collect two independent 64-shot samples', 2),
+			action('button.btn-solid', 'click', 'collect another sample and inspect the CHSH witness'),
+			action(
+				'.fault-switch [role="switch"]',
+				'change',
+				'inject the hidden preparation disturbance and inspect the changed evidence',
+				1,
+				'fault'
+			)
+		],
+		prediction: {
+			prompt:
+				'After $H$ and CNOT prepare $|\\Phi^+\\rangle$, which outcomes can a $Z$-basis measurement produce?',
+			choices: [
+				{
+					id: 'correlated-pair',
+					label: 'Only $00$ and $11$, with approximately equal frequency.',
+					correct: true,
+					feedback:
+						'Exactly. The amplitudes of $|01\\rangle$ and $|10\\rangle$ are zero; sampling reveals perfect same-bit correlation.'
+				},
+				{
+					id: 'four-uniform',
+					label: 'All four bit strings with equal probability.',
+					correct: false,
+					feedback:
+						'That describes two independent superpositions. The CNOT removes the cross outcomes by correlating the two rails.'
+				}
+			]
+		},
+		diagnosisPrompt:
+			'Disturb the preparation, sample again, and use both the histogram and $S$ value to identify which operation stopped creating non-classical correlation.'
+	},
+	timer: {
+		curriculum: {
+			order: 4,
+			prerequisites: ['rc'],
+			objective: 'Relate RC charge thresholds to oscillator frequency and duty cycle.'
+		},
+		actions: [
+			action('input[aria-label="R A"]', 'change', 'change R_A and inspect the capacitor trace'),
+			action('input[aria-label="R B"]', 'change', 'change R_B and inspect the duty cycle'),
+			action(
+				'.mode-row [role="radio"]:last-child',
+				'click',
+				'switch to monostable mode before firing a one-shot'
+			)
+		],
+		prediction: {
+			prompt: 'Increase $R_B$ while $R_A$ and $C$ stay fixed. What changes first?',
+			choices: [
+				{
+					id: 'slower-symmetric',
+					label: 'The oscillator slows and its duty cycle moves closer to $50\\%$.',
+					correct: true,
+					feedback:
+						'Yes. $R_B$ lengthens both paths and makes their times more alike; $R_A$ remains only in the charge path, so exact $50\\%$ is still unreachable.'
+				},
+				{
+					id: 'faster-higher-duty',
+					label: 'The oscillator speeds up and spends a larger fraction high.',
+					correct: false,
+					feedback:
+						'Increasing $R_B$ lengthens the RC time constant. It also reduces the relative influence of $R_A$, moving duty downward toward—not away from—$50\\%$.'
+				}
+			]
+		},
+		diagnosisPrompt:
+			'Disturb the threshold network and watch $V_C$. Which missing threshold crossing best explains the output becoming motionless?'
+	},
+	teleport: {
+		curriculum: {
+			order: 5,
+			prerequisites: ['bell'],
+			objective:
+				'Explain why entanglement and two classical bits are both necessary for teleportation.'
+		},
+		actions: [
+			sequenceAction(
+				['input[aria-label="Theta"]', 'input[aria-label="Phi"]'],
+				'change',
+				'set θ, then set φ on the Bloch sphere'
+			),
+			action(
+				'button[title="Step forward"]',
+				'click',
+				'advance through all five remaining protocol stages',
+				5
+			),
+			action(
+				'.fault-switch [role="switch"]',
+				'change',
+				'inject the hidden communication disturbance and inspect the changed evidence',
+				1,
+				'fault'
+			)
+		],
+		prediction: {
+			prompt:
+				'Alice completes her Bell measurement but Bob receives no correction bits. What happens to fidelity?',
+			choices: [
+				{
+					id: 'fidelity-drops',
+					label: 'It drops because Bob cannot undo the measurement-dependent rotation.',
+					correct: true,
+					feedback:
+						'Correct. Entanglement transfers the state only up to one of four Pauli frames; $m_1,m_2$ tell Bob which frame to undo.'
+				},
+				{
+					id: 'fidelity-stays-one',
+					label: 'It remains $1$ because entanglement already carried the complete state.',
+					correct: false,
+					feedback:
+						'Entanglement alone cannot signal or select Bob’s Pauli frame. If this were true, teleportation would permit faster-than-light communication.'
+				}
+			]
+		},
+		diagnosisPrompt:
+			'Disturb one communication path, step to the end, and compare the measurement bits with Bob’s corrections. Which required dependency is absent?'
+	},
+	buck: {
+		curriculum: {
+			order: 6,
+			prerequisites: ['rc'],
+			objective: 'Predict averaged buck-converter output and recognize conduction-mode boundaries.'
+		},
+		actions: [
+			action(
+				'input[min="0.05"][max="0.95"]',
+				'change',
+				'change the duty-cycle control and compare output voltage'
+			),
+			action(
+				'input[min="1"][max="30"]',
+				'change',
+				'change load resistance until the conduction classifier changes',
+				1,
+				'control',
+				'conduction-left-ccm'
+			),
+			action(
+				'.fault-switch [role="switch"]',
+				'change',
+				'inject the hidden power-stage disturbance and inspect the changed evidence',
+				1,
+				'fault'
+			)
+		],
+		prediction: {
+			prompt:
+				'In continuous conduction, increase $D$ while $V_{in}$ stays fixed. What should $v_o$ do?',
+			choices: [
+				{
+					id: 'output-rises',
+					label: 'It rises approximately in proportion to $D$.',
+					correct: true,
+					feedback:
+						'Yes. Inductor volt-second balance gives $v_o\\approx D V_{in}$ in the ideal continuous-conduction regime.'
+				},
+				{
+					id: 'output-fixed',
+					label: 'It remains fixed because the $LC$ network rejects PWM changes.',
+					correct: false,
+					feedback:
+						'The filter rejects switching ripple, not the PWM average. Changing duty changes the average energy delivered each cycle.'
+				}
+			]
+		},
+		diagnosisPrompt:
+			'Disturb the power stage and compare duty command, switch-node activity, and $v_o$. Where does commanded energy stop entering the $LC$ network?'
+	},
+	chua: {
+		curriculum: {
+			order: 7,
+			prerequisites: ['rc'],
+			objective: 'Separate deterministic dynamics from long-term predictability.'
+		},
+		actions: [
+			action('input[min="7"][max="18"]', 'change', 'raise α and inspect the regime classifier'),
+			action('.button-row button:nth-of-type(4)', 'click', 'compute the bifurcation diagram'),
+			action(
+				'.button-row button:nth-of-type(3)',
+				'click',
+				'perturb the orbit and compare the shadow trajectory'
+			)
+		],
+		prediction: {
+			prompt:
+				'Two chaotic trajectories start $10^{-2}$ apart under identical equations. What happens?',
+			choices: [
+				{
+					id: 'diverge',
+					label: 'They diverge exponentially while remaining on the same attractor.',
+					correct: true,
+					feedback:
+						'Correct. Local separation grows even though both trajectories remain bounded by the double-scroll attractor.'
+				},
+				{
+					id: 'converge',
+					label: 'They converge because deterministic equations have one future.',
+					correct: false,
+					feedback:
+						'Determinism guarantees one future per exact initial state, not robustness to uncertainty. Chaos amplifies the tiny initial difference.'
+				}
+			]
+		},
+		diagnosisPrompt:
+			'Disturb the nonlinear branch and inspect the phase portrait. Which missing geometric feature explains the collapse from folded scrolls to a damped orbit?'
+	},
+	pll: {
+		curriculum: {
+			order: 8,
+			prerequisites: ['timer'],
+			objective: 'Relate damping and reference feedback to PLL acquisition behavior.'
+		},
+		actions: [
+			action('button.btn-solid', 'click', 'force a fresh lock-acquisition transient'),
+			action(
+				'input[min="0.25"][max="1.6"]',
+				'change',
+				'lower the damping-ratio control and reacquire'
+			),
+			action(
+				'.fault-switch [role="switch"]',
+				'change',
+				'inject the hidden loop disturbance and inspect the changed evidence',
+				1,
+				'fault'
+			)
+		],
+		prediction: {
+			prompt:
+				'Reduce the damping ratio $\\zeta$ while reacquiring the same target. What should the error trace do?',
+			choices: [
+				{
+					id: 'more-ringing',
+					label: 'Overshoot and ringing increase before lock.',
+					correct: true,
+					feedback:
+						'Yes. The second-order poles become less damped, so stored phase error crosses zero repeatedly before settling.'
+				},
+				{
+					id: 'less-ringing',
+					label: 'The trace becomes slower but strictly monotonic.',
+					correct: false,
+					feedback:
+						'That is the overdamped direction. Lower $\\zeta$ trades a faster initial response for more overshoot and oscillation.'
+				}
+			]
+		},
+		diagnosisPrompt:
+			'Disturb the loop and compare divider activity, phase error, and VCO drift. Which source of frequency truth disappeared?'
+	},
+	statechart: {
+		curriculum: {
+			order: 9,
+			prerequisites: ['adder'],
+			objective: 'Predict guarded state transitions and identify a liveness failure.'
+		},
+		actions: [
+			action(
+				'.button-row button.btn-solid',
+				'click',
+				'fire three timer events to complete one state cycle',
+				3
+			),
+			action(
+				'.button-row button.btn-solid',
+				'click',
+				'fire the next event and inspect whether an edge is enabled'
+			),
+			action(
+				'.fault-switch [role="switch"]',
+				'change',
+				'inject the hidden guard disturbance and inspect the changed evidence',
+				1,
+				'fault'
+			)
+		],
+		prediction: {
+			prompt:
+				'An event arrives with no enabled transition from the current state. What must a deterministic machine do?',
+			choices: [
+				{
+					id: 'hold-state',
+					label: 'Hold the current state.',
+					correct: true,
+					feedback:
+						'Correct. With no matching edge, $\\delta(s,e)$ produces no transition; inventing a destination would make the model non-deterministic.'
+				},
+				{
+					id: 'reset',
+					label: 'Jump automatically to the initial state.',
+					correct: false,
+					feedback:
+						'A reset requires an explicit transition or reset event. No enabled edge means the active-state token stays where it is.'
+				}
+			]
+		},
+		diagnosisPrompt:
+			'Disturb one guard, drive the token around the cycle, and locate the state whose exit can no longer become enabled.'
+	},
+	qec: {
+		curriculum: {
+			order: 10,
+			prerequisites: ['bell'],
+			objective:
+				'Infer a single-qubit bit flip from syndrome parity without reading the logical state.'
+		},
+		actions: [
+			action('.inject-row button', 'click', 'inject one bit flip on a physical qubit'),
+			action(
+				'.stack .button-row button.btn-solid',
+				'click',
+				'extract the syndrome and apply correction'
+			),
+			action(
+				'.fault-switch [role="switch"]',
+				'change',
+				'inject the hidden decoder disturbance and inspect the changed evidence',
+				1,
+				'fault'
+			)
+		],
+		prediction: {
+			prompt: 'What information do the two syndrome measurements reveal?',
+			choices: [
+				{
+					id: 'disagreement-only',
+					label: 'Which physical qubits disagree, not the logical amplitudes.',
+					correct: true,
+					feedback:
+						'Exactly. Stabilizer parity identifies the error location while preserving the unknown $\\alpha$ and $\\beta$.'
+				},
+				{
+					id: 'logical-value',
+					label: 'Whether the encoded logical qubit is $|0\\rangle$ or $|1\\rangle$.',
+					correct: false,
+					feedback:
+						'That measurement would collapse the protected superposition. The syndrome deliberately extracts only relational parity.'
+				}
+			]
+		},
+		diagnosisPrompt:
+			'Disturb the correction map, inject one error, and compare syndrome with the corrected rail. Which mapping sends correction to the wrong qubit?'
+	},
+	wien: {
+		curriculum: {
+			order: 11,
+			prerequisites: ['rc'],
+			objective: 'Use loop gain and phase to predict oscillator startup or decay.'
+		},
+		actions: [
+			action('input[aria-label="Gain"]', 'change', 'set gain below three and inspect decay'),
+			action(
+				'input[aria-label="Gain"]',
+				'change',
+				'move gain across three and inspect the phase portrait'
+			),
+			action(
+				'.fault-switch [role="switch"]',
+				'change',
+				'inject the hidden gain-path disturbance and inspect the changed evidence',
+				1,
+				'fault'
+			)
+		],
+		prediction: {
+			prompt: 'Set amplifier gain just below $3$. What happens to a small disturbance at $f_0$?',
+			choices: [
+				{
+					id: 'decays',
+					label: 'It decays to silence.',
+					correct: true,
+					feedback:
+						'Correct. The Wien network returns one third, so gain below $3$ makes $A\\beta<1$ and every trip around the loop shrinks.'
+				},
+				{
+					id: 'grows',
+					label: 'It grows into a stable sinusoid.',
+					correct: false,
+					feedback:
+						'Growth requires loop gain above unity. Below the Barkhausen threshold, noise loses amplitude on every circulation.'
+				}
+			]
+		},
+		diagnosisPrompt:
+			'Disturb the gain path and distinguish a bounded limit cycle from rail clipping. Which loop condition is no longer regulated?'
+	},
+	lfsr: {
+		curriculum: {
+			order: 12,
+			prerequisites: ['adder'],
+			objective: 'Connect primitive feedback taps to the period of an LFSR sequence.'
+		},
+		actions: [
+			action(
+				'.button-row button:nth-of-type(2)',
+				'click',
+				'single-step the LFSR and read the register'
+			),
+			action(
+				'.button-row button:nth-of-type(2)',
+				'click',
+				'step through the remaining fourteen non-zero states',
+				14
+			),
+			action(
+				'.fault-switch [role="switch"]',
+				'change',
+				'inject the hidden feedback disturbance and inspect the changed evidence',
+				1,
+				'fault'
+			)
+		],
+		prediction: {
+			prompt:
+				'Move one feedback tap away from the primitive polynomial. Must the period remain $15$?',
+			choices: [
+				{
+					id: 'period-can-shorten',
+					label: 'No. The state graph can split into shorter cycles.',
+					correct: true,
+					feedback:
+						'Correct. Maximal period is a property of primitive taps, not merely of having four flip-flops.'
+				},
+				{
+					id: 'period-always-fifteen',
+					label: 'Yes. Any nonzero four-bit register has period $2^4-1$.',
+					correct: false,
+					feedback:
+						'$2^n-1$ is an upper bound reached only by a primitive feedback polynomial. Other taps partition the states into shorter loops.'
+				}
+			]
+		},
+		diagnosisPrompt:
+			'Disturb the feedback network, record repeats, and infer from the shortened cycle which recurrence no longer spans all non-zero states.'
+	},
+	grover: {
+		curriculum: {
+			order: 13,
+			prerequisites: ['bell'],
+			objective: 'Explain Grover search as amplitude rotation and identify over-rotation.'
+		},
+		actions: [
+			action('.qubits button', 'click', 'choose a marked target state'),
+			action(
+				'.timeline button[aria-label="Next step"]',
+				'click',
+				'advance through two complete oracle-and-diffusion rounds',
+				6
+			),
+			action(
+				'.timeline button[aria-label="Next step"]',
+				'click',
+				'advance one more round and inspect over-rotation',
+				3
+			)
+		],
+		prediction: {
+			prompt:
+				'For $N=8$, apply a third Grover round after the optimal two. What happens to target probability?',
+			choices: [
+				{
+					id: 'probability-falls',
+					label: 'It falls because the state rotates past the target.',
+					correct: true,
+					feedback:
+						'Correct. Grover amplification is a rotation, not monotonic accumulation; too many iterations move amplitude away again.'
+				},
+				{
+					id: 'probability-rises',
+					label: 'It keeps rising toward $100\\%$.',
+					correct: false,
+					feedback:
+						'The rotation angle is fixed. Once the target direction is passed, another reflection pair lowers its amplitude.'
+				}
+			]
+		},
+		diagnosisPrompt:
+			'Disturb the oracle, run two rounds, and compare the requested target with the amplified bar. Which state did the phase flip actually mark?'
+	}
+};
 
 /**
  * Detail-page copies add explicit LaTeX boundaries around technical notation.
@@ -1215,22 +1920,46 @@ const DETAIL_MATH_COPY: Readonly<Record<string, DetailMathCopy>> = {
 	}
 };
 
-/** Public environment registry with dependency-free escaped model notation. */
+/** Public environment registry with server-rendered, accessible mathematical notation. */
 export const SIM_ENVIRONMENTS: readonly SimEnvironment[] = SIM_ENVIRONMENTS_RAW.map(
-	(environment) => ({
-		...environment,
-		formulaHtml: renderFormula(environment.formula),
-		pedagogy: {
-			aha: environment.pedagogy.aha,
-			ahaHtml: renderProse(environment.pedagogy.aha),
-			principleHtml: renderProse(environment.pedagogy.principle),
-			steps: environment.pedagogy.steps.map((step) => ({
-				label: step.label,
-				labelHtml: renderProse(step.label),
-				detailHtml: renderProse(step.detail)
-			}))
+	(environment): SimEnvironment => {
+		const learning = LEARNING_DESIGN[environment.id];
+		if (!learning) throw new Error(`Missing learning design for simulation "${environment.id}".`);
+		if (learning.actions.length !== environment.pedagogy.steps.length) {
+			throw new Error(
+				`Learning-action count does not match steps for simulation "${environment.id}".`
+			);
 		}
-	})
+		return {
+			...environment,
+			curriculum: learning.curriculum,
+			formulaHtml: renderFormula(environment.formula),
+			pedagogy: {
+				aha: environment.pedagogy.aha,
+				ahaHtml: renderProse(environment.pedagogy.aha),
+				principleHtml: renderProse(environment.pedagogy.principle),
+				prediction: {
+					prompt: learning.prediction.prompt,
+					promptHtml: renderProse(learning.prediction.prompt),
+					choices: learning.prediction.choices.map((choice) => ({
+						id: choice.id,
+						label: choice.label,
+						labelHtml: renderProse(choice.label),
+						correct: choice.correct,
+						feedbackHtml: renderProse(choice.feedback)
+					}))
+				},
+				steps: environment.pedagogy.steps.map((step, index) => ({
+					label: step.label,
+					labelHtml: renderProse(step.label),
+					detailHtml: renderProse(step.detail),
+					action: learning.actions[index]!
+				})),
+				diagnosisPrompt: learning.diagnosisPrompt,
+				diagnosisPromptHtml: renderProse(learning.diagnosisPrompt)
+			}
+		};
+	}
 );
 
 const META_BY_ID = new Map(SIM_ENVIRONMENTS.map((environment) => [environment.id, environment]));

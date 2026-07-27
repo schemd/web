@@ -1,5 +1,13 @@
-import { describe, expect, test } from 'vitest';
-import { compileSchematic, parseSchematicFence, COMPONENT_KINDS } from '@schemd/core';
+import { describe, expect, test, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {
+	compileSchematic,
+	inspectSchematic,
+	parseSchematicFence,
+	COMPONENT_KINDS
+} from '@schemd/core';
 import { decodeWorkspaceState } from '$lib/state-uri';
 import { _compileHeroes, _HERO_SPECS } from '../../routes/+page.server';
 import { _PLAYGROUND_SAMPLE } from '../../routes/playground/[version]/+page.server';
@@ -8,13 +16,21 @@ import { docManifest, docSearchIndex, loadDoc } from './docs';
 import { loadGallery } from './gallery';
 import {
 	compareVersionsDesc,
+	_createRegistryStore,
 	DOCUMENTATION_VERSIONS,
+	_buildRegistry,
+	packageManifestVersion,
 	resolveVersion,
 	resolveReleaseVersion,
 	WEBSITE_CORE_VERSION,
 	type SchemdRegistry
 } from './registry';
-import { DOCUMENTED_VERSIONS, LATEST_DOCUMENTED_VERSION, resolveDocVersion } from './versions';
+import {
+	DOCUMENTED_VERSIONS,
+	LATEST_DOCUMENTED_VERSION,
+	resolveDocVersion,
+	versionedRawSources
+} from './versions';
 import { languageCoverage } from './coverage';
 import { COMPONENT_CATALOG } from './component-catalog';
 import {
@@ -40,6 +56,16 @@ const registry: SchemdRegistry = {
 };
 
 describe('versioned registry and documentation', () => {
+	test('reports the installed compiler version, independent of editorial release-note order', () => {
+		const entry = fileURLToPath(import.meta.resolve('@schemd/core'));
+		const manifest: unknown = JSON.parse(
+			readFileSync(resolve(dirname(entry), '..', 'package.json'), 'utf8')
+		);
+		expect(WEBSITE_CORE_VERSION).toBe(packageManifestVersion(manifest));
+		expect(packageManifestVersion({ version: 'not semver' })).toBeUndefined();
+		expect(packageManifestVersion(null)).toBeUndefined();
+	});
+
 	test('compiles every landing-page hero with strict geometry validation', () => {
 		const heroes = _compileHeroes();
 		expect(heroes).toHaveLength(4);
@@ -61,9 +87,70 @@ describe('versioned registry and documentation', () => {
 			'0.2.9',
 			'0.2.1'
 		]);
+		expect(['0.4.0-beta.2', '0.4.0', '0.4.0-beta.11', '0.3.9'].sort(compareVersionsDesc)).toEqual([
+			'0.4.0',
+			'0.4.0-beta.11',
+			'0.4.0-beta.2',
+			'0.3.9'
+		]);
 		expect(resolveVersion(registry, 'latest')).toBe(WEBSITE_CORE_VERSION);
 		expect(resolveVersion(registry, '0.2.1')).toBe('0.2.1');
 		expect(resolveVersion(registry, '9.9.9')).toBeUndefined();
+	});
+
+	test('takes npm latest from the dist-tag rather than an unpublished local candidate', () => {
+		const live = _buildRegistry(
+			{
+				'dist-tags': { latest: '0.3.8' },
+				versions: {
+					'0.3.8': {
+						dist: { unpackedSize: 290_000, fileCount: 24 },
+						gitHead: '0123456789abcdef'
+					}
+				},
+				time: { '0.3.8': '2026-07-20T00:00:00.000Z' }
+			},
+			[]
+		);
+		expect(live?.latest).toBe('0.3.8');
+		expect(live?.releases.find((release) => release.version === '0.3.8')).toMatchObject({
+			released: true,
+			gitHead: '0123456789ab'
+		});
+		expect(
+			live?.releases.find((release) => release.version === WEBSITE_CORE_VERSION)
+		).toMatchObject({ released: false });
+	});
+
+	test('serves the cold registry seed immediately and refreshes npm and GitHub in parallel', async () => {
+		const pending: ((value: unknown) => void)[] = [];
+		const fetcher = vi.fn(
+			() =>
+				new Promise<unknown>((resolveRequest) => {
+					pending.push(resolveRequest);
+				})
+		);
+		const store = _createRegistryStore(fetcher, () => 1_000_000);
+
+		const cold = store.read();
+		expect(cold.live).toBe(false);
+		expect(fetcher).toHaveBeenCalledTimes(2);
+		expect(pending).toHaveLength(2);
+		/* A second reader shares the same in-flight refresh. */
+		expect(store.read()).toBe(cold);
+		expect(fetcher).toHaveBeenCalledTimes(2);
+
+		pending[0]!({
+			'dist-tags': { latest: '0.3.8' },
+			versions: { '0.3.8': { dist: { unpackedSize: 290_000, fileCount: 24 } } },
+			time: { '0.3.8': '2026-07-20T00:00:00.000Z' }
+		});
+		pending[1]!([]);
+
+		await vi.waitFor(() => {
+			expect(store.read()).toMatchObject({ live: true, latest: '0.3.8' });
+		});
+		expect(fetcher).toHaveBeenCalledTimes(2);
 	});
 
 	test('resolves release line aliases to a concrete release for playground/simulations', () => {
@@ -117,6 +204,50 @@ describe('versioned registry and documentation', () => {
 		).toBe(true);
 		expect(historicalOverview?.examples.some(({ source }) => source.includes('orientation='))).toBe(
 			false
+		);
+	});
+
+	test('pins the complete 0.4 corpus, all 31 compiled fences, and every internal link', () => {
+		const line = '0.4';
+		const manifest = docManifest(line);
+		const sources = versionedRawSources(line);
+		expect(sources).toBeDefined();
+		expect(manifest).toHaveLength(13);
+
+		let fenceCount = 0;
+		for (const page of manifest) {
+			const doc = loadDoc(line, page.slug);
+			expect(doc, `${line}/${page.slug}`).toBeDefined();
+			fenceCount += doc?.examples.length ?? 0;
+		}
+		expect(fenceCount).toBe(31);
+
+		const searchableLinks = new Set(docSearchIndex(line).map(({ href }) => href));
+		const routeLinks = new Set(['/playground/0.4.0', '/changelog']);
+		for (const [path, raw] of Object.entries(sources!)) {
+			const slug = path.split('/').pop()!.replace(/\.md$/, '');
+			expect(raw, path).toContain(`schemd-doc: id=${slug};`);
+			for (const match of raw.matchAll(/\[[^\]]+\]\((\/[^)\s]+)\)/g)) {
+				const href = match[1]!;
+				if (href.startsWith(`/docs/${line}/`)) {
+					expect(searchableLinks.has(href), `${path}: broken documentation link ${href}`).toBe(
+						true
+					);
+				} else {
+					expect(routeLinks.has(href), `${path}: unverified internal route ${href}`).toBe(true);
+				}
+			}
+		}
+
+		const netlistDoc = loadDoc(line, 'netlist')!;
+		const supply = netlistDoc.examples.find(({ source }) => source.includes('source:V1'))!;
+		const compiled = compileSchematic(supply.source, {
+			bounds: { width: 900, height: 400 },
+			title: 'Supply, resistor, and return'
+		});
+		expect(inspectSchematic(compiled.document).netlist.nets).toHaveLength(2);
+		expect(Object.values(sources!).find((raw) => raw.includes('id=netlist;'))).toContain(
+			'netlist.nets.length; // 2'
 		);
 	});
 
@@ -263,7 +394,13 @@ describe('versioned simulation source and compilation', () => {
 					(match) => match[1]!
 				)
 			);
+			const nodeIds = new Set(
+				[...(simulation?.svg.matchAll(/data-node-id="([^"]+)"/g) ?? [])].map((match) => match[1]!)
+			);
 			for (const frame of timelineFor(environment.id)) {
+				for (const node of [...frame.nodes, ...(frame.highNodes ?? [])]) {
+					expect(nodeIds.has(node), `${environment.id}: missing timeline node ${node}`).toBe(true);
+				}
 				for (const source of [...frame.wires, ...(frame.highWires ?? [])]) {
 					expect(
 						wireSources.has(source),

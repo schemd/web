@@ -14,7 +14,11 @@
 	import Oscilloscope from './Oscilloscope.svelte';
 	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
+	import SimulationMotionControl from './SimulationMotionControl.svelte';
+	import { createSimulationMotion } from './simulation-motion.svelte';
 	import { reading, type MathReading } from '$lib/simulation-math';
+	import { pllLocked, pllPpmError, pllTargetFrequency } from '$lib/simulation-models';
+	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 
 	interface Props {
 		svg: string;
@@ -36,13 +40,14 @@
 	let scopeControl = $state<number[]>([]);
 	let scopeFrequency = $state<number[]>([]);
 	let faults = $state({ referenceLost: false });
+	const motion = createSimulationMotion('Phase-locked-loop animation');
+	const timeline = useSimulationTimelineModel();
 
 	const referenceFrequency = $derived(referenceKilo * 1e3);
-	const targetFrequency = $derived(referenceFrequency * divider);
+	const targetFrequency = $derived(pllTargetFrequency(referenceFrequency, divider));
 	const dividedFrequency = $derived(vcoFrequency / divider);
-	const frequencyError = $derived(vcoFrequency - targetFrequency);
-	const ppmError = $derived((frequencyError / Math.max(targetFrequency, 1)) * 1e6);
-	const locked = $derived(!faults.referenceLost && Math.abs(ppmError) < 50 && confidence > 0.82);
+	const ppmError = $derived(pllPpmError(vcoFrequency, targetFrequency));
+	const locked = $derived(pllLocked(ppmError, confidence, faults.referenceLost));
 	const lockState = $derived(
 		faults.referenceLost
 			? 'HOLDOVER'
@@ -51,6 +56,11 @@
 				: confidence > 0.35
 					? 'PULL-IN'
 					: 'ACQUIRING'
+	);
+	const timelineProjection = $derived(
+		[phaseError, Math.sign(phaseError), controlVoltage, vcoFrequency, dividedFrequency][
+			timeline.step
+		] ?? 0
 	);
 
 	function wrapPhase(value: number): number {
@@ -67,9 +77,12 @@
 	}
 
 	$effect(() => {
+		if (motion.animationBlocked) return;
 		let frame = 0;
+		let stopped = false;
 		let last = performance.now();
 		const loop = (now: number): void => {
+			if (stopped) return;
 			const dt = Math.min(0.04, (now - last) / 1000);
 			last = now;
 			const naturalFrequency = 2 * Math.PI * bandwidthKilo;
@@ -126,7 +139,10 @@
 			frame = requestAnimationFrame(loop);
 		};
 		frame = requestAnimationFrame(loop);
-		return () => cancelAnimationFrame(frame);
+		return () => {
+			stopped = true;
+			cancelAnimationFrame(frame);
+		};
 	});
 
 	function applyProfile(reference: number, ratio: number, bandwidth: number, zeta: number): void {
@@ -195,14 +211,23 @@
 	<div class="profiles">
 		<p class="microlabel">loop profiles</p>
 		<div class="button-row">
-			<button type="button" class="btn" onclick={() => applyProfile(10, 16, 1.2, 0.72)}
-				>balanced</button
+			<button
+				type="button"
+				class="btn"
+				data-timeline-input
+				onclick={() => applyProfile(10, 16, 1.2, 0.72)}>balanced</button
 			>
-			<button type="button" class="btn" onclick={() => applyProfile(12, 32, 4.2, 0.48)}
-				>fast / underdamped</button
+			<button
+				type="button"
+				class="btn"
+				data-timeline-input
+				onclick={() => applyProfile(12, 32, 4.2, 0.48)}>fast / underdamped</button
 			>
-			<button type="button" class="btn" onclick={() => applyProfile(8, 24, 0.45, 1.25)}
-				>quiet / overdamped</button
+			<button
+				type="button"
+				class="btn"
+				data-timeline-input
+				onclick={() => applyProfile(8, 24, 0.45, 1.25)}>quiet / overdamped</button
 			>
 		</div>
 	</div>
@@ -244,7 +269,10 @@
 			><input type="range" min="0.25" max="1.6" step="0.01" bind:value={damping} /></label
 		>
 	</div>
-	<button type="button" class="btn btn-solid" onclick={reacquire}>force reacquisition</button>
+	<button type="button" class="btn btn-solid" data-timeline-input onclick={reacquire}
+		>force reacquisition</button
+	>
+	<SimulationMotionControl {motion} label="PLL acquisition and waveform animation" />
 	<div class="switchboard">
 		<p class="microlabel">switchboard · fault injection</p>
 		<FaultSwitch label="reference clock disconnected" bind:active={faults.referenceLost} />
@@ -256,18 +284,31 @@
 		class="sim-stage schemd-frame"
 		bind:this={host}
 		role="group"
-		aria-label="Charge-pump phase-locked loop circuit"
+		data-model-stage={timeline.step}
+		data-model-value={timelineProjection}
+		aria-label="Phase-locked loop model"
 	>
 		{@html svg}
 	</div>
 {/snippet}
 
 {#snippet instruments()}
+	<p class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
+		Loop state {lockState}. {faults.referenceLost
+			? 'Reference input degraded: clock disconnected.'
+			: 'Reference input nominal.'}
+	</p>
 	<div class="lock-card" class:locked class:holdover={faults.referenceLost}>
 		<div class="lock-ring" style={`--confidence: ${(confidence * 360).toFixed(1)}deg`}>
 			<span>{Math.round(confidence * 100)}%</span>
 		</div>
-		<div><span class="microlabel">loop state</span><strong>{lockState}</strong></div>
+		<div>
+			<span class="microlabel">loop state</span><strong>{lockState}</strong>
+			<span class="visually-hidden"
+				>{faults.referenceLost ? 'Reference input degraded: clock disconnected.' : ''}
+				{motion.status}</span
+			>
+		</div>
 	</div>
 	<div class="readouts">
 		<span class="readout"

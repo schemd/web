@@ -9,16 +9,17 @@
 	 * reference against the attenuated, phase-shifted output.
 	 */
 	import { styleWiresFrom, delegatedWireSource, setNodeDegraded } from '$lib/sim-dom';
-	import {
-		SIMULATION_TIMELINE_EVENT,
-		type SimulationTimelineDetail
-	} from '$lib/simulation-timelines';
 	import Oscilloscope from './Oscilloscope.svelte';
 	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
+	import SimulationMotionControl from './SimulationMotionControl.svelte';
+	import { createSimulationMotion } from './simulation-motion.svelte';
 	import { reading, type MathReading } from '$lib/simulation-math';
+	import { rcLowPass } from '$lib/simulation-models';
+	import { reportSimulationEvidence } from '$lib/simulation-evidence';
+	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 
 	interface Props {
 		svg: string;
@@ -35,45 +36,40 @@
 	let scopeIn = $state<number[]>([]);
 	let scopeOut = $state<number[]>([]);
 	let faults = $state({ openCapacitor: false });
+	const motion = createSimulationMotion('RC waveform animation');
 
 	const resistance = $derived(10 ** logR);
 	const capacitance = $derived(10 ** logC);
 	const frequency = $derived(10 ** logF);
 
-	/** f_c = 1 / (2πRC), with an open capacitor faulting the pole away. */
-	const cutoff = $derived(
-		faults.openCapacitor ? Number.POSITIVE_INFINITY : 1 / (2 * Math.PI * resistance * capacitance)
-	);
-	const ratio = $derived(frequency / cutoff);
-	/** |H(jω)| for a first-order low-pass. */
-	const magnitude = $derived(1 / Math.sqrt(1 + ratio * ratio));
-	const phaseShift = $derived(-Math.atan(ratio));
+	const response = $derived(rcLowPass(resistance, capacitance, frequency, faults.openCapacitor));
+	const cutoff = $derived(response.cutoff);
+	const magnitude = $derived(response.magnitude);
+	const phaseShift = $derived(response.phase);
 
 	/* The controls define the target response immediately, but the observed output
 	 * advances only with the shared source → R → C → probe teaching frames. */
-	const INITIAL_RATIO = 100 * 2 * Math.PI * 10_000 * 100e-9;
-	const INITIAL_MAGNITUDE = 1 / Math.sqrt(1 + INITIAL_RATIO * INITIAL_RATIO);
-	const INITIAL_PHASE_SHIFT = -Math.atan(INITIAL_RATIO);
+	const INITIAL_RESPONSE = rcLowPass(10_000, 100e-9, 100);
+	const INITIAL_MAGNITUDE = INITIAL_RESPONSE.magnitude;
+	const INITIAL_PHASE_SHIFT = INITIAL_RESPONSE.phase;
 	let outputMagnitude = $state(INITIAL_MAGNITUDE);
 	let outputPhaseShift = $state(INITIAL_PHASE_SHIFT);
 	let originMagnitude = INITIAL_MAGNITUDE;
 	let originPhaseShift = INITIAL_PHASE_SHIFT;
+	let originRunId = -1;
+	const timeline = useSimulationTimelineModel();
 	const attenuationDb = $derived(20 * Math.log10(outputMagnitude));
 
 	$effect(() => {
-		const onStage = (event: Event): void => {
-			const detail = (event as CustomEvent<SimulationTimelineDetail>).detail;
-			if (detail.simulationId !== 'rc') return;
-			if (detail.step === 0) {
-				originMagnitude = outputMagnitude;
-				originPhaseShift = outputPhaseShift;
-			}
-			const progress = [0, 0.2, 0.65, 1][detail.step] ?? 1;
-			outputMagnitude = originMagnitude + (magnitude - originMagnitude) * progress;
-			outputPhaseShift = originPhaseShift + (phaseShift - originPhaseShift) * progress;
-		};
-		window.addEventListener(SIMULATION_TIMELINE_EVENT, onStage);
-		return () => window.removeEventListener(SIMULATION_TIMELINE_EVENT, onStage);
+		const runId = timeline.runId;
+		if (runId !== originRunId) {
+			originRunId = runId;
+			originMagnitude = outputMagnitude;
+			originPhaseShift = outputPhaseShift;
+		}
+		const progress = [0, 0.2, 0.65, 1][timeline.step] ?? 1;
+		outputMagnitude = originMagnitude + (magnitude - originMagnitude) * progress;
+		outputPhaseShift = originPhaseShift + (phaseShift - originPhaseShift) * progress;
 	});
 
 	/* ---------- Bode cutoff-response overlay geometry ----------
@@ -101,8 +97,12 @@
 		let d = '';
 		for (let index = 0; index <= samples; index += 1) {
 			const logFrequency = F_MIN_LOG + ((F_MAX_LOG - F_MIN_LOG) * index) / samples;
-			const localRatio = 10 ** logFrequency / cutoff;
-			const localMagnitude = 1 / Math.sqrt(1 + localRatio * localRatio);
+			const localMagnitude = rcLowPass(
+				resistance,
+				capacitance,
+				10 ** logFrequency,
+				faults.openCapacitor
+			).magnitude;
 			d += `${index === 0 ? 'M' : 'L'} ${plotX(logFrequency).toFixed(1)} ${plotY(localMagnitude).toFixed(1)} `;
 		}
 		return d;
@@ -122,6 +122,17 @@
 	);
 	const cutoffFlowDuration = $derived(`${(0.7 + (1 - cutoffVisibility) * 2.8).toFixed(2)}s`);
 	const glowOpacity = $derived((cutoffVisibility ** 1.15 * 0.8).toFixed(3));
+
+	function testCutoffCrossing(event: Event): void {
+		const control = event.currentTarget;
+		if (!(control instanceof Element)) return;
+		/* Run after the range binding commits the new logarithmic frequency. */
+		queueMicrotask(() => {
+			if (frequency >= cutoff) {
+				reportSimulationEvidence(control, 'rc', 'frequency-above-cutoff');
+			}
+		});
+	}
 
 	function formatSi(value: number, unit: string): string {
 		if (!Number.isFinite(value)) return `∞ ${unit}`;
@@ -160,8 +171,11 @@
 
 	/* 60 FPS waveform: input sine reference vs. attenuated, phase-shifted output. */
 	$effect(() => {
+		if (motion.animationBlocked) return;
 		let frame = 0;
+		let stopped = false;
 		const loop = (): void => {
+			if (stopped) return;
 			phase += 0.045;
 			const points = 96;
 			const nextIn: number[] = [];
@@ -176,7 +190,10 @@
 			frame = requestAnimationFrame(loop);
 		};
 		frame = requestAnimationFrame(loop);
-		return () => cancelAnimationFrame(frame);
+		return () => {
+			stopped = true;
+			cancelAnimationFrame(frame);
+		};
 	});
 
 	function probe(element: Element): MathReading | undefined {
@@ -262,9 +279,11 @@
 				step="0.01"
 				bind:value={logF}
 				aria-label="Stimulus frequency, 10 hertz to 100 kilohertz"
+				onchange={testCutoffCrossing}
 			/>
 		</label>
 	</div>
+	<SimulationMotionControl {motion} label="RC waveform and frequency-response animation" />
 	<div class="switchboard">
 		<p class="microlabel">switchboard · fault injection</p>
 		<FaultSwitch label="capacitor branch open" bind:active={faults.openCapacitor} />
@@ -272,12 +291,24 @@
 {/snippet}
 
 {#snippet canvas()}
-	<div class="sim-stage schemd-frame" bind:this={host}>
+	<div
+		class="sim-stage schemd-frame"
+		bind:this={host}
+		role="group"
+		data-model-stage={timeline.step}
+		aria-label="RC filter model"
+	>
 		{@html svg}
 	</div>
 {/snippet}
 
 {#snippet instruments()}
+	<p class="visually-hidden" aria-live="polite" aria-atomic="true">
+		{faults.openCapacitor
+			? 'Capacitor branch degraded: open circuit. The cutoff frequency is infinite and the output has unity gain.'
+			: 'Capacitor branch active.'}
+		{motion.status}
+	</p>
 	<div class="readouts">
 		<span class="readout"
 			><LiveMath
@@ -301,7 +332,11 @@
 			/></span
 		>
 	</div>
-	<figure class="bode cutoff-overlay" aria-label="Animated frequency response with cutoff marker">
+	<figure
+		class="bode cutoff-overlay"
+		class:motion-paused={motion.paused}
+		aria-label="Animated frequency response with cutoff marker"
+	>
 		<svg
 			viewBox={`0 0 ${PLOT_W} ${PLOT_H}`}
 			role="img"
@@ -468,6 +503,16 @@
 		transition:
 			cx var(--dur-fast) var(--ease-precise),
 			cy var(--dur-fast) var(--ease-precise);
+	}
+
+	.motion-paused {
+		& .bode-cutoff,
+		& .bode-glow,
+		& .bode-curve,
+		& .bode-op {
+			transition: none;
+			animation-play-state: paused;
+		}
 	}
 
 	@keyframes cutoff-flow {

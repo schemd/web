@@ -12,10 +12,6 @@
 	 * the exact transformation for the current step.
 	 */
 	import { setNodeActive, setWiresFrom, delegatedNodeId } from '$lib/sim-dom';
-	import {
-		SIMULATION_TIMELINE_EVENT,
-		type SimulationTimelineDetail
-	} from '$lib/simulation-timelines';
 	import { playSuccess, playTick } from '$lib/audio';
 	import { ui } from '$lib/ui.svelte';
 	import LabShell from './LabShell.svelte';
@@ -23,6 +19,13 @@
 	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
 	import { reading, type MathReading } from '$lib/simulation-math';
+	import {
+		groverOptimalRounds,
+		groverPhases,
+		groverState,
+		type GroverPhase as PhaseKind
+	} from '$lib/simulation-models';
+	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 
 	interface Props {
 		svg: string;
@@ -31,10 +34,12 @@
 	let { svg }: Props = $props();
 
 	const N = 8;
-	const UNIFORM = 1 / Math.sqrt(N);
-	const OPTIMAL = Math.floor((Math.PI / 4) * Math.sqrt(N)); /* = 2 for N = 8 */
+	const OPTIMAL_ROUNDS = groverOptimalRounds(N);
+	const DEMONSTRATION_ROUNDS = OPTIMAL_ROUNDS + 1;
+	const PHASE_KINDS = groverPhases(N, DEMONSTRATION_ROUNDS);
+	const UNIFORM = groverState(0, 0, N).amplitudes[0]!;
+	const FIRST_ORACLE = PHASE_KINDS.indexOf('oracle');
 
-	type PhaseKind = 'super' | 'oracle' | 'mean' | 'diffuse' | 'measure';
 	interface Phase {
 		readonly kind: PhaseKind;
 		readonly round: number;
@@ -43,44 +48,42 @@
 
 	/** The full staged schedule: superposition, k×(oracle, mean, diffuse), measure. */
 	const PHASES: readonly Phase[] = (() => {
-		const list: Phase[] = [{ kind: 'super', round: 0, label: 'Superposition' }];
-		for (let round = 1; round <= OPTIMAL; round += 1) {
-			list.push({ kind: 'oracle', round, label: `Round ${round} · Oracle U_f` });
-			list.push({ kind: 'mean', round, label: `Round ${round} · Mean ⟨a⟩` });
-			list.push({ kind: 'diffuse', round, label: `Round ${round} · Diffuser` });
-		}
-		list.push({ kind: 'measure', round: OPTIMAL, label: 'Measurement' });
-		return list;
+		let round = 0;
+		return PHASE_KINDS.map((kind) => {
+			if (kind === 'oracle') round += 1;
+			const label =
+				kind === 'super'
+					? 'Superposition'
+					: kind === 'measure'
+						? 'Measurement'
+						: `Round ${round} · ${kind === 'oracle' ? 'Oracle U_f' : kind === 'mean' ? 'Mean ⟨a⟩' : 'Diffuser'}`;
+			return { kind, round, label };
+		});
 	})();
 	let host = $state<HTMLElement | undefined>();
 	let target = $state(0b101); /* the marked item; set by the 3 qubit toggles */
 	let step = $state(0);
 	let faults = $state({ wrongOracle: false });
+	const timeline = useSimulationTimelineModel();
 
-	const markedIndex = $derived(faults.wrongOracle ? target ^ 0b001 : target);
+	const markedIndex = $derived(
+		groverState(
+			target,
+			FIRST_ORACLE,
+			N,
+			faults.wrongOracle,
+			DEMONSTRATION_ROUNDS
+		).amplitudes.findIndex((amplitude) => amplitude < 0)
+	);
 	const label = (index: number): string => index.toString(2).padStart(3, '0');
 
 	/** The exact state after replaying every phase up to (and including) `step`. */
-	const stepState = $derived.by(() => {
-		const marked = markedIndex;
-		let amplitudes = Array.from({ length: N }, () => UNIFORM);
-		for (let index = 1; index <= step; index += 1) {
-			const kind = PHASES[index]!.kind;
-			if (kind === 'oracle') {
-				amplitudes = amplitudes.map((a, i) => (i === marked ? -a : a));
-			} else if (kind === 'diffuse') {
-				const mean = amplitudes.reduce((sum, a) => sum + a, 0) / N;
-				amplitudes = amplitudes.map((a) => 2 * mean - a);
-			}
-		}
-		const phase = PHASES[step]!;
-		/* The mean line is the reflection axis shown at the dedicated mean step. */
-		const mean = phase.kind === 'mean' ? amplitudes.reduce((sum, a) => sum + a, 0) / N : undefined;
-		return { amplitudes, mean, phase };
-	});
+	const stepState = $derived(
+		groverState(target, step, N, faults.wrongOracle, DEMONSTRATION_ROUNDS)
+	);
 
 	const amplitudes = $derived(stepState.amplitudes);
-	const currentPhase = $derived(stepState.phase);
+	const currentPhase = $derived(PHASES[step]!);
 	const meanValue = $derived(stepState.mean);
 	const pTarget = $derived(amplitudes[target]! ** 2);
 
@@ -93,14 +96,10 @@
 
 	/* Keep the mathematical replay synchronized with the shared SVG timeline. */
 	$effect(() => {
-		const onStage = (event: Event): void => {
-			const detail = (event as CustomEvent<SimulationTimelineDetail>).detail;
-			if (detail.simulationId !== 'grover') return;
-			step = Math.max(0, Math.min(PHASES.length - 1, detail.step));
-			onStep(step);
-		};
-		window.addEventListener(SIMULATION_TIMELINE_EVENT, onStage);
-		return () => window.removeEventListener(SIMULATION_TIMELINE_EVENT, onStage);
+		const next = Math.max(0, Math.min(PHASES.length - 1, timeline.step));
+		if (next === step) return;
+		step = next;
+		onStep(next);
 	});
 
 	/** Toggle one bit of the target. */
@@ -203,8 +202,9 @@
 {#snippet controls()}
 	<div class="stack">
 		<p class="control-note">
-			Mark one of the eight states, then <strong>step</strong> the register toward it. Each round is an
-			oracle phase-flip, a mean reflection, and a diffuser rebound — watch the target grow.
+			Mark one of the eight states, then <strong>step</strong> the register toward it. Each round is
+			an oracle phase-flip, a mean reflection, and a diffuser rebound. The first {OPTIMAL_ROUNDS}
+			rounds amplify the target; the final demonstration round deliberately rotates past it.
 		</p>
 		<div class="target-picker">
 			<span class="microlabel"
@@ -218,6 +218,7 @@
 				{#each [2, 1, 0] as bit (bit)}
 					<button
 						type="button"
+						data-timeline-input
 						class="qubit"
 						class:on={((target >> bit) & 1) === 1}
 						onclick={() => toggleTargetBit(bit)}
@@ -247,6 +248,7 @@
 		class="sim-stage schemd-frame net-optics"
 		bind:this={host}
 		role="group"
+		data-model-stage={timeline.step}
 		aria-label="Grover 3-qubit search circuit"
 	>
 		{@html svg}

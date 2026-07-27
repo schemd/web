@@ -26,6 +26,11 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		simulation,
 		math: renderSimulationMath(simulation.id),
 		timeline: renderSimulationTimeline(timelineFor(simulation.id)),
-		environments: listSimulationEnvironments().map(({ id, index, title }) => ({ id, index, title }))
+		environments: listSimulationEnvironments().map(({ id, index, title, curriculum }) => ({
+			id,
+			index,
+			title,
+			curriculum
+		}))
 	};
 };

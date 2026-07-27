@@ -1,11 +1,15 @@
-<!-- schemd-doc: id=performance; label=Performance; title=Keep compilation bounded and measurable; summary=Use fixed resource ceilings, deterministic caches, and exact output-byte regressions.; category=Operate safely; order=100 -->
+<!-- schemd-doc: id=performance; label=Performance; title=Measure scaling and bound every host; summary=Separate compiler throughput, bundle cost, response amplification, and the limits a public service must add.; category=Operate safely; order=100 -->
 
 <!-- schemd-expect-page: unconnected-component, disconnected-subcircuit -->
 <!-- These examples measure geometry throughput, not connectivity. -->
 
-<!-- schemd-section: id=budgets; eyebrow=01 / Limits; title=Reject hostile work before allocation; example-title=Bounded rotated route -->
+<!-- schemd-section: id=budgets; eyebrow=01 / Compiler; title=Read scaling and size as separate budgets; example-title=Bounded rotated route -->
 
-The compiler caps source length, components, connections, wire crossings, UML rows, pins, label lengths, routing states, and SVG output. Orthogonal routing remains bounded even when rotated AABBs create tight corridors.
+Version 0.4 has no default component or connection count. That is a compiler capability, not
+permission for a public endpoint to accept arbitrary work. Set `components`, `connections`,
+`sourceCharacters`, `wireCrossings`, and `svgOutputBytes` through the per-compilation `limits`
+option whenever the source is not trusted. A host-level wall-clock deadline is still required:
+output bytes cannot bound a small routing problem with pathological geometry.
 
 ```schemd bounds="800x360" title="Bounded rotated route"
 port:A "A" at (70, 100) #blue
@@ -16,17 +20,28 @@ A.out -> R.in #blue [ortho]
 R.out -> B.in #emerald [ortho]
 ```
 
-Two budgets are enforced, because there are two honest answers to how big schemd is. Tree-shaken to `compileSchematic` — what a host that only compiles actually ships — the 0.3.6 release measures **103,084 B minified** and **30,806 B gzip** against a 31,744 B gate. The whole public entry with nothing shaken away, which is what registry size tools report because they bundle every export, measures **110,542 B minified** and **33,572 B gzip** against a 34,816 B gate. On disk that is a **77,670 B npm tarball** and **330,916 B unpacked**. Both gates run in `bun run size`.
+The release gate measures two different client costs. A tree-shaken host that imports only
+`compileSchematic` must remain below **32 KiB gzip**; the complete public entry, which includes
+exports a given host may never call, must remain below **35 KiB gzip**. Both are budgets, not claims
+that TypeScript declarations, the npm tarball, installed files, or a website route have the same
+size. Run `bun run size` on the exact release commit instead of repeating a registry screenshot as a
+bundle measurement.
 
-Neither gzip figure moved in 0.3.6 even though the release adds a module: `@schemd/core/describe` sits outside the package entry, so nothing that only compiles can reach it. The tarball grew by the two files it ships.
-
-Tracking only the first figure is how the published number moved 1.8 KB in 0.3.4 with nothing noticing.
+Scaling is gated independently. The 0.4 candidate measured 64,000 components with 32,000 connections
+at roughly one second and a flat cost near 16 µs per component from 8,000 upward; 11,200 components
+with 800 obstacle-dodging orthogonal traces measured about 130 ms. Those are warm figures from one
+Apple Silicon/Node configuration. The durable claim is the guarded slope, not the absolute
+millisecond value.
 
 <!-- /schemd-section -->
 
-<!-- schemd-section: id=server-cache; eyebrow=02 / Node; title=Bound every process-lifetime cache; example-title=Cache-key reference -->
+<!-- schemd-section: id=server-cache; eyebrow=02 / Host; title=Isolate deadlines and cap amplification; example-title=Cache-key reference -->
 
-The website registry stores one immutable release snapshot and one refresh promise. The compile API uses a 256-entry LRU. Documentation and simulation caches are keyed by finite version/slug or environment registries; user source is never accumulated without eviction.
+The official compile endpoint applies limits stricter than the library defaults, rejects oversized
+request bodies before JSON allocation, rate-limits by client, and runs a compilation outside the
+request thread. A deadline can terminate that worker; `Promise.race` around synchronous compilation
+cannot. Concurrency and queue depth are finite, and a full queue returns a retryable capacity error
+instead of multiplying memory by the rate-limit burst.
 
 ```schemd bounds="720x300" title="Cache-key reference"
 clock:C "CLK" at (90, 120) #blue
@@ -36,8 +51,19 @@ C.out -> N.clock #blue [digital ortho]
 N.out1 -> Q.in #emerald [digital line]
 ```
 
-On Node.js 26.4.0 / Apple Silicon, Phase 5 warm medians were 0.202 ms for the representative RC compile, 6.583 ms for 512 rotated components, and 2.982 ms for a dense 16×16 crossing fixture. Their SVG outputs were 6,019 B, 279,243 B, and 44,604 B. A repeated-symbol fixture emitted 1,353 B for one resistor and 35,463 B for 64 labeled mixed-orientation instances.
+Successful and line-numbered failed compilations share a SHA-256-keyed LRU capped at 64 entries and
+16 MiB. The cache key includes mode, bounds, title, and source; hits refresh recency. Registry data
+uses one immutable stale-while-revalidate snapshot and one in-flight refresh promise. Documentation
+and simulation caches are keyed by finite registries rather than user input.
 
-Absolute milliseconds belong to the machine that measured them, so read the ratios. Routing cost in 0.3.5 falls to **0.53×** on the dense crossing fixture and **0.40×** on a 512-component chain that wires one connection per component. The gap between those two is the point: the old obstacle index was keyed on x alone, so a column held every obstacle stacked along it and cost grew with the document's height rather than with what a segment could actually hit. Documents whose connection count grows with their component count gained most; a sparse document was already cheap and is unchanged. Run `bun run benchmark` to get the numbers for your own hardware.
+The browser IDE compiles locally in a lazily started native worker containing `@schemd/core` and
+uses the endpoint only as a fallback. That removes a network round trip and server work from normal
+typing, and the worker boundary lets a deadline terminate a pathological local compile, without
+putting the compiler on documentation, catalogue, or simulation critical paths. The website build
+budget verifies both facts from Vite’s manifest.
+
+Performance work is not finished when one benchmark turns green. Re-run `bun run benchmark` on the
+target hardware, inspect p95/p99 latency under concurrent load, and size the serialized response—not
+only parser time—before raising any public-host budget.
 
 <!-- /schemd-section -->

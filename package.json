@@ -1,6 +1,10 @@
 {
 	"name": "schemd-web",
 	"version": "0.1.0",
+	"packageManager": "bun@1.3.14",
+	"engines": {
+		"node": ">=24"
+	},
 	"devDependencies": {
 		"@axe-core/playwright": "^4.12.1",
 		"@eslint/js": "^10.0.1",
@@ -43,7 +47,8 @@
 		"test:e2e": "playwright test",
 		"test:a11y": "playwright test e2e/accessibility.e2e.ts",
 		"test:budget": "bun run build && bun scripts/check-build-budget.ts",
-		"test": "bun run check && bun run test:unit && bun run test:e2e"
+		"test": "bun run check && bun run test:unit && bun run test:e2e",
+		"release:check": "bun run ci && bun run format:check && bun run lint && bun run check && bun run test:unit && bun run test:e2e && bun run test:budget"
 	},
 	"type": "module",
 	"dependencies": {

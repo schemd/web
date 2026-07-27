@@ -1,9 +1,17 @@
 import type { RequestHandler } from './$types';
 import { clientAddress, consumeRateLimit, readLimitedJson } from '$lib/server/request-guard';
-import type { InteractionName, TelemetryEvent, VitalName, VitalRating } from '$lib/telemetry';
+import {
+	vitalRating,
+	type InteractionName,
+	type TelemetryEvent,
+	type VitalName,
+	type VitalRating
+} from '$lib/telemetry';
 
 const MAX_BODY_BYTES = 16 * 1024;
 const MAX_EVENTS = 20;
+const MAX_EVENT_AGE_MS = 24 * 60 * 60 * 1_000;
+const MAX_CLOCK_SKEW_MS = 5 * 60 * 1_000;
 type Viewport = 'small' | 'medium' | 'large';
 const VITALS = new Set<VitalName>(['CLS', 'INP', 'LCP', 'TTFB']);
 const RATINGS = new Set<VitalRating>(['good', 'needs-improvement', 'poor']);
@@ -25,10 +33,14 @@ function inSet<T extends string>(values: ReadonlySet<T>, value: unknown): value 
 	return typeof value === 'string' && values.has(value as T);
 }
 
-function base(value: Record<string, unknown>): { at: number; path: string } | undefined {
+function base(
+	value: Record<string, unknown>,
+	now: number
+): { at: number; path: string } | undefined {
 	const at = value['at'];
 	const path = value['path'];
 	if (value['v'] !== 1 || typeof at !== 'number' || !Number.isFinite(at)) return undefined;
+	if (at < now - MAX_EVENT_AGE_MS || at > now + MAX_CLOCK_SKEW_MS) return undefined;
 	if (typeof path !== 'string' || !path.startsWith('/') || path.length > 256) return undefined;
 	if (path.includes('?') || path.includes('#')) return undefined;
 	for (const character of path) {
@@ -39,13 +51,16 @@ function base(value: Record<string, unknown>): { at: number; path: string } | un
 }
 
 /** Strictly rebuild events so unknown client fields never reach structured logs. */
-export function _parseTelemetryBatch(value: unknown): readonly TelemetryEvent[] | undefined {
+export function _parseTelemetryBatch(
+	value: unknown,
+	now = Date.now()
+): readonly TelemetryEvent[] | undefined {
 	if (!isRecord(value) || !Array.isArray(value['events'])) return undefined;
 	if (value['events'].length === 0 || value['events'].length > MAX_EVENTS) return undefined;
 	const events: TelemetryEvent[] = [];
 	for (const candidate of value['events']) {
 		if (!isRecord(candidate)) return undefined;
-		const common = base(candidate);
+		const common = base(candidate, now);
 		if (!common) return undefined;
 		if (candidate['type'] === 'page_view' && inSet(VIEWPORTS, candidate['viewport'])) {
 			events.push({
@@ -61,7 +76,8 @@ export function _parseTelemetryBatch(value: unknown): readonly TelemetryEvent[] 
 			typeof candidate['value'] === 'number' &&
 			Number.isFinite(candidate['value']) &&
 			candidate['value'] >= 0 &&
-			candidate['value'] <= 60_000
+			candidate['value'] <= 60_000 &&
+			candidate['rating'] === vitalRating(candidate['name'], candidate['value'])
 		) {
 			events.push({
 				v: 1,

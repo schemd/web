@@ -48,7 +48,7 @@ describe('simulation teaching timelines', () => {
 		expect(timeline.at(-1)?.nodes).toContain('COUT');
 	});
 
-	it('replays both Grover rounds before measurement', () => {
+	it('replays the two-round Grover optimum and one explicit over-rotation before measurement', () => {
 		const labels = timelineFor('grover').map((frame) => frame.label);
 		expect(labels).toEqual([
 			'Uniform superposition',
@@ -58,7 +58,19 @@ describe('simulation teaching timelines', () => {
 			'Round 2 · oracle',
 			'Round 2 · mean',
 			'Round 2 · inversion',
+			'Round 3 · oracle',
+			'Round 3 · mean',
+			'Round 3 · over-rotation',
 			'Measurement'
+		]);
+	});
+
+	it('prepares LFSR feedback before one atomic register edge', () => {
+		expect(timelineFor('lfsr').map((frame) => frame.label)).toEqual([
+			'Form the feedback bit',
+			'Clock the register',
+			'Commit all four stages',
+			'Emit the sequence bit'
 		]);
 	});
 

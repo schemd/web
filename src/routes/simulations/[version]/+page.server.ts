@@ -13,5 +13,34 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	if (params.version !== version) {
 		redirect(307, `/simulations/${version}${url.search}`);
 	}
-	return { version, environments: listSimulationEnvironments() };
+	return {
+		version,
+		environments: listSimulationEnvironments().map(
+			({
+				id,
+				index,
+				title,
+				domain,
+				tier,
+				model,
+				tagline,
+				formulaHtml,
+				inventory,
+				boundaries,
+				curriculum
+			}) => ({
+				id,
+				index,
+				title,
+				domain,
+				tier,
+				model,
+				tagline,
+				formulaHtml,
+				inventory,
+				boundaries,
+				curriculum
+			})
+		)
+	};
 };

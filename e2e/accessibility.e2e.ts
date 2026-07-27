@@ -42,17 +42,73 @@ async function settled(page: import('@playwright/test').Page): Promise<void> {
 		.catch(() => undefined);
 }
 
+const CURRENT_DOCS = [
+	'overview',
+	'grammar',
+	'framework-adapters',
+	'component-reference',
+	'markdown-adapters',
+	'math-labels',
+	'responsive-svg',
+	'integrations',
+	'netlist',
+	'output-modes',
+	'limits',
+	'performance',
+	'roadmap'
+] as const;
+
 const ROUTES = [
 	'/',
-	'/docs/0.3.0/overview',
+	...CURRENT_DOCS.map((slug) => `/docs/0.4.0/${slug}`),
 	'/docs/0.2.1/component-reference',
-	'/playground/0.3.0',
-	'/simulations/0.3.0/adder',
-	'/simulations/0.3.0/rc',
-	'/simulations/0.3.0/bell',
-	'/simulations/0.3.0/timer',
-	'/simulations/0.3.0/teleport',
+	'/playground/0.4.0',
+	'/diff/0.4.0',
+	'/conformance',
+	'/simulations/0.4.0',
+	'/simulations/0.4.0/adder',
+	'/simulations/0.4.0/rc',
+	'/simulations/0.4.0/bell',
+	'/simulations/0.4.0/timer',
+	'/simulations/0.4.0/teleport',
+	'/simulations/0.4.0/buck',
+	'/simulations/0.4.0/chua',
+	'/simulations/0.4.0/pll',
+	'/simulations/0.4.0/statechart',
+	'/simulations/0.4.0/qec',
+	'/simulations/0.4.0/wien',
+	'/simulations/0.4.0/lfsr',
+	'/simulations/0.4.0/grover',
+	'/examples',
+	'/coverage',
 	'/changelog'
+];
+
+const LABS = [
+	'adder',
+	'rc',
+	'bell',
+	'timer',
+	'teleport',
+	'buck',
+	'chua',
+	'pll',
+	'statechart',
+	'qec',
+	'wien',
+	'lfsr',
+	'grover'
+] as const;
+
+const CONTINUOUS_MOTION_LABS = [
+	'rc',
+	'timer',
+	'teleport',
+	'buck',
+	'chua',
+	'pll',
+	'statechart',
+	'wien'
 ] as const;
 
 for (const route of ROUTES) {
@@ -68,6 +124,67 @@ for (const route of ROUTES) {
 		expect(results.violations).toEqual([]);
 	});
 }
+
+test('every live laboratory readout has an accessible MathML copy', async ({ page }) => {
+	for (const lab of LABS) {
+		await page.goto(`/simulations/0.4.0/${lab}`);
+		const expressions = page.locator('[data-math-id]');
+		const count = await expressions.count();
+		expect(count, `${lab}: live expressions`).toBeGreaterThan(0);
+		for (let index = 0; index < count; index += 1) {
+			const expression = expressions.nth(index);
+			await expect(
+				expression,
+				`${lab}: expression ${index} has an accessible name`
+			).toHaveAttribute('aria-label', /\S/);
+			await expect(
+				expression.locator('.katex-mathml math').first(),
+				`${lab}: expression ${index} retains KaTeX MathML`
+			).toHaveCount(1);
+			await expect(
+				expression.locator('.katex-html[aria-hidden="true"]').first(),
+				`${lab}: visual copy remains hidden to avoid duplicate speech`
+			).toHaveCount(1);
+		}
+	}
+});
+
+test('timeline prose keeps accessible math tokens inside complete sentences', async ({ page }) => {
+	await page.goto('/simulations/0.4.0/adder');
+	const timeline = page.getByRole('region', { name: 'Signal propagation timeline' });
+	const mathTokens = timeline.locator('.katex');
+	expect(await mathTokens.count()).toBeGreaterThan(0);
+	await expect(mathTokens.first().locator('.katex-mathml math')).toHaveCount(1);
+	await expect(timeline).toContainText(/carry/i);
+});
+
+test('live KaTeX patches visual and MathML slot values together', async ({ page }) => {
+	await page.goto('/simulations/0.4.0/rc');
+	const response = page.locator('[data-math-id="rc.readout.h"]');
+	await expect(response.locator('.katex-html [data-math-slot="magnitude"]')).toHaveText('0.847');
+	await expect(response.locator('.katex-mathml [data-math-slot="magnitude"]')).toHaveText('0.847');
+
+	await page.getByRole('slider', { name: 'Resistance' }).fill('5');
+	await page.getByRole('slider', { name: 'Resistance' }).dispatchEvent('change');
+	await expect(response.locator('.katex-html [data-math-slot="magnitude"]')).not.toHaveText(
+		'0.847'
+	);
+	await expect(response.locator('.katex-mathml [data-math-slot="magnitude"]')).not.toHaveText(
+		'0.847'
+	);
+});
+
+test('reduced-motion users receive a stopped simulation with an explicit opt-in', async ({
+	page
+}) => {
+	for (const lab of CONTINUOUS_MOTION_LABS) {
+		await page.goto(`/simulations/0.4.0/${lab}`);
+		const resume = page.getByRole('button', { name: /resume .*animation/i });
+		await expect(resume, `${lab}: reduced-motion pause control`).toBeVisible();
+		await expect(resume).toHaveAttribute('aria-pressed', 'true');
+		await expect(page.getByText(/paused for your reduced-motion preference/i)).toBeVisible();
+	}
+});
 
 test('command palette modal has no detectable WCAG A/AA violations', async ({ page }) => {
 	await page.goto('/');

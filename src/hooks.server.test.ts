@@ -48,6 +48,7 @@ describe('response hardening', () => {
 		const response = applySecurityHeaders(new Response('ok'), true);
 		expect(response.headers.get('x-content-type-options')).toBe('nosniff');
 		expect(response.headers.get('permissions-policy')).toContain('camera=()');
+		expect(response.headers.get('referrer-policy')).toBe('origin');
 		expect(response.headers.get('cross-origin-opener-policy')).toBe('same-origin');
 		expect(response.headers.get('strict-transport-security')).toContain('includeSubDomains');
 		expect(response.headers.has('x-frame-options')).toBe(false);

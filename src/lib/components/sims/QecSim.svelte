@@ -17,6 +17,14 @@
 	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
 	import { reading, type MathReading } from '$lib/simulation-math';
+	import {
+		qecAccused,
+		qecFidelity,
+		qecResidual,
+		qecSyndrome,
+		type QecError
+	} from '$lib/simulation-models';
+	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 
 	interface Props {
 		svg: string;
@@ -26,56 +34,36 @@
 
 	let host = $state<HTMLElement | undefined>();
 	/** Physical bit-flip error on each of the three code qubits. */
-	let error = $state<number[]>([0, 0, 0]);
-	let corrected = $state(false);
+	let error = $state<QecError>([0, 0, 0]);
 	let faults = $state({ miswiredDecoder: false });
+	const timeline = useSimulationTimelineModel();
+	const NO_ERROR: QecError = [0, 0, 0];
 
 	/** Syndrome parities: (q0⊕q1, q1⊕q2). Reveal disagreement, never values. */
-	const syndrome = $derived<[number, number]>([error[0]! ^ error[1]!, error[1]! ^ error[2]!]);
-
-	/** Decode a syndrome to the qubit that must be flipped back. */
-	function decode([s0, s1]: [number, number]): number | undefined {
-		if (faults.miswiredDecoder) {
-			/* Rows swapped: the decoder blames the wrong line. */
-			if (s0 === 1 && s1 === 0) return 2;
-			if (s0 === 0 && s1 === 1) return 0;
-			if (s0 === 1 && s1 === 1) return 1;
-			return undefined;
-		}
-		if (s0 === 1 && s1 === 0) return 0;
-		if (s0 === 1 && s1 === 1) return 1;
-		if (s0 === 0 && s1 === 1) return 2;
-		return undefined;
-	}
-
-	const accused = $derived(decode(syndrome));
-
-	/** Residual after correction: error XOR the applied fix. Trivial ⇒ recovered. */
-	const residual = $derived.by(() => {
-		if (!corrected) return error;
-		const fix = [0, 0, 0];
-		if (accused !== undefined) fix[accused] = 1;
-		return error.map((bit, index) => bit ^ fix[index]!);
-	});
-
-	/** Weight-0 residual preserves the logical state; anything else is a logical fault. */
-	const fidelity = $derived(residual.every((bit) => bit === 0) ? 1 : 0);
+	const visibleError = $derived(timeline.step >= 2 ? error : NO_ERROR);
+	const syndrome = $derived(timeline.step >= 3 ? qecSyndrome(error) : ([0, 0] as const));
+	const accused = $derived(qecAccused(syndrome, faults.miswiredDecoder));
+	const corrected = $derived(timeline.step >= 4);
+	const residual = $derived(qecResidual(visibleError, corrected, faults.miswiredDecoder));
+	const fidelity = $derived(qecFidelity(visibleError, corrected, faults.miswiredDecoder));
 	const syndromeLabel = $derived(`${syndrome[0]}${syndrome[1]}`);
 
 	function inject(qubit: number): void {
-		error = error.map((bit, index) => (index === qubit ? bit ^ 1 : bit));
-		corrected = false;
+		const next: [0 | 1, 0 | 1, 0 | 1] = [...error];
+		next[qubit] = (next[qubit]! ^ 1) as 0 | 1;
+		error = next;
 		if (ui.audio) playError();
 	}
 
 	function correct(): void {
-		corrected = true;
-		if (ui.audio) (fidelity === 1 ? playSuccess : playError)();
+		const projectedFidelity = qecFidelity(error, true, faults.miswiredDecoder);
+		timeline.command('seek', 4);
+		if (ui.audio) (projectedFidelity === 1 ? playSuccess : playError)();
 	}
 
 	function reset(): void {
 		error = [0, 0, 0];
-		corrected = false;
+		timeline.command('reset');
 		if (ui.audio) playTick(560);
 	}
 
@@ -83,18 +71,22 @@
 	$effect(() => {
 		const root = host;
 		if (!root) return;
-		const anyError = error.some((bit) => bit === 1);
-		setNodeActive(root, 'ENC', true);
-		setNodeActive(root, 'ERR', anyError);
+		const anyError = visibleError.some((bit) => bit === 1);
+		setNodeActive(root, 'ENC', timeline.step >= 1);
+		setNodeActive(root, 'ERR', timeline.step >= 2 && anyError);
 		setNodeDegraded(root, 'ERR', anyError && !corrected);
 		for (let index = 0; index < 3; index += 1) {
-			setWiresFrom(root, `ERR.o${index}`, error[index] === 1 && !corrected);
-			setWiresFrom(root, `ENC.o${index}`, true);
+			setWiresFrom(
+				root,
+				`ERR.o${index}`,
+				timeline.step >= 2 && visibleError[index] === 1 && !corrected
+			);
+			setWiresFrom(root, `ENC.o${index}`, timeline.step >= 1);
 		}
-		setNodeActive(root, 'SYN', syndrome[0] === 1 || syndrome[1] === 1);
-		setNodeActive(root, 'COR', corrected);
+		setNodeActive(root, 'SYN', timeline.step >= 3 && (syndrome[0] === 1 || syndrome[1] === 1));
+		setNodeActive(root, 'COR', timeline.step >= 4);
 		setNodeDegraded(root, 'COR', corrected && fidelity === 0);
-		setNodeActive(root, 'MOUT', corrected && fidelity === 1);
+		setNodeActive(root, 'MOUT', timeline.step >= 5 && fidelity === 1);
 	});
 
 	function probe(element: Element): MathReading | undefined {
@@ -104,10 +96,12 @@
 		if (id === 'ERR')
 			return reading(
 				'qec.error',
-				error.some((b) => b) ? `bit flip on qubit ${error.findIndex((b) => b === 1)}` : 'no error',
+				visibleError.some((b) => b)
+					? `bit flip on qubit ${visibleError.findIndex((b) => b === 1)}`
+					: 'no error',
 				{
-					qubit: error.some((b) => b) ? error.findIndex((b) => b === 1) : '—',
-					state: error.some((b) => b) ? 'bit flip' : 'no error'
+					qubit: visibleError.some((b) => b) ? visibleError.findIndex((b) => b === 1) : '—',
+					state: visibleError.some((b) => b) ? 'bit flip' : 'no error'
 				}
 			);
 		if (id === 'SYN')
@@ -142,6 +136,7 @@
 			{#each [0, 1, 2] as qubit (qubit)}
 				<button
 					type="button"
+					data-timeline-input
 					class="btn"
 					class:flipped={error[qubit] === 1}
 					onclick={() => inject(qubit)}
@@ -166,15 +161,24 @@
 		class="sim-stage schemd-frame"
 		bind:this={host}
 		role="group"
-		aria-label="3-qubit bit-flip code pipeline"
+		data-model-stage={timeline.step}
+		aria-label="Quantum error-correction model"
 	>
 		{@html svg}
 	</div>
 {/snippet}
 
 {#snippet instruments()}
+	<p class="visually-hidden" aria-live="polite" aria-atomic="true">
+		Error-correction decoder {faults.miswiredDecoder ? 'degraded: wiring fault active' : 'nominal'};
+		syndrome {syndromeLabel}; {corrected
+			? `correction applied, residual pattern ${residual.join('')}, logical fidelity ${fidelity}`
+			: accused === undefined
+				? 'no correction requested'
+				: `decoder accuses qubit ${accused}`}.
+	</p>
 	<div class="qubits" aria-label="Physical qubit states">
-		{#each error as bit, index (index)}
+		{#each visibleError as bit, index (index)}
 			<div class="qwire" class:flipped={bit === 1 && !corrected}>
 				<span class="microlabel"
 					><LiveMath id="qec.qubit" label={`qubit ${index}`} values={{ value: index }} /></span

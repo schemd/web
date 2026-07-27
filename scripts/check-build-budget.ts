@@ -1,9 +1,10 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { gzipSync } from 'node:zlib';
 
 interface ManifestEntry {
 	readonly file: string;
+	readonly name?: string;
 	readonly src?: string;
 	readonly imports?: readonly string[];
 	readonly dynamicImports?: readonly string[];
@@ -15,14 +16,27 @@ const MANIFEST_PATH = join(CLIENT_ROOT, '.vite/manifest.json');
 const MAX_SINGLE_JS_GZIP = 22 * 1024;
 /*
  * The compiler is the one chunk allowed to be large, because it is the one
- * chunk nobody downloads unless they open the playground. It must stay lazily
- * imported and off every other route's critical path — the budget below checks
- * exactly that, rather than trusting a size number on its own.
+ * chunk nobody downloads unless they start an authoring surface. It runs in a
+ * native worker so a legal worst-case compile cannot block the document thread.
+ * Keep it emitted once, referenced only by the tiny compiler facade, and out of
+ * Vite's document module graph.
  */
 const COMPILER_MODULE = 'node_modules/@schemd/core/dist/index.js';
-const MAX_COMPILER_JS_GZIP = 34 * 1024;
-const MAX_ALL_JS_GZIP = 180 * 1024;
-const MAX_SIMULATION_SHELL_RAW = 20 * 1024;
+const COMPILER_WORKER = /\/workers\/compile-browser\.worker-[^/]+\.js$/;
+/*
+ * Worker isolation adds a small message/validation boundary to the compiler's
+ * public entry. Budget it separately instead of concealing it inside an
+ * inflated application allowance. The combined ceiling is exactly the sum.
+ */
+const MAX_COMPILER_JS_GZIP = 36 * 1024;
+const MAX_DOCUMENT_JS_GZIP = 146 * 1024;
+const MAX_ALL_JS_GZIP = 182 * 1024;
+/*
+ * Prediction, evidence validation, progression, and the selected lab's async
+ * loader are SSR-critical shell code. Keep the hard raw ceiling tight enough
+ * to catch accidental model bundling without pretending that pedagogy is free.
+ */
+const MAX_SIMULATION_SHELL_RAW = 27 * 1024;
 const MAX_MODERN_MATH_FONTS = 320 * 1024;
 const MAX_CLIENT_OUTPUT = 1_100 * 1024;
 const EXPECTED_SIMULATIONS = 13;
@@ -48,43 +62,60 @@ async function filesBelow(root: string): Promise<readonly string[]> {
 
 const manifest = JSON.parse(await readFile(MANIFEST_PATH, 'utf8')) as Record<string, ManifestEntry>;
 const clientFiles = await filesBelow(CLIENT_ROOT);
-const javascript = [...new Set(Object.values(manifest).map((entry) => entry.file))].filter((file) =>
-	file.endsWith('.js')
+const javascript = clientFiles.filter((file) => file.endsWith('.js'));
+const compilerWorkers = javascript.filter((file) =>
+	COMPILER_WORKER.test(`/${relative(CLIENT_ROOT, file).replaceAll('\\', '/')}`)
 );
-
-const compilerEntry = manifest[COMPILER_MODULE];
-assertBudget(compilerEntry, `${COMPILER_MODULE} is no longer in the client manifest`);
 assertBudget(
-	compilerEntry.isDynamicEntry,
-	'the schemd compiler is no longer a dynamic entry; the playground would ship it to every route'
+	compilerWorkers.length === 1,
+	`expected one compiler worker, emitted ${compilerWorkers.length}: ${compilerWorkers.join(', ')}`
 );
-const staticallyImportedBy = Object.entries(manifest)
-	.filter(([, entry]) => entry.imports?.includes(COMPILER_MODULE))
-	.map(([key]) => key);
+const compilerWorker = compilerWorkers[0]!;
+const compilerWorkerName = relative(CLIENT_ROOT, compilerWorker).replaceAll('\\', '/');
+const compilerFacade = Object.values(manifest).find((entry) => entry.name === 'compile-client');
+assertBudget(compilerFacade, 'the compiler worker facade is missing from the client manifest');
 assertBudget(
-	staticallyImportedBy.length === 0,
-	`the schemd compiler is statically imported by ${staticallyImportedBy.join(', ')}`
+	manifest[COMPILER_MODULE] === undefined,
+	'the schemd compiler leaked into the document module graph instead of its worker'
 );
 
 let allJavascriptGzip = 0;
+let documentJavascriptGzip = 0;
 let compilerGzip = 0;
-let largestJavascript = { file: '', gzip: 0 };
+let largestDocumentJavascript = { file: '', gzip: 0 };
+const compilerReferences: string[] = [];
 for (const file of javascript) {
-	const compressed = gzipSync(await readFile(join(CLIENT_ROOT, file))).byteLength;
+	const source = await readFile(file);
+	const emittedName = relative(CLIENT_ROOT, file).replaceAll('\\', '/');
+	const compressed = gzipSync(source).byteLength;
 	allJavascriptGzip += compressed;
-	if (file === compilerEntry.file) {
+	if (file === compilerWorker) {
 		compilerGzip = compressed;
 		continue;
 	}
-	if (compressed > largestJavascript.gzip) largestJavascript = { file, gzip: compressed };
+	documentJavascriptGzip += compressed;
+	if (source.includes(compilerWorkerName.split('/').at(-1)!)) {
+		compilerReferences.push(emittedName);
+	}
+	if (compressed > largestDocumentJavascript.gzip) {
+		largestDocumentJavascript = { file: emittedName, gzip: compressed };
+	}
 }
 assertBudget(
-	largestJavascript.gzip <= MAX_SINGLE_JS_GZIP,
-	`${largestJavascript.file} is ${kib(largestJavascript.gzip)} gzip; limit ${kib(MAX_SINGLE_JS_GZIP)}`
+	compilerReferences.length === 1 && compilerReferences[0] === compilerFacade.file,
+	`compiler worker is referenced outside its facade: ${compilerReferences.join(', ')}`
+);
+assertBudget(
+	largestDocumentJavascript.gzip <= MAX_SINGLE_JS_GZIP,
+	`${largestDocumentJavascript.file} is ${kib(largestDocumentJavascript.gzip)} gzip; limit ${kib(MAX_SINGLE_JS_GZIP)}`
 );
 assertBudget(
 	compilerGzip <= MAX_COMPILER_JS_GZIP,
 	`the lazily loaded compiler chunk is ${kib(compilerGzip)} gzip; limit ${kib(MAX_COMPILER_JS_GZIP)}`
+);
+assertBudget(
+	documentJavascriptGzip <= MAX_DOCUMENT_JS_GZIP,
+	`document JavaScript is ${kib(documentJavascriptGzip)} gzip; limit ${kib(MAX_DOCUMENT_JS_GZIP)}`
 );
 assertBudget(
 	allJavascriptGzip <= MAX_ALL_JS_GZIP,
@@ -134,8 +165,9 @@ console.info(
 	[
 		`Build budgets passed: ${kib(clientBytes)} client output`,
 		`${kib(allJavascriptGzip)} total JS gzip`,
-		`${kib(largestJavascript.gzip)} largest eager JS chunk`,
-		`${kib(compilerGzip)} lazy compiler chunk`,
+		`${kib(documentJavascriptGzip)} document JS gzip`,
+		`${kib(largestDocumentJavascript.gzip)} largest document JS chunk`,
+		`${kib(compilerGzip)} lazy compiler worker`,
 		`${simulationImports.length} lazy simulation chunks`,
 		`${kib(modernMathFontBytes)} WOFF2 math fonts`
 	].join(' · ')

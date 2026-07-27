@@ -219,7 +219,6 @@ export const simulationMathTemplateIds = (simulationId: string): readonly string
 
 const renderTemplate = (tex: string): string =>
 	katex.renderToString(tex, {
-		output: 'html',
 		throwOnError: false,
 		strict: 'ignore',
 		trust: (context) => context.command === '\\htmlData'
@@ -291,7 +290,6 @@ function renderTimelineText(value: string): string {
 		let rendered = timelineKatexCache.get(token);
 		if (rendered === undefined) {
 			rendered = katex.renderToString(timelineTex(token), {
-				output: 'html',
 				throwOnError: false,
 				strict: 'ignore'
 			});

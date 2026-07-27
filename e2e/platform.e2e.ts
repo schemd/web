@@ -39,23 +39,23 @@ test('version selector preserves the slug and snaps future releases to the docum
 	page,
 	request
 }) => {
-	await page.goto('/docs/0.3.0/component-reference');
-	await expect(page.locator('main h1')).toHaveText('Use every 0.3 primitive deliberately');
+	await page.goto('/docs/0.4.0/component-reference');
+	await expect(page.locator('main h1')).toHaveText('Use every 0.4 primitive deliberately');
 	await page.getByRole('combobox', { name: 'Documentation version' }).selectOption('0.2.1');
 	await expect(page).toHaveURL(/\/docs\/0\.2\/component-reference$/);
 	await expect(page.locator('main h1')).toHaveText('Find a component and its ports');
 
 	const futureVersion = await request.get('/docs/9.9.9/overview');
 	expect(futureVersion.status()).toBe(200);
-	expect(futureVersion.url()).toMatch(/\/docs\/0\.3\/overview$/);
-	const missingSlug = await request.get('/docs/0.3.0/not-a-document');
+	expect(futureVersion.url()).toMatch(/\/docs\/0\.4\/overview$/);
+	const missingSlug = await request.get('/docs/0.4.0/not-a-document');
 	expect(missingSlug.status()).toBe(404);
 });
 
 test('command palette traps focus and keyboard-navigates the versioned search index', async ({
 	page
 }) => {
-	await page.goto('/docs/0.3.0/overview');
+	await page.goto('/docs/0.4.0/overview');
 	await expect(page.getByRole('button', { name: 'Open command palette' })).toBeEnabled();
 	await page.keyboard.press('Control+K');
 	const dialog = page.getByRole('dialog');
@@ -71,13 +71,13 @@ test('command palette traps focus and keyboard-navigates the versioned search in
 	await expect(close).toBeFocused();
 	await search.fill('Component API');
 	await search.press('Enter');
-	await expect(page).toHaveURL(/\/docs\/0\.3\/component-reference$/);
+	await expect(page).toHaveURL(/\/docs\/0\.4\/component-reference$/);
 });
 
 test('playground opens valid, maps source to vector, preserves URI state, and exposes raw parity', async ({
 	page
 }) => {
-	await page.goto('/playground/0.3.0');
+	await page.goto('/playground/0.4.0');
 	const preview = page.getByRole('region', { name: 'Compiled schematic preview' });
 	await expect(preview.locator('[data-schematic] svg')).toBeVisible();
 	await expect(page.getByRole('alert')).toHaveCount(0);
@@ -123,7 +123,7 @@ test('playground opens valid, maps source to vector, preserves URI state, and ex
 test('RC laboratory uses native primitives and updates derived physics without regenerating SVG', async ({
 	page
 }) => {
-	await page.goto('/simulations/0.3.0/rc');
+	await page.goto('/simulations/0.4.0/rc');
 	const schematic = page.locator('.sim-stage [data-schematic] svg');
 	await expect(schematic).toBeVisible();
 	await expect(schematic.locator('[data-node-id="VIN"]')).toBeVisible();
@@ -153,24 +153,28 @@ test('release timeline and sitemap expose current and historical platform contex
 	request
 }) => {
 	await page.goto('/changelog');
-	await expect(page.getByRole('heading', { name: /v0\.3\.0/ })).toBeVisible();
-	await expect(page.getByText(/release candidate/i)).toBeVisible();
-	await expect(page.getByText('26,512 B')).toBeVisible();
-	await expect(page.getByText('59,709 B')).toBeVisible();
+	await expect(page.getByRole('heading', { name: /v0\.4\.0/ })).toBeVisible();
+	await expect(page.getByText(/publication unconfirmed/i).first()).toBeVisible();
+	await expect(page.locator('.stat').filter({ hasText: 'installed engine' })).toContainText(
+		'v0.4.0'
+	);
+	await expect(page.locator('.stat').filter({ hasText: 'latest install' })).toContainText(
+		'pending'
+	);
 
 	const sitemap = await request.get('/sitemap.xml');
 	expect(sitemap.status()).toBe(200);
 	const xml = await sitemap.text();
-	expect(xml).toContain('/docs/0.3/component-reference');
+	expect(xml).toContain('/docs/0.4/component-reference');
 	expect(xml).toContain('/docs/0.2/component-reference');
-	expect(xml).toContain('/simulations/0.3.0/rc');
+	expect(xml).toContain('/simulations/0.4.0/rc');
 });
 
 test('mobile docs expose an accessible index and compiled-example bottom sheet', async ({
 	page
 }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
-	await page.goto('/docs/0.3.0/overview');
+	await page.goto('/docs/0.4.0/overview');
 	const indexToggle = page.getByRole('button', { name: /index · Quickstart/i });
 	await expect(indexToggle).toBeVisible();
 	await indexToggle.click();
@@ -185,19 +189,50 @@ test('mobile docs expose an accessible index and compiled-example bottom sheet',
 test('every public page shell fits the mobile viewport without horizontal scroll', async ({
 	page
 }) => {
+	test.setTimeout(120_000);
 	await page.setViewportSize({ width: 390, height: 844 });
+	const currentDocs = [
+		'overview',
+		'grammar',
+		'framework-adapters',
+		'component-reference',
+		'markdown-adapters',
+		'math-labels',
+		'responsive-svg',
+		'integrations',
+		'netlist',
+		'output-modes',
+		'limits',
+		'performance',
+		'roadmap'
+	] as const;
+	const laboratories = [
+		'adder',
+		'rc',
+		'bell',
+		'timer',
+		'teleport',
+		'buck',
+		'chua',
+		'pll',
+		'statechart',
+		'qec',
+		'wien',
+		'lfsr',
+		'grover'
+	] as const;
 	const routes = [
 		'/',
-		'/docs/0.3.2/overview',
-		'/docs/0.3.2/component-reference',
-		'/playground/0.3.2',
-		'/simulations/0.3.2',
-		'/simulations/0.3.2/adder',
-		'/simulations/0.3.2/rc',
+		...currentDocs.map((slug) => `/docs/0.4.0/${slug}`),
+		'/playground/0.4.0',
+		'/diff/0.4.0',
+		'/conformance',
+		'/simulations/0.4.0',
+		...laboratories.map((id) => `/simulations/0.4.0/${id}`),
 		'/examples',
 		'/coverage',
 		'/changelog'
-	] as const;
+	];
 
 	for (const route of routes) {
 		await page.goto(route);

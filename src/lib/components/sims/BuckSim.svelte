@@ -14,7 +14,12 @@
 	import Oscilloscope from './Oscilloscope.svelte';
 	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
+	import SimulationMotionControl from './SimulationMotionControl.svelte';
+	import { createSimulationMotion } from './simulation-motion.svelte';
 	import { reading, type MathReading } from '$lib/simulation-math';
+	import { buckMetrics } from '$lib/simulation-models';
+	import { reportSimulationEvidence } from '$lib/simulation-evidence';
+	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 
 	interface Props {
 		svg: string;
@@ -34,29 +39,48 @@
 	let scopeCurrent = $state<number[]>([]);
 	let scopeOutput = $state<number[]>([]);
 	let faults = $state({ gateLost: false });
+	const motion = createSimulationMotion('Buck-converter animation');
+	const timeline = useSimulationTimelineModel();
 
 	const inductance = $derived(inductanceMicro * 1e-6);
 	const capacitance = $derived(capacitanceMicro * 1e-6);
 	const frequency = $derived(frequencyKilo * 1e3);
 	const effectiveDuty = $derived(faults.gateLost ? 0 : duty);
-	const idealOutput = $derived(vin * effectiveDuty);
-	const loadCurrent = $derived(outputVoltage / load);
-	const rippleCurrent = $derived(
-		Math.max(0, ((vin - outputVoltage) * effectiveDuty) / (inductance * frequency))
+	const metrics = $derived(
+		buckMetrics({
+			vin,
+			duty,
+			load,
+			inductance,
+			capacitance,
+			frequency,
+			outputVoltage,
+			inductorCurrent,
+			gateLost: faults.gateLost
+		})
 	);
-	const rippleVoltage = $derived(rippleCurrent / (8 * capacitance * frequency));
+	const idealOutput = $derived(metrics.idealOutput);
+	const loadCurrent = $derived(metrics.loadCurrent);
+	const rippleCurrent = $derived(metrics.rippleCurrent);
+	const rippleVoltage = $derived(metrics.rippleVoltage);
 	const conduction = $derived.by(() => {
 		if (faults.gateLost || outputVoltage < 0.05) return 'OFF';
 		if (inductorCurrent > rippleCurrent * 0.58) return 'CCM';
 		if (inductorCurrent > rippleCurrent * 0.42) return 'BCM';
 		return 'DCM';
 	});
-	const efficiency = $derived.by(() => {
-		if (faults.gateLost || outputVoltage < 0.05) return 0;
-		const copperLoss = inductorCurrent * inductorCurrent * 0.085;
-		const switchLoss = vin * Math.max(inductorCurrent, 0) * 32e-9 * frequency;
-		const outputPower = (outputVoltage * outputVoltage) / load;
-		return outputPower / Math.max(outputPower + copperLoss + switchLoss, 1e-9);
+	const efficiency = $derived(metrics.efficiency);
+	const timelineProjection = $derived(
+		[idealOutput, effectiveDuty, inductorCurrent, outputVoltage, efficiency][timeline.step] ?? 0
+	);
+	let loadExperimentArmed = $state(false);
+
+	$effect(() => {
+		if (!loadExperimentArmed || conduction === 'CCM') return;
+		const root = host;
+		if (!root) return;
+		loadExperimentArmed = false;
+		reportSimulationEvidence(root, 'buck', 'conduction-left-ccm');
 	});
 
 	function derivatives(current: number, voltage: number): readonly [number, number] {
@@ -79,9 +103,12 @@
 	}
 
 	$effect(() => {
+		if (motion.animationBlocked) return;
 		let frame = 0;
+		let stopped = false;
 		let last = performance.now();
 		const loop = (now: number): void => {
+			if (stopped) return;
 			const realDt = Math.min(0.035, (now - last) / 1000);
 			last = now;
 			const simulatedDt = realDt * 0.018;
@@ -139,7 +166,10 @@
 			frame = requestAnimationFrame(loop);
 		};
 		frame = requestAnimationFrame(loop);
-		return () => cancelAnimationFrame(frame);
+		return () => {
+			stopped = true;
+			cancelAnimationFrame(frame);
+		};
 	});
 
 	function applyPreset(nextVin: number, nextDuty: number, nextLoad: number): void {
@@ -196,21 +226,25 @@
 	<div class="presets">
 		<p class="microlabel">operating-point presets</p>
 		<div class="button-row">
-			<button type="button" class="btn" onclick={() => applyPreset(12, 0.42, 5)}
+			<button type="button" class="btn" data-timeline-input onclick={() => applyPreset(12, 0.42, 5)}
 				><LiveMath
 					id="buck.preset"
 					label="12 volts to 5 volts"
 					values={{ input: 12, output: 5 }}
 				/></button
 			>
-			<button type="button" class="btn" onclick={() => applyPreset(24, 0.5, 8)}
+			<button type="button" class="btn" data-timeline-input onclick={() => applyPreset(24, 0.5, 8)}
 				><LiveMath
 					id="buck.preset"
 					label="24 volts to 12 volts"
 					values={{ input: 24, output: 12 }}
 				/></button
 			>
-			<button type="button" class="btn" onclick={() => applyPreset(5, 0.24, 1.2)}
+			<button
+				type="button"
+				class="btn"
+				data-timeline-input
+				onclick={() => applyPreset(5, 0.24, 1.2)}
 				><LiveMath
 					id="buck.preset"
 					label="5 volts to 1.2 volts"
@@ -245,7 +279,14 @@
 					label={`load resistance ${load.toFixed(1)} ohms`}
 					values={{ value: load.toFixed(1) }}
 				/></span
-			><input type="range" min="1" max="30" step="0.1" bind:value={load} /></label
+			><input
+				type="range"
+				min="1"
+				max="30"
+				step="0.1"
+				bind:value={load}
+				onchange={() => (loadExperimentArmed = true)}
+			/></label
 		>
 		<label
 			><span class="microlabel"
@@ -275,6 +316,7 @@
 			><input type="range" min="20" max="500" step="1" bind:value={frequencyKilo} /></label
 		>
 	</div>
+	<SimulationMotionControl {motion} label="buck-converter waveform and switching animation" />
 	<div class="switchboard">
 		<p class="microlabel">switchboard · fault injection</p>
 		<FaultSwitch label="high-side gate drive lost" bind:active={faults.gateLost} />
@@ -286,16 +328,24 @@
 		class="sim-stage schemd-frame"
 		bind:this={host}
 		role="group"
-		aria-label="Interactive closed-loop buck converter power stage"
+		data-model-stage={timeline.step}
+		data-model-value={timelineProjection}
+		aria-label="Buck converter model"
 	>
 		{@html svg}
 	</div>
 {/snippet}
 
 {#snippet instruments()}
-	<div class="mode-card" class:faulted={faults.gateLost}>
+	<div class="mode-card" class:faulted={faults.gateLost} aria-live="polite" aria-atomic="true">
 		<span class="microlabel">conduction regime</span>
 		<strong>{conduction}</strong>
+		<span class="visually-hidden"
+			>{faults.gateLost
+				? 'High-side switch degraded: gate drive lost.'
+				: 'High-side switch active.'}
+			{motion.status}</span
+		>
 		<span
 			>{conduction === 'CCM'
 				? 'inductor current stays above zero'

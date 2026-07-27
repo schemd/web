@@ -33,13 +33,13 @@ R1.out -> OUT.in #emerald [ortho]
 
 Every field is optional and every omitted field keeps its default, so passing nothing compiles exactly as it did before the option existed. `Infinity` states no limit explicitly, which is what the two counts default to.
 
-| Field | Default | Bounds |
-| --- | --- | --- |
-| `components` | unlimited | component declarations |
-| `connections` | unlimited | directed connections |
-| `sourceCharacters` | 16,777,216 | UTF-16 characters read in one pass |
-| `wireCrossings` | 32,768 | orthogonal intersections before routing gives up |
-| `svgOutputBytes` | 268,435,456 | UTF-8 bytes of generated markup |
+| Field              | Default     | Bounds                                           |
+| ------------------ | ----------- | ------------------------------------------------ |
+| `components`       | unlimited   | component declarations                           |
+| `connections`      | unlimited   | directed connections                             |
+| `sourceCharacters` | 16,777,216  | UTF-16 characters read in one pass               |
+| `wireCrossings`    | 32,768      | orthogonal intersections before routing gives up |
+| `svgOutputBytes`   | 268,435,456 | UTF-8 bytes of generated markup                  |
 
 The defaults that remain bound allocation, not diagram size. They sit far past any readable drawing, so treat them as a backstop against a runaway input rather than as a policy you have chosen.
 
@@ -77,7 +77,7 @@ B.out -> T.in #cyan [ortho net=CLOCK]
 
 <!-- schemd-section: id=timeout; eyebrow=04 / Time; title=A budget is not a timeout; example-title=Small source, real routing work -->
 
-Every field above bounds a *size*. None of them bounds *time*. A small document can still be expensive to route: orthogonal routing falls back to a sparse compressed-grid search, and congestion is what makes that search work, not declaration count.
+Every field above bounds a _size_. None of them bounds _time_. A small document can still be expensive to route: orthogonal routing falls back to a sparse compressed-grid search, and congestion is what makes that search work, not declaration count.
 
 Pair a budget with a time limit you enforce yourself — a worker with a deadline, an `AbortSignal` around the call site, a queue with a per-job ceiling. `wireCrossings` bounds the crossing pass specifically and is the closest thing to a work limit the compiler offers, but it is not a substitute.
 

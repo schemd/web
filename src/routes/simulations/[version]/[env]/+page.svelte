@@ -1,12 +1,15 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
 	import { setContext, type Component } from 'svelte';
+	import SimulationPedagogy from '$lib/components/SimulationPedagogy.svelte';
 	import SimulationTimeline from '$lib/components/sims/SimulationTimeline.svelte';
+	import { provideSimulationTimelineModel } from '$lib/components/sims/simulation-timeline.svelte';
 	import 'katex/dist/katex.min.css';
 	import { SIMULATION_MATH_CONTEXT, type SimulationMathContext } from '$lib/simulation-math';
 
 	let { data }: PageProps = $props();
 	setContext<SimulationMathContext>(SIMULATION_MATH_CONTEXT, () => data.math);
+	const timelineModel = provideSimulationTimelineModel();
 
 	/**
 	 * One route used to statically import every laboratory, forcing visitors to
@@ -47,15 +50,26 @@
 	}
 
 	const sim = $derived(data.simulation);
-	const simComponent = $derived(loadComponent(sim.id));
 	const timeline = $derived(data.timeline);
 	let simulationHost = $state<HTMLElement | undefined>();
+	let interactionHost = $state<HTMLElement | undefined>();
 
 	/* Cyclic prev/next across the environment registry. */
 	const here = $derived(data.environments.findIndex((environment) => environment.id === sim.id));
 	const count = $derived(data.environments.length);
 	const previous = $derived(data.environments[(here - 1 + count) % count]!);
 	const next = $derived(data.environments[(here + 1) % count]!);
+	const prerequisites = $derived(
+		sim.curriculum.prerequisites.flatMap((id) => {
+			const prerequisite = data.environments.find((environment) => environment.id === id);
+			return prerequisite ? [{ id: prerequisite.id, title: prerequisite.title }] : [];
+		})
+	);
+	const curriculumNext = $derived(
+		data.environments.find(
+			(environment) => environment.curriculum.order === sim.curriculum.order + 1
+		)
+	);
 
 	const jsonLd = $derived(
 		JSON.stringify({
@@ -97,64 +111,52 @@
 			</p>
 		</div>
 
-		<!-- The aha: the one realization this lab is built to deliver. -->
-		<blockquote class="aha">
-			<span class="aha-mark microlabel">the aha</span>
-			<p>{@html sim.pedagogy.ahaHtml}</p>
-		</blockquote>
+		<SimulationPedagogy
+			id={sim.id}
+			title={sim.title}
+			version={data.version}
+			fault={sim.fault}
+			pedagogy={sim.pedagogy}
+			curriculum={sim.curriculum}
+			{prerequisites}
+			next={curriculumNext}
+			host={interactionHost}
+		/>
 
-		<div class="lab-grid">
-			<div class="principle">
-				<span class="microlabel">why it works</span>
-				<div class="prose">{@html sim.pedagogy.principleHtml}</div>
-			</div>
-
-			<div class="lab-model">
-				<div class="model-card">
-					<span class="microlabel">governing model</span>
-					<!-- Keyboard focus exposes horizontally overflowing equations to Safari users. -->
-					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-					<div class="lab-formula" role="region" aria-label="Governing model" tabindex="0">
-						{@html sim.formulaHtml}
-					</div>
+		<div class="lab-model">
+			<div class="model-card">
+				<span class="microlabel">governing model</span>
+				<!-- Keyboard focus exposes horizontally overflowing equations to Safari users. -->
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+				<div class="lab-formula" role="region" aria-label="Governing model" tabindex="0">
+					{@html sim.formulaHtml}
 				</div>
-				<div class="lab-spec">
-					<div class="spec-group">
-						<span class="microlabel">structural inventory</span>
-						<ul class="chips">
-							{#each sim.inventoryHtml as item, index (sim.inventory[index])}
-								<li>{@html item}</li>
-							{/each}
-						</ul>
-					</div>
-					<div class="spec-group">
-						<span class="microlabel">boundaries</span>
-						<ul class="bounds">
-							{#each sim.boundariesHtml as bound, index (sim.boundaries[index])}
-								<li>{@html bound}</li>
-							{/each}
-						</ul>
-					</div>
-					<div class="spec-group">
-						<span class="microlabel">fault relay</span>
-						<span class="fault-note">{@html sim.faultHtml}</span>
-					</div>
+			</div>
+			<div class="lab-spec">
+				<div class="spec-group">
+					<span class="microlabel">structural inventory</span>
+					<ul class="chips">
+						{#each sim.inventoryHtml as item, index (sim.inventory[index])}
+							<li>{@html item}</li>
+						{/each}
+					</ul>
+				</div>
+				<div class="spec-group">
+					<span class="microlabel">boundaries</span>
+					<ul class="bounds">
+						{#each sim.boundariesHtml as bound, index (sim.boundaries[index])}
+							<li>{@html bound}</li>
+						{/each}
+					</ul>
+				</div>
+				<div class="spec-group">
+					<span class="microlabel">diagnosis challenge</span>
+					<span class="fault-note"
+						>Fault identity withheld: infer it from the changed outputs first.</span
+					>
 				</div>
 			</div>
 		</div>
-
-		<!-- Guided walk-through: earn the aha through direct interaction. -->
-		<ol class="guided" aria-label="Guided walk-through">
-			{#each sim.pedagogy.steps as step, index (step.label)}
-				<li class="guided-step">
-					<span class="step-index" aria-hidden="true">{index + 1}</span>
-					<div class="step-body">
-						<p class="step-label">{@html step.labelHtml}</p>
-						<div class="prose step-detail">{@html step.detailHtml}</div>
-					</div>
-				</li>
-			{/each}
-		</ol>
 	</header>
 
 	<nav class="env-nav" aria-label="Simulation environments">
@@ -179,22 +181,19 @@
 		</a>
 	</nav>
 
-	<SimulationTimeline simulationId={sim.id} stages={timeline} host={simulationHost} />
-	<div class="simulation-host" bind:this={simulationHost}>
-		{#key sim.id}
-			{#await simComponent}
-				<div class="simulation-loading panel" role="status">
-					<span class="loading-pulse" aria-hidden="true"></span>
-					<span>Loading {sim.title} model…</span>
-				</div>
-			{:then SimComponent}
+	<div id="live-laboratory" class="laboratory-interaction" bind:this={interactionHost}>
+		<SimulationTimeline
+			simulationId={sim.id}
+			stages={timeline}
+			host={simulationHost}
+			model={timelineModel}
+		/>
+		<div class="simulation-host" bind:this={simulationHost}>
+			{#key sim.id}
+				{@const SimComponent = await loadComponent(sim.id)}
 				<SimComponent svg={sim.svg} />
-			{:catch}
-				<div class="simulation-loading simulation-error panel" role="alert">
-					The interactive model could not load. Reload this laboratory to retry.
-				</div>
-			{/await}
-		{/key}
+			{/key}
+		</div>
 	</div>
 </div>
 
@@ -210,36 +209,11 @@
 		min-inline-size: 0;
 	}
 
-	.simulation-loading {
-		min-block-size: min(62vh, 680px);
+	.laboratory-interaction {
 		display: grid;
-		place-content: center;
-		grid-auto-flow: column;
-		align-items: center;
-		gap: var(--space-3);
-		font-family: var(--font-mono);
-		font-size: var(--text-sm);
-		color: var(--ink-mute);
-	}
-
-	.loading-pulse {
-		inline-size: 0.7rem;
-		block-size: 0.7rem;
-		border-radius: 50%;
-		background: var(--accent);
-		box-shadow: 0 0 10px var(--glow);
-		animation: loading-pulse 900ms ease-in-out infinite alternate;
-	}
-
-	.simulation-error {
-		color: var(--danger);
-	}
-
-	@keyframes loading-pulse {
-		to {
-			opacity: 0.35;
-			transform: scale(0.7);
-		}
+		gap: var(--space-5);
+		min-inline-size: 0;
+		scroll-margin-block-start: var(--space-6);
 	}
 
 	.lab-head {
@@ -284,31 +258,6 @@
 		border-radius: 999px;
 	}
 
-	/* ---------- The aha callout ---------- */
-	.aha {
-		position: relative;
-		margin: 0;
-		padding: var(--space-4) var(--space-5);
-		background: color-mix(in srgb, var(--accent) 8%, var(--bg-inset));
-		border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
-		border-inline-start: 3px solid var(--accent);
-		display: grid;
-		gap: var(--space-2);
-	}
-
-	.aha-mark {
-		color: var(--accent);
-	}
-
-	.aha p {
-		margin: 0;
-		font-size: var(--text-lg);
-		line-height: 1.4;
-		letter-spacing: -0.01em;
-		color: var(--ink);
-		text-wrap: balance;
-	}
-
 	/* KaTeX governing model card. */
 	.model-card {
 		display: grid;
@@ -324,47 +273,6 @@
 		color: var(--ink);
 	}
 
-	/* Rendered author prose with typeset math. */
-	.prose {
-		color: var(--ink-mute);
-		line-height: 1.7;
-		font-size: var(--text-sm);
-
-		& :global(strong) {
-			color: var(--ink);
-			font-weight: 600;
-		}
-
-		& :global(code) {
-			font-family: var(--font-mono);
-			font-size: 0.9em;
-			padding: 0.05em 0.35em;
-			background: var(--bg-inset);
-			border: 1px solid var(--line);
-			border-radius: 4px;
-		}
-
-		& :global(.katex-display) {
-			margin: var(--space-3) 0;
-			overflow-x: auto;
-			overflow-y: hidden;
-		}
-	}
-
-	.principle {
-		display: grid;
-		gap: var(--space-2);
-		align-content: start;
-	}
-
-	/* Two-column body: principle prose left, model + specs right. */
-	.lab-grid {
-		display: grid;
-		grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-		gap: clamp(var(--space-4), 3vw, var(--space-8));
-		align-items: start;
-	}
-
 	.lab-identity {
 		display: grid;
 		gap: var(--space-3);
@@ -375,59 +283,6 @@
 		display: grid;
 		gap: var(--space-3);
 		align-content: start;
-	}
-
-	/* ---------- Guided walk-through ---------- */
-	.guided {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: grid;
-		gap: 1px;
-		background: var(--line);
-		border: 1px solid var(--line);
-	}
-
-	.guided-step {
-		display: grid;
-		grid-template-columns: auto minmax(0, 1fr);
-		gap: var(--space-3);
-		padding: var(--space-3) var(--space-4);
-		background: var(--bg-panel);
-		transition: background-color var(--dur-fast) var(--ease-precise);
-
-		&:hover {
-			background: var(--bg-raised);
-		}
-	}
-
-	.step-index {
-		display: grid;
-		place-items: center;
-		inline-size: 1.6rem;
-		block-size: 1.6rem;
-		font-family: var(--font-mono);
-		font-size: var(--text-xs);
-		color: var(--accent-ink);
-		background: var(--accent);
-		border-radius: 999px;
-	}
-
-	.step-body {
-		display: grid;
-		gap: 2px;
-		min-inline-size: 0;
-	}
-
-	.step-label {
-		margin: 0;
-		font-size: var(--text-sm);
-		font-weight: 600;
-		color: var(--ink);
-	}
-
-	.step-detail {
-		font-size: var(--text-xs);
 	}
 
 	.lab-summary {
@@ -449,12 +304,6 @@
 
 	.lab-spec .spec-group:last-child {
 		grid-column: 1 / -1;
-	}
-
-	@media (max-width: 860px) {
-		.lab-grid {
-			grid-template-columns: 1fr;
-		}
 	}
 
 	.spec-group {
@@ -576,14 +425,6 @@
 
 		.lab-title-row h1 {
 			font-size: clamp(1.5rem, 8.5vw, var(--text-xl));
-		}
-
-		.aha {
-			padding: var(--space-3);
-		}
-
-		.aha p {
-			font-size: var(--text-md);
 		}
 
 		.lab-spec {

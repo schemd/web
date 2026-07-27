@@ -1,4 +1,4 @@
-<!-- schemd-doc: id=component-reference; label=Component API; title=Use every 0.3 primitive deliberately; summary=Exhaustive families, variants, options, semantic ports, and canonical orientations.; category=Author diagrams; order=40 -->
+<!-- schemd-doc: id=component-reference; label=Component API; title=Use every 0.4 primitive deliberately; summary=Exhaustive families, variants, options, semantic ports, and canonical orientations.; category=Author diagrams; order=40 -->
 
 <!-- schemd-expect-page: unconnected-component, disconnected-subcircuit -->
 <!-- A reference shows each primitive in isolation; wiring every example would obscure the symbol it demonstrates. -->

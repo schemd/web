@@ -25,7 +25,7 @@ const fence = parseSchematicFence('schemd bounds="900x400" title="Supply"')!;
 const { netlist, diagnostics } = inspectSchematic(parseSchematic(source, fence));
 
 netlist.nodes[0].ports; // ['negative', 'positive']
-netlist.nets.length; // 3
+netlist.nets.length; // 2
 diagnostics; // []
 ```
 

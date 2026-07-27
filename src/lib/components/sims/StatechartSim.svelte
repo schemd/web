@@ -15,7 +15,10 @@
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
+	import { createSimulationMotion } from './simulation-motion.svelte';
 	import { reading, type MathReading } from '$lib/simulation-math';
+	import { nextTrafficState, type TrafficState as State } from '$lib/simulation-models';
+	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 
 	interface Props {
 		svg: string;
@@ -23,7 +26,6 @@
 
 	let { svg }: Props = $props();
 
-	type State = 'RED' | 'GREEN' | 'YELLOW';
 	interface Transition {
 		readonly from: State;
 		readonly to: State;
@@ -42,57 +44,86 @@
 
 	let host = $state<HTMLElement | undefined>();
 	let current = $state<State>('RED');
-	let running = $state(false);
-	let progress = $state(0); /* dwell fraction within the active state */
-	let speed = $state(1);
 	let pulsing = $state<string | undefined>();
 	let trace = $state<string[]>(['▸ start → RED']);
 	let visits = $state<Record<State, number>>({ RED: 1, GREEN: 0, YELLOW: 0 });
 	let faults = $state({ invertedGuard: false });
+	const motion = createSimulationMotion('State-machine auto-run');
+	const timeline = useSimulationTimelineModel();
+	const running = $derived(timeline.playing);
 
 	const active = $derived(TRANSITIONS.find((transition) => transition.from === current)!);
+	const autoRunning = $derived(running && !motion.animationBlocked);
 	/** With the guard inverted, YELLOW's exit never becomes enabled — a deadlock. */
-	const deadlocked = $derived(faults.invertedGuard && current === 'YELLOW');
+	const deadlocked = $derived(
+		faults.invertedGuard && nextTrafficState(current, faults.invertedGuard) === current
+	);
 
 	function fire(): void {
 		if (deadlocked) {
 			if (ui.audio) playError();
 			return;
 		}
-		const transition = active;
-		pulsing = transition.wire;
-		current = transition.to;
-		progress = 0;
-		visits = { ...visits, [transition.to]: visits[transition.to] + 1 };
-		trace = [...trace.slice(-11), `${transition.from} —[${transition.event}]→ ${transition.to}`];
-		if (ui.audio) playTick(current === 'GREEN' ? 660 : current === 'YELLOW' ? 520 : 440);
-		setTimeout(() => (pulsing = undefined), 320);
+		if (timeline.step >= TRANSITIONS.length) {
+			timeline.command('seek', 1);
+		} else {
+			timeline.command('next');
+		}
 	}
 
 	function reset(): void {
-		current = 'RED';
-		progress = 0;
-		trace = ['▸ start → RED'];
-		visits = { RED: 1, GREEN: 0, YELLOW: 0 };
+		timeline.command('reset');
 		if (ui.audio) playTick(560);
 	}
 
-	/* Auto-run: accumulate dwell, fire the guarded transition when it expires. */
+	function toggleRunning(): void {
+		if (autoRunning) {
+			timeline.command('pause');
+			return;
+		}
+		if (motion.paused) motion.toggle();
+		timeline.command('play');
+	}
+
+	/* The universal causal clock owns both manual seeking and auto-run. Rebuild
+	 * from RED for every requested stage so Previous is deterministic and never
+	 * applies a transition twice. */
 	$effect(() => {
-		if (!running) return;
-		let frame = 0;
-		let last = performance.now();
-		const loop = (now: number): void => {
-			const dt = (now - last) * speed;
-			last = now;
-			if (!deadlocked) {
-				progress = Math.min(1, progress + dt / active.dwell);
-				if (progress >= 1) fire();
+		const requested = Math.max(0, Math.min(TRANSITIONS.length, timeline.step));
+		let state: State = 'RED';
+		const nextTrace = ['▸ start → RED'];
+		const nextVisits: Record<State, number> = { RED: 1, GREEN: 0, YELLOW: 0 };
+		let lastWire: string | undefined;
+		for (let index = 0; index < requested; index += 1) {
+			const transition = TRANSITIONS[index];
+			if (!transition || transition.from !== state) break;
+			const next = nextTrafficState(state, faults.invertedGuard);
+			if (next === state) {
+				nextTrace.push(`${state} —[${transition.event}]→ blocked`);
+				break;
 			}
-			frame = requestAnimationFrame(loop);
+			state = next;
+			lastWire = transition.wire;
+			nextVisits[state] += 1;
+			nextTrace.push(`${transition.from} —[${transition.event}]→ ${state}`);
+		}
+		const changed = state !== current;
+		current = state;
+		visits = nextVisits;
+		trace = nextTrace;
+		pulsing = lastWire;
+		if (changed && ui.audio) playTick(state === 'GREEN' ? 660 : state === 'YELLOW' ? 520 : 440);
+		const timer = setTimeout(() => {
+			if (pulsing === lastWire) pulsing = undefined;
+		}, 320);
+		return () => {
+			clearTimeout(timer);
 		};
-		frame = requestAnimationFrame(loop);
-		return () => cancelAnimationFrame(frame);
+	});
+
+	/* Reduced-motion remains an opt-in: the shared Play control cannot bypass it. */
+	$effect(() => {
+		if (motion.animationBlocked && timeline.playing) timeline.command('pause');
 	});
 
 	/* Paint the token and the pulsing transition into the schematic. */
@@ -135,24 +166,29 @@
 			next event by hand — the diagram <em>is</em> the machine.
 		</p>
 		<div class="button-row">
-			<button type="button" class="btn" aria-pressed={running} onclick={() => (running = !running)}>
-				{running ? 'pause' : 'run'}
+			<button
+				type="button"
+				class="btn"
+				aria-pressed={!autoRunning}
+				aria-label={`${autoRunning ? 'Pause' : 'Resume'} state-machine auto-run animation`}
+				onclick={toggleRunning}
+			>
+				{autoRunning ? 'pause auto-run' : 'run state machine'}
 			</button>
 			<button type="button" class="btn btn-solid" onclick={fire} disabled={deadlocked}>
 				fire event
 			</button>
 			<button type="button" class="btn" onclick={reset}>reset</button>
 		</div>
-		<label>
-			<span class="microlabel"
-				><LiveMath
-					id="statechart.control.time"
-					label={`time scale ${speed.toFixed(1)} times`}
-					values={{ value: speed.toFixed(1) }}
-				/></span
-			>
-			<input type="range" min="0.3" max="3" step="0.1" bind:value={speed} aria-label="Time scale" />
-		</label>
+		{#if motion.reducedMotion && motion.paused}
+			<p class="control-note" role="status">
+				State-machine animation is paused for your reduced-motion preference. “Run state machine”
+				starts it explicitly.
+			</p>
+		{/if}
+		<p class="control-note">
+			Auto-run uses the causal stage delay configured in the timeline above.
+		</p>
 		<div class="next-event">
 			<span class="microlabel">enabled transition</span>
 			{#if deadlocked}
@@ -179,20 +215,21 @@
 		class="sim-stage schemd-frame"
 		bind:this={host}
 		role="group"
+		data-model-stage={timeline.step}
 		aria-label="Executable UML traffic-signal state machine"
 	>
 		{@html svg}
-		<div class="dwell" aria-hidden="true">
-			<span style={`width: ${deadlocked ? 100 : progress * 100}%`} class:stalled={deadlocked}
-			></span>
-		</div>
 	</div>
 {/snippet}
 
 {#snippet instruments()}
-	<div class="current" class:deadlocked>
+	<div class="current" class:deadlocked aria-live="polite" aria-atomic="true">
 		<span class="microlabel">active state</span>
 		<strong>{current}</strong>
+		<span class="visually-hidden"
+			>{deadlocked ? 'No exit guard is enabled; state machine deadlocked.' : ''}
+			{autoRunning ? 'Auto-run active.' : 'Auto-run paused.'}</span
+		>
 	</div>
 	<div class="residency">
 		<span class="microlabel">state residency</span>
@@ -245,15 +282,6 @@
 		color: var(--accent);
 	}
 
-	label {
-		display: grid;
-		gap: 2px;
-	}
-
-	input[type='range'] {
-		accent-color: var(--accent);
-	}
-
 	.next-event {
 		display: grid;
 		gap: 2px;
@@ -287,25 +315,6 @@
 
 		:global([data-wire-source].is-active) {
 			filter: drop-shadow(0 0 6px var(--glow));
-		}
-	}
-
-	.dwell {
-		position: absolute;
-		inset-block-end: 0;
-		inset-inline: 0;
-		block-size: 3px;
-		background: var(--bg-inset);
-
-		& span {
-			display: block;
-			block-size: 100%;
-			background: var(--accent);
-			transition: width 80ms linear;
-		}
-
-		& span.stalled {
-			background: var(--danger);
 		}
 	}
 
