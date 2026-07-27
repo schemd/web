@@ -63,14 +63,16 @@ const adderStages: readonly SimulationStage[] = [
 			`Resolve bit ${bit}${bit === 0 ? ' (LSB)' : ''}`,
 			`A${bit} ⊕ B${bit} combines with the incoming carry; the generated and propagated carries then determine S${bit}.`,
 			[`X1_${bit}`, `N1_${bit}`, `X2_${bit}`, `N2_${bit}`, `O1_${bit}`, `S${bit}`],
-			[`X1_${bit}.out`, `N1_${bit}.out`, `N2_${bit}.out`, `X2_${bit}.out`, `O1_${bit}.out`]
+			/* Gate outputs are `out1` in the AST: `@schemd/core` 0.4 reports the
+			   canonical terminal an alias addresses, and `data-wire-source` follows it. */
+			[`X1_${bit}.out1`, `N1_${bit}.out1`, `N2_${bit}.out1`, `X2_${bit}.out1`, `O1_${bit}.out1`]
 		)
 	),
 	stage(
 		'Commit Cₒᵤₜ and Σ',
 		'Only after the eighth full-adder cell settles is the byte result and final carry committed.',
 		['O1_7', 'S7', 'COUT'],
-		['O1_7.out', 'X2_7.out']
+		['O1_7.out1', 'X2_7.out1']
 	)
 ];
 
@@ -429,13 +431,13 @@ export const SIMULATION_TIMELINES: Readonly<Record<string, readonly SimulationSt
 			'Form the feedback bit',
 			'The selected Q3 and Q4 taps XOR to produce the next entering bit.',
 			['Q3', 'Q4', 'FB'],
-			['Q3.q', 'Q4.q', 'FB.out']
+			['Q3.q', 'Q4.q', 'FB.out1']
 		),
 		stage(
 			'Load Q1',
 			'The feedback bit enters the first flip-flop.',
 			['Q1'],
-			['FB.out', 'CLK.out', 'Q1.q']
+			['FB.out1', 'CLK.out', 'Q1.q']
 		),
 		stage(
 			'Shift through Q2',

@@ -47,7 +47,7 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"@schemd/core": "^0.3.8",
+		"@schemd/core": "^0.4.0",
 		"katex": "^0.18.1",
 		"marked": "^18.0.7"
 	}

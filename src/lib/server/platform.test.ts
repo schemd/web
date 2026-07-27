@@ -89,7 +89,7 @@ describe('versioned registry and documentation', () => {
 		const currentSlugs = current.map(({ slug }) => slug);
 		for (const { slug } of historical) expect(currentSlugs).toContain(slug);
 		expect(new Set(currentSlugs).size).toBe(current.length);
-		expect(current).toHaveLength(12);
+		expect(current).toHaveLength(13);
 
 		for (const version of DOCUMENTATION_VERSIONS) {
 			for (const page of docManifest(version)) {
