@@ -9,11 +9,7 @@
 import { availableParallelism } from 'node:os';
 import { Worker } from 'node:worker_threads';
 import type { SchematicDiagnostic, SchematicLimitOptions } from '@schemd/core';
-import type {
-	CompileFailure,
-	CompileOutcome,
-	CompileRequest
-} from '$lib/compile-contract';
+import type { CompileFailure, CompileOutcome, CompileRequest } from '$lib/compile-contract';
 
 export const SERVER_COMPILE_DEADLINE_MS = 300;
 export const SERVER_COMPILE_CONCURRENCY = Math.max(1, Math.min(4, availableParallelism() - 1));
@@ -33,7 +29,11 @@ export type InspectOutcome =
 			readonly ok: true;
 			readonly diagnostics: readonly SchematicDiagnostic[];
 			readonly truncated: boolean;
-			readonly counts: { readonly errors: number; readonly warnings: number; readonly notes: number };
+			readonly counts: {
+				readonly errors: number;
+				readonly warnings: number;
+				readonly notes: number;
+			};
 			readonly netlist: {
 				readonly components: number;
 				readonly nets: number;

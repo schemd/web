@@ -1,9 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import {
-	MAX_RASTER_DIMENSION,
-	MAX_RASTER_PIXELS,
-	rasterExportScale
-} from './playground-export';
+import { MAX_RASTER_DIMENSION, MAX_RASTER_PIXELS, rasterExportScale } from './playground-export';
 
 describe('playground raster export budget', () => {
 	test('keeps ordinary diagrams at 2x and caps worst-case canvases', () => {
