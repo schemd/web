@@ -35,7 +35,7 @@
 
 	<ul class="grid" aria-label="Example schematics">
 		{#each data.items as item (item.id)}
-			<li class="card panel">
+			<li class="card plate">
 				<div class="thumb schemd-frame" style={`aspect-ratio: ${item.width} / ${item.height}`}>
 					{@html item.svg}
 				</div>

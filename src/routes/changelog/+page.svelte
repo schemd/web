@@ -48,6 +48,33 @@
 
 	const gridLines = [0, 0.25, 0.5, 0.75, 1];
 
+	/**
+	 * Which release ticks get a printed label.
+	 *
+	 * Every release used to be labelled, so the axis turned into overlapping
+	 * ink the moment the history grew past a handful. Labels are thinned to
+	 * whatever the axis can actually hold — first and last always survive,
+	 * because those are the two a reader looks for — while every release keeps
+	 * its dot and its hover title.
+	 */
+	const LABEL_PITCH = 58;
+	/** Per-point flag, parallel to `sizePoints`: does this release print a label? */
+	const labelledTicks: readonly boolean[] = $derived.by(() => {
+		const count = sizePoints.length;
+		if (count === 0) return [];
+		const capacity = Math.max(2, Math.floor((CHART_W - PAD * 2) / LABEL_PITCH) + 1);
+		const stride = Math.max(1, Math.ceil((count - 1) / (capacity - 1)));
+		const keep = Array.from({ length: count }, (_, index) => index % stride === 0);
+		const last = count - 1;
+		/* The final release anchors the axis. If the strided label before it
+		 * lands within a label's width, that one goes rather than the anchor. */
+		const pitch = (CHART_W - PAD * 2) / Math.max(1, last);
+		const previous = last - (last % stride);
+		if (previous !== last && (last - previous) * pitch < LABEL_PITCH) keep[previous] = false;
+		keep[last] = true;
+		return keep;
+	});
+
 	function formatBytes(bytes: number | undefined): string {
 		if (bytes === undefined) return '—';
 		if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(2)} MiB`;
@@ -64,7 +91,15 @@
 		{ label: 'releases tracked', value: String(data.releases.length) },
 		{ label: 'median compile', value: `${data.benchmark.medianMs} ms` },
 		{ label: 'workload output', value: `${data.benchmark.svgBytes.toLocaleString('en-US')} B` },
-		{ label: 'latest install', value: formatBytes(taggedRelease?.unpackedSize) }
+		/* An em dash reads as "zero" next to five live numbers. Until npm
+		 * confirms the tagged release, say what is actually true. */
+		{
+			label: 'latest install',
+			value:
+				taggedRelease?.unpackedSize === undefined
+					? 'pending'
+					: formatBytes(taggedRelease.unpackedSize)
+		}
 	]);
 </script>
 
@@ -102,7 +137,7 @@
 		{/each}
 	</dl>
 
-	<section class="metrics panel" aria-label="Compiler metrics">
+	<section class="metrics plate" aria-label="Compiler metrics">
 		<div class="metrics-grid">
 			<figure class="metric">
 				<figcaption class="microlabel">unpacked install footprint by release</figcaption>
@@ -129,11 +164,13 @@
 						{/each}
 						<path class="area" d={areaPath} />
 						<path class="series" d={linePath} />
-						{#each sizePoints as point (point.version)}
+						{#each sizePoints as point, index (point.version)}
 							<circle class="dot" cx={point.x} cy={point.y} r="4">
 								<title>v{point.version} — {formatBytes(point.bytes)}</title>
 							</circle>
-							<text class="tick" x={point.x} y={CHART_H - PAD + 16}>v{point.version}</text>
+							{#if labelledTicks[index]}
+								<text class="tick" x={point.x} y={CHART_H - PAD + 16}>v{point.version}</text>
+							{/if}
 						{/each}
 						<text class="peak" x={PAD} y={PAD - 10}
 							>{formatBytes(Math.max(...sizePoints.map((p) => p.bytes)))}</text
@@ -166,7 +203,7 @@
 		{#each data.releases as release (release.version)}
 			<li class="milestone" class:is-latest={release.version === data.latest}>
 				<div class="milestone-marker" aria-hidden="true"></div>
-				<div class="milestone-body panel">
+				<div class="milestone-body plate">
 					<header class="milestone-head">
 						<h2>
 							v{release.version}
@@ -255,24 +292,34 @@
 		max-inline-size: 68ch;
 	}
 
-	/* ---------- Stat band ---------- */
+	/* ---------- Stat band ----------
+	   Six readouts inside a reading-width column. `auto-fit` picked whatever
+	   count fit the viewport — not this column — and stranded the remainder on
+	   a half-empty row. The track count is stated explicitly instead, and every
+	   value divides six exactly, so the band is always a full rectangle. */
 	.stat-band {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: 1px;
 		background: var(--line);
 		border: 1px solid var(--line);
+		border-radius: var(--radius-md);
+		overflow: hidden;
 		margin-block: var(--space-6);
+		box-shadow: var(--shadow-plate);
 	}
 
 	.stat {
-		background: var(--bg-panel);
+		background-color: var(--bg-panel);
+		background-image: var(--sheen);
 		padding: var(--space-4);
 		display: grid;
 		gap: 2px;
+		align-content: start;
 
 		& .readout {
 			font-size: var(--text-lg);
+			white-space: nowrap;
 		}
 
 		& dt {
@@ -466,7 +513,7 @@
 
 	@media (max-width: 720px) {
 		.stat-band {
-			grid-template-columns: 1fr 1fr;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
 
 		.metrics-grid {

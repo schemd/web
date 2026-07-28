@@ -271,31 +271,32 @@
 				const record = isRecord(body) ? body : {};
 				if (record['ok'] === true) {
 					const raw = isRecord(record['metrics']) ? record['metrics'] : {};
+					/* Announce from the locals rather than re-reading the reactive
+					 * `result`, whose optional fields do not stay narrowed. */
+					const metrics = {
+						sourceCharacters: Number(raw['sourceCharacters'] ?? 0),
+						components: Number(raw['components'] ?? 0),
+						connections: Number(raw['connections'] ?? 0),
+						svgBytes: Number(raw['svgBytes'] ?? 0)
+					};
 					result = {
 						svg: String(record['svg'] ?? ''),
-						metrics: {
-							sourceCharacters: Number(raw['sourceCharacters'] ?? 0),
-							components: Number(raw['components'] ?? 0),
-							connections: Number(raw['connections'] ?? 0),
-							svgBytes: Number(raw['svgBytes'] ?? 0)
-						},
+						metrics,
 						sourceMap: parseSourceMap(record['sourceMap']),
 						ms: Number(record['ms'] ?? 0)
 					};
 					if (manual) {
-						compileAnnouncement = `Compilation complete. ${result.metrics.components} components and ${result.metrics.connections} connections.`;
+						compileAnnouncement = `Compilation complete. ${metrics.components} components and ${metrics.connections} connections.`;
 					}
 					if (manual && ui.audio) playSuccess();
 				} else {
-					result = {
-						...result,
-						error: {
-							message: String(record['message'] ?? 'Compilation failed.'),
-							line: typeof record['line'] === 'number' ? record['line'] : undefined
-						}
+					const failure = {
+						message: String(record['message'] ?? 'Compilation failed.'),
+						line: typeof record['line'] === 'number' ? record['line'] : undefined
 					};
+					result = { ...result, error: failure };
 					if (manual) {
-						compileAnnouncement = `Compilation error${result.error.line === undefined ? '' : ` on line ${result.error.line}`}: ${result.error.message}`;
+						compileAnnouncement = `Compilation error${failure.line === undefined ? '' : ` on line ${failure.line}`}: ${failure.message}`;
 					}
 					if (manual && ui.audio) playError();
 				}
@@ -1445,10 +1446,6 @@
 		gap: var(--space-2);
 		min-inline-size: 0;
 		flex-wrap: wrap;
-
-		& output {
-			color: var(--accent);
-		}
 	}
 
 	.command-trigger {

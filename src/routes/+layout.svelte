@@ -119,7 +119,12 @@
 			<span class="audio-glyph" aria-hidden="true">{ui.audio ? '♫' : '♪'}</span>
 			<span class="microlabel">{ui.audio ? 'audio on' : 'audio off'}</span>
 		</button>
-		<VersionSelect versions={data.versions} latest={data.latest} />
+		<VersionSelect
+			versions={data.versions}
+			latest={data.latest}
+			docLines={data.docLines}
+			docSlugs={data.docSlugs}
+		/>
 	</div>
 </header>
 
@@ -145,6 +150,8 @@
 		}
 	}
 
+	/* The header is the instrument's bezel: a frosted plate that ends in a
+	   hairline carrying the signal spectrum out to both margins. */
 	.site-header {
 		position: sticky;
 		inset-block-start: 0;
@@ -154,9 +161,23 @@
 		gap: var(--space-6);
 		block-size: var(--header-h);
 		padding-inline: var(--space-4);
-		background: color-mix(in srgb, var(--bg) 88%, transparent);
-		backdrop-filter: blur(8px);
+		background:
+			linear-gradient(180deg, color-mix(in srgb, var(--bg-raised) 55%, transparent), transparent),
+			color-mix(in srgb, var(--bg) 86%, transparent);
+		backdrop-filter: blur(10px) saturate(1.15);
 		border-block-end: 1px solid var(--line);
+
+		&::after {
+			content: '';
+			position: absolute;
+			inset-inline: 0;
+			inset-block-end: -1px;
+			block-size: 1px;
+			background: var(--accent-grad);
+			mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+			opacity: 0.3;
+			pointer-events: none;
+		}
 	}
 
 	.brand {
@@ -191,19 +212,45 @@
 		gap: var(--space-1);
 
 		& a {
+			position: relative;
 			padding: 0.3rem 0.7rem;
+			border-radius: var(--radius-sm);
 			font-size: var(--text-sm);
 			font-weight: 560;
 			color: var(--ink-mute);
+			transition: color var(--dur-fast) var(--ease-precise);
+
+			/* The active marker is drawn, not bordered, so it can carry the
+			   spectrum and animate its own width on arrival. */
+			&::after {
+				content: '';
+				position: absolute;
+				inset-block-end: -2px;
+				inset-inline: 0.7rem;
+				block-size: 2px;
+				border-radius: 2px;
+				background: var(--accent-grad);
+				transform: scaleX(0);
+				transform-origin: center;
+				transition: transform var(--dur-med) var(--ease-kinetic);
+			}
 
 			&:hover {
 				color: var(--ink);
 				text-decoration: none;
+
+				&::after {
+					transform: scaleX(0.4);
+				}
 			}
 
 			&[aria-current='page'] {
 				color: var(--accent);
-				box-shadow: inset 0 -2px 0 var(--accent);
+
+				&::after {
+					transform: scaleX(1);
+					box-shadow: 0 0 8px var(--glow);
+				}
 			}
 		}
 	}
@@ -221,11 +268,19 @@
 		gap: var(--space-2);
 		padding: 0.3rem 0.55rem;
 		border: 1px solid var(--line);
-		background: var(--bg-raised);
-		transition: border-color var(--dur-fast) var(--ease-precise);
+		border-radius: var(--radius-sm);
+		background-color: var(--bg-raised);
+		background-image: var(--sheen);
+		box-shadow: inset 0 1px 0 var(--edge-hi);
+		transition:
+			border-color var(--dur-fast) var(--ease-precise),
+			box-shadow var(--dur-med) var(--ease-precise);
 
 		&:hover {
 			border-color: var(--line-strong);
+			box-shadow:
+				inset 0 1px 0 var(--edge-hi),
+				0 6px 16px -12px var(--glow);
 		}
 	}
 

@@ -29,14 +29,27 @@ const COMPILER_WORKER = /\/workers\/compile-browser\.worker-[^/]+\.js$/;
  * inflated application allowance. The combined ceiling is exactly the sum.
  */
 const MAX_COMPILER_JS_GZIP = 36 * 1024;
-const MAX_DOCUMENT_JS_GZIP = 146 * 1024;
-const MAX_ALL_JS_GZIP = 182 * 1024;
+/*
+ * Raised from 146/182 KiB in 0.4. The laboratory grew from five environments
+ * to thirteen, and each one ships its own lazily loaded chunk plus its share
+ * of the shared instrument shell; the document budget had been exceeded on
+ * `main` since that landed. These ceilings are set just above the measured
+ * cost of the current catalogue, so the next unaccounted regression still
+ * fails here rather than reaching a visitor.
+ */
+const MAX_DOCUMENT_JS_GZIP = 154 * 1024;
+const MAX_ALL_JS_GZIP = 190 * 1024;
 /*
  * Prediction, evidence validation, progression, and the selected lab's async
  * loader are SSR-critical shell code. Keep the hard raw ceiling tight enough
  * to catch accidental model bundling without pretending that pedagogy is free.
+ *
+ * Raised from 27 KiB alongside the JavaScript ceilings above: the shell holds
+ * one static registry entry per environment, so thirteen laboratories cost
+ * more shell than five did. The models themselves stay in their own chunks —
+ * the `isDynamicEntry` assertion below is what actually guards that.
  */
-const MAX_SIMULATION_SHELL_RAW = 27 * 1024;
+const MAX_SIMULATION_SHELL_RAW = 38 * 1024;
 const MAX_MODERN_MATH_FONTS = 320 * 1024;
 const MAX_CLIENT_OUTPUT = 1_100 * 1024;
 const EXPECTED_SIMULATIONS = 13;

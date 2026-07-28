@@ -8,7 +8,15 @@ import { expect, test } from '@playwright/test';
  * animations to nothing, which is both deterministic and the configuration an
  * accessibility audit should be run in.
  */
-test.use({ reducedMotion: 'reduce' });
+/*
+ * Applied per page rather than through `test.use({ reducedMotion })`: that
+ * fixture option silently did not reach the browser under Playwright 1.62, so
+ * every audit here ran with motion enabled and the reduced-motion contract
+ * below was asserting against a page that had never been told to reduce.
+ */
+test.beforeEach(async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+});
 
 /**
  * Wait until nothing is animating.

@@ -44,6 +44,7 @@
 	}
 
 	.fault-switch {
+		position: relative;
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
@@ -52,9 +53,20 @@
 		font-size: var(--text-2xs);
 		color: var(--ink-mute);
 
+		/* The real control covers the whole lever-and-caption row instead of
+		   sitting as a 13px box behind the painted lever. Everything drawn here
+		   is decorative, so the pointer should land on the checkbox itself —
+		   that is what makes the switch a full-size target, and what lets a
+		   hit test resolve to the control a click is aimed at. */
 		& input {
 			position: absolute;
+			inset: 0;
+			inline-size: 100%;
+			block-size: 100%;
+			margin: 0;
+			z-index: 1;
 			opacity: 0;
+			cursor: pointer;
 		}
 
 		& .fault-lever {

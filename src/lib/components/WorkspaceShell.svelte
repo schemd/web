@@ -271,13 +271,26 @@
 		}
 	}
 
+	/* The export, embed, and share actions live here. `overflow: hidden` hid
+	   whichever ones did not fit — on a phone that silently removed sharing
+	   from the product — so the strip scrolls instead, with the scrollbar
+	   suppressed because the row is only one control tall. */
 	.status-extra {
 		margin-inline-start: auto;
 		display: flex;
 		align-items: center;
 		gap: var(--space-3);
 		min-inline-size: 0;
-		overflow: hidden;
+		overflow-x: auto;
+		overflow-y: hidden;
+		overscroll-behavior-inline: contain;
+		scrollbar-width: none;
+
+		/* The actions arrive through a snippet the host owns, so the scope has
+		   to be released for the child selector to reach them. */
+		& > :global(*) {
+			flex: none;
+		}
 	}
 
 	@media (max-width: 860px) {

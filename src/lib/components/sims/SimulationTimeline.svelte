@@ -87,7 +87,7 @@
 </script>
 
 {#if stages.length > 0}
-	<section class="timeline panel" aria-label="Signal propagation timeline">
+	<section class="timeline plate" aria-label="Signal propagation timeline">
 		<div class="timeline-copy">
 			<div class="timeline-heading">
 				<span class="microlabel">causal signal trace</span>

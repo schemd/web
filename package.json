@@ -39,7 +39,7 @@
 		"start:test": "SCHEMD_REGISTRY_OFFLINE=1 HOST=127.0.0.1 PORT=4173 node build/index.js",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"ci": "bun i",
+		"ci": "bun install --frozen-lockfile",
 		"format:check": "prettier --check .",
 		"lint": "eslint .",
 		"format": "prettier --write .",

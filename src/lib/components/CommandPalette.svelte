@@ -120,7 +120,7 @@
 	>
 		<div
 			bind:this={dialog}
-			class="palette panel"
+			class="palette plate"
 			role="dialog"
 			tabindex="-1"
 			aria-modal="true"

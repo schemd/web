@@ -80,6 +80,18 @@ export function docManifest(version: string): readonly DocPageMeta[] {
 	return corpusFor(version)?.manifest ?? [];
 }
 
+/**
+ * Every documented line mapped to the slugs it actually publishes.
+ *
+ * The version switcher needs this on the client: lines do not carry identical
+ * corpora (0.4 documents `netlist` and `limits`; 0.2 never did), so switching
+ * lines has to keep the reader's page when the target line has it and land on
+ * the overview when it does not, instead of navigating into a 404.
+ */
+export const DOC_SLUGS_BY_LINE: Readonly<Record<string, readonly string[]>> = Object.fromEntries(
+	DOCUMENTED_VERSIONS.map((version) => [version, docManifest(version).map((page) => page.slug)])
+);
+
 /** Latest manifest retained for sitemap and build-time callers. */
 export const DOC_MANIFEST: readonly DocPageMeta[] = docManifest(LATEST_DOCUMENTED_VERSION);
 

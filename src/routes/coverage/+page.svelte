@@ -27,7 +27,7 @@
 			documentation's <code>schemd</code> fences add real-world usages on top. Open any primitive to take
 			it apart in the playground.
 		</p>
-		<div class="summary panel">
+		<div class="summary plate">
 			<div class="summary-figures">
 				<span class="readout big">{data.coverage.covered} / {data.coverage.total}</span>
 				<span class="microlabel">primitives exercised across {data.coverage.examples} examples</span
@@ -42,7 +42,7 @@
 
 	<div class="groups">
 		{#each data.coverage.groups as group (group.label)}
-			<section class="group panel" aria-label={group.label}>
+			<section class="group plate" aria-label={group.label}>
 				<p class="microlabel group-label">{group.label}</p>
 				<ul class="kinds">
 					{#each group.kinds as entry (entry.kind)}

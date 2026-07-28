@@ -40,10 +40,23 @@ test('version selector preserves the slug and snaps future releases to the docum
 	request
 }) => {
 	await page.goto('/docs/0.4.0/component-reference');
+	await expect(page).toHaveURL(/\/docs\/0\.4\/component-reference$/);
 	await expect(page.locator('main h1')).toHaveText('Use every 0.4 primitive deliberately');
-	await page.getByRole('combobox', { name: 'Documentation version' }).selectOption('0.2.1');
+
+	/* Docs are versioned by documented line, so the switcher offers lines — the
+	 * only values a docs URL can hold — and keeps showing the one in the URL. */
+	const switcher = page.getByRole('combobox', { name: 'Documentation version' });
+	await expect(switcher).toHaveValue('0.4');
+	await switcher.selectOption('0.2');
 	await expect(page).toHaveURL(/\/docs\/0\.2\/component-reference$/);
 	await expect(page.locator('main h1')).toHaveText('Find a component and its ports');
+	await expect(switcher).toHaveValue('0.2');
+
+	/* A page the older line never published falls back to its overview rather
+	 * than navigating the reader into a 404. */
+	await page.goto('/docs/0.4/netlist');
+	await page.getByRole('combobox', { name: 'Documentation version' }).selectOption('0.2');
+	await expect(page).toHaveURL(/\/docs\/0\.2\/overview$/);
 
 	const futureVersion = await request.get('/docs/9.9.9/overview');
 	expect(futureVersion.status()).toBe(200);
@@ -268,6 +281,16 @@ test('every public page shell fits the mobile viewport without horizontal scroll
 				 * own viewBox. Neither is visible overflow.
 				 */
 				if (element.closest('.katex-mathml') || element.parentElement?.closest('svg')) continue;
+				/*
+				 * Decorative paint whose scrolling belongs to a sibling. The
+				 * editor's syntax layer mirrors a `<textarea>` that is itself the
+				 * scroll container, translating in lock-step with it, so the walk
+				 * below cannot find the scroller from here. Anything both hidden
+				 * from assistive technology and untouchable is not content a
+				 * phone reader can lose.
+				 */
+				const decorative = element.closest('[aria-hidden="true"]');
+				if (decorative && getComputedStyle(decorative).pointerEvents === 'none') continue;
 				/* Wide content is fine once something above it can scroll. */
 				let ancestor = element.parentElement;
 				let scrollable = false;

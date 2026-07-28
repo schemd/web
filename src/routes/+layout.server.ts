@@ -1,7 +1,11 @@
 import type { LayoutServerLoad } from './$types';
 import { getRegistry } from '$lib/server/registry';
-import { docSearchIndex } from '$lib/server/docs';
-import { LATEST_DOCUMENTED_VERSION, resolveDocVersion } from '$lib/server/versions';
+import { DOC_SLUGS_BY_LINE, docSearchIndex } from '$lib/server/docs';
+import {
+	DOCUMENTED_VERSIONS,
+	LATEST_DOCUMENTED_VERSION,
+	resolveDocVersion
+} from '$lib/server/versions';
 
 export const load: LayoutServerLoad = async ({ params }) => {
 	const registry = await getRegistry();
@@ -14,6 +18,10 @@ export const load: LayoutServerLoad = async ({ params }) => {
 	return {
 		versions,
 		latest,
+		/* Docs are versioned by line, engines by release. The switcher offers
+		 * whichever domain the current route actually navigates in. */
+		docLines: DOCUMENTED_VERSIONS,
+		docSlugs: DOC_SLUGS_BY_LINE,
 		registryLive: registry.live,
 		paletteEntries: [
 			{ title: 'Landing', hint: 'route', href: '/' },

@@ -94,7 +94,7 @@
 </svelte:head>
 
 <div class="lab-page grid-backdrop">
-	<header class="lab-head panel">
+	<header class="lab-head plate">
 		<div class="lab-crumbs">
 			<a href={`/simulations/${data.version}`} class="back">← all environments</a>
 			<span class="microlabel">{sim.index} · {sim.tier} · {sim.domain} · v{data.version}</span>

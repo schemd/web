@@ -44,8 +44,23 @@ test('native editor provides indentation, comments, pairing, find/replace, and u
 
 	await page.getByRole('button', { name: 'Close find' }).click();
 	await editor.pressSequentially('x');
-	await editor.press('Control+z');
-	await expect(editor).toHaveValue('junction:A "A"\njunction:A "A"');
+	await expect(editor).toHaveValue('junction:A "A"\njunction:A "A"x');
+
+	/*
+	 * Undo belongs to the platform — the editor's own edits go through
+	 * `setRangeText` precisely so they join the native transaction stream.
+	 * Headless Chromium does not route a synthesized Control+Z to that stack
+	 * (a bare `<textarea>` ignores it too), so the contract is exercised
+	 * through the editing command itself: the editor must not swallow undo,
+	 * and the typing it recorded must come back out.
+	 */
+	const undone = await editor.evaluate((field: HTMLTextAreaElement) => {
+		field.focus();
+		document.execCommand('undo');
+		return field.value;
+	});
+	expect(undone).not.toContain('x');
+	await expect(editor).toHaveValue(undone);
 
 	await editor.press('Escape');
 	await editor.press('Tab');
@@ -56,16 +71,19 @@ test('diagnostics navigate to source and the local command palette executes IDE 
 	page
 }) => {
 	const editor = page.getByRole('textbox', { name: 'schemd source editor' });
-	await editor.fill('port:A "A" at (80, 80)\nnot valid');
+	/* The valid line must really be valid: 0.4 requires a colour on a port, so
+	 * the previous fixture reported line 1 and never exercised the jump. */
+	const valid = 'port:A "A" at (80, 80) #blue';
+	await editor.fill(`${valid}\nnot valid`);
 	const diagnostics = page.getByRole('region', { name: 'Compiler diagnostics' });
-	await expect(diagnostics).toContainText('line 2');
+	await expect(diagnostics).toContainText('Line 2');
 	await diagnostics.getByRole('button', { name: /Go to line 2/ }).click();
 	expect(
 		await editor.evaluate((field: HTMLTextAreaElement) => ({
 			start: field.selectionStart,
 			selected: field.value.slice(field.selectionStart, field.selectionEnd)
 		}))
-	).toEqual({ start: 'port:A "A" at (80, 80)\n'.length, selected: 'not valid' });
+	).toEqual({ start: valid.length + 1, selected: 'not valid' });
 
 	await page.keyboard.press('F1');
 	const palette = page.getByRole('dialog', { name: 'playground commands' });
@@ -145,23 +163,33 @@ test('opening a shared workspace does not overwrite an unrelated recovery draft'
 	const local = 'port:LOCAL "private recovery" at (80, 80) #blue';
 	await editor.fill(local);
 	await page.keyboard.press('Control+s');
-	const stored = await page.evaluate(() => localStorage.getItem('schemd.playground.draft.v1'));
+
+	/*
+	 * Recovery is keyed per compiler version and per tab
+	 * (`schemd.playground.draft.v2:<version>:<workspaceId>`), so the slot is
+	 * discovered rather than named — a hard-coded key silently stopped
+	 * matching when the scheme gained those segments.
+	 */
+	const slot = await page.evaluate(() =>
+		Object.keys(localStorage).find((key) => key.startsWith('schemd.playground.draft.v2:'))
+	);
+	expect(slot, 'a manual save writes one versioned recovery slot').toBeDefined();
+	const stored = await page.evaluate((key) => localStorage.getItem(key), slot!);
 	expect(stored).not.toBeNull();
+	expect(stored).toContain('private recovery');
 
 	const shared = 'port:SHARED "read-only arrival" at (120, 100) #cyan';
 	await editor.fill(shared);
 	await expect(page).toHaveURL(/[?&]code=/);
 	const sharedUrl = page.url();
-	await page.evaluate(
-		(value) => localStorage.setItem('schemd.playground.draft.v1', value),
+	await page.evaluate(([key, value]) => localStorage.setItem(key!, value!), [
+		slot!,
 		stored!
-	);
+	] as const);
 
 	await page.goto(sharedUrl);
 	await expect(editor).toHaveValue(shared);
 	await expect(page.getByText('shared · save manually')).toBeVisible();
 	await page.waitForTimeout(700);
-	expect(await page.evaluate(() => localStorage.getItem('schemd.playground.draft.v1'))).toBe(
-		stored
-	);
+	expect(await page.evaluate((key) => localStorage.getItem(key), slot!)).toBe(stored);
 });

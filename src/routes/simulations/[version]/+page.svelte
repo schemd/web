@@ -154,7 +154,7 @@
 {/snippet}
 
 <div class="selector grid-backdrop">
-	<header class="terminal panel">
+	<header class="terminal plate">
 		<div class="terminal-head">
 			<span class="microlabel">schemd · simulation laboratory</span>
 			<span class="microlabel">v{data.version} · {environments.length} environments</span>
@@ -193,7 +193,7 @@
 		</div>
 	</header>
 
-	<div class="catalog-bar panel">
+	<div class="catalog-bar plate">
 		<div>
 			<span class="microlabel">recommended curriculum · local progress</span>
 			<p>{visibleEnvironments.length} of {environments.length} laboratories online</p>
@@ -212,7 +212,7 @@
 
 	<ul class="lab-list" aria-label="Simulation environments">
 		{#each visibleEnvironments as environment, index (environment.id)}
-			<li class="lab-row panel" style={`--i: ${index}`}>
+			<li class="lab-row plate" style={`--i: ${index}`}>
 				<a
 					class="lab-icon"
 					href={`/simulations/${data.version}/${environment.id}`}

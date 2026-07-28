@@ -106,6 +106,20 @@
 		};
 	});
 
+	/**
+	 * Title-block fields.
+	 *
+	 * A drafting sheet identifies itself in a title block rather than a
+	 * headline, and this corpus already carries every field one needs: which
+	 * sheet of how many, which revision line, and what the sheet contains.
+	 */
+	const titleBlock = $derived([
+		{ field: 'sheet', value: `${docIndex + 1} / ${data.manifest.length}` },
+		{ field: 'rev', value: `v${data.version}` },
+		{ field: 'sections', value: String(data.doc.sections.length) },
+		{ field: 'compiled', value: String(data.doc.examples.length) }
+	]);
+
 	const jsonLd = $derived(
 		JSON.stringify({
 			'@context': 'https://schema.org',
@@ -138,7 +152,9 @@
 		<div class="doc-nav-head">
 			<div class="doc-nav-brandwrap">
 				<span class="doc-nav-brand">schemd docs</span>
-				<Pronounce compact />
+				<span class="doc-nav-meta microlabel">
+					v{data.version} · {data.manifest.length} sheets
+				</span>
 			</div>
 			<button
 				type="button"
@@ -222,13 +238,21 @@
 		<div class="read-progress" aria-hidden="true">
 			<span style={`transform: scaleX(${readProgress})`}></span>
 		</div>
-		<header class="doc-header">
-			<p class="microlabel">v{data.version} · {data.meta.group}</p>
+		<header class="doc-header plate">
+			<p class="eyebrow">{data.meta.group}</p>
 			<h1>{data.meta.title}</h1>
 			{#if data.meta.slug === 'overview'}
 				<Pronounce />
 			{/if}
 			<p class="doc-summary">{data.meta.summary}</p>
+			<dl class="title-block">
+				{#each titleBlock as entry (entry.field)}
+					<div>
+						<dt class="microlabel">{entry.field}</dt>
+						<dd class="readout">{entry.value}</dd>
+					</div>
+				{/each}
+			</dl>
 		</header>
 		<div class="prose">
 			{@html data.doc.html}
@@ -260,6 +284,11 @@
 		class:open={railOpenMobile}
 		aria-label="Compiled example for the active section"
 	>
+		<div class="rail-head">
+			<span class="rail-lamp" aria-hidden="true"></span>
+			<span class="microlabel">compiled example</span>
+			<span class="microlabel rail-mode">mode=full</span>
+		</div>
 		{#if activeExample}
 			{#key activeExample.id}
 				<div class="rail-body">
@@ -311,28 +340,46 @@
 		}
 	}
 
-	/* ----- left ----- */
+	/* ----- left: the index card ----- */
 	.doc-nav {
-		border-inline-end: 1px solid var(--line);
-		background: var(--bg-raised);
 		position: sticky;
 		inset-block-start: var(--header-h);
 		block-size: calc(100vh - var(--header-h));
 		overflow-y: auto;
 		padding: var(--space-4);
+		border-inline-end: 1px solid var(--line);
+		background:
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--accent) 3.5%, transparent),
+				transparent 220px
+			),
+			var(--bg-raised);
+		scrollbar-gutter: stable;
 	}
 
 	.doc-nav-head {
+		position: sticky;
+		inset-block-start: calc(var(--space-4) * -1);
+		z-index: 2;
 		display: flex;
 		align-items: start;
 		justify-content: space-between;
 		gap: var(--space-2);
-		margin-block-end: var(--space-4);
+		margin-block: calc(var(--space-4) * -1) var(--space-4);
+		padding-block: var(--space-4) var(--space-3);
+		background: linear-gradient(180deg, var(--bg-raised) 78%, transparent);
 
 		& .doc-nav-brand {
 			display: block;
 			font-family: var(--font-mono);
 			font-weight: 700;
+			letter-spacing: -0.01em;
+		}
+
+		& .doc-nav-meta {
+			display: block;
+			margin-block-start: 2px;
 		}
 	}
 
@@ -430,21 +477,36 @@
 	}
 
 	.doc-nav details {
-		margin-block-end: var(--space-3);
+		margin-block-end: var(--space-4);
 
 		& summary {
+			display: flex;
+			align-items: center;
+			gap: var(--space-2);
 			cursor: pointer;
 			list-style: none;
 			padding-block: var(--space-1);
 
 			&::before {
-				content: '▸ ';
-				color: var(--accent);
+				content: '';
+				inline-size: 5px;
+				block-size: 5px;
+				background: var(--accent);
+				clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+				transition: transform var(--dur-med) var(--ease-kinetic);
+			}
+
+			/* The group header's rule runs out to the rail edge. */
+			&::after {
+				content: '';
+				flex: 1;
+				block-size: 1px;
+				background: var(--line);
 			}
 		}
 
 		&[open] summary::before {
-			content: '▾ ';
+			transform: rotate(90deg) scale(1.15);
 		}
 
 		& ul {
@@ -453,36 +515,62 @@
 			padding-inline-start: var(--space-3);
 		}
 
-		& a {
+		/* Every index entry is a track; the active one lights its spine. */
+		& li > a {
+			position: relative;
 			display: block;
-			padding: 0.22rem 0.4rem;
+			padding: 0.26rem 0.5rem;
+			border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 			font-size: var(--text-sm);
 			color: var(--ink-mute);
 			border-inline-start: 1px solid var(--line);
 			transition:
 				color var(--dur-fast) var(--ease-precise),
-				border-color var(--dur-fast) var(--ease-precise);
+				background-color var(--dur-fast) var(--ease-precise);
+
+			&::before {
+				content: '';
+				position: absolute;
+				inset-block: 0;
+				inset-inline-start: -1px;
+				inline-size: 2px;
+				background: var(--accent-grad-v);
+				transform: scaleY(0);
+				transform-origin: top;
+				transition: transform var(--dur-med) var(--ease-kinetic);
+			}
 
 			&:hover {
 				color: var(--ink);
+				background: color-mix(in srgb, var(--ink) 5%, transparent);
 				text-decoration: none;
 			}
 
 			&[aria-current='page'] {
 				color: var(--accent);
-				border-inline-start-color: var(--accent);
+				background: color-mix(in srgb, var(--accent) 9%, transparent);
+
+				&::before {
+					transform: scaleY(1);
+				}
 			}
 		}
 	}
 
 	.section-tree {
+		margin-block: 2px var(--space-2);
+
 		& a {
 			font-size: var(--text-xs);
 			color: var(--ink-faint);
 
 			&.active {
 				color: var(--accent);
-				border-inline-start-color: var(--accent);
+				background: color-mix(in srgb, var(--accent) 7%, transparent);
+
+				&::before {
+					transform: scaleY(1);
+				}
 			}
 		}
 	}
@@ -502,14 +590,15 @@
 		background: var(--line);
 		margin-block-end: var(--space-6);
 		overflow: hidden;
+		border-radius: 2px;
 
 		& span {
 			display: block;
 			block-size: 100%;
-			background: var(--accent);
+			background: var(--accent-grad);
 			transform-origin: left;
 			transition: transform 90ms linear;
-			box-shadow: 0 0 6px var(--glow);
+			box-shadow: 0 0 8px var(--glow);
 		}
 	}
 
@@ -528,15 +617,19 @@
 		gap: var(--space-1);
 		padding: var(--space-4);
 		border: 1px solid var(--line);
-		background: var(--bg-raised);
+		border-radius: var(--radius-md);
+		background-color: var(--bg-raised);
+		background-image: var(--sheen);
 		color: var(--ink-mute);
 		transition:
 			border-color var(--dur-kinetic) var(--ease-kinetic),
+			box-shadow var(--dur-kinetic) var(--ease-kinetic),
 			transform var(--dur-kinetic) var(--ease-kinetic);
 
 		&:hover {
 			border-color: var(--accent);
 			transform: translateY(-2px);
+			box-shadow: var(--shadow-lift);
 			text-decoration: none;
 		}
 
@@ -561,21 +654,50 @@
 		}
 	}
 
+	/* The document identifies itself the way a drawing does: a title block. */
 	.doc-header {
-		margin-block-end: var(--space-6);
+		margin-block-end: var(--space-8);
+		padding: var(--space-6) var(--space-6) 0;
+		overflow: hidden;
 
 		& h1 {
 			font-size: var(--text-xl);
-			letter-spacing: -0.02em;
-			margin-block: var(--space-2) var(--space-3);
+			letter-spacing: -0.025em;
+			margin-block: var(--space-1) var(--space-3);
+			text-wrap: balance;
 		}
 	}
 
 	.doc-summary {
-		margin: 0;
+		margin: 0 0 var(--space-6);
 		max-inline-size: 68ch;
 		color: var(--ink-mute);
 		font-size: var(--text-md);
+	}
+
+	.title-block {
+		display: grid;
+		/* Four fields, four tracks. `auto-fit` stranded the last one on a row
+		   of its own the moment the column narrowed. */
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 0;
+		margin: 0 calc(var(--space-6) * -1);
+		border-block-start: 1px solid var(--line);
+		background: color-mix(in srgb, var(--bg-inset) 55%, transparent);
+
+		& > div {
+			padding: var(--space-2) var(--space-4);
+			border-inline-end: 1px solid var(--line);
+
+			&:last-child {
+				border-inline-end: none;
+			}
+		}
+
+		& dd {
+			margin: 0;
+			font-size: var(--text-sm);
+		}
 	}
 
 	/* Section eyebrow injected before each h2 by the markdown pipeline. */
@@ -590,15 +712,61 @@
 		margin-block-end: var(--space-1);
 	}
 
-	/* ----- right rail: rigid sticky context ----- */
+	/* ----- right rail: the scope ----- */
 	.doc-rail {
 		border-inline-start: 1px solid var(--line);
-		background: var(--bg-raised);
+		background:
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--accent) 3.5%, transparent),
+				transparent 200px
+			),
+			var(--bg-raised);
 		position: sticky;
 		inset-block-start: var(--header-h);
 		block-size: calc(100vh - var(--header-h));
 		overflow-y: auto;
-		padding: var(--space-4);
+		padding: 0 var(--space-4) var(--space-4);
+	}
+
+	/* Bezel: the rail states what it is showing and that the view is live. */
+	.rail-head {
+		position: sticky;
+		inset-block-start: 0;
+		z-index: 2;
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin-inline: calc(var(--space-4) * -1);
+		padding: var(--space-3) var(--space-4);
+		border-block-end: 1px solid var(--line);
+		background: color-mix(in srgb, var(--bg-raised) 92%, transparent);
+		backdrop-filter: blur(6px);
+		margin-block-end: var(--space-4);
+
+		& .rail-mode {
+			margin-inline-start: auto;
+			color: var(--ink-faint);
+		}
+	}
+
+	.rail-lamp {
+		inline-size: 6px;
+		block-size: 6px;
+		border-radius: 50%;
+		background: var(--accent);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+		animation: lamp 2.6s var(--ease-precise) infinite;
+	}
+
+	@keyframes lamp {
+		0%,
+		100% {
+			opacity: 0.45;
+		}
+		50% {
+			opacity: 1;
+		}
 	}
 
 	.rail-body {
@@ -656,7 +824,10 @@
 		}
 
 		.doc-nav-head {
-			margin-block-end: 0;
+			position: static;
+			margin-block: 0;
+			padding-block: 0;
+			background: none;
 		}
 
 		/* On mobile the index is a compact disclosure, closed by default. */
@@ -716,12 +887,45 @@
 			overflow: hidden;
 		}
 
+		/*
+		 * `overflow: hidden` above makes the article the sticky containing
+		 * block, which parked the progress bar 98px inside the column — a
+		 * hairline struck through the title. On a phone the bar belongs to the
+		 * viewport anyway, so pin it under the header instead of to a column.
+		 */
+		.read-progress {
+			position: fixed;
+			inset-inline: 0;
+			inset-block-start: var(--header-h);
+			margin-block-end: 0;
+			z-index: 40;
+		}
+
+		.doc-header {
+			padding: var(--space-5) var(--space-4) 0;
+		}
+
 		.doc-header h1 {
 			font-size: clamp(1.55rem, 9vw, var(--text-xl));
 		}
 
 		.doc-summary {
 			font-size: var(--text-base);
+		}
+
+		/* Four fields; two tracks keep the block a rectangle rather than
+		   stranding one label on a row of its own. */
+		.title-block {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			margin-inline: calc(var(--space-4) * -1);
+
+			& > div:nth-child(2n) {
+				border-inline-end: none;
+			}
+
+			& > div:nth-child(-n + 2) {
+				border-block-end: 1px solid var(--line);
+			}
 		}
 
 		.doc-rail {

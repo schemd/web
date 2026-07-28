@@ -166,10 +166,11 @@
 </svelte:head>
 
 <article class="landing grid-backdrop">
-	<section class="hero">
+	<section class="hero signal-field">
 		<div class="hero-copy">
 			<p class="microlabel animate-in">@schemd/core · v{data.latest} · MIT</p>
 			<h1 class="animate-in">Schematics are<br />source code.</h1>
+			<hr class="hero-measure" />
 			<div class="hero-pronounce animate-in">
 				<span class="hero-brand">schemd</span>
 				<Pronounce />
@@ -215,7 +216,7 @@
 		</div>
 
 		<figure
-			class="instrument panel animate-in"
+			class="instrument plate animate-in"
 			onpointerenter={() => (paused = true)}
 			onpointerleave={() => (paused = false)}
 			onfocusin={() => (paused = true)}
@@ -277,7 +278,7 @@
 
 	<section class="pipeline">
 		<header class="section-head">
-			<p class="section-eyebrow microlabel">the pass, end to end</p>
+			<p class="eyebrow">the pass, end to end</p>
 			<h2>Text in. Vector out. Four deterministic passes.</h2>
 		</header>
 		<ol class="stepper">
@@ -296,18 +297,18 @@
 
 	<section class="features">
 		<header class="section-head">
-			<p class="section-eyebrow microlabel">what you get</p>
+			<p class="eyebrow">what you get</p>
 			<h2>An engineering compiler, not a drawing toy.</h2>
 		</header>
 		<div class="feature-grid">
 			{#each features as feature (feature.n)}
-				<article class="feature panel" data-span={feature.span}>
+				<article class="feature plate" data-span={feature.span}>
 					<span class="feature-n microlabel">{feature.n}</span>
 					<h3>{feature.title}</h3>
 					<p>{feature.body}</p>
 				</article>
 			{/each}
-			<article class="feature panel feature-limits" data-span="6">
+			<article class="feature plate feature-limits" data-span="6">
 				<div class="limits-copy">
 					<span class="feature-n microlabel">06</span>
 					<h3>Bounded by design</h3>
@@ -360,8 +361,33 @@
 	.hero-copy h1 {
 		font-size: var(--text-2xl);
 		font-weight: 700;
-		letter-spacing: -0.03em;
-		margin-block: var(--space-3);
+		letter-spacing: -0.035em;
+		line-height: 1.02;
+		margin-block: var(--space-4) var(--space-3);
+		text-wrap: balance;
+	}
+
+	/* A dimension line under the headline: the drafting equivalent of a
+	   flourish, and the first place the accent spectrum appears on the page. */
+	.hero-measure {
+		display: block;
+		inline-size: min(340px, 70%);
+		block-size: 1px;
+		border: 0;
+		margin: 0 0 var(--space-4);
+		background: var(--accent-grad);
+		mask-image: linear-gradient(90deg, #000 55%, transparent);
+		animation: measure-draw 900ms var(--ease-kinetic) both;
+		transform-origin: left;
+	}
+
+	@keyframes measure-draw {
+		from {
+			transform: scaleX(0);
+		}
+		to {
+			transform: scaleX(1);
+		}
 	}
 
 	.hero-pronounce {
@@ -398,7 +424,10 @@
 		inline-size: fit-content;
 		max-inline-size: 100%;
 		border: 1px solid var(--line);
+		border-radius: var(--radius-md);
 		background: var(--bg-inset);
+		overflow: hidden;
+		box-shadow: inset 0 1px 0 var(--edge-hi);
 	}
 
 	.pm-tabs {
@@ -457,6 +486,9 @@
 	.instrument {
 		display: grid;
 		overflow: hidden;
+		box-shadow:
+			inset 0 1px 0 var(--edge-hi),
+			var(--shadow-plate);
 	}
 
 	.instrument-tabs {
@@ -485,9 +517,19 @@
 			}
 
 			&.active {
+				position: relative;
 				color: var(--accent);
 				background: color-mix(in srgb, var(--accent) 8%, transparent);
-				box-shadow: inset 0 -2px 0 var(--accent);
+
+				&::after {
+					content: '';
+					position: absolute;
+					inset-inline: 0;
+					inset-block-end: 0;
+					block-size: 2px;
+					background: var(--accent-grad);
+					box-shadow: 0 0 10px var(--glow);
+				}
 			}
 		}
 	}
@@ -580,19 +622,14 @@
 
 	/* ---------- Shared section chrome ---------- */
 	.section-head {
-		margin-block-end: var(--space-6);
+		margin-block-end: var(--space-8);
 
 		& h2 {
-			font-size: var(--text-lg);
-			letter-spacing: -0.02em;
-			max-inline-size: 30ch;
+			font-size: var(--text-xl);
+			letter-spacing: -0.025em;
+			max-inline-size: 26ch;
+			text-wrap: balance;
 		}
-	}
-
-	.section-eyebrow {
-		display: block;
-		color: var(--accent);
-		margin-block-end: var(--space-2);
 	}
 
 	/* ---------- Pipeline stepper ---------- */
@@ -630,20 +667,34 @@
 		gap: var(--space-3);
 	}
 
+	/* A pass marker: an inset well ringed by the signal spectrum. */
 	.step-disc {
+		position: relative;
 		flex: none;
-		inline-size: 2.25rem;
-		block-size: 2.25rem;
+		inline-size: 2.4rem;
+		block-size: 2.4rem;
 		display: grid;
 		place-items: center;
-		border: 1px solid var(--line-strong);
 		border-radius: 50%;
 		font-family: var(--font-mono);
 		font-size: var(--text-2xs);
 		color: var(--accent);
 		background: var(--bg-inset);
+		box-shadow:
+			0 0 0 1px var(--line-strong),
+			inset 0 1px 3px rgb(0 0 0 / 0.25);
 		animation: disc-pop 520ms var(--ease-kinetic) backwards;
 		animation-delay: calc(var(--i) * 130ms + 120ms);
+
+		&::before {
+			content: '';
+			position: absolute;
+			inset: -3px;
+			border-radius: 50%;
+			background: var(--accent-grad);
+			opacity: 0.28;
+			z-index: -1;
+		}
 	}
 
 	/* The signal flowing through the compiler, made literal. */
@@ -694,15 +745,19 @@
 		min-block-size: 172px;
 		transition:
 			border-color var(--dur-kinetic) var(--ease-kinetic),
+			box-shadow var(--dur-kinetic) var(--ease-kinetic),
 			transform var(--dur-kinetic) var(--ease-kinetic);
 
 		&:hover {
-			border-color: var(--line-strong);
+			border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
 			transform: translateY(-3px);
+			box-shadow: var(--shadow-lift);
 		}
 
 		& .feature-n {
 			color: var(--accent);
+			font-size: var(--text-sm);
+			letter-spacing: 0.06em;
 		}
 
 		& h3 {
@@ -743,11 +798,13 @@
 
 	.limits-grid {
 		display: grid;
-		grid-template-columns: repeat(4, 1fr);
+		grid-template-columns: repeat(auto-fit, minmax(124px, 1fr));
 		gap: 1px;
 		margin: 0;
 		background: var(--line);
 		border: 1px solid var(--line);
+		border-radius: var(--radius-sm);
+		overflow: hidden;
 
 		& div {
 			background: var(--bg-inset);

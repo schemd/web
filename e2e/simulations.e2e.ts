@@ -58,28 +58,33 @@ test('adder preserves the old output and commits one ripple stage per configured
 	await delay.fill('250');
 
 	const result = page.locator('[data-math-id="adder.value.total"]');
-	await expect(result).toHaveAttribute('aria-label', 'nine-bit result equals 129');
-	/* Core 0.4 emits a classical gate's canonical `out1` terminal even when
-	 * source used the compatibility alias `out`; the live electrical model
-	 * must drive that same identity. Initial A0 xor B0 is high. */
-	await expect(page.locator('[data-wire-source="X1_0.out1"]').first()).toHaveClass(
-		/net-high-signal/
-	);
+	/* Every live readout appends its bit pattern to the spoken label, so the
+	 * value is matched at the head of the sentence rather than as the whole
+	 * of it. */
+	await expect(result).toHaveAttribute('aria-label', /^nine-bit result equals 129\b/);
+	/* Core 0.4 emits a classical gate's canonical `out1` terminal even when the
+	 * source used the compatibility alias `out`, and nothing may reintroduce
+	 * the alias. Gate nets stay dark until a ripple commits past their bit, so
+	 * the model's drive of that identity is asserted after the pass below. */
+	await expect(page.locator('[data-wire-source="X1_0.out"]')).toHaveCount(0);
+	await expect(page.locator('[data-wire-source="X1_0.out1"]').first()).toBeAttached();
 	await page.locator('.sim-stage [data-node-id="A0"] [role="button"]').first().click();
 	await expect(page.locator('[data-math-id="adder.value.a"]')).toHaveAttribute(
 		'aria-label',
-		'A equals 42'
+		/^A equals 42\b/
 	);
-	await expect(result).toHaveAttribute('aria-label', 'nine-bit result equals 129');
+	await expect(result).toHaveAttribute('aria-label', /^nine-bit result equals 129\b/);
 	await expect(timeline.getByText('propagating')).toBeVisible();
 
 	await expect(page.locator('.sim-stage [data-node-id="X1_0"]')).toHaveClass(/is-propagating/, {
 		timeout: 1_500
 	});
-	await expect(result).toHaveAttribute('aria-label', 'nine-bit result equals 128', {
+	await expect(result).toHaveAttribute('aria-label', /^nine-bit result equals 128\b/, {
 		timeout: 4_000
 	});
 	await expect(timeline.getByText('settled')).toBeVisible();
+	/* A settled pass lights the canonical gate terminals it drove. */
+	await expect(page.locator('[data-wire-source$=".out1"].net-high-signal').first()).toBeAttached();
 	/* Settled paths latch until the next input change; logic-0 inputs do not. */
 	await expect(page.locator('.sim-stage [data-node-id="X1_0"]')).toHaveClass(/is-propagating/);
 	await expect(page.locator('.sim-stage [data-node-id="A1"]')).toHaveClass(/is-propagating/);
@@ -252,11 +257,25 @@ test('the diagnostic probe renders its live reading through server-authored KaTe
 
 test('LFSR feedback drives the canonical v0.4 gate output terminal', async ({ page }) => {
 	await page.goto('/simulations/0.4.0/lfsr');
-	const step = page.getByRole('button', { name: 'step', exact: true });
-	await step.click();
-	await step.click();
-	await expect(page.locator('[data-wire-source="FB.out1"]').first()).toHaveClass(/is-active/);
+	/* What this pins is the terminal identity: only the canonical `out1`
+	 * exists, and the live model drives it. Which shift first raises feedback
+	 * is seed and tap detail, so advance until it goes high rather than
+	 * asserting a fixed step count. */
 	await expect(page.locator('[data-wire-source="FB.out"]')).toHaveCount(0);
+	const feedback = page.locator('[data-wire-source="FB.out1"]').first();
+	await expect(feedback).toBeAttached();
+	const step = page.getByRole('button', { name: 'step', exact: true });
+	const high = () => feedback.evaluate((wire) => wire.classList.contains('is-active'));
+	await expect
+		.poll(
+			async () => {
+				if (await high()) return true;
+				await step.click();
+				return high();
+			},
+			{ timeout: 20_000, message: 'feedback never drove FB.out1 high' }
+		)
+		.toBe(true);
 });
 
 test('a learner commits a prediction before the explanation is revealed', async ({ page }) => {
@@ -292,9 +311,9 @@ test('guided evidence, diagnosis, completion, and catalogue progress persist loc
 	/* An unrelated convenience button must not game the declared operand-entry step. */
 	await page.getByRole('button', { name: 'randomize A,B' }).click();
 	await expect(walkthrough.locator('.guided-step.is-complete')).toHaveCount(0);
-	await expect(walkthrough.locator('.action-feedback')).toContainText(
-		'This step asks you to enter both operand values'
-	);
+	const feedback = walkthrough.locator('.action-feedback');
+	await expect(feedback).toContainText('randomize A,B');
+	await expect(feedback).toContainText('This step asks you to enter an A value, then a B value');
 
 	const operands = page.locator('.operands input[type="number"]');
 	await operands.nth(0).fill('255');

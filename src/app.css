@@ -1,7 +1,24 @@
 /* ============================================================
-   schemd — structural design system
+   schemd — "instrument grade" design system
+
    Pure vanilla CSS. No utility frameworks. CSS custom properties,
    native nesting, fluid grids, hardware-accelerated keyframes.
+
+   The site reads as measuring hardware rather than a marketing page,
+   so three motifs carry the whole surface and every page composes
+   them instead of inventing its own chrome:
+
+   1. REGISTRATION — plates carry drafting corner marks (`.plate`),
+      the way a plotted sheet carries crop marks.
+   2. LIGHT HAS A SOURCE — raised surfaces take a top-down sheen and a
+      hairline highlight on their leading edge, so a panel reads as a
+      physical plate instead of a lighter rectangle.
+   3. SIGNAL — the accent is a spectrum (`--accent-grad`), not one
+      flat colour. Rules, spines, progress, and active markers are
+      drawn with it, so "this is live" is a consistent visual claim.
+
+   Everything is token-driven because three blueprint modes (dark HUD,
+   cyanotype, ISO print) recolour the entire site from the tokens below.
    ============================================================ */
 
 /* ---------- Typography stacks ---------- */
@@ -19,7 +36,7 @@
 	--text-base: 0.9375rem;
 	--text-md: 1.0625rem;
 	--text-lg: 1.375rem;
-	--text-xl: 2rem;
+	--text-xl: clamp(1.75rem, 3.2vw, 2.25rem);
 	--text-2xl: clamp(2.5rem, 6vw, 4.25rem);
 
 	--tracking-wide: 0.14em;
@@ -38,6 +55,17 @@
 
 	--header-h: 52px;
 	--statusbar-h: 28px;
+
+	/* Precision radii — enough to stop the brutal 0px, never enough to
+	   read as a rounded UI kit. */
+	--radius-sm: 3px;
+	--radius-md: 5px;
+	--radius-lg: 8px;
+
+	/* Registration marks: arm length and stroke of the drafting corner
+	   brackets that `.plate` and its variants draw. */
+	--tick-len: 9px;
+	--tick-weight: 1px;
 
 	--ease-precise: cubic-bezier(0.2, 0, 0, 1);
 	/* Physical kinematic settle for panels, sheets, and playback motion. */
@@ -69,6 +97,17 @@
 	--grid-dot: rgb(87 215 196 / 0.06);
 	--selection: rgb(87 215 196 / 0.24);
 	--glow: rgb(87 215 196 / 0.45);
+	/* Signal spectrum — every live rule, spine, and progress fill. */
+	--accent-grad: linear-gradient(90deg, #57d7c4, #7aa8ff);
+	--accent-grad-v: linear-gradient(180deg, #57d7c4, #7aa8ff);
+	/* Light source: a top-down sheen plus a hairline on the leading edge. */
+	--sheen: linear-gradient(180deg, rgb(255 255 255 / 0.045), rgb(255 255 255 / 0) 42%);
+	--edge-hi: rgb(255 255 255 / 0.07);
+	--shadow-plate: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 30px -18px rgb(0 0 0 / 0.85);
+	--shadow-lift: 0 2px 4px rgb(0 0 0 / 0.35), 0 22px 48px -24px rgb(87 215 196 / 0.4);
+	/* Ambient field behind hero surfaces. */
+	--field-a: rgb(87 215 196 / 0.12);
+	--field-b: rgb(122 168 255 / 0.1);
 	/* schemd renderer hooks (real custom properties read by @schemd/core output) */
 	--schematic-surface: var(--bg-panel);
 	--schematic-grid: #3a4a58;
@@ -102,6 +141,14 @@
 	--grid-dot: rgb(255 255 255 / 0.08);
 	--selection: rgb(255 255 255 / 0.22);
 	--glow: rgb(255 255 255 / 0.5);
+	--accent-grad: linear-gradient(90deg, #ffffff, #a9d1ff);
+	--accent-grad-v: linear-gradient(180deg, #ffffff, #a9d1ff);
+	--sheen: linear-gradient(180deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0) 42%);
+	--edge-hi: rgb(255 255 255 / 0.12);
+	--shadow-plate: 0 1px 2px rgb(3 20 41 / 0.5), 0 10px 30px -18px rgb(2 14 30 / 0.9);
+	--shadow-lift: 0 2px 4px rgb(3 20 41 / 0.45), 0 22px 48px -24px rgb(169 209 255 / 0.45);
+	--field-a: rgb(255 255 255 / 0.1);
+	--field-b: rgb(169 209 255 / 0.14);
 	--schematic-surface: var(--bg-panel);
 	--schematic-grid: #4a76ad;
 	--schematic-vector-fallback: #dcebfb;
@@ -134,6 +181,15 @@
 	--grid-dot: rgb(11 125 108 / 0.07);
 	--selection: rgb(11 125 108 / 0.18);
 	--glow: rgb(11 125 108 / 0.35);
+	--accent-grad: linear-gradient(90deg, #0b7d6c, #2456c4);
+	--accent-grad-v: linear-gradient(180deg, #0b7d6c, #2456c4);
+	/* On paper the light source darkens toward the sheet, not lightens. */
+	--sheen: linear-gradient(180deg, rgb(255 255 255 / 0.9), rgb(23 33 31 / 0.015) 55%);
+	--edge-hi: rgb(255 255 255 / 0.9);
+	--shadow-plate: 0 1px 1px rgb(23 33 31 / 0.05), 0 8px 24px -18px rgb(23 33 31 / 0.35);
+	--shadow-lift: 0 1px 2px rgb(23 33 31 / 0.07), 0 20px 40px -24px rgb(11 125 108 / 0.45);
+	--field-a: rgb(11 125 108 / 0.09);
+	--field-b: rgb(36 86 196 / 0.07);
 	--schematic-surface: var(--bg-panel);
 	--schematic-grid: #9db3ad;
 	--schematic-vector-fallback: #3c4a46;
@@ -257,10 +313,102 @@ h4 {
 		14px 14px;
 }
 
-/* ---------- Structural panels: flat, clipped, 1px seams ---------- */
+/**
+ * Ambient signal field.
+ *
+ * Two very low-opacity radial lobes that drift under a surface, giving the
+ * hero and other feature plates depth the flat palette cannot. It is painted
+ * on a `::before` so it never tints the content, and it sits behind the grid
+ * dots rather than replacing them.
+ */
+.signal-field {
+	position: relative;
+	isolation: isolate;
+
+	&::before {
+		content: '';
+		position: absolute;
+		inset: -20%;
+		z-index: -1;
+		background:
+			radial-gradient(40% 55% at 18% 22%, var(--field-a), transparent 70%),
+			radial-gradient(45% 50% at 82% 68%, var(--field-b), transparent 72%);
+		animation: field-drift 34s var(--ease-precise) infinite alternate;
+		pointer-events: none;
+	}
+}
+
+@keyframes field-drift {
+	from {
+		transform: translate3d(-2%, -1%, 0) scale(1);
+	}
+	to {
+		transform: translate3d(2%, 2%, 0) scale(1.08);
+	}
+}
+
+/* ---------- Structural panels: plates with a light source ---------- */
 .panel {
 	background: var(--bg-panel);
 	border: 1px solid var(--line);
+	border-radius: var(--radius-sm);
+}
+
+/**
+ * A plate is a panel that admits it is a physical object: a sheen from above,
+ * a hairline highlight on its leading edge, and drafting registration marks
+ * at the corners. `.plate-marks` draws the marks alone for surfaces that
+ * already own their background (compiled schematic frames, media, canvases).
+ */
+.plate {
+	position: relative;
+	background-color: var(--bg-panel);
+	background-image: var(--sheen);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-md);
+	box-shadow:
+		inset 0 1px 0 var(--edge-hi),
+		var(--shadow-plate);
+}
+
+.plate-marks,
+.plate {
+	&::before,
+	&::after {
+		content: '';
+		position: absolute;
+		inline-size: var(--tick-len);
+		block-size: var(--tick-len);
+		pointer-events: none;
+		opacity: 0.55;
+		transition: opacity var(--dur-med) var(--ease-precise);
+	}
+
+	/* Top-leading and bottom-trailing brackets. Two elements, four arms.
+	   Drawn inside the border box so a plate that clips its own overflow —
+	   any plate with a full-bleed footer — keeps its marks. */
+	&::before {
+		inset-block-start: 0;
+		inset-inline-start: 0;
+		border-block-start: var(--tick-weight) solid var(--accent);
+		border-inline-start: var(--tick-weight) solid var(--accent);
+	}
+
+	&::after {
+		inset-block-end: 0;
+		inset-inline-end: 0;
+		border-block-end: var(--tick-weight) solid var(--accent);
+		border-inline-end: var(--tick-weight) solid var(--accent);
+	}
+
+	&:hover::before,
+	&:hover::after {
+		opacity: 1;
+	}
+}
+
+.plate-marks {
+	position: relative;
 }
 
 .hairline-x {
@@ -271,6 +419,19 @@ h4 {
 	border-inline-start: 1px solid var(--line);
 }
 
+/**
+ * A signal rule — a 1px hairline that carries the accent spectrum and fades
+ * out along its run. Used to terminate section eyebrows and plate headers.
+ */
+.signal-rule {
+	block-size: 1px;
+	border: 0;
+	margin: 0;
+	background: var(--accent-grad);
+	mask-image: linear-gradient(90deg, #000, transparent);
+	opacity: 0.65;
+}
+
 /* ---------- Labels & readouts ---------- */
 .microlabel {
 	font-family: var(--font-mono);
@@ -278,6 +439,40 @@ h4 {
 	letter-spacing: var(--tracking-wide);
 	text-transform: uppercase;
 	color: var(--ink-faint);
+}
+
+/**
+ * A section eyebrow: the microlabel plus a leading registration tick and a
+ * rule that runs out to the edge of its column. This is the one element that
+ * announces "a new instrument section starts here" across every page.
+ */
+.eyebrow {
+	display: grid;
+	grid-template-columns: auto auto minmax(0, 1fr);
+	align-items: center;
+	gap: var(--space-3);
+	font-family: var(--font-mono);
+	font-size: var(--text-2xs);
+	letter-spacing: var(--tracking-wide);
+	text-transform: uppercase;
+	color: var(--accent);
+	margin: 0 0 var(--space-3);
+
+	&::before {
+		content: '';
+		inline-size: 6px;
+		block-size: 6px;
+		background: var(--accent);
+		clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+	}
+
+	&::after {
+		content: '';
+		block-size: 1px;
+		background: var(--accent-grad);
+		mask-image: linear-gradient(90deg, #000, transparent);
+		opacity: 0.5;
+	}
 }
 
 .readout {
@@ -346,41 +541,59 @@ kbd {
 
 /* ---------- Buttons / controls ---------- */
 .btn {
+	position: relative;
 	display: inline-flex;
 	align-items: center;
 	gap: 0.5em;
 	padding: 0.44rem 0.95rem;
 	border: 1px solid var(--line-strong);
-	background: var(--bg-raised);
+	border-radius: var(--radius-sm);
+	background-color: var(--bg-raised);
+	background-image: var(--sheen);
+	box-shadow: inset 0 1px 0 var(--edge-hi);
 	color: var(--ink);
 	font-size: var(--text-sm);
 	font-weight: 560;
 	transition:
 		border-color var(--dur-fast) var(--ease-precise),
-		background-color var(--dur-fast) var(--ease-precise),
+		box-shadow var(--dur-med) var(--ease-precise),
 		transform var(--dur-fast) var(--ease-precise);
 
 	&:hover {
 		border-color: var(--accent);
+		box-shadow:
+			inset 0 1px 0 var(--edge-hi),
+			0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent),
+			0 8px 22px -14px var(--glow);
 	}
 
 	&:active {
 		transform: translateY(1px);
 	}
 
+	/* The primary action carries the signal spectrum itself. */
 	&.btn-solid {
-		background: var(--accent);
-		border-color: var(--accent);
+		background-color: var(--accent);
+		background-image: var(--accent-grad);
+		border-color: transparent;
 		color: var(--accent-ink);
+		font-weight: 640;
+
+		&:hover {
+			box-shadow: 0 10px 30px -14px var(--glow);
+		}
 	}
 }
 
 .seg {
 	display: inline-flex;
 	border: 1px solid var(--line-strong);
+	border-radius: var(--radius-sm);
 	background: var(--bg-inset);
+	overflow: hidden;
 
 	& > button {
+		position: relative;
 		padding: 0.3rem 0.7rem;
 		font-family: var(--font-mono);
 		font-size: var(--text-2xs);
@@ -396,6 +609,10 @@ kbd {
 			border-inline-end: none;
 		}
 
+		&:hover {
+			color: var(--ink);
+		}
+
 		&[aria-pressed='true'],
 		&[aria-checked='true'],
 		&[aria-selected='true'] {
@@ -406,10 +623,24 @@ kbd {
 }
 
 /* ---------- Compiled schematic frames ---------- */
+/* The compiler's own output is the site's hero material, so its frame is the
+   most instrument-like surface here: an inset well under a raised bezel. */
 .schemd-frame {
-	background: var(--schematic-surface);
+	position: relative;
+	background:
+		radial-gradient(
+			120% 90% at 50% -10%,
+			color-mix(in srgb, var(--accent) 5%, transparent),
+			transparent 60%
+		),
+		var(--schematic-surface);
 	border: 1px solid var(--line);
+	border-radius: var(--radius-md);
+	box-shadow:
+		inset 0 0 0 1px color-mix(in srgb, var(--bg-inset) 60%, transparent),
+		inset 0 1px 0 var(--edge-hi);
 	color: var(--ink-mute);
+	overflow: hidden;
 
 	& svg {
 		display: block;
@@ -542,15 +773,25 @@ kbd {
 }
 
 /* ---------- Code blocks ---------- */
+/* Source is an input well: recessed, with a signal hairline down the gutter
+   edge so a listing reads as something the compiler consumes. */
 pre.codeblock {
+	position: relative;
 	margin: 0;
 	padding: var(--space-4);
 	background: var(--bg-inset);
 	border: 1px solid var(--line);
+	border-radius: var(--radius-sm);
+	box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.18);
 	overflow: auto;
+	overscroll-behavior-inline: contain;
 	font-size: var(--text-sm);
 	line-height: 1.7;
 	tab-size: 2;
+	background-image: linear-gradient(180deg, var(--accent), transparent);
+	background-size: 2px 100%;
+	background-repeat: no-repeat;
+	background-position: 0 0;
 }
 
 /* Tokenizer palette (shared by docs + playground) */
@@ -603,12 +844,25 @@ pre.codeblock {
 		margin-block: 0 var(--space-4);
 	}
 
+	/* Each section opens on a plotted seam: a hairline that starts in the
+	   accent spectrum and fades out across the measure. */
 	& > h2 {
+		position: relative;
 		font-size: var(--text-lg);
 		margin-block: var(--space-12) var(--space-3);
 		padding-block-start: var(--space-6);
 		border-block-start: 1px solid var(--line);
 		scroll-margin-block-start: calc(var(--header-h) + var(--space-6));
+
+		&::before {
+			content: '';
+			position: absolute;
+			inset-block-start: -1px;
+			inset-inline-start: 0;
+			inline-size: min(140px, 40%);
+			block-size: 1px;
+			background: var(--accent-grad);
+		}
 	}
 
 	& > h3 {
@@ -624,6 +878,23 @@ pre.codeblock {
 
 	& li {
 		margin-block: var(--space-1);
+	}
+
+	/* An inline link inside running prose must be identifiable without colour
+	   (WCAG 1.4.1). The accent used for links does not reach 3:1 against body
+	   ink in any blueprint mode, so the underline is the distinguishing mark
+	   and it is always drawn — thinned and offset so it reads as typography
+	   rather than as the browser default. */
+	& :is(p, li, td, th, dd, dt, blockquote, figcaption) a {
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+		text-decoration-color: color-mix(in srgb, var(--accent-2) 45%, transparent);
+		transition: text-decoration-color var(--dur-fast) var(--ease-precise);
+
+		&:hover {
+			text-decoration-color: var(--accent-2);
+		}
 	}
 
 	& code:not(pre code) {
@@ -666,11 +937,25 @@ pre.codeblock {
 	}
 
 	& .admonition {
+		position: relative;
+		overflow: hidden;
 		border: 1px solid var(--line-strong);
-		border-inline-start: 3px solid var(--accent);
-		background: var(--bg-raised);
+		border-radius: var(--radius-sm);
+		background-color: var(--bg-raised);
+		background-image: var(--sheen);
 		padding: var(--space-3) var(--space-4);
+		padding-inline-start: calc(var(--space-4) + 3px);
 		margin-block: var(--space-4);
+
+		/* Spine in the signal spectrum, drawn rather than bordered. */
+		&::before {
+			content: '';
+			position: absolute;
+			inset-block: 0;
+			inset-inline-start: 0;
+			inline-size: 3px;
+			background: var(--accent-grad-v);
+		}
 
 		& .title {
 			display: block;
