@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
+	import Seo from '$lib/components/Seo.svelte';
 	import type { SchematicSourceMap } from '@schemd/core';
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
@@ -885,14 +886,12 @@
 
 <svelte:window onkeydown={onWindowKeydown} />
 
-<svelte:head>
-	<title>Playground · schemd v{data.version}</title>
-	<meta
-		name="description"
-		content="Compile schemd source to SVG live: three output modes, raw markup view, and shareable workspace links."
-	/>
-	<meta name="robots" content="noindex" />
-</svelte:head>
+<Seo
+	title={`Playground · schemd v${data.version}`}
+	description="Compile schemd source to SVG live: three output modes, a raw markup view, and shareable workspace links."
+	canonicalPath={`/playground/${data.latest}`}
+	noindex
+/>
 
 <WorkspaceShell
 	leftLabel="Reference"

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
+	import Seo from '$lib/components/Seo.svelte';
 	import { setContext, type Component } from 'svelte';
 	import SimulationPedagogy from '$lib/components/SimulationPedagogy.svelte';
 	import SimulationTimeline from '$lib/components/sims/SimulationTimeline.svelte';
@@ -80,18 +81,15 @@
 			description: sim.summary
 		})
 	);
-	const jsonLdMarkup = $derived(`<script type="application/ld+json">${jsonLd}</${'script'}>`);
 </script>
 
-<svelte:head>
-	<title>{sim.title} · schemd simulation v{data.version}</title>
-	<meta name="description" content={sim.summary} />
-	<meta property="og:title" content={`${sim.title} — schemd simulation`} />
-	<meta property="og:description" content={sim.tagline} />
-	<meta property="og:type" content="website" />
-	<meta property="og:image" content="/brand/schemd-logo.svg" />
-	{@html jsonLdMarkup}
-</svelte:head>
+<Seo
+	title={`${sim.title} · schemd simulation lab`}
+	description={sim.summary}
+	canonicalPath={`/simulations/${data.latest}/${sim.id}`}
+	type="article"
+	{jsonLd}
+/>
 
 <div class="lab-page grid-backdrop">
 	<header class="lab-head plate">

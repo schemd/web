@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
+	import Seo from '$lib/components/Seo.svelte';
 
 	let { data }: PageProps = $props();
 
@@ -103,13 +104,11 @@
 	]);
 </script>
 
-<svelte:head>
-	<title>Changelog · schemd</title>
-	<meta
-		name="description"
-		content="Registry-synced release timeline for @schemd/core, with native SVG metric graphs: install footprint, file counts, and compiler benchmarks."
-	/>
-</svelte:head>
+<Seo
+	title="Changelog · schemd"
+	description="Registry-synced release timeline for @schemd/core: install footprint, file counts, publication dates, and compiler benchmarks measured on this server."
+	type="article"
+/>
 
 <article class="changelog grid-backdrop">
 	<header class="changelog-head">

@@ -8,6 +8,7 @@
 	 * uninteresting reasons; topology does not.
 	 */
 	import { browser } from '$app/environment';
+	import Seo from '$lib/components/Seo.svelte';
 	import { untrack } from 'svelte';
 	import CodeEditor from '$lib/components/CodeEditor.svelte';
 	import { inspectInBrowser, prefetchCompiler } from '$lib/compile-client';
@@ -81,13 +82,12 @@
 	const badge = (kind: string) => kind.split('-')[0] ?? kind;
 </script>
 
-<svelte:head>
-	<title>Review a diagram change · schemd {data.version}</title>
-	<meta
-		name="description"
-		content="Compare two revisions of a schemd diagram and read the semantic delta: components, nets, and connections that changed."
-	/>
-</svelte:head>
+<Seo
+	title={`Review a diagram change · schemd v${data.version}`}
+	description="Compare two revisions of a schemd diagram and read the semantic delta: the components, nets, and connections that changed."
+	canonicalPath={`/diff/${data.latest ?? data.version}`}
+	noindex
+/>
 
 <main class="review">
 	<header>

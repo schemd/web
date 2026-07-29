@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
+	import Seo from '$lib/components/Seo.svelte';
 
 	let { data }: PageProps = $props();
 
@@ -9,13 +10,10 @@
 	const percent = $derived(Math.round(ratio * 100));
 </script>
 
-<svelte:head>
-	<title>Language coverage · schemd</title>
-	<meta
-		name="description"
-		content="Which @schemd/core primitives the documentation exercises — derived from the compiler's exported vocabulary and the schemd fences in the docs corpus."
-	/>
-</svelte:head>
+<Seo
+	title="Language coverage · schemd"
+	description="Which @schemd/core primitives the documentation exercises, derived from the compiler's own exported vocabulary and every schemd fence in the docs corpus."
+/>
 
 <article class="coverage grid-backdrop">
 	<header class="coverage-head">

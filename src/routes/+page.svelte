@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
+	import Seo from '$lib/components/Seo.svelte';
 	import Pronounce from '$lib/components/Pronounce.svelte';
 	import { trackInteraction } from '$lib/telemetry';
 
@@ -157,24 +158,14 @@
 			}
 		})
 	);
-	const jsonLdMarkup = $derived(`<script type="application/ld+json">${jsonLd}</${'script'}>`);
 </script>
 
-<svelte:head>
-	<title>schemd — the vector schematic compiler</title>
-	<meta
-		name="description"
-		content="schemd (pronounced “skemd”, /skɛmd/) compiles plain-text schematics and UML into accessible, deterministic SVG. Zero dependencies. Node 24+."
-	/>
-	<meta property="og:title" content="schemd — the vector schematic compiler" />
-	<meta
-		property="og:description"
-		content="Write schematics and UML as text. Get accessible, deterministic SVG."
-	/>
-	<meta property="og:type" content="website" />
-	<meta property="og:image" content="/brand/schemd-logo.svg" />
-	{@html jsonLdMarkup}
-</svelte:head>
+<Seo
+	title="schemd — the vector schematic compiler"
+	description="schemd (pronounced “skemd”, /skɛmd/) compiles plain-text schematics, logic, quantum circuits, and UML into accessible, deterministic SVG. Zero dependencies, Node 24+."
+	canonicalPath="/"
+	{jsonLd}
+/>
 
 <article class="landing grid-backdrop">
 	<section class="hero signal-field">

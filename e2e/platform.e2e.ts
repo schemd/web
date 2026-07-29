@@ -23,8 +23,17 @@ test('landing page is SSR-valid, stable, and proves rotated native geometry', as
 	await expect(page.getByLabel('schemd is pronounced skemd').first()).toContainText('skemd');
 	await expect(page.locator('[data-node-id="C1"]')).toHaveAttribute('data-orientation', 'down');
 
-	const jsonLd = await page.locator('script[type="application/ld+json"]').textContent();
-	expect(() => JSON.parse(jsonLd ?? '')).not.toThrow();
+	/* Two blocks now: the site-wide `WebSite` graph and the page's own
+	 * `SoftwareApplication`. Both must parse — a malformed one is silently
+	 * dropped by every consumer, which is the worst way for it to fail. */
+	const graphs = await page.locator('script[type="application/ld+json"]').allTextContents();
+	expect(graphs.length).toBeGreaterThanOrEqual(2);
+	const types = graphs.map((graph) => {
+		expect(() => JSON.parse(graph)).not.toThrow();
+		return (JSON.parse(graph) as { '@type': string })['@type'];
+	});
+	expect(types).toContain('WebSite');
+	expect(types).toContain('SoftwareApplication');
 	await page.waitForTimeout(700);
 	const cumulativeShift = await page.evaluate(() =>
 		((window as Window & { __schemdLayoutShifts?: number[] }).__schemdLayoutShifts ?? []).reduce(
@@ -192,6 +201,67 @@ test('release timeline and sitemap expose current and historical platform contex
 	expect(xml).toContain('/docs/0.4/component-reference');
 	expect(xml).toContain('/docs/0.2/component-reference');
 	expect(xml).toContain('/simulations/0.4.0/rc');
+});
+
+test('every indexable page states a canonical, and duplicates consolidate onto it', async ({
+	page,
+	request
+}) => {
+	/* One canonical per page, and never the query string: a playground URL
+	 * carries a whole document in `?code=`, which must not become a page. */
+	await page.goto('/playground/0.4.0?code=abc');
+	await expect(page.locator('link[rel=canonical]')).toHaveAttribute(
+		'href',
+		/\/playground\/0\.4\.0$/
+	);
+	await expect(page.locator('meta[name=robots]')).toHaveAttribute('content', /noindex/);
+
+	/* The laboratories render the same content for every published release, so
+	 * the historical URLs point at the newest rather than competing with it. */
+	await page.goto('/simulations/0.3.2/rc');
+	await expect(page.locator('link[rel=canonical]')).toHaveAttribute(
+		'href',
+		/\/simulations\/0\.4\.0\/rc$/
+	);
+	await expect(page.locator('meta[name=robots]')).toHaveAttribute('content', /^index, follow/);
+	await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+		'content',
+		/\/brand\/social-card\.jpg$/
+	);
+
+	/* Each documented line is genuinely different prose, so each is its own page. */
+	for (const line of ['0.2', '0.3', '0.4']) {
+		await page.goto(`/docs/${line}/overview`);
+		await expect(page.locator('link[rel=canonical]')).toHaveAttribute(
+			'href',
+			new RegExp(`/docs/${line.replace('.', '\\.')}/overview$`)
+		);
+	}
+
+	const sitemap = await request.get('/sitemap.xml');
+	expect(sitemap.status()).toBe(200);
+	const xml = await sitemap.text();
+	const locations = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]!);
+	expect(new Set(locations).size).toBe(locations.length);
+	/* Only the latest release is submitted for the per-release surfaces. */
+	expect(
+		locations
+			.filter((url) => url.includes('/simulations/'))
+			.every((url) => url.includes('/0.4.0/') || url.endsWith('/0.4.0'))
+	).toBe(true);
+	expect(locations.filter((url) => url.includes('/playground/'))).toHaveLength(1);
+	expect(xml).toContain('<lastmod>');
+	expect(xml).toContain('/docs/0.2/component-reference');
+	expect(xml).toContain('/docs/0.4/component-reference');
+
+	const robots = await request.get('/robots.txt');
+	expect(await robots.text()).toContain(
+		'Sitemap: https://schemd.johnowolabiidogun.dev/sitemap.xml'
+	);
+
+	const card = await request.get('/brand/social-card.jpg');
+	expect(card.status()).toBe(200);
+	expect(card.headers()['content-type']).toContain('image/jpeg');
 });
 
 test('mobile docs expose an accessible index and compiled-example bottom sheet', async ({

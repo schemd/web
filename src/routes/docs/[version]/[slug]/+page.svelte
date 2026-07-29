@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
+	import Seo from '$lib/components/Seo.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { page } from '$app/state';
 	import Pronounce from '$lib/components/Pronounce.svelte';
@@ -133,18 +134,15 @@
 			about: { '@type': 'SoftwareApplication', name: '@schemd/core' }
 		})
 	);
-	const jsonLdMarkup = $derived(`<script type="application/ld+json">${jsonLd}</${'script'}>`);
 </script>
 
-<svelte:head>
-	<title>{data.meta.title} · schemd v{data.version} docs</title>
-	<meta name="description" content={data.meta.summary} />
-	<meta property="og:title" content={`${data.meta.title} · schemd docs`} />
-	<meta property="og:description" content={data.meta.summary} />
-	<meta property="og:type" content="article" />
-	<link rel="canonical" href={`${page.url.origin}/docs/${data.version}/${data.meta.slug}`} />
-	{@html jsonLdMarkup}
-</svelte:head>
+<Seo
+	title={`${data.meta.title} · schemd v${data.version} docs`}
+	description={data.meta.summary}
+	canonicalPath={`/docs/${data.version}/${data.meta.slug}`}
+	type="article"
+	{jsonLd}
+/>
 
 <div class="docs-shell" class:nav-collapsed={ui.docsNavCollapsed}>
 	<!-- LEFT: collapsible index tree -->

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
+	import Seo from '$lib/components/Seo.svelte';
 
 	let { data }: PageProps = $props();
 
@@ -9,19 +10,13 @@
 		name: 'schemd example gallery',
 		description: 'Compiled schematic and UML examples, each openable in the playground.'
 	});
-	const jsonLdMarkup = `<script type="application/ld+json">${jsonLd}</${'script'}>`;
 </script>
 
-<svelte:head>
-	<title>Example gallery · schemd</title>
-	<meta
-		name="description"
-		content="Every schemd documentation example, compiled to accessible SVG and openable in the playground — circuits, logic, quantum, and UML."
-	/>
-	<meta property="og:title" content="schemd — example gallery" />
-	<meta property="og:type" content="website" />
-	{@html jsonLdMarkup}
-</svelte:head>
+<Seo
+	title="Example gallery · schemd"
+	description="Every schemd documentation example compiled to accessible SVG and openable in the playground — circuits, logic, quantum, and UML."
+	{jsonLd}
+/>
 
 <article class="gallery grid-backdrop">
 	<header class="gallery-head">

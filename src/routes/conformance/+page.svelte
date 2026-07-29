@@ -7,19 +7,17 @@
 	 * fixtures proves nothing; this is the corpus a reader can open and check.
 	 */
 	import type { PageProps } from './$types';
+	import Seo from '$lib/components/Seo.svelte';
 
 	let { data }: PageProps = $props();
 
 	const clean = $derived(data.totals.diagrams > 0 && data.flagged.length === 0);
 </script>
 
-<svelte:head>
-	<title>Conformance · schemd</title>
-	<meta
-		name="description"
-		content="Every documented schemd diagram checked against the compiler's design rules: shorted rails, width and domain mismatches, contended drivers, and disconnected subcircuits."
-	/>
-</svelte:head>
+<Seo
+	title="Conformance · schemd"
+	description="Every documented schemd diagram checked against the compiler's design rules: shorted rails, width and domain mismatches, contended drivers, and disconnected subcircuits."
+/>
 
 <main class="conformance">
 	<header>

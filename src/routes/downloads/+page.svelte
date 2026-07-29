@@ -8,6 +8,7 @@
 	 * numbers step rather than tick, and the header says when it last looked.
 	 */
 	import { liveDownloads } from './downloads.remote';
+	import Seo from '$lib/components/Seo.svelte';
 	import type { DownloadDay } from '$lib/server/downloads';
 
 	const stream = liveDownloads();
@@ -103,13 +104,10 @@
 	});
 </script>
 
-<svelte:head>
-	<title>Install telemetry · schemd</title>
-	<meta
-		name="description"
-		content="Live npm download counts for @schemd/core — daily, weekly, and monthly installs, a 30-day trend, and the share carried by each published release."
-	/>
-</svelte:head>
+<Seo
+	title="Install telemetry · schemd"
+	description="Live npm download counts for @schemd/core: daily, weekly, and monthly installs, a 30-day trend, and the share carried by each published release."
+/>
 
 <article class="downloads grid-backdrop">
 	<header class="downloads-head">

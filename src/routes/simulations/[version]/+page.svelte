@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
+	import Seo from '$lib/components/Seo.svelte';
 	import { onMount } from 'svelte';
 	import { playTick } from '$lib/audio';
 	import { ui } from '$lib/ui.svelte';
@@ -65,7 +66,6 @@
 			}))
 		})
 	);
-	const jsonLdMarkup = $derived(`<script type="application/ld+json">${jsonLd}</${'script'}>`);
 
 	/* ---------- Terminal diagnostics boot sequence ---------- */
 	const BOOT_LINES = [
@@ -89,21 +89,12 @@
 	});
 </script>
 
-<svelte:head>
-	<title>Simulation Laboratory · schemd v{data.version}</title>
-	<meta
-		name="description"
-		content={`Explore ${environments.length} interactive circuit laboratories spanning digital logic, analog filters, quantum protocols, power electronics, nonlinear chaos, and phase-locked control systems.`}
-	/>
-	<meta property="og:title" content="schemd — simulation laboratory" />
-	<meta
-		property="og:description"
-		content={`${environments.length} high-fidelity engineering simulations with live physics, fault injection, and instrumentation.`}
-	/>
-	<meta property="og:type" content="website" />
-	<meta property="og:image" content="/brand/schemd-logo.svg" />
-	{@html jsonLdMarkup}
-</svelte:head>
+<Seo
+	title={`Simulation laboratory · schemd v${data.version}`}
+	description={`${environments.length} interactive circuit laboratories spanning digital logic, analog filters, quantum protocols, power electronics, nonlinear chaos, and phase-locked control — each compiled from schemd source and instrumented with fault injection.`}
+	canonicalPath={`/simulations/${data.latest}`}
+	{jsonLd}
+/>
 
 {#snippet miniIcon(id: string)}
 	<svg class="mini" viewBox="0 0 80 48" role="img" aria-hidden="true">
