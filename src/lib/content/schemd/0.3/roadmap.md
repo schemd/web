@@ -8,11 +8,11 @@
 Quarter-turn transforms, typed primitive families, polished `qgate`, semantic ports, bus-width checks, expanded UML relations, deterministic fuzzing, exact resource ceilings, and 100% core coverage are complete.
 
 ```schemd bounds="980x420" title="Cross-domain 0.3 specimen"
-source:AC "AC" at (90, 120) #blue [type=voltage-ac]
-capacitor:C "C" at (280, 120) #cyan [orientation=down]
-adder:FA "FA" at (500, 120) #amber [type=full]
-qgate:Q "R_z" at (710, 120) #purple [parameter="\theta"]
-component:SYS "system" at (870, 290) #slate [width=150 height=80]
+source:DC "DC" at (90, 130) #blue [type=voltage-dc]
+inductor:LX "L" at (280, 130) #purple [orientation=down]
+mux:MX "mux" at (520, 130) #amber [type=mux]
+hadamard:HX "H" at (730, 130) #cyan
+package:PKG "subsystem" at (860, 300) #slate [width=160 height=80]
 ```
 
 <!-- /schemd-section -->
@@ -21,12 +21,13 @@ component:SYS "system" at (870, 290) #slate [width=150 height=80]
 
 The 0.3 line documents releases 0.3.0 through the current 0.3.x patch; the newest release in the line is the deterministic fallback until npm publication confirms it. The timeline must replace the pending date and commit hash from registry/GitHub data after release. Phase 5 owns version changes, changelogs, README updates, tags, pushes, and npm publication authorization.
 
-```schemd bounds="700x300" title="Release-gate signal"
-logic:READY "1" at (100, 120) #blue [type=high]
-testpoint:GATE "release gate" at (340, 120) #amber
-load:L "lamp" at (590, 120) #emerald [type=lamp]
-READY.out -> GATE.node #blue [digital line]
-GATE.node -> L.in #emerald [digital line]
+```schemd bounds="720x300" title="Release-gate signal"
+logic:OK "1" at (100, 130) #blue [type=high]
+comparator:CMP "gate" at (350, 130) #amber
+load:BZ "sounder" at (600, 130) #emerald [type=buzzer]
+
+OK.out -> CMP.in1 #blue [digital line]
+CMP.eq -> BZ.in #emerald [digital line]
 ```
 
 Known boundaries remain deliberate: no arbitrary-angle rotation, no browser font measurement, no unbounded plug-in renderer, and no silent scalar/bus coercion.

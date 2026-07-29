@@ -2,7 +2,7 @@
 
 <!-- schemd-section: id=mode-selection; eyebrow=01 / Output; title=Pick a mode at the render boundary; example-title=Mode comparison; example-summary=The live preview recompiles one diagram in all three modes. -->
 
-Here is the reassuring part: the geometry is identical in every mode. Same nodes, same routes, same coordinates — only the styling and interaction metadata change. So you can raise or lower the mode freely, and the drawing underneath never moves.
+Here is the reassuring part: the geometry is identical in every mode. Same nodes, same routes, same coordinates — only the styling and interaction metadata change. So we can raise or lower the mode freely and the drawing underneath never moves.
 
 | Mode           | Adds                                   | Good fit                           |
 | -------------- | -------------------------------------- | ---------------------------------- |

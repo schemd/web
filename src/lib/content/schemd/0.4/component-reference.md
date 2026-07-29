@@ -3,7 +3,7 @@
 <!-- schemd-expect-page: unconnected-component, disconnected-subcircuit -->
 <!-- A reference shows each primitive in isolation; wiring every example would obscure the symbol it demonstrates. -->
 
-Every direction-sensitive family defaults to `orientation=right`. `junction` and other rotationally symmetric nodes reject the option. Aliases remain accepted for compatibility, but the port names below are the stable names emitted in full-mode metadata.
+Every direction-sensitive family defaults to `orientation=right`; a rotationally symmetric node such as `junction` rejects the option outright. Aliases are still accepted, but the names in these tables are the ones 0.4 emits — an alias is rewritten to its canonical terminal before anything downstream sees it, so these are the names a host must key on.
 
 <!-- schemd-section: id=electrical; eyebrow=01 / Electrical; title=Sources, connectivity, switching, and instruments; example-title=Typed analog signal chain -->
 
@@ -20,20 +20,22 @@ Every direction-sensitive family defaults to `orientation=right`. `junction` and
 | `meter`                 | `voltmeter`, `ammeter`                                                                                             | `in`, `out`                                                                              |
 | `load`                  | `lamp`, `motor`, `speaker`, `buzzer`                                                                               | `in`, `out`                                                                              |
 
-```schemd bounds="980x460" title="Typed analog signal chain"
-source:V1 "AC source" at (90, 140) #blue [type=voltage-ac]
-protection:F1 "fuse" at (250, 140) #amber [type=fuse]
-amplifier:A1 "instrumentation" at (470, 140) #cyan [type=instrumentation]
-meter:M1 "V" at (690, 140) #purple [type=voltmeter]
-load:L1 "speaker" at (870, 140) #emerald [type=speaker]
-power:VDD "VDD" at (470, 300) #amber [type=vdd orientation=up]
+```schemd bounds="1040x420" title="Relay-switched motor drive"
+connector:J1 "mains in" at (90, 150) #slate
+protection:CB1 "breaker" at (260, 150) #amber [type=breaker]
+switch:K1 "contactor" at (450, 150) #cyan [type=relay]
+meter:M1 "A" at (650, 150) #purple [type=ammeter]
+load:MOT "motor" at (850, 150) #emerald [type=motor]
+testpoint:TP1 "TP1" at (650, 300) #cyan
 
-V1.positive -> F1.in #blue [line]
-F1.out -> A1.positive #amber [line]
-A1.out -> M1.in #cyan [line]
-M1.out -> L1.in #purple [line]
-VDD.in -> A1.v+ #amber [ortho]
+J1.out -> CB1.in #slate [line]
+CB1.out -> K1.in #amber [line]
+K1.out -> M1.in #cyan [line]
+M1.out -> MOT.in #emerald [line marker-end=arrow]
+M1.out -> TP1.node #cyan [ortho]
 ```
+
+A relay is two circuits in one symbol: `in`/`out` carry the load, `coil1`/`coil2` carry the control that closes it. That separation is why the contactor above needs no second component to be honest about what switches it.
 
 <!-- /schemd-section -->
 
@@ -52,12 +54,14 @@ Passives share `in`/`out`; diodes expose `anode`/`cathode`. Transistor controls 
 | `ground`     | `signal`, `earth`, `chassis`; `in`                                               |
 
 ```schemd bounds="1040x430" title="Variant family specimen"
-resistor:R1 "LDR" at (100, 130) #amber [type=ldr orientation=down]
-capacitor:C1 "C_{pol}" at (280, 130) #cyan [type=polarized orientation=up]
-inductor:T1 "T" at (470, 130) #purple [type=transformer]
-diode:D1 "photo" at (660, 130) #blue [type=photodiode orientation=left]
-transistor:Q1 "IGBT" at (850, 130) #emerald [type=nigbt orientation=down]
+resistor:R1 "wiper" at (100, 150) #amber [type=potentiometer]
+capacitor:C1 "trimmer" at (290, 150) #cyan [type=variable orientation=down]
+inductor:L1 "coupled" at (480, 150) #purple [type=coupled]
+diode:D1 "triac" at (670, 150) #blue [type=triac]
+transistor:Q1 "p-JFET" at (860, 150) #emerald [type=pjfet orientation=up]
 ```
+
+Note that the variant changes the symbol, never the port contract. A potentiometer and a fixed resistor are both wired `in` to `out`, so swapping one for the other is a one-word edit rather than a rewiring.
 
 <!-- /schemd-section -->
 
@@ -79,20 +83,26 @@ Classical gates are `and`, `or`, `not`, `nand`, `nor`, `xor`, and `xnor`; they u
 | `comparator`         | —                                                                       | `in1`, `in2`, `gt`, `eq`, `lt`                                    |
 | `bus`                | `tap`, `splitter`, `joiner`                                             | `bus`, `tap`, or indexed branches; `width=2..256`                 |
 
-```schemd bounds="1020x430" title="Registered bus pipeline"
-port:DIN "D[7:0]" at (80, 150) #blue [width=8]
-bus:SPLIT "split" at (270, 260) #cyan [type=splitter width=8 outputs=2]
-register:REG "R0" at (520, 150) #purple [width=8]
-clock:CLK "CLK" at (520, 310) #amber
-port:DOUT "Q[7:0]" at (850, 150) #emerald [width=8]
-port:FLAG "D_0" at (80, 330) #cyan
+```schemd bounds="1140x520" title="Threshold comparator datapath"
+port:SAMPLE "sample" at (80, 130) #blue
+port:LIMIT "limit" at (80, 250) #amber
+comparator:CMP "sample ? limit" at (400, 190) #cyan
+junction:OVER "over" at (650, 190) #cyan
+mux:SEL "select" at (860, 190) #purple [type=mux]
+counter:CNT "overruns" at (650, 420) #emerald
+clock:CLK "CLK" at (200, 420) #amber
+port:RESULT "result" at (1050, 190) #emerald
 
-DIN.out -> REG.in #blue [digital ortho width=8]
-DIN.out -> SPLIT.bus #blue [digital ortho width=8]
-SPLIT.out1 -> FLAG.in #cyan [digital ortho]
-CLK.out -> REG.clock #amber [digital ortho]
-REG.out -> DOUT.in #emerald [digital width=8]
+SAMPLE.out -> CMP.in1 #blue [digital line]
+LIMIT.out -> CMP.in2 #amber [digital line]
+CMP.gt -> OVER.node #cyan [digital line]
+OVER.node -> SEL.select #cyan [digital ortho]
+OVER.node -> CNT.in1 #cyan [digital line]
+CLK.out -> CNT.clock #amber [digital ortho]
+SEL.out -> RESULT.in #emerald [digital line marker-end=arrow]
 ```
+
+A comparator publishes three answers — `gt`, `eq`, `lt` — rather than one boolean, so a datapath that cares about _which_ way a threshold was crossed does not need a second gate to find out.
 
 <!-- /schemd-section -->
 
@@ -113,19 +123,36 @@ Single-qubit shells are `hadamard`, `qgate`, `xgate`, `ygate`, `zgate`, `sgate`,
 
 `cnot` always owns exactly two continuous qubit rails. Use the indexed through-ports when composing a circuit; `control` and `target` address the marker locations for compatibility and interaction metadata. `initial` and `final` belong to UML state/activity diagrams—they are not quantum state boundaries. Start a quantum rail with `prepare`, and terminate it with `measure` or a system `port` when it remains unmeasured.
 
-```schemd bounds="900x400" title="Bell-state entangler"
-prepare:P0 "|0\rangle" at (80, 120) #blue
-prepare:P1 "|0\rangle" at (80, 280) #blue
-hadamard:H "H" at (260, 120) #cyan
-cnot:CX "CNOT" at (500, 200) #purple
-measure:M0 "M_0" at (760, 120) #emerald
-measure:M1 "M_1" at (760, 280) #emerald
+```schemd bounds="1000x520" title="Toffoli with classical readout"
+prepare:C0 "|1\rangle" at (80, 110) #blue
+prepare:C1 "|1\rangle" at (80, 250) #blue
+prepare:T0 "|0\rangle" at (80, 390) #blue
+toffoli:CCX "CCX" at (420, 250) #purple [controls=2 targets=1]
+measure:MT "M" at (700, 390) #cyan
+classical-bit:CB "c_0" at (880, 390) #emerald
 
-P0.out -> H.in #blue [quantum line]
-H.out -> CX.in1 #cyan [quantum line]
-P1.out -> CX.in2 #blue [quantum line]
-CX.out1 -> M0.in #purple [quantum line]
-CX.out2 -> M1.in #purple [quantum line]
+C0.out -> CCX.in1 #blue [quantum line]
+C1.out -> CCX.in2 #blue [quantum line]
+T0.out -> CCX.in3 #blue [quantum line]
+CCX.out3 -> MT.in #purple [quantum line]
+MT.classical -> CB.in #cyan [classical line marker-end=arrow]
+```
+
+The rails are indexed and continuous: `inN` enters, `outN` leaves, and the operator sits across all of them. `measure` is the only place a quantum rail becomes classical, which is why its `classical` port — not its `out` — feeds the classical bit.
+
+`cnot` is the two-track case of the same rule, and the one most often written wrongly. It owns exactly two continuous rails: the control enters at `in1` and leaves unchanged at `out1`, the target enters at `in2` and leaves at `out2`. The legacy `control` and `target` names still resolve — they address the marker positions — but a composed circuit should use the indexed through-ports, because those are the terminals the netlist and the full-mode metadata carry.
+
+```schemd bounds="900x340" title="Indexed CNOT rails"
+prepare:Q0 "|+\rangle" at (90, 110) #blue
+prepare:Q1 "|0\rangle" at (90, 250) #blue
+cnot:CX "CNOT" at (450, 180) #purple
+port:R0 "control out" at (780, 110) #emerald
+port:R1 "target out" at (780, 250) #emerald
+
+Q0.out -> CX.in1 #blue [quantum line]
+Q1.out -> CX.in2 #blue [quantum line]
+CX.out1 -> R0.in #purple [quantum line]
+CX.out2 -> R1.in #purple [quantum line marker-end=arrow]
 ```
 
 <!-- /schemd-section -->
@@ -142,15 +169,17 @@ Sized rectangular nodes accept bounded `width` and `height`. Class-like nodes ad
 
 Relations are `association`, `dependency`, `generalization`, `realization`, `aggregation`, `composition`, `message`, `synchronous`, `asynchronous`, `return`, `control-flow`, `object-flow`, `assembly`, `delegation`, `transition`, `include`, and `extend`.
 
-```schemd bounds="980x500" title="Deployment and activity model"
-device:EDGE "Edge device" at (170, 150) #blue [width=180 height=100]
-artifact:FW "firmware.bin" at (480, 150) #amber [width=170 height=90]
-node:CLOUD "Cloud node" at (790, 150) #purple [width=180 height=100]
-action:DEPLOY "Deploy" at (480, 350) #cyan [width=150 height=70]
+```schemd bounds="1000x540" title="Firmware rollout interaction"
+lifeline:FLEET "Fleet service" at (220, 270) #blue [width=170 height=400]
+lifeline:DEVICE "Edge device" at (620, 270) #purple [width=170 height=400]
+artifact:IMG "firmware.bin" at (880, 110) #amber [width=170 height=80]
 
-EDGE.right -> FW.left #blue [assembly]
-FW.right -> CLOUD.left #amber [dependency]
-DEPLOY.top -> FW.bottom #cyan [control-flow]
+FLEET.right90 -> DEVICE.left90 #blue [line synchronous label="offer(v0.4.0)"]
+DEVICE.left180 -> FLEET.right180 #purple [line return dashed label="accepted"]
+FLEET.right270 -> DEVICE.left270 #blue [line asynchronous label="stream image"]
+IMG.bottom -> DEVICE.top #amber [ortho dependency label="manifest"]
 ```
+
+A lifeline exposes `leftNN` and `rightNN`, placing a port exactly `NN` units below its top edge — which is what lets three messages sit at three exact heights without a layout engine deciding for us.
 
 <!-- /schemd-section -->

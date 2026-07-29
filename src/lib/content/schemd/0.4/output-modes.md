@@ -11,7 +11,7 @@
 | `embedded-css` | isolated theme and state classes                     | responsive themed documents                    |
 | `full`         | node, port, wire, source-line, and topology datasets | playground mapping and simulations             |
 
-All modes use the same parsed document, layout, routes, vectors, and viewBox. Raw SVG in the playground is the exact string used by Render View—not a reconstructed DOM snapshot.
+Here is the reassuring part: every mode shares one parsed document, one layout, one set of routes, one viewBox. Only the styling and metadata differ, so raising or lowering the mode never moves the drawing underneath. The raw SVG in the playground is the exact string Render View displays — not a reconstructed DOM snapshot.
 
 With wire hooks enabled, every signal wire exposes its parser-resolved topology as `data-net-id`: named nets keep their author name and unnamed nets use deterministic `$N` identities. The compilation source map exposes the same value as `SchematicWireSource.netId`; relation-only UML connectors omit it.
 
@@ -29,7 +29,7 @@ SW.out -> M.in #emerald [line]
 
 <!-- schemd-section: id=optimization; eyebrow=02 / Bytes; title=Reuse canonical symbols; example-title=Repeated passives -->
 
-Repeated identical components reference one `<symbol>` definition. Orientation adds only an instance rotation; unused families add zero bytes to an individual generated diagram.
+Identical components reference a single `<symbol>` definition, and orientation costs only an instance rotation on top of it. A family we never use adds exactly zero bytes to the diagram, which is why a large drawing of few distinct parts stays small.
 
 ```schemd bounds="820x300" title="Repeated passives"
 resistor:R1 "R" at (130, 120) #amber

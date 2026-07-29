@@ -5,11 +5,15 @@
 
 <!-- schemd-section: id=budgets; eyebrow=01 / Compiler; title=Read scaling and size as separate budgets; example-title=Bounded rotated route -->
 
-Version 0.4 has no default component or connection count. That is a compiler capability, not
-permission for a public endpoint to accept arbitrary work. Set `components`, `connections`,
-`sourceCharacters`, `wireCrossings`, and `svgOutputBytes` through the per-compilation `limits`
-option whenever the source is not trusted. A host-level wall-clock deadline is still required:
-output bytes cannot bound a small routing problem with pathological geometry.
+Version 0.4 has no default component or connection count. Note that this is a compiler capability,
+not permission for a public endpoint to accept arbitrary work — the two are easy to confuse and
+expensive to confuse. Whenever the source is not ours, set `components`, `connections`,
+`sourceCharacters`, `wireCrossings`, and `svgOutputBytes` through the per-compilation
+[`limits`](/docs/0.4/limits) option.
+
+A wall-clock deadline is still required on top of that, because every one of those fields bounds a
+_size_ and none of them bounds _time_. A small document with pathological geometry can be expensive
+to route, and no count of output bytes will catch it.
 
 ```schemd bounds="800x360" title="Bounded rotated route"
 port:A "A" at (70, 100) #blue
@@ -63,7 +67,7 @@ putting the compiler on documentation, catalogue, or simulation critical paths. 
 budget verifies both facts from Vite’s manifest.
 
 Performance work is not finished when one benchmark turns green. Re-run `bun run benchmark` on the
-target hardware, inspect p95/p99 latency under concurrent load, and size the serialized response—not
-only parser time—before raising any public-host budget.
+target hardware, read p95 and p99 under concurrent load rather than a warm median, and measure the
+serialized response — not only parser time — before raising any public-host budget.
 
 <!-- /schemd-section -->

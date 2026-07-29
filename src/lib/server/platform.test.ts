@@ -19,6 +19,7 @@ import {
 	_createRegistryStore,
 	DOCUMENTATION_VERSIONS,
 	_buildRegistry,
+	_seedReleases,
 	packageManifestVersion,
 	resolveVersion,
 	resolveReleaseVersion,
@@ -96,6 +97,26 @@ describe('versioned registry and documentation', () => {
 		expect(resolveVersion(registry, 'latest')).toBe(WEBSITE_CORE_VERSION);
 		expect(resolveVersion(registry, '0.2.1')).toBe('0.2.1');
 		expect(resolveVersion(registry, '9.9.9')).toBeUndefined();
+	});
+
+	test('seeds the generated snapshot as published and a local build as unconfirmed', () => {
+		/* The snapshot records what npm reported when it was generated, so its
+		 * entries seed as published; an engine it never saw is a local build. */
+		const snapshot = [
+			{ version: '0.3.8', publishedAt: '2026-07-26T04:14:29.344Z', unpackedSize: 339_502 },
+			{ version: '0.2.1', publishedAt: '2026-07-17T00:00:00.000Z' }
+		];
+		expect(_seedReleases(snapshot, '0.3.8').map((r) => [r.version, r.released])).toEqual([
+			['0.3.8', true],
+			['0.2.1', true]
+		]);
+		const withLocalBuild = _seedReleases(snapshot, '0.4.0');
+		expect(withLocalBuild.map((r) => [r.version, r.released])).toEqual([
+			['0.4.0', false],
+			['0.3.8', true],
+			['0.2.1', true]
+		]);
+		expect(withLocalBuild[1]).toMatchObject({ unpackedSize: 339_502 });
 	});
 
 	test('takes npm latest from the dist-tag rather than an unpublished local candidate', () => {
@@ -207,7 +228,7 @@ describe('versioned registry and documentation', () => {
 		);
 	});
 
-	test('pins the complete 0.4 corpus, all 31 compiled fences, and every internal link', () => {
+	test('pins the complete 0.4 corpus, all 33 compiled fences, and every internal link', () => {
 		const line = '0.4';
 		const manifest = docManifest(line);
 		const sources = versionedRawSources(line);
@@ -220,7 +241,7 @@ describe('versioned registry and documentation', () => {
 			expect(doc, `${line}/${page.slug}`).toBeDefined();
 			fenceCount += doc?.examples.length ?? 0;
 		}
-		expect(fenceCount).toBe(31);
+		expect(fenceCount).toBe(33);
 
 		const searchableLinks = new Set(docSearchIndex(line).map(({ href }) => href));
 		const routeLinks = new Set(['/playground/0.4.0', '/changelog']);

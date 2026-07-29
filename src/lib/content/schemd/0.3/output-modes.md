@@ -15,12 +15,13 @@ All modes use the same parsed document, layout, routes, vectors, and viewBox. Ra
 
 With wire hooks enabled, every signal wire exposes its parser-resolved topology as `data-net-id`: named nets keep their author name and unnamed nets use deterministic `$N` identities. The compilation source map exposes the same value as `SchematicWireSource.netId`; relation-only UML connectors omit it.
 
-```schemd bounds="760x320" title="Mode-parity specimen"
-source:S "pulse" at (90, 130) #blue [type=voltage-pulse]
-switch:SW "SPST" at (290, 130) #amber [type=spst]
-load:M "motor" at (520, 130) #emerald [type=motor]
-S.positive -> SW.in #blue [line]
-SW.out -> M.in #emerald [line]
+```schemd bounds="800x340" title="Mode-parity specimen"
+source:S "24 V" at (90, 150) #blue [type=voltage-dc]
+protection:CB "breaker" at (320, 150) #amber [type=breaker]
+load:FAN "fan" at (600, 150) #emerald [type=motor]
+
+S.positive -> CB.in #blue [line]
+CB.out -> FAN.in #emerald [line marker-end=arrow]
 ```
 
 `full` mode keeps diagram-local IDs and provides accessible port targets. It never injects scripts, external fonts, raster assets, data URLs, or `foreignObject`.
@@ -29,12 +30,12 @@ SW.out -> M.in #emerald [line]
 
 <!-- schemd-section: id=optimization; eyebrow=02 / Bytes; title=Reuse canonical symbols; example-title=Repeated passives -->
 
-Repeated identical components reference one `<symbol>` definition. Orientation adds only an instance rotation; unused families add zero bytes to an individual generated diagram.
+Identical components reference one `<symbol>` definition, and orientation costs only an instance rotation on top of it. A family we never use adds exactly zero bytes to the diagram — the three capacitors below cost one symbol and three transforms.
 
-```schemd bounds="820x300" title="Repeated passives"
-resistor:R1 "R" at (130, 120) #amber
-resistor:R2 "R" at (350, 120) #amber [orientation=down]
-resistor:R3 "R" at (580, 120) #amber [orientation=left]
+```schemd bounds="860x320" title="Repeated passives"
+capacitor:C1 "C" at (140, 130) #cyan
+capacitor:C2 "C" at (380, 130) #cyan [orientation=down]
+capacitor:C3 "C" at (620, 130) #cyan [orientation=up]
 ```
 
 <!-- /schemd-section -->

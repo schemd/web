@@ -29,10 +29,16 @@ package-boundary tests, two gzip budgets, and latency/scaling ceilings. Those ga
 properties they assert. They do not prove a circuit is electrically safe, temporally correct,
 standards-certified, or manufacturable.
 
-Until npm’s `latest` tag names `0.4.0`, the website must use a verified local package build during
-development. Publication order is non-negotiable: publish `@schemd/core@0.4.0`, install it into the
-web project from the registry, rerun the complete web gate, and only then deploy the website. A
-linked `dist/` proves local integration; it does not prove the published tarball or export map works.
+Publication order is non-negotiable, and it is now automated rather than remembered. A tag push
+publishes `@schemd/core` to npm and cuts the GitHub release from that version's `CHANGELOG.md`
+section, so the prose is written once. A scheduled job on the website then adopts the release —
+dependency and lockfile together, release snapshot regenerated from npm's own packument — runs the
+complete web gate against it, and opens a pull request. Nothing merges itself, because a compiler
+release is allowed to change rendered geometry and that is the part CI cannot judge.
+
+The ordering matters for a reason worth stating plainly: a linked `dist/` proves local integration,
+never that the published tarball and its export map work. Only an install from the registry does
+that, which is why the sync job installs rather than links.
 
 ```schemd bounds="700x300" title="Release-gate signal"
 logic:READY "1" at (100, 120) #blue [type=high]

@@ -2,7 +2,7 @@
 
 <!-- schemd-section: id=intrinsic-sizing; eyebrow=01 / Layout; title=Reserve the canvas before SVG arrives; example-title=Responsive vertical filter -->
 
-The compiler emits explicit `width`, `height`, and `viewBox`. Put the result in a host with the same `aspect-ratio`; the browser can reserve space during SSR and avoid cumulative layout shift.
+The compiler emits explicit `width`, `height`, and `viewBox`, so the page can reserve the exact space the vector will occupy before it arrives. Give the host the same `aspect-ratio` and cumulative layout shift goes to zero — the diagram is bounded before it is parsed, and this is where that pays.
 
 ```css
 .schemd-frame {
@@ -28,13 +28,13 @@ J.node -> C.in #cyan [ortho]
 J.node -> OUT.in #emerald [line]
 ```
 
-Component labels are emitted outside the rotated vector group. Text therefore stays upright at every viewport size, while full-mode port hotspots remain aligned with the transformed terminals.
+Labels are emitted outside the rotated vector group, so text stays upright at every viewport size while full-mode port hotspots stay aligned with the terminals they belong to. Scaling changes how large the drawing is, never what it says.
 
 <!-- /schemd-section -->
 
 <!-- schemd-section: id=containment; eyebrow=02 / Performance; title=Contain expensive host repaint; example-title=Compact status circuit -->
 
-Use `content-visibility: auto` for long galleries and `contain-intrinsic-size` as a fallback. Do not animate SVG `d` strings for panel motion; transform or fade the containing panel instead.
+Reach for `content-visibility: auto` on a long gallery, with `contain-intrinsic-size` as the placeholder. And do not animate an SVG `d` string to move a panel — transform or fade the container instead. Path animation forces geometry work on every frame for motion the geometry was never part of.
 
 ```schemd bounds="700x280" title="Compact status circuit"
 logic:HI "1" at (90, 120) #blue [type=high]

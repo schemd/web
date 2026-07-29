@@ -167,13 +167,24 @@ test('release timeline and sitemap expose current and historical platform contex
 }) => {
 	await page.goto('/changelog');
 	await expect(page.getByRole('heading', { name: /v0\.4\.0/ })).toBeVisible();
-	await expect(page.getByText(/publication unconfirmed/i).first()).toBeVisible();
 	await expect(page.locator('.stat').filter({ hasText: 'installed engine' })).toContainText(
 		'v0.4.0'
 	);
+	/*
+	 * The offline seed is generated from npm's own packument now, so it carries
+	 * the tarball size npm reported rather than a hand-typed one. `pending` is
+	 * still the honest answer for a release the snapshot has never seen — that
+	 * rule is pinned as a unit test on `_seedReleases`.
+	 */
 	await expect(page.locator('.stat').filter({ hasText: 'latest install' })).toContainText(
-		'pending'
+		/\d[\d.,]* (?:KiB|MiB)|pending/
 	);
+	/* Seeded releases carry the compiler's own changelog prose, so the offline
+	 * timeline is a readable history rather than a list of version numbers. */
+	const noted = await page
+		.locator('.milestone')
+		.evaluateAll((rows) => rows.filter((row) => (row.textContent ?? '').length > 400).length);
+	expect(noted).toBeGreaterThanOrEqual(10);
 
 	const sitemap = await request.get('/sitemap.xml');
 	expect(sitemap.status()).toBe(200);

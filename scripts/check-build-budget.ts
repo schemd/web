@@ -36,9 +36,13 @@ const MAX_COMPILER_JS_GZIP = 36 * 1024;
  * `main` since that landed. These ceilings are set just above the measured
  * cost of the current catalogue, so the next unaccounted regression still
  * fails here rather than reaching a visitor.
+ *
+ * Raised again for the live install-telemetry page: `query.live` ships a
+ * streaming client runtime that static pages do not, and it is loaded by the
+ * route that needs it.
  */
-const MAX_DOCUMENT_JS_GZIP = 154 * 1024;
-const MAX_ALL_JS_GZIP = 190 * 1024;
+const MAX_DOCUMENT_JS_GZIP = 162 * 1024;
+const MAX_ALL_JS_GZIP = 198 * 1024;
 /*
  * Prediction, evidence validation, progression, and the selected lab's async
  * loader are SSR-critical shell code. Keep the hard raw ceiling tight enough

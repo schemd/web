@@ -2,7 +2,7 @@
 
 <!-- schemd-section: id=passives; eyebrow=01 / Circuit; title=Passive components; example-title=RLC signal path; example-summary=The three passive symbols use the same left-to-right port contract. -->
 
-The three passives — `resistor`, `capacitor`, and `inductor` — are fixed horizontal symbols. Whatever distinguishes one from the next (a value, a tolerance, a role) lives in the quoted label, not in the geometry.
+The three passives — `resistor`, `capacitor`, `inductor` — are fixed horizontal symbols in 0.2. Whatever distinguishes one from the next (a value, a tolerance, a role) lives in the quoted label, never in the geometry.
 
 | Kind        | Left ports        | Right ports         | Options |
 | ----------- | ----------------- | ------------------- | ------- |
@@ -27,7 +27,7 @@ C1.out -> OUT.in #emerald [line marker-end=arrow]
 
 <!-- schemd-section: id=semiconductors; eyebrow=02 / Circuit; title=Diodes and transistors; example-title=NMOS protected switch; example-summary=A gate-controlled transistor feeds a protected output. -->
 
-A `diode` keeps its anode on the left and cathode on the right; pick the flavor with `type=standard|schottky|zener|led`. A `transistor` takes `type=npn|pnp|nmos|pmos`, and — usefully — the BJT and FET names point at the same physical terminals, so you may wire it in whichever vocabulary you think in.
+A `diode` keeps its anode left and cathode right; pick the flavour with `type=standard|schottky|zener|led`. A `transistor` takes `type=npn|pnp|nmos|pmos`, and the BJT and FET names address the same physical terminals — so we may wire it in whichever vocabulary we think in.
 
 | Node         | Ports                                                                          |
 | ------------ | ------------------------------------------------------------------------------ |
@@ -51,7 +51,7 @@ Q1.source -> GND.in #slate [ortho]
 
 <!-- schemd-section: id=boundaries; eyebrow=03 / Circuit; title=Ports and grounds; example-title=Referenced input; example-summary=A boundary port feeds a resistor tied to signal ground. -->
 
-A `port` marks the edge of a system and exposes exactly `in` and `out` — nothing more, because an edge should not pretend to be a component. A `ground` carries a single `in` port above the symbol; choose `style=signal`, `earth`, or `chassis`, and `signal` is what you get when you say nothing.
+A `port` marks the edge of a system and exposes exactly `in` and `out` — nothing more, because an edge should not pretend to be a component. A `ground` carries one `in` port above the symbol; `style` takes `signal`, `earth`, or `chassis`, and `signal` is the default.
 
 ```schemd bounds="720x320" title="Referenced input"
 port:VIN "Input" at (70, 100) #blue
@@ -66,7 +66,7 @@ R1.out -> GND.in #slate [ortho]
 
 <!-- schemd-section: id=logic-gates; eyebrow=04 / Logic; title=Classical logic gates; example-title=Parity and inversion; example-summary=Indexed pins keep configurable fan-in and fan-out explicit. -->
 
-The built-in gates are the six you would expect: `and`, `nand`, `or`, `nor`, `xor`, and `not`. Scale the fan-in and fan-out explicitly with `inputs=1..32` and `outputs=1..32`, choose a `standard=ieee|iec` body, and remember that `not` always has exactly one input. Ports are `in1..inN` and `out1..outN`, with `in` and `out` aliasing the first pins for the common case.
+The built-in gates are the six we would expect: `and`, `nand`, `or`, `nor`, `xor`, `not`. Scale fan-in and fan-out explicitly with `inputs=1..32` and `outputs=1..32`, choose `standard=ieee|iec`, and note that `not` always takes exactly one input. Ports are `in1..inN` and `out1..outN`; `in` and `out` alias the first pins for the common case.
 
 ```schemd bounds="860x340" title="Parity and inversion"
 port:A "A" at (60, 90) #blue
@@ -85,7 +85,7 @@ N1.out -> Y.in #emerald [line marker-end=arrow]
 
 <!-- schemd-section: id=quantum-gates; eyebrow=05 / Quantum; title=Quantum gates; example-title=Small quantum pipeline; example-summary=Native and custom operators share a left-to-right register path. -->
 
-`hadamard` exposes `in` and `out`; `cnot` adds `control` and `target`; and `qgate` is the escape hatch — a custom operator block that accepts quoted `parameter`, `matrix`, and `phase` rows. As everywhere in schemd, every visible string supports micro-math, so an operator can wear its own definition.
+`hadamard` exposes `in` and `out`, `cnot` adds `control` and `target`, and `qgate` is the escape hatch — a custom operator block taking quoted `parameter`, `matrix`, and `phase` rows. Every visible string supports micro-math, so an operator can wear its own definition.
 
 ```schemd bounds="940x400" title="Small quantum pipeline"
 port:QIN "|0〉" at (55, 200) #slate
@@ -108,7 +108,7 @@ CX.target -> TARGET.in #amber [line]
 
 <!-- schemd-section: id=integrated-circuits; eyebrow=06 / Blocks; title=Integrated circuits; example-title=Configurable controller; example-summary=Named pin lists create an addressable multi-sided package. -->
 
-`ic` takes quoted, comma-separated `left`, `right`, `top`, and `bottom` pin lists. Each name becomes a case-sensitive port, and the body grows to fit the longest side, so you never hand-size the box. Wire with the real pin name — `U1.DATA` — and let `in`/`out` fall back to the first suitable input and output sides when you genuinely do not care which.
+`ic` takes quoted, comma-separated `left`, `right`, `top`, and `bottom` pin lists. Each name becomes a case-sensitive port and the body grows to fit the longest side, so we never hand-size the box. Wire with the real pin name — `U1.DATA` — and let `in`/`out` fall back to the first suitable sides when we genuinely do not care.
 
 ```schemd bounds="960x480" title="Configurable controller"
 port:INPUT "Sensor bus" at (60, 230) #blue
@@ -127,7 +127,7 @@ U1.GND -> GND.in #slate [ortho]
 
 <!-- schemd-section: id=uml-structure; eyebrow=07 / UML; title=Classes, packages, and notes; example-title=Order model; example-summary=Auto-sized class compartments connect to package and note nodes. -->
 
-`class` accepts semicolon-separated `attributes` and `operations`, plus an optional `stereotype` and `width`. Its height grows with the rows and its width grows to fit the widest visible string — the compartment is always exactly as large as its contents demand, never a pixel of guesswork. `package` and `note` take `width` and `height`; they are ordinary nodes, _not_ automatic layout containers, and that distinction is worth keeping straight. Every UML node exposes `left`, `right`, `top`, `bottom`, `in`, and `out`.
+`class` accepts semicolon-separated `attributes` and `operations`, plus optional `stereotype` and `width`. Height grows with the rows, width grows to fit the widest visible string — the compartment is exactly as large as its contents demand, never a pixel of guesswork. `package` and `note` take `width` and `height`, and note that they are ordinary nodes, _not_ automatic layout containers. Every UML node exposes `left`, `right`, `top`, `bottom`, `in`, and `out`.
 
 ```schemd bounds="960x480" title="Order model"
 package:Domain "Domain" at (120, 70) #slate [width=160]
@@ -144,7 +144,7 @@ Rule.top -> Order.bottom #amber [ortho dependency label="documents"]
 
 <!-- schemd-section: id=uml-behavior; eyebrow=08 / UML; title=Actors, use cases, states, and pseudostates; example-title=Checkout flow; example-summary=Use-case and state nodes share the same relationship grammar. -->
 
-`actor`, `initial`, and `final` need no options at all. `usecase` accepts `width` and `height`; `state` accepts semicolon-separated `details` and an optional `width`. For the connectors, reach for `association` to show participation, `include` and `extend` between use cases, and `transition` for state flow — the same relationship grammar you met in the class diagram, doing behavioral work.
+`actor`, `initial`, and `final` take no options. `usecase` accepts `width` and `height`; `state` accepts semicolon-separated `details` and an optional `width`. For connectors, reach for `association` to show participation, `include` and `extend` between use cases, `transition` for state flow — the same relationship grammar as the class diagram, doing behavioural work.
 
 ```schemd bounds="920x440" title="Checkout flow"
 actor:Customer "Customer" at (80, 145) #blue
@@ -164,7 +164,7 @@ Start.right -> Done.left #emerald [line transition label="complete"]
 
 <!-- schemd-section: id=uml-sequence; eyebrow=09 / UML; title=Sequence lifelines and messages; example-title=Request and response; example-summary=Offsets place messages at exact heights along two lifelines. -->
 
-`lifeline` accepts `width` and `height`, and — the detail that makes sequence diagrams actually work — alongside the usual side ports, `leftNN` and `rightNN` place a port exactly `NN` units below the top of the lifeline. Use `message` for an open arrow, add `dashed` for a reply, and `label="..."` for the message text itself.
+`lifeline` accepts `width` and `height`, and — the detail that makes sequence diagrams work — `leftNN` and `rightNN` place a port exactly `NN` units below the lifeline's top edge. Use `message` for an open arrow, add `dashed` for a reply, and `label="..."` for the text.
 
 ```schemd bounds="800x440" title="Request and response"
 lifeline:Client "Client" at (200, 220) #blue [width=140 height=320]

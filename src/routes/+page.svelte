@@ -30,10 +30,21 @@
 		};
 	});
 
+	/**
+	 * Advance the hero one domain at a time.
+	 *
+	 * `selected` is read here deliberately. An effect only re-runs when a value
+	 * it *read* changes, and writing one inside an async callback is not a read:
+	 * the rotation used to schedule exactly one timer, hand over from analog to
+	 * digital, and stop there. Depending on the index it advances re-arms the
+	 * timer after every step.
+	 */
 	$effect(() => {
-		if (paused || reducedMotion || !pageVisible || data.heroes.length < 2) return;
+		const count = data.heroes.length;
+		const current = selected;
+		if (paused || reducedMotion || !pageVisible || count < 2) return;
 		const timer = setTimeout(() => {
-			selected = (selected + 1) % data.heroes.length;
+			selected = (current + 1) % count;
 		}, 4600);
 		return () => clearTimeout(timer);
 	});
@@ -333,6 +344,7 @@
 		<span class="microlabel">{data.releaseCount} releases tracked · registry-synced</span>
 		<span>
 			<a href="/changelog">Changelog</a> ·
+			<a href="/downloads">Downloads</a> ·
 			<a href="/examples">Examples</a> ·
 			<a href="/coverage">Coverage</a> ·
 			<a href="https://github.com/schemd/core" rel="noopener" target="_blank">GitHub</a> ·

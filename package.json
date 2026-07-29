@@ -48,7 +48,8 @@
 		"test:a11y": "playwright test e2e/accessibility.e2e.ts",
 		"test:budget": "bun run build && bun scripts/check-build-budget.ts",
 		"test": "bun run check && bun run test:unit && bun run test:e2e",
-		"release:check": "bun run ci && bun run format:check && bun run lint && bun run check && bun run test:unit && bun run test:e2e && bun run test:budget"
+		"release:check": "bun run ci && bun run format:check && bun run lint && bun run check && bun run test:unit && bun run test:docs && bun run test:e2e && bun run test:budget",
+		"test:docs": "bun scripts/check-doc-fences.ts"
 	},
 	"type": "module",
 	"dependencies": {

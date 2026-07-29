@@ -5,7 +5,7 @@
 
 <!-- schemd-section: id=scripts; eyebrow=01 / Text; title=Compose scripts without baseline drift; example-title=Rotated components with upright math -->
 
-Labels support grouped `_` and `^` scripts plus bounded commands such as `\Omega`, `\pi`, `\theta`, and `\infty`. Every generated `tspan` carries an explicit baseline correction; component rotation never rotates the outer label.
+There is no TeX runtime here, and the labels still read like engineering. Grouped `_` and `^` scripts nest, and bounded commands such as `\Omega`, `\pi`, `\theta`, `\mu`, and `\infty` resolve to glyphs. Each generated `tspan` carries an explicit baseline correction, so text following a nested script lands back on the parent baseline rather than drifting. Rotation stops at the vector: the label sits outside the rotated group and stays upright.
 
 ```schemd bounds="900x340" title="Rotated components with upright math"
 source:V1 "V_{in}^{AC}" at (100, 150) #blue [type=voltage-ac]
@@ -14,13 +14,13 @@ qgate:Q1 "R_z" at (570, 150) #purple [parameter="\theta/2" phase="e^{i\phi}"]
 port:O1 "f_c = \infty" at (800, 150) #emerald
 ```
 
-The width estimator is deterministic and conservative. Long labels enlarge component bounds before placement validation rather than relying on SSR-incompatible `getBBox()`.
+Width is estimated, never measured — no font is loaded at any point. The estimator is deterministic and deliberately conservative, and a long label grows the component's bounds _before_ placement is validated. That ordering is what lets the whole thing work without an SSR-incompatible `getBBox()`.
 
 <!-- /schemd-section -->
 
 <!-- schemd-section: id=quantum; eyebrow=02 / Quantum; title=Use polished custom gate rows; example-title=Parameterized quantum register -->
 
-Plain `qgate` shares the same shell geometry, stub lengths, corner radius, focus treatment, and ports as `hadamard`. Detail rows increase the body deterministically.
+`qgate` is the escape hatch, and it shares `hadamard`'s exact shell — same stub lengths, corner radius, focus treatment, and ports. Its `parameter`, `phase`, and `matrix` rows grow the body deterministically, so a custom operator can wear its own definition without becoming a different kind of object.
 
 ```schemd bounds="860x320" title="Parameterized quantum register"
 prepare:P "|0\rangle" at (80, 130) #blue

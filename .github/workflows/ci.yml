@@ -51,6 +51,13 @@ jobs:
       - run: bun run lint
       - run: bun run check
       - run: bun run test:unit
+
+      # Every `schemd` fence in the documentation corpus must compile. The docs
+      # pipeline compiles fences per request, so a broken example is a 500 on
+      # one page rather than a failed build — this is what turns it back into a
+      # build failure.
+      - run: bun run test:docs
+
       - run: bun run build
       - run: bun scripts/check-build-budget.ts
 

@@ -16,16 +16,17 @@ The compiler emits explicit `width`, `height`, and `viewBox`. Put the result in 
 }
 ```
 
-```schemd bounds="840x360" title="Responsive vertical filter"
-source:IN "AC" at (80, 120) #blue [type=voltage-ac]
-resistor:R "R" at (280, 120) #amber
-junction:J "node" at (460, 120) #cyan
-capacitor:C "C" at (460, 240) #cyan [orientation=down]
-port:OUT "out" at (720, 120) #emerald
-IN.positive -> R.in #blue [line]
-R.out -> J.node #amber [line]
-J.node -> C.in #cyan [ortho]
-J.node -> OUT.in #emerald [line]
+```schemd bounds="880x400" title="Responsive LR network"
+source:IN "AC" at (90, 130) #blue [type=voltage-ac]
+inductor:L "L" at (300, 130) #purple
+junction:J "tap" at (500, 130) #cyan
+resistor:R "R" at (500, 260) #amber [orientation=down]
+port:OUT "out" at (760, 130) #emerald
+
+IN.positive -> L.in #blue [line]
+L.out -> J.node #purple [line]
+J.node -> R.in #amber [ortho]
+J.node -> OUT.in #emerald [line marker-end=arrow]
 ```
 
 Component labels are emitted outside the rotated vector group. Text therefore stays upright at every viewport size, while full-mode port hotspots remain aligned with the transformed terminals.
@@ -36,12 +37,13 @@ Component labels are emitted outside the rotated vector group. Text therefore st
 
 Use `content-visibility: auto` for long galleries and `contain-intrinsic-size` as a fallback. Do not animate SVG `d` strings for panel motion; transform or fade the containing panel instead.
 
-```schemd bounds="700x280" title="Compact status circuit"
-logic:HI "1" at (90, 120) #blue [type=high]
-buffer:B "buffer" at (330, 120) #cyan [type=schmitt]
-load:L "lamp" at (590, 120) #emerald [type=lamp]
-HI.out -> B.in1 #blue [digital line]
-B.out1 -> L.in #emerald [line]
+```schemd bounds="740x300" title="Compact status circuit"
+logic:UNK "X" at (100, 130) #slate [type=unknown]
+buffer:B "inverting" at (350, 130) #cyan [type=schmitt-inverter]
+load:SPK "speaker" at (620, 130) #emerald [type=speaker]
+
+UNK.out -> B.in1 #slate [digital line]
+B.out1 -> SPK.in #emerald [line marker-end=arrow]
 ```
 
 <!-- /schemd-section -->

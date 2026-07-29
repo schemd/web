@@ -5,29 +5,47 @@
 
 <!-- schemd-section: id=declarations; eyebrow=01 / Nodes; title=Declare one bounded component per line; example-title=Four exact orientations -->
 
-The declaration grammar is `kind:ID "label" at (x, y) #color [options]`. Identifiers are stable source-map keys. Unknown, duplicated, or kind-incompatible options fail with a one-based line diagnostic.
+One declaration, one line:
 
-`orientation` accepts only `right`, `down`, `left`, or `up`. It is rejected for rotationally meaningless nodes such as `junction`. Logical port names never rotate.
+```text
+kind:ID "label" at (x, y) #color [options]
+```
 
-```schemd bounds="860x360" title="Four exact orientations"
-resistor:R0 "right" at (130, 150) #amber [orientation=right]
-resistor:R1 "down" at (330, 150) #cyan [orientation=down]
-resistor:R2 "left" at (530, 150) #purple [orientation=left]
-resistor:R3 "up" at (730, 150) #emerald [orientation=up]
+Identifiers are case-sensitive and become stable source-map keys. An unknown, duplicated, or kind-incompatible option fails with a one-based line diagnostic.
+
+`orientation` takes exactly `right`, `down`, `left`, or `up`, and is rejected for a node no rotation can mean — a `junction` has no facing. Note that the option turns geometry, never vocabulary: the shunt resistor below is vertical, and it is still wired `in` to `out`.
+
+```schemd bounds="900x400" title="Rotated passives in place"
+resistor:RS "shunt" at (150, 200) #amber [orientation=up]
+capacitor:CS "bypass" at (330, 200) #cyan [orientation=down]
+inductor:LS "choke" at (510, 200) #purple [orientation=left]
+diode:DS "return" at (690, 200) #emerald [orientation=up]
 ```
 
 <!-- /schemd-section -->
 
 <!-- schemd-section: id=connections; eyebrow=02 / Wires; title=Connect semantic ports and signal domains; example-title=Typed digital bus -->
 
-Connections use `A.port -> B.port #color [options]`. Routes are `line`, `bezier`, or `ortho`. Signal domains are `electrical`, `digital`, `quantum`, and `classical`; width mismatches are rejected before layout.
+A connection is two terminals and an arrow:
 
-```schemd bounds="820x330" title="Typed digital bus"
-port:INPUT "D[7:0]" at (80, 140) #blue [width=8]
-register:REG "R0" at (330, 140) #cyan [width=8]
-port:OUTPUT "Q[7:0]" at (650, 140) #emerald [width=8]
-INPUT.out -> REG.in #blue [digital width=8]
-REG.out -> OUTPUT.in #emerald [digital width=8]
+```text
+A.port -> B.port #color [options]
+```
+
+Routes are `line`, `bezier`, or `ortho`. Signal domains are `electrical`, `digital`, `quantum`, and `classical`, and a width mismatch is rejected before layout rather than drawn as a plausible lie — a 4-bit bus cannot quietly land on a 1-bit port.
+
+```schemd bounds="900x460" title="Clocked datapath"
+clock:REF "f_{ref}" at (90, 150) #amber
+port:DIN "D[3:0]" at (90, 320) #blue [width=4]
+flipflop:FF "D" at (360, 150) #cyan [type=d]
+register:PIPE "pipe" at (360, 320) #purple [width=4]
+port:Q "Q" at (700, 150) #emerald
+port:DOUT "Q[3:0]" at (700, 320) #emerald [width=4]
+
+REF.out -> FF.clock #amber [digital line]
+DIN.out -> PIPE.in #blue [digital line width=4]
+FF.q -> Q.in #cyan [digital line]
+PIPE.out -> DOUT.in #purple [digital line width=4]
 ```
 
 Connection options also include `net`, `marker-start`, `marker-end`, `label`, UML relations, and `dashed`. Full mode emits source-line metadata for nodes, ports, and wires.
@@ -40,13 +58,15 @@ Geometry is contract-checked at compile time. Physical component bodies may touc
 
 <!-- schemd-section: id=options; eyebrow=03 / Validation; title=Use family options, never untyped attributes; example-title=Variant-driven components -->
 
-Common family options are `type`, `orientation`, `inputs`, `outputs`, `width`, `controls`, `targets`, `wires`, `parameter`, `phase`, `matrix`, `operator`, and `control`. Availability is defined per kind in the [component API](/docs/0.3/component-reference).
+Options are validated by name against the kind we named: `type`, `orientation`, `inputs`, `outputs`, `width`, `controls`, `targets`, `wires`, `parameter`, `phase`, `matrix`, `operator`, and `control`, with availability defined per kind in the [component API](/docs/0.3/component-reference). There is no untyped attribute bag, so a misspelled option is a compile error rather than a silently wrong drawing.
 
-```schemd bounds="900x360" title="Variant-driven components"
-source:AC "AC" at (100, 150) #blue [type=voltage-ac orientation=down]
-buffer:BUF "3-state" at (340, 150) #cyan [type=tristate orientation=left]
-controlled:CU "U" at (580, 150) #purple [controls=2 targets=1 operator="R_z"]
-component:CPU "controller" at (790, 150) #slate [width=150 height=90]
+```schemd bounds="960x380" title="One option, four families"
+source:PULSE "pulse" at (110, 170) #blue [type=voltage-pulse]
+switch:RLY "relay" at (330, 170) #amber [type=relay]
+buffer:BUF "schmitt" at (560, 170) #cyan [type=schmitt]
+flipflop:JK "J-K" at (790, 170) #purple [type=jk]
 ```
+
+Each of those is the same option name doing four different jobs, because `type` is resolved against the family. That is why `type=jk` on a `switch` is an error and not a shrug.
 
 <!-- /schemd-section -->

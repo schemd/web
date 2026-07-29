@@ -2,7 +2,7 @@
 
 <!-- schemd-section: id=delegation; eyebrow=01 / Events; title=Listen once and mutate state classes; example-title=Probe-ready digital path -->
 
-Compile once in `full` mode. A single listener on the trusted host can resolve `event.target.closest('[data-node-id], [data-wire-source], [data-port-id]')`. Simulations should toggle classes or CSS custom properties; slider changes must not recompile the SVG tree.
+Compile once in `full` mode, then delegate. One listener on the host resolves `event.target.closest('[data-node-id], [data-wire-source], [data-port-id]')`, and that is the entire interaction layer. A simulation toggles classes or custom properties on whatever it finds; moving a slider must never recompile the tree. Application state lives outside the SVG — recompiling the same source is deterministic, so the drawing is safe to treat as disposable.
 
 ```schemd bounds="860x340" title="Probe-ready digital path"
 logic:ONE "1" at (80, 130) #blue [type=high]
@@ -16,13 +16,13 @@ T.out1 -> TP.node #cyan [digital line]
 TP.node -> L.in #emerald [digital line]
 ```
 
-Source-to-vector mapping uses compiler-emitted one-based lines. Do not reparse the DSL with browser regexes; the server response already supplies the authoritative source map.
+Source-to-vector mapping uses the compiler's own one-based lines. Do not reparse the language with a browser regex — the response already carries the authoritative source map, and a second parser is simply a second answer waiting to disagree.
 
 <!-- /schemd-section -->
 
 <!-- schemd-section: id=accessibility; eyebrow=02 / Accessibility; title=Keep pointer and keyboard paths equivalent; example-title=Semantic measurement path -->
 
-Node and port targets expose stable labels in the generated SVG. Custom host controls still need semantic buttons, current `aria-pressed`/`aria-expanded` state, visible focus, and keyboard activation.
+Nodes and ports carry stable labels in the generated SVG, but that only covers what the compiler emitted. Anything we add around it is ours to make equivalent: semantic buttons, honest `aria-pressed`/`aria-expanded` state, visible focus, and keyboard activation for every path a pointer can take.
 
 ```schemd bounds="760x320" title="Semantic measurement path"
 prepare:P "|0\rangle" at (80, 130) #blue

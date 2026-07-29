@@ -3,50 +3,88 @@
 <!-- schemd-expect-page: unconnected-component, disconnected-subcircuit -->
 <!-- Grammar fragments show one declaration at a time. -->
 
-<!-- schemd-section: id=declarations; eyebrow=01 / Nodes; title=Declare one bounded component per line; example-title=Four exact orientations -->
+<!-- schemd-section: id=declarations; eyebrow=01 / Nodes; title=Declare one bounded component per line; example-title=Half-bridge leg; example-summary=Orientation rotates geometry; the logical port names stay put. -->
 
-The declaration grammar is `kind:ID "label" at (x, y) #color [options]`. Identifiers are stable source-map keys. Unknown, duplicated, or kind-incompatible options fail with a one-based line diagnostic.
+One declaration, one line:
 
-`orientation` accepts only `right`, `down`, `left`, or `up`. It is rejected for rotationally meaningless nodes such as `junction`. Logical port names never rotate.
+```text
+kind:ID "label" at (x, y) #color [options]
+```
 
-```schemd bounds="860x360" title="Four exact orientations"
-resistor:R0 "right" at (130, 150) #amber [orientation=right]
-resistor:R1 "down" at (330, 150) #cyan [orientation=down]
-resistor:R2 "left" at (530, 150) #purple [orientation=left]
-resistor:R3 "up" at (730, 150) #emerald [orientation=up]
+Identifiers are case-sensitive and become source-map keys. An unknown, duplicated, or kind-incompatible option is a compile error carrying a one-based line number.
+
+`orientation` accepts exactly `right`, `down`, `left`, or `up`, and is rejected outright for a node no rotation can mean — a `junction` has no facing. What rotates is geometry: the body, its ports, their outward normals, the collision rectangle, and the routing corridors, all together. What never rotates is the vocabulary. A vertical transistor is still wired through `gate`, `drain`, and `source`, so rotating a symbol never rewrites the connections around it.
+
+```schemd bounds="820x560" title="Half-bridge leg"
+source:VBUS "V_{bus}" at (390, 90) #blue [type=voltage-dc orientation=down]
+transistor:QH "high side" at (390, 240) #amber [type=nmos orientation=down]
+junction:SW "SW" at (390, 350) #cyan
+transistor:QL "low side" at (390, 460) #purple [type=nmos orientation=down]
+port:PHASE "phase" at (680, 350) #emerald
+
+VBUS.positive -> QH.drain #blue [line]
+QH.source -> SW.node #amber [line]
+SW.node -> QL.drain #purple [line]
+SW.node -> PHASE.in #emerald [line marker-end=arrow]
 ```
 
 <!-- /schemd-section -->
 
-<!-- schemd-section: id=connections; eyebrow=02 / Wires; title=Connect semantic ports and signal domains; example-title=Typed digital bus -->
+<!-- schemd-section: id=connections; eyebrow=02 / Wires; title=Connect semantic ports and signal domains; example-title=Four-wire reversal bus; example-summary=Crossing traces reserve their terminals before any wire is placed. -->
 
-Connections use `A.port -> B.port #color [options]`. Routes are `line`, `bezier`, or `ortho`. Signal domains are `electrical`, `digital`, `quantum`, and `classical`; width mismatches are rejected before layout.
+A connection is two terminals and an arrow:
 
-```schemd bounds="820x330" title="Typed digital bus"
-port:INPUT "D[7:0]" at (80, 140) #blue [width=8]
-register:REG "R0" at (330, 140) #cyan [width=8]
-port:OUTPUT "Q[7:0]" at (650, 140) #emerald [width=8]
-INPUT.out -> REG.in #blue [digital width=8]
-REG.out -> OUTPUT.in #emerald [digital width=8]
+```text
+A.port -> B.port #color [options]
 ```
 
-Connection options also include `net`, `marker-start`, `marker-end`, `label`, UML relations, and `dashed`. Full mode emits source-line metadata for nodes, ports, and wires.
+Routes are `line`, `bezier`, or `ortho`. Signal domains are `electrical`, `digital`, `quantum`, and `classical`, and a width mismatch is rejected before layout rather than drawn as a plausible lie.
 
-`net=NAME` gives signal segments one explicit topology identity. Names begin with an ASCII letter, contain only letters, digits, `_`, or `-`, and are at most 64 characters. Segments sharing an exact `component.port` join implicitly, so every branch declared through the same `junction.node` inherits one net, and a name may also join geometrically disconnected segments. Every segment in one net must use the same signal domain and width; conflicting names at a shared terminal are errors. UML relations cannot declare nets. Unnamed signal topologies receive deterministic source-ordered `$1`, `$2`, … identities in the AST, source map, and full-mode SVG (`data-net-id`).
+`net=NAME` gives a group of segments one topology identity. Segments that share an exact `component.port` join implicitly — every branch off one `junction.node` is therefore one net — and a name can additionally join segments that never touch. Every segment in a net must agree on domain and width; conflicting names at a shared terminal are errors. Unnamed topologies still get deterministic, source-ordered `$1`, `$2`, … identities in the AST, the source map, and full-mode SVG (`data-net-id`).
 
-Geometry is contract-checked at compile time. Physical component bodies may touch at an edge but cannot overlap (UML containers and lifeline overlays may intentionally contain children). All route families are collision checked: straight and cubic paths cannot penetrate unrelated bodies or earlier connector labels, orthogonal paths route around bodies and labels while pricing earlier unrelated wire channels as soft occupancy, and transformed endpoint-marker footprints participate in the same rule. Separate nets may cross only as a strict perpendicular orthogonal crossing — which receives a bridge on the later trace — while same-net contacts stay continuous with no bridge. Collinear overlap between separate nets, endpoint contact, diagonal or cubic crossings, and bridge clusters too dense to render are compile errors with source-line diagnostics.
+Geometry is contract-checked. Bodies may touch at an edge but never overlap, and every route family is collision-checked against bodies, labels, and earlier wire channels. Two **separate** nets may cross only as a strict perpendicular orthogonal crossing, and the later trace receives a bridge; two segments of the **same** net stay continuous with no bridge, because they are one conductor. Collinear overlap between separate nets, endpoint contact, diagonal crossings, and bridge clusters too dense to render are all compile errors with source lines.
+
+A reversal bus is the case that exercises all of it at once — every wire must cross every other:
+
+```schemd bounds="880x500" title="Four-wire reversal bus"
+port:A0 "A0" at (90, 90) #blue [width=1]
+port:A1 "A1" at (90, 200) #cyan [width=1]
+port:A2 "A2" at (90, 310) #amber [width=1]
+port:A3 "A3" at (90, 420) #purple [width=1]
+port:B0 "B0" at (790, 420) #blue [width=1]
+port:B1 "B1" at (790, 310) #cyan [width=1]
+port:B2 "B2" at (790, 200) #amber [width=1]
+port:B3 "B3" at (790, 90) #purple [width=1]
+
+A0.out -> B0.in #blue [ortho digital net=BIT0]
+A1.out -> B1.in #cyan [ortho digital net=BIT1]
+A2.out -> B2.in #amber [ortho digital net=BIT2]
+A3.out -> B3.in #purple [ortho digital net=BIT3]
+```
+
+Before 0.4 this failed from the third wire on: the router scored reuse of an occupied channel as expensive-but-legal while the validator rejected it outright, so the router could return a route it had already proved would be thrown away. Now a contact the validator rejects costs the router infinity through the same predicate, every trace reserves its terminal approach before any wire is placed, and a blocked channel offers a lane a pitch to either side.
 
 <!-- /schemd-section -->
 
-<!-- schemd-section: id=options; eyebrow=03 / Validation; title=Use family options, never untyped attributes; example-title=Variant-driven components -->
+<!-- schemd-section: id=options; eyebrow=03 / Validation; title=Use family options, never untyped attributes; example-title=Named-pin package; example-summary=Each pin name becomes an addressable, case-sensitive port. -->
 
-Common family options are `type`, `orientation`, `inputs`, `outputs`, `width`, `controls`, `targets`, `wires`, `parameter`, `phase`, `matrix`, `operator`, and `control`. Availability is defined per kind in the [component API](/docs/0.4/component-reference).
+Options are validated by name against the kind we named. The common ones are `type`, `orientation`, `inputs`, `outputs`, `width`, `controls`, `targets`, `wires`, `parameter`, `phase`, `matrix`, `operator`, and `control`; availability per kind lives in the [component API](/docs/0.4/component-reference). There is no untyped attribute bag, and that is the point — a typo is a compile error, never a silently wrong drawing.
 
-```schemd bounds="900x360" title="Variant-driven components"
-source:AC "AC" at (100, 150) #blue [type=voltage-ac orientation=down]
-buffer:BUF "3-state" at (340, 150) #cyan [type=tristate orientation=left]
-controlled:CU "U" at (580, 150) #purple [controls=2 targets=1 operator="R_z"]
-component:CPU "controller" at (790, 150) #slate [width=150 height=90]
+`ic` is the clearest case. Its quoted `left`, `right`, `top`, and `bottom` lists each become case-sensitive ports, and the body grows to fit the longest side, so we never hand-size the box:
+
+```schemd bounds="960x520" title="Named-pin package"
+port:SDA "SDA" at (80, 190) #blue
+port:SCL "SCL" at (80, 290) #amber
+ic:U1 "ADC, 24-bit" at (460, 240) #cyan [left="SDA,SCL,DRDY" right="AIN0,AIN1" top="AVDD" bottom="AGND"]
+port:AIN "sensor" at (860, 200) #emerald
+ground:GND "AGND" at (460, 420) #slate
+
+SDA.out -> U1.SDA #blue [ortho]
+SCL.out -> U1.SCL #amber [ortho]
+U1.AIN0 -> AIN.in #emerald [ortho marker-end=arrow]
+U1.AGND -> GND.in #slate [ortho]
 ```
+
+Note that we wired `U1.SDA` by its real pin name. `in` and `out` still fall back to the first suitable input and output side when we genuinely do not care which — but on a package with named pins, we usually do.
 
 <!-- /schemd-section -->

@@ -20,20 +20,22 @@ Every direction-sensitive family defaults to `orientation=right`. `junction` and
 | `meter`                 | `voltmeter`, `ammeter`                                                                                             | `in`, `out`                                                                              |
 | `load`                  | `lamp`, `motor`, `speaker`, `buzzer`                                                                               | `in`, `out`                                                                              |
 
-```schemd bounds="980x460" title="Typed analog signal chain"
-source:V1 "AC source" at (90, 140) #blue [type=voltage-ac]
-protection:F1 "fuse" at (250, 140) #amber [type=fuse]
-amplifier:A1 "instrumentation" at (470, 140) #cyan [type=instrumentation]
-meter:M1 "V" at (690, 140) #purple [type=voltmeter]
-load:L1 "speaker" at (870, 140) #emerald [type=speaker]
-power:VDD "VDD" at (470, 300) #amber [type=vdd orientation=up]
+```schemd bounds="1040x440" title="Battery-fed reference oscillator"
+source:V1 "12 V" at (100, 160) #blue [type=battery]
+protection:F1 "2 A" at (280, 160) #amber [type=fuse]
+resonator:X1 "16 MHz" at (470, 160) #cyan [type=crystal]
+amplifier:U1 "opamp" at (680, 160) #purple [type=opamp]
+load:LMP "lamp" at (890, 160) #emerald [type=lamp]
+power:VSS "VSS" at (680, 330) #slate [type=vss orientation=up]
 
 V1.positive -> F1.in #blue [line]
-F1.out -> A1.positive #amber [line]
-A1.out -> M1.in #cyan [line]
-M1.out -> L1.in #purple [line]
-VDD.in -> A1.v+ #amber [ortho]
+F1.out -> X1.in #amber [line]
+X1.out -> U1.positive #cyan [line]
+U1.out -> LMP.in #purple [line marker-end=arrow]
+VSS.in -> U1.v- #slate [ortho]
 ```
+
+An amplifier separates its signal terminals (`positive`, `negative`, `out`) from its rails (`v+`, `v-`), which is why the supply above attaches without pretending to be an input.
 
 <!-- /schemd-section -->
 
@@ -52,11 +54,11 @@ Passives share `in`/`out`; diodes expose `anode`/`cathode`. Transistor controls 
 | `ground`     | `signal`, `earth`, `chassis`; `in`                                               |
 
 ```schemd bounds="1040x430" title="Variant family specimen"
-resistor:R1 "LDR" at (100, 130) #amber [type=ldr orientation=down]
-capacitor:C1 "C_{pol}" at (280, 130) #cyan [type=polarized orientation=up]
-inductor:T1 "T" at (470, 130) #purple [type=transformer]
-diode:D1 "photo" at (660, 130) #blue [type=photodiode orientation=left]
-transistor:Q1 "IGBT" at (850, 130) #emerald [type=nigbt orientation=down]
+resistor:R1 "thermistor" at (100, 150) #amber [type=thermistor]
+capacitor:C1 "C_{pol}" at (290, 150) #cyan [type=polarized orientation=up]
+inductor:T1 "transformer" at (480, 150) #purple [type=transformer]
+diode:D1 "zener" at (670, 150) #blue [type=zener orientation=left]
+transistor:Q1 "n-IGBT" at (860, 150) #emerald [type=nigbt orientation=down]
 ```
 
 <!-- /schemd-section -->
@@ -94,6 +96,8 @@ CLK.out -> REG.clock #amber [digital ortho]
 REG.out -> DOUT.in #emerald [digital width=8]
 ```
 
+A `bus` splitter is how one wide signal becomes several narrow ones without the width check losing its meaning: the `bus` port carries all eight bits, each indexed branch carries one.
+
 <!-- /schemd-section -->
 
 <!-- schemd-section: id=quantum; eyebrow=04 / Quantum; title=Named gates, two-track CNOT, multi-track operators, and classical results; example-title=Bell-state entangler -->
@@ -113,20 +117,22 @@ Single-qubit shells are `hadamard`, `qgate`, `xgate`, `ygate`, `zgate`, `sgate`,
 
 `cnot` always owns exactly two continuous qubit rails. Use the indexed through-ports when composing a circuit; `control` and `target` address the marker locations for compatibility and interaction metadata. `initial` and `final` belong to UML state/activity diagrams—they are not quantum state boundaries. Start a quantum rail with `prepare`, and terminate it with `measure` or a system `port` when it remains unmeasured.
 
-```schemd bounds="900x400" title="Bell-state entangler"
-prepare:P0 "|0\rangle" at (80, 120) #blue
-prepare:P1 "|0\rangle" at (80, 280) #blue
-hadamard:H "H" at (260, 120) #cyan
-cnot:CX "CNOT" at (500, 200) #purple
-measure:M0 "M_0" at (760, 120) #emerald
-measure:M1 "M_1" at (760, 280) #emerald
+```schemd bounds="980x460" title="Teleportation entangler"
+prepare:A "|\psi\rangle" at (90, 110) #blue
+prepare:B "|0\rangle" at (90, 250) #blue
+prepare:C "|0\rangle" at (90, 390) #blue
+hadamard:H "H" at (300, 250) #cyan
+cnot:E "CNOT" at (520, 320) #purple
+swap:SW "SWAP" at (770, 190) #emerald
 
-P0.out -> H.in #blue [quantum line]
-H.out -> CX.in1 #cyan [quantum line]
-P1.out -> CX.in2 #blue [quantum line]
-CX.out1 -> M0.in #purple [quantum line]
-CX.out2 -> M1.in #purple [quantum line]
+A.out -> SW.in1 #blue [quantum line]
+B.out -> H.in #blue [quantum line]
+H.out -> E.in1 #cyan [quantum line]
+C.out -> E.in2 #blue [quantum line]
+E.out1 -> SW.in2 #purple [quantum ortho]
 ```
+
+`cnot` owns exactly two continuous rails — control in at `in1` and out at `out1`, target in at `in2` and out at `out2`. Use the indexed through-ports when composing; `control` and `target` remain accepted, but they address the marker positions rather than the rails.
 
 <!-- /schemd-section -->
 
@@ -142,15 +148,21 @@ Sized rectangular nodes accept bounded `width` and `height`. Class-like nodes ad
 
 Relations are `association`, `dependency`, `generalization`, `realization`, `aggregation`, `composition`, `message`, `synchronous`, `asynchronous`, `return`, `control-flow`, `object-flow`, `assembly`, `delegation`, `transition`, `include`, and `extend`.
 
-```schemd bounds="980x500" title="Deployment and activity model"
-device:EDGE "Edge device" at (170, 150) #blue [width=180 height=100]
-artifact:FW "firmware.bin" at (480, 150) #amber [width=170 height=90]
-node:CLOUD "Cloud node" at (790, 150) #purple [width=180 height=100]
-action:DEPLOY "Deploy" at (480, 350) #cyan [width=150 height=70]
+```schemd bounds="1000x520" title="Calibration use cases and states"
+actor:OPS "Operator" at (100, 240) #blue
+usecase:CAL "Calibrate" at (330, 150) #cyan
+usecase:LOG "Record run" at (330, 340) #purple
+state:ARMED "Armed" at (640, 150) #amber [details="entry / zero; exit / latch"]
+choice:CH "ok?" at (640, 340) #slate
+final:END "done" at (880, 340) #emerald
 
-EDGE.right -> FW.left #blue [assembly]
-FW.right -> CLOUD.left #amber [dependency]
-DEPLOY.top -> FW.bottom #cyan [control-flow]
+OPS.right -> CAL.left #blue [line association]
+CAL.bottom -> LOG.top #purple [ortho include]
+CAL.right -> ARMED.left #amber [line transition label="start"]
+LOG.right -> CH.left #slate [line transition]
+CH.right -> END.left #emerald [line transition label="pass"]
 ```
+
+Note that a relation name is only a connection option. Naming `include` or `transition` picks the marker and dash pattern the notation already expects, so we never hand-build one.
 
 <!-- /schemd-section -->

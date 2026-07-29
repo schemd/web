@@ -220,14 +220,28 @@
 		padding: 0;
 		list-style: none;
 	}
+	/* Four fixed columns need ~21rem before the summary gets a pixel, so the
+	   row stacks rather than pushing its prose off a phone screen. */
 	.rules li {
 		display: grid;
-		grid-template-columns: 3rem 12rem 6rem 1fr;
+		grid-template-columns: 3rem minmax(0, 12rem) 6rem minmax(0, 1fr);
 		gap: var(--space-3);
 		align-items: baseline;
 		padding: var(--space-2) var(--space-3);
 		border: 1px solid var(--line);
+		border-radius: var(--radius-sm);
 		background: var(--bg-raised);
+	}
+
+	@media (max-width: 640px) {
+		.rules li {
+			grid-template-columns: 3rem minmax(0, 1fr);
+			row-gap: var(--space-1);
+		}
+
+		.rules .summary {
+			grid-column: 1 / -1;
+		}
 	}
 	.count {
 		font: 600 1rem/1 var(--font-mono);

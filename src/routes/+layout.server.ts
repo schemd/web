@@ -28,6 +28,7 @@ export const load: LayoutServerLoad = async ({ params }) => {
 			{ title: 'Playground', hint: `route · v${latest}`, href: `/playground/${latest}` },
 			{ title: 'Simulation Lab', hint: `route · v${latest}`, href: `/simulations/${latest}` },
 			{ title: 'Changelog', hint: 'route', href: '/changelog' },
+			{ title: 'Install telemetry', hint: 'route · live npm', href: '/downloads' },
 			...docSearchIndex(activeVersion)
 		]
 	};

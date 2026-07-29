@@ -2,26 +2,27 @@
 
 <!-- schemd-section: id=server-boundary; eyebrow=01 / Host; title=Compile outside reactive component state; example-title=Framework-neutral source -->
 
-The adapter contract is intentionally small: accept source plus a validated fence, call `compileSchematic`, then mount the trusted result. Do not import a DOM implementation or regenerate output when unrelated UI state changes.
+The contract is one sentence: take source plus a validated fence, call `compileSchematic`, mount the trusted result. Never import a DOM implementation, and never recompile because some unrelated piece of UI state moved.
 
 ```ts
 export function renderDiagram(source: string) {
 	return compileSchematic(source, {
-		bounds: { width: 760, height: 320 },
-		title: 'Framework-neutral source',
+		bounds: { width: 760, height: 340 },
+		title: 'Line-level buffer',
 		mode: 'embedded-css'
 	}).svg;
 }
 ```
 
-```schemd bounds="760x320" title="Framework-neutral source"
-connector:IN "input" at (80, 130) #blue
-amplifier:A "op-amp" at (340, 130) #cyan [type=opamp]
-connector:OUT "output" at (650, 130) #emerald
-IN.out -> A.positive #blue [line]
-A.out -> OUT.in #emerald [line]
+```schemd bounds="760x340" title="Line-level buffer"
+connector:J1 "line in" at (90, 150) #blue
+transistor:Q1 "buffer" at (340, 150) #cyan [type=njfet]
+connector:J2 "line out" at (640, 150) #emerald
+
+J1.out -> Q1.gate #blue [line]
+Q1.drain -> J2.in #emerald [line marker-end=arrow]
 ```
 
-Svelte should derive the SVG only from source/fence inputs. React should memoize on those same values. Vue and Angular should treat the result as trusted server output, never arbitrary user HTML.
+Svelte should derive the SVG from the source and fence alone; React should memoize on those same two values. Vue and Angular treat the result as trusted server output — and note that this door is for compiler output only, never for arbitrary user HTML.
 
 <!-- /schemd-section -->

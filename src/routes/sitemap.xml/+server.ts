@@ -17,6 +17,7 @@ export const GET: RequestHandler = async ({ url }) => {
 		`${origin}/`,
 		`${origin}/changelog`,
 		`${origin}/coverage`,
+		`${origin}/downloads`,
 		`${origin}/examples`
 	];
 	/* Playground and simulations exist per release; docs exist per documented line. */

@@ -11,7 +11,8 @@ import { building } from '$app/environment';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DOCUMENTED_VERSIONS } from './versions';
+import { DOCUMENTED_VERSIONS, OLDEST_DOCUMENTED_VERSION } from './versions';
+import releaseSnapshot from './release-snapshot.json' with { type: 'json' };
 
 /** One published release aggregated from npm (and GitHub when reachable). */
 export interface SchemdRelease {
@@ -53,60 +54,28 @@ const FETCH_TIMEOUT_MS = 6_000;
 
 /**
  * Seed data lets every route render deterministically before the first
- * network round-trip completes and when the registry is unreachable. The
- * version pinned here matches the workspace's installed `@schemd/core`.
+ * network round-trip completes and when the registry is unreachable.
+ *
+ * It is generated, never typed: `scripts/sync-release-snapshot.ts` reads npm's
+ * packument and the compiler's own changelog and writes
+ * `release-snapshot.json`, which a scheduled job refreshes by pull request. A
+ * publish therefore costs no editing here. The snapshot has no authority over
+ * the executable engine version — that comes only from the installed
+ * `@schemd/core` manifest — and documentation lines are still discovered from
+ * content folders.
  */
-/**
- * Editorial notes per known release, shown when the npm registry is
- * unreachable. Their keys have no authority over the executable engine
- * version; that comes only from the installed `@schemd/core` manifest.
- * Documentation lines are discovered separately from content folders.
- */
-const RELEASE_NOTES: Readonly<Record<string, { unpackedSize?: number; notes?: string }>> = {
-	'0.4.0': {
-		notes:
-			'Diagram size stops being a product limit. The 512-component and 2,048-connection ceilings are gone — the compiler is linear in both, and sixty-four thousand components compile in about a second — and the budgets that remain are configurable per compilation through a `limits` option, so a host compiling a fence it did not write rejects an oversized document at the declaration that crosses it. Five defects found by audit are fixed: compounded traces no longer swallow every endpoint marker but one, a reversal bus routes where a four-wire crossbar used to fail, port aliases resolve to one canonical terminal across topology, netlist and design rules, integrated-circuit pins serialize at the documented precision, and a terminal can no longer be wired to itself.'
-	},
-	'0.3.8': {
-		notes:
-			'Geometry diagnostics became actionable: overlap and bounds errors name the offending coordinate and an origin that clears the collision or overhang. The documentation also states the structural, routing, hierarchy, and verification limits that a clean compile does not remove.'
-	},
-	'0.3.7': {
-		notes:
-			'The netlist and description modules gained the package exports their earlier releases promised. An installed-package test now checks every public subpath instead of assuming source-level imports prove the tarball boundary.'
-	},
-	'0.3.6': {
-		notes:
-			'Deterministic accessible descriptions summarize component inventory and proven connectivity without guessing a circuit archetype. The description module stays outside the main compiler entry so hosts that only compile do not ship it.'
-	},
-	'0.3.5': {
-		notes:
-			'Orthogonal routing moved from an x-only obstacle index to a two-axis spatial hash, removing the height-dependent quadratic term while preserving byte-identical output across the regression corpus.'
-	},
-	'0.3.4': {
-		notes:
-			'Connectivity became a first-class artifact. `buildNetlist` returns the nodes, nets, and edges behind a validated document, `verifyNetlist` checks seven design rules against them — shorted supply rails, conflicting bus widths, mixed signal domains, unconnected components, duplicate connections, contended digital drivers, disconnected subcircuits — and `inspectSchematic` does both. Orthogonal routing resolves obstacle participation once per route instead of once per segment query, and every component sheds the duplicated label paint it used to carry.'
-	},
-	'0.3.3': {
-		notes:
-			'CNOT is now an intrinsic two-track controlled-X gate: the control rail enters at `in1` and leaves unchanged at `out1`, while the target rail enters at `in2` and leaves at `out2`. The renderer preserves both quantum tracks through one compact symbol, the compiler rejects missing or oversubscribed rails, legacy `control`/`target` aliases remain accepted, and the website examples and simulation timelines use the canonical indexed ports.'
-	},
-	'0.3.2': {
-		unpackedSize: 298_854,
-		notes:
-			'Net topology, universal collision rules, and overlap detection. Signal wires resolve to first-class nets (`net=NAME`, deterministic $N identities, one domain/width contract per net); same-net crossings stay continuous while separate nets bridge; straight, Bézier, and orthogonal routes share one collision policy with soft channel occupancy; physical overlap is rejected with source-line diagnostics; open markers are genuinely transparent; Chromium visual goldens, property fuzzing, and a mutation gate pin it all.'
-	},
-	'0.3.1': {
-		unpackedSize: 260_610,
-		notes:
-			'Routing, fidelity, and accessibility patch. Dense sub-clearance layouts now route as straight traces instead of failing, empty qgate detail rows no longer inflate the shared quantum shell, and embedded-css output keeps hover-only groups out of the tab order under its role="img" root.'
-	},
-	'0.3.0': {
-		unpackedSize: 258_900,
-		notes:
-			'Quarter-turn orientation geometry across every primitive, deterministic source maps for editor↔vector round-tripping, drift-free micro-math baselines, and expanded electrical, digital, quantum, and UML families.'
-	},
-	'0.2.1': {}
+interface SnapshotRelease {
+	readonly version: string;
+	readonly publishedAt: string;
+	readonly unpackedSize?: number;
+	readonly fileCount?: number;
+	readonly gitHead?: string;
+	readonly notes?: string;
+}
+
+const SNAPSHOT = releaseSnapshot as {
+	readonly latest: string;
+	readonly releases: readonly SnapshotRelease[];
 };
 
 /** Extract a strict semver from an installed package manifest. */
@@ -136,29 +105,60 @@ function installedCoreVersion(): string {
 
 export const WEBSITE_CORE_VERSION = installedCoreVersion();
 
-/** Every known release, newest first; always include the installed engine. */
-const KNOWN_RELEASE_VERSIONS: readonly string[] = [
-	...new Set([...Object.keys(RELEASE_NOTES), WEBSITE_CORE_VERSION])
-].sort((a, b) => compareVersionsDesc(a, b));
-/** The oldest release kept alive for legacy playground/simulation deep links. */
-export const HISTORICAL_CORE_VERSION = KNOWN_RELEASE_VERSIONS[KNOWN_RELEASE_VERSIONS.length - 1]!;
-/** Documented docs lines (newest first), re-exported for route/test callers. */
-export const DOCUMENTATION_VERSIONS: readonly string[] = DOCUMENTED_VERSIONS;
+/**
+ * Seed every known release so routes resolve offline.
+ *
+ * A version the snapshot carries was confirmed on npm when the snapshot was
+ * generated, so it seeds as published with the metadata npm actually reported.
+ * An installed engine the snapshot has never seen is a local build: it stays
+ * routable, and stays marked publication-unconfirmed until a live refresh (or
+ * the next snapshot) says otherwise.
+ */
+export function _seedReleases(
+	snapshot: readonly SnapshotRelease[],
+	installed: string
+): readonly SchemdRelease[] {
+	const seeded = snapshot.map((release) => ({
+		version: release.version,
+		publishedAt: release.publishedAt,
+		unpackedSize: release.unpackedSize,
+		fileCount: release.fileCount,
+		gitHead: release.gitHead,
+		notes: release.notes,
+		released: true
+	}));
+	if (!seeded.some((release) => release.version === installed)) {
+		seeded.push({
+			version: installed,
+			publishedAt: new Date(0).toISOString(),
+			unpackedSize: undefined,
+			fileCount: undefined,
+			gitHead: undefined,
+			notes: undefined,
+			released: false
+		});
+	}
+	return seeded.sort((a, b) => compareVersionsDesc(a.version, b.version));
+}
+
+const SEED_RELEASES: readonly SchemdRelease[] = _seedReleases(
+	SNAPSHOT.releases,
+	WEBSITE_CORE_VERSION
+);
 
 /**
- * Seed every known release so routes resolve offline. The installed build is
- * the local candidate (`released: false`) until npm confirms publication;
- * newer editorial notes cannot change that status.
+ * The release legacy deep links land on.
+ *
+ * This is the newest release inside the *oldest documented line*, not the
+ * oldest release npm has ever carried. A visitor arriving from a five-year-old
+ * link wants the earliest version this site still explains; sending them to a
+ * 0.1.x build the docs never covered would be worse than not redirecting.
  */
-const SEED_RELEASES: readonly SchemdRelease[] = KNOWN_RELEASE_VERSIONS.map((version) => ({
-	version,
-	publishedAt: new Date(0).toISOString(),
-	unpackedSize: RELEASE_NOTES[version]?.unpackedSize,
-	fileCount: RELEASE_NOTES[version]?.unpackedSize === undefined ? undefined : 24,
-	gitHead: undefined,
-	notes: RELEASE_NOTES[version]?.notes,
-	released: version !== WEBSITE_CORE_VERSION
-}));
+export const HISTORICAL_CORE_VERSION =
+	SEED_RELEASES.find((release) => release.version.startsWith(`${OLDEST_DOCUMENTED_VERSION}.`))
+		?.version ?? SEED_RELEASES[SEED_RELEASES.length - 1]!.version;
+/** Documented docs lines (newest first), re-exported for route/test callers. */
+export const DOCUMENTATION_VERSIONS: readonly string[] = DOCUMENTED_VERSIONS;
 
 const SEED_REGISTRY: SchemdRegistry = {
 	releases: [...SEED_RELEASES],
@@ -274,7 +274,17 @@ export function _buildRegistry(
 			released: true
 		});
 	}
-	const releases = [...releasesByVersion.values()];
+	/*
+	 * A live packument is the fresher, complete answer about what npm carries.
+	 * A version the seed believed published that this packument does not list
+	 * is therefore not published — an unreleased local build, or a snapshot
+	 * that has run ahead of the registry.
+	 */
+	const releases = [...releasesByVersion.values()].map((release) =>
+		release.released && !publishedVersions.has(release.version)
+			? { ...release, released: false }
+			: release
+	);
 	if (releases.length === 0) return undefined;
 	releases.sort((a, b) => compareVersionsDesc(a.version, b.version));
 	const distTags = isRecord(packument['dist-tags']) ? packument['dist-tags'] : undefined;

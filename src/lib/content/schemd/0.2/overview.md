@@ -2,7 +2,7 @@
 
 <!-- schemd-section: id=direct-api; eyebrow=01 / Install; title=Compile text into SVG; example-title=Sensor input; example-summary=A small circuit compiled without a browser or DOM. -->
 
-We treat a schematic the way a compiler treats source, so the first step is the one every compiler asks of you: install it, then hand it a string.
+We treat a schematic the way a compiler treats source, so the first step is the one every compiler asks: install it, then hand it a string.
 
 ```sh
 npm install @schemd/core
@@ -18,9 +18,9 @@ const fence = parseSchematicFence('schemd bounds="640x260" title="Sensor input"'
 const { svg, document, metrics } = compileSchematic(source, fence);
 ```
 
-Everything here happens on a server or during a build — there is no DOM, no font-loading pass, no client-side layout library. Because the compiler reserves space from the bounds you declared, the page never reflows once the vector arrives.
+All of this runs on a server or during a build — no DOM, no font-loading pass, no layout library. The compiler reserves space from the bounds we declared, so the page never reflows once the vector lands.
 
-Consider a sensor front-end: a source, a series resistor, and a shunt capacitor to ground. The diagram to the right is not a _drawing_ of that network — it **is** that network, compiled. And because the topology is explicit, we can reason about it. The resistor and capacitor form a first-order low-pass filter whose cutoff sits at
+Consider a sensor front-end: a source, a series resistor, a shunt capacitor to ground. The diagram beside this is not a _drawing_ of that network — it **is** that network, compiled. Because the topology is explicit, we can reason about it: the resistor and capacitor form a first-order low-pass filter with cutoff
 
 $$
 f_c = \frac{1}{2\pi R C}
@@ -43,11 +43,7 @@ C1.out -> ADC.in #emerald [line marker-end=arrow]
 
 <!-- schemd-section: id=markdown; eyebrow=02 / Markdown; title=Keep Markdown in your app; example-title=Tiny class model; example-summary=The same text format also covers UML nodes and relationships. -->
 
-Core ships no Markdown parser, and that omission is deliberate: the boundary between _parse my prose_ and _compile my diagrams_ belongs to you. Keep your parser on the server, recognize `schemd` fences, and forward only the fence body to the compiler.
-
-```sh
-npm install @schemd/core
-```
+Core ships no Markdown parser, and the omission is deliberate: the boundary between _parse my prose_ and _compile my diagrams_ belongs to us. Keep the parser on the server, recognize `schemd` fences, forward only the body.
 
 ```ts
 import { compileSchematic, parseSchematicFence } from '@schemd/core';
@@ -60,7 +56,7 @@ function renderSchemdFence(body: string, info: string) {
 }
 ```
 
-Wire that one function into Marked, markdown-it, unified, or your own build step. This site uses exactly that server-only boundary — not a byte of compiler or Markdown code reaches the browser. And the grammar that drew the circuit above is the same grammar that describes _structure_; here it is holding a two-class model instead of a filter.
+Wire that one function into Marked, markdown-it, unified, or a build step of our own. This site uses exactly that boundary — not a byte of compiler or Markdown code reaches the browser. Note that the grammar which drew the circuit above also describes _structure_; below it holds a two-class model instead of a filter.
 
 ```schemd bounds="760x360" title="Tiny class model"
 class:User "User" at (200, 180) #slate [attributes="- id: UUID; + email: string" operations="+ save(): void"]

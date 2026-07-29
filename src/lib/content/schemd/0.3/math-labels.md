@@ -5,31 +5,34 @@
 
 <!-- schemd-section: id=scripts; eyebrow=01 / Text; title=Compose scripts without baseline drift; example-title=Rotated components with upright math -->
 
-Labels support grouped `_` and `^` scripts plus bounded commands such as `\Omega`, `\pi`, `\theta`, and `\infty`. Every generated `tspan` carries an explicit baseline correction; component rotation never rotates the outer label.
+Labels take grouped `_` and `^` scripts plus bounded commands such as `\Omega`, `\pi`, `\theta`, `\mu`, and `\infty`. Every generated `tspan` carries an explicit baseline correction, so a nested script returns the following text to the parent baseline exactly where the eye expects it.
 
-```schemd bounds="900x340" title="Rotated components with upright math"
-source:V1 "V_{in}^{AC}" at (100, 150) #blue [type=voltage-ac]
-resistor:R1 "10 k\Omega" at (330, 150) #amber [orientation=down]
-qgate:Q1 "R_z" at (570, 150) #purple [parameter="\theta/2" phase="e^{i\phi}"]
-port:O1 "f_c = \infty" at (800, 150) #emerald
+Note that rotation stops at the vector. The label sits outside the rotated group, so a vertical component still reads horizontally:
+
+```schemd bounds="920x360" title="Upright math on rotated bodies"
+inductor:L1 "L = 47 \muH" at (120, 160) #purple [orientation=up]
+capacitor:C1 "C_{out} = 220 \muF" at (390, 160) #cyan [orientation=down]
+qgate:Q1 "U_\theta" at (650, 160) #amber [parameter="\theta \le \pi" phase="e^{-i\omega t}"]
+port:O1 "\Delta I_L" at (860, 160) #emerald
 ```
 
-The width estimator is deterministic and conservative. Long labels enlarge component bounds before placement validation rather than relying on SSR-incompatible `getBBox()`.
+Width is estimated, not measured — no font is ever loaded. The estimator is deterministic and deliberately conservative, and a long label enlarges the component's bounds _before_ placement is validated, which is what lets all of this work without an SSR-incompatible `getBBox()`.
 
 <!-- /schemd-section -->
 
 <!-- schemd-section: id=quantum; eyebrow=02 / Quantum; title=Use polished custom gate rows; example-title=Parameterized quantum register -->
 
-Plain `qgate` shares the same shell geometry, stub lengths, corner radius, focus treatment, and ports as `hadamard`. Detail rows increase the body deterministically.
+A named rotation gate carries its angle in `parameter`, and `qgate` shares `hadamard`'s exact shell — same stub lengths, corner radius, focus treatment, and ports. Detail rows grow the body deterministically rather than by measurement.
 
-```schemd bounds="860x320" title="Parameterized quantum register"
-prepare:P "|0\rangle" at (80, 130) #blue
-hadamard:H "H" at (260, 130) #cyan
-qgate:U "U" at (470, 130) #purple [parameter="\theta" matrix="[a,b;c,d]"]
-measure:M "M_z" at (690, 130) #emerald
-P.out -> H.in #blue [quantum line]
-H.out -> U.in #cyan [quantum line]
-U.out -> M.in #purple [quantum line]
+```schemd bounds="880x330" title="Parameterized rotation chain"
+prepare:P "|0\rangle" at (90, 150) #blue
+ry:R "R_y" at (330, 150) #purple [parameter="\pi/3"]
+zgate:Z "Z" at (540, 150) #cyan
+measure:M "M" at (740, 150) #emerald
+
+P.out -> R.in #blue [quantum line]
+R.out -> Z.in #purple [quantum line]
+Z.out -> M.in #cyan [quantum line]
 ```
 
 <!-- /schemd-section -->
