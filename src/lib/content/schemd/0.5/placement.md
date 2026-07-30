@@ -36,14 +36,14 @@ VIN.negative -> GND.in #slate [ortho]
 
 There are six relations. Each takes a component or one of its terminals, and the four directions take an optional `by` distance:
 
-| Relation | Sets | `by` |
-| --- | --- | --- |
-| `right-of REF` | x, our left edge clear of the reference's right edge | yes |
-| `left-of REF` | x, our right edge clear of the reference's left edge | yes |
-| `below REF` | y, our top edge clear of the reference's bottom edge | yes |
-| `above REF` | y, our bottom edge clear of the reference's top edge | yes |
-| `aligned-x with REF` | x, copied from the reference | no |
-| `aligned-y with REF` | y, copied from the reference | no |
+| Relation             | Sets                                                 | `by` |
+| -------------------- | ---------------------------------------------------- | ---- |
+| `right-of REF`       | x, our left edge clear of the reference's right edge | yes  |
+| `left-of REF`        | x, our right edge clear of the reference's left edge | yes  |
+| `below REF`          | y, our top edge clear of the reference's bottom edge | yes  |
+| `above REF`          | y, our bottom edge clear of the reference's top edge | yes  |
+| `aligned-x with REF` | x, copied from the reference                         | no   |
+| `aligned-y with REF` | y, copied from the reference                         | no   |
 
 Two details matter. A direction measures from the **body**, not the origin, so `by 150` is 150 units of clear space between facing edges — the room we actually asked for, and still correct when the reference is rotated. Omit `by` and we get the axis default: 160 horizontally, 140 vertically.
 
@@ -92,14 +92,14 @@ V1.negative -> GND.in #slate [ortho]
 
 `limits.placementDepth` caps how long a chain may be, and defaults to 64. Every diagnostic carries its line:
 
-| We wrote | It says |
-| --- | --- |
+| We wrote                            | It says                                                                                                                          |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | A reference to something undeclared | `B is placed relative to R9, which the document never declares. Declare R9 anywhere in the document, or place B with at (x, y).` |
-| A part placed against itself | `B is placed relative to itself.` |
-| A cycle | `Placement cycle: A -> C -> B -> A. One component in a cycle must be placed with at (x, y).` |
-| `by -80` | `B states a negative by distance of -80. Distances are unsigned; use the opposite direction instead.` |
-| A terminal that does not exist | `A has no terminal named clock, so B cannot be placed against it.` |
-| Too long a chain | `P5 sits 5 placements deep, past the 4 chain budget. Anchor one component in the chain with at (x, y).` |
+| A part placed against itself        | `B is placed relative to itself.`                                                                                                |
+| A cycle                             | `Placement cycle: A -> C -> B -> A. One component in a cycle must be placed with at (x, y).`                                     |
+| `by -80`                            | `B states a negative by distance of -80. Distances are unsigned; use the opposite direction instead.`                            |
+| A terminal that does not exist      | `A has no terminal named clock, so B cannot be placed against it.`                                                               |
+| Too long a chain                    | `P5 sits 5 placements deep, past the 4 chain budget. Anchor one component in the chain with at (x, y).`                          |
 
 A relation that pushes a part off the canvas is not a new kind of error — it reaches the same out-of-bounds diagnostic a bad `at (x, y)` would, naming a coordinate that fits.
 
