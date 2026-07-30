@@ -85,6 +85,10 @@ export const GET: RequestHandler = async ({ url }) => {
 
 	const body =
 		`<?xml version="1.0" encoding="UTF-8"?>` +
+		/* Presentation only. The sitemap protocol ignores processing instructions,
+		   so a crawler reads exactly the document it read before this line
+		   existed; a browser gets /sitemap.xsl applied to it. */
+		`<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>` +
 		`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">` +
 		entries
 			.map(
