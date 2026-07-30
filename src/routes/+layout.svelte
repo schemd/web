@@ -28,6 +28,7 @@
 	const nav = $derived([
 		{ href: `/docs/${version}/overview`, label: 'Docs', match: '/docs' },
 		{ href: `/playground/${version}`, label: 'Playground', match: '/playground' },
+		{ href: `/inspector/${version}`, label: 'Inspector', match: '/inspector' },
 		{ href: `/simulations/${version}`, label: 'Simulations', match: '/simulations' },
 		{ href: '/changelog', label: 'Changelog', match: '/changelog' }
 	]);

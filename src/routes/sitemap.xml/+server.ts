@@ -59,6 +59,7 @@ export const GET: RequestHandler = async ({ url }) => {
 		{ path: '/coverage', lastmod, priority: '0.5' },
 		{ path: '/conformance', lastmod, priority: '0.5' },
 		{ path: `/playground/${latest}`, lastmod, priority: '0.8' },
+		{ path: `/inspector/${latest}`, lastmod, priority: '0.8' },
 		{ path: `/simulations/${latest}`, lastmod, priority: '0.8' }
 	];
 

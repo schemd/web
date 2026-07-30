@@ -197,7 +197,9 @@ describe('versioned registry and documentation', () => {
 		const currentSlugs = current.map(({ slug }) => slug);
 		for (const { slug } of historical) expect(currentSlugs).toContain(slug);
 		expect(new Set(currentSlugs).size).toBe(current.length);
-		expect(current).toHaveLength(13);
+		/* 14 since 0.5, which added the placement chapter. */
+		expect(current).toHaveLength(14);
+		expect(currentSlugs).toContain('placement');
 
 		for (const version of DOCUMENTATION_VERSIONS) {
 			for (const page of docManifest(version)) {

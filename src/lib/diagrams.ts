@@ -39,3 +39,27 @@ VOUT.node -> OUT.in #emerald [line marker-end=arrow]`;
 
 /** Canvas the RC filter was drawn for. */
 export const RC_FILTER_BOUNDS: DiagramBounds = { width: 760, height: 440 };
+
+/**
+ * The RC filter again, positioned by relation instead of by arithmetic.
+ *
+ * Seeds the inspector, where it earns its place twice: the Place stage has
+ * something to resolve, and the diagram is the same circuit the rest of the site
+ * opens with — so a visitor comparing the two forms is comparing exactly one
+ * thing. Only VIN carries coordinates; everything else states where it sits
+ * relative to what came before, and an axis no relation constrains is inherited.
+ */
+export const RELATIVE_PLACEMENT_SOURCE = `// Relative placement: only VIN states coordinates.
+source:VIN "V_{in}" at (90, 150) #blue [type=voltage-ac]
+resistor:R1 "10 kΩ" right-of VIN by 150 #amber
+junction:VOUT "output node" right-of R1 by 150 #cyan
+capacitor:C1 "100 nF" below VOUT by 110 #cyan [orientation=down]
+port:OUT "V_{out}" right-of VOUT by 150 #emerald
+ground:GND "0 V" below R1 by 190 aligned-x with R1 #slate
+
+VIN.positive -> R1.in #blue [line]
+R1.out -> VOUT.node #amber [line]
+VOUT.node -> C1.in #cyan [line]
+VOUT.node -> OUT.in #emerald [line marker-end=arrow]
+C1.out -> GND.in #cyan [ortho]
+VIN.negative -> GND.in #slate [ortho]`;
