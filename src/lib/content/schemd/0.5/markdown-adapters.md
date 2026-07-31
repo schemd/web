@@ -12,8 +12,9 @@ return compileSchematic(token.text, { ...fence, mode: 'default' }).svg;
 
 ```schemd bounds="760x320" title="Markdown adapter fixture"
 source:V "5 V" at (80, 130) #blue [type=voltage-dc]
-protection:F "breaker" at (300, 130) #amber [type=breaker]
-load:B "buzzer" at (560, 130) #emerald [type=buzzer]
+protection:F "breaker" right-of V by 130 #amber [type=breaker]
+load:B "buzzer" right-of F by 160 #emerald [type=buzzer]
+
 V.positive -> F.in #blue [line]
 F.out -> B.in #emerald [line]
 ```

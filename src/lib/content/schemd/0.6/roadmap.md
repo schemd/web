@@ -12,11 +12,11 @@ typed primitives, net semantics, collision validation, netlist inspection, struc
 accessible descriptions, deterministic fuzzing, and source maps remain part of the same compiler.
 
 ```schemd bounds="980x420" title="Cross-domain 0.5 specimen"
-source:AC "AC" at (90, 120) #blue [type=voltage-ac]
-capacitor:C "C" at (280, 120) #cyan [orientation=down]
-adder:FA "FA" at (500, 120) #amber [type=full]
-qgate:Q "R_z" at (710, 120) #purple [parameter="\theta"]
-component:SYS "system" at (870, 290) #slate [width=150 height=80]
+source:DC "DC" at (90, 120) #purple [type=voltage-dc]
+inductor:LD "L" at (280, 120) #cyan
+adder:HA "HA" at (500, 120) #amber [type=half]
+qgate:QR "R_y" at (710, 120) #blue [parameter="\phi"]
+component:PLANT "plant" at (870, 290) #slate [width=150 height=80]
 ```
 
 <!-- /schemd-section -->
@@ -41,11 +41,12 @@ never that the published tarball and its export map work. Only an install from t
 that, which is why the sync job installs rather than links.
 
 ```schemd bounds="700x300" title="Release-gate signal"
-logic:READY "1" at (100, 120) #blue [type=high]
-testpoint:GATE "release gate" at (340, 120) #amber
-load:L "lamp" at (590, 120) #emerald [type=lamp]
-READY.out -> GATE.node #blue [digital line]
-GATE.node -> L.in #emerald [digital line]
+logic:HOLD "0" at (100, 120) #purple [type=low]
+testpoint:HOLDTP "hold gate" at (340, 120) #cyan
+load:MOT2 "motor" at (590, 120) #emerald [type=motor]
+
+HOLD.out -> HOLDTP.node #purple [digital line]
+HOLDTP.node -> MOT2.in #emerald [digital line]
 ```
 
 Known boundaries remain deliberate: rotation is limited to quarter turns; text measurement is

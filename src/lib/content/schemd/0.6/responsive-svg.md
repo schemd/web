@@ -17,15 +17,16 @@ The compiler emits explicit `width`, `height`, and `viewBox`, so the page can re
 ```
 
 ```schemd bounds="840x360" title="Responsive vertical filter"
-source:IN "AC" at (80, 120) #blue [type=voltage-ac]
-resistor:R "R" at (280, 120) #amber
-junction:J "node" at (460, 120) #cyan
-capacitor:C "C" at (460, 240) #cyan [orientation=down]
-port:OUT "out" at (720, 120) #emerald
-IN.positive -> R.in #blue [line]
-R.out -> J.node #amber [line]
-J.node -> C.in #cyan [ortho]
-J.node -> OUT.in #emerald [line]
+source:SIN "DC" at (80, 120) #blue [type=voltage-dc]
+inductor:LV "L" at (280, 120) #purple
+junction:JV "tap" at (460, 120) #cyan
+capacitor:CV "C" at (460, 240) #cyan [orientation=down]
+port:OUTV "out" at (720, 120) #emerald
+
+SIN.positive -> LV.in #blue [line]
+LV.out -> JV.node #purple [line]
+JV.node -> CV.in #cyan [ortho]
+JV.node -> OUTV.in #emerald [line]
 ```
 
 Labels are emitted outside the rotated vector group, so text stays upright at every viewport size while full-mode port hotspots stay aligned with the terminals they belong to. Scaling changes how large the drawing is, never what it says.
@@ -37,11 +38,12 @@ Labels are emitted outside the rotated vector group, so text stays upright at ev
 Reach for `content-visibility: auto` on a long gallery, with `contain-intrinsic-size` as the placeholder. And do not animate an SVG `d` string to move a panel — transform or fade the container instead. Path animation forces geometry work on every frame for motion the geometry was never part of.
 
 ```schemd bounds="700x280" title="Compact status circuit"
-logic:HI "1" at (90, 120) #blue [type=high]
-buffer:B "buffer" at (330, 120) #cyan [type=schmitt]
-load:L "lamp" at (590, 120) #emerald [type=lamp]
-HI.out -> B.in1 #blue [digital line]
-B.out1 -> L.in #emerald [line]
+logic:LO "0" at (90, 120) #purple [type=low]
+buffer:BT "tri-state" at (330, 120) #cyan [type=tristate]
+load:SP "speaker" at (590, 120) #emerald [type=speaker]
+
+LO.out -> BT.in1 #purple [digital line]
+BT.out1 -> SP.in #emerald [line]
 ```
 
 <!-- /schemd-section -->

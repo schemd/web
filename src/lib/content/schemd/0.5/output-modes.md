@@ -17,8 +17,9 @@ With wire hooks enabled, every signal wire exposes its parser-resolved topology 
 
 ```schemd bounds="760x320" title="Mode-parity specimen"
 source:S "pulse" at (90, 130) #blue [type=voltage-pulse]
-switch:SW "SPST" at (290, 130) #amber [type=spst]
-load:M "motor" at (520, 130) #emerald [type=motor]
+switch:SW "SPST" right-of S by 120 #amber [type=spst]
+load:M "motor" right-of SW by 150 #emerald [type=motor]
+
 S.positive -> SW.in #blue [line]
 SW.out -> M.in #emerald [line]
 ```
@@ -33,8 +34,8 @@ Identical components reference a single `<symbol>` definition, and orientation c
 
 ```schemd bounds="820x300" title="Repeated passives"
 resistor:R1 "R" at (130, 120) #amber
-resistor:R2 "R" at (350, 120) #amber [orientation=down]
-resistor:R3 "R" at (580, 120) #amber [orientation=left]
+resistor:R2 "R" right-of R1 by 140 #amber [orientation=down]
+resistor:R3 "R" right-of R2 by 150 #amber [orientation=left]
 ```
 
 <!-- /schemd-section -->

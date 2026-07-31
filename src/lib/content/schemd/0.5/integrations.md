@@ -5,11 +5,12 @@
 Compile once in `full` mode, then delegate. One listener on the host resolves `event.target.closest('[data-node-id], [data-wire-source], [data-port-id]')`, and that is the entire interaction layer. A simulation toggles classes or custom properties on whatever it finds; moving a slider must never recompile the tree. Application state lives outside the SVG — recompiling the same source is deterministic, so the drawing is safe to treat as disposable.
 
 ```schemd bounds="860x340" title="Probe-ready digital path"
-logic:ONE "1" at (80, 130) #blue [type=high]
-buffer:T "tri-state" at (300, 130) #cyan [type=tristate]
-clock:CLK "enable" at (300, 270) #amber
-testpoint:TP "probe" at (530, 130) #purple
-load:L "lamp" at (740, 130) #emerald [type=lamp]
+logic:ONE "1" at (80, 110) #blue [type=high]
+buffer:T "tri-state" right-of ONE by 130 #cyan [type=tristate]
+clock:CLK "enable" below T by 30 aligned-x with T #amber
+testpoint:TP "probe" right-of T by 140 aligned-y with ONE #purple
+load:L "lamp" right-of TP by 130 #emerald [type=lamp]
+
 ONE.out -> T.in1 #blue [digital line]
 CLK.out -> T.enable #amber [digital ortho]
 T.out1 -> TP.node #cyan [digital line]
@@ -26,8 +27,9 @@ Nodes and ports carry stable labels in the generated SVG, but that only covers w
 
 ```schemd bounds="760x320" title="Semantic measurement path"
 prepare:P "|0\rangle" at (80, 130) #blue
-rx:R "R_x" at (300, 130) #purple [parameter="\pi/2"]
-measure:M "M" at (540, 130) #emerald
+rx:R "R_x" right-of P by 140 #purple [parameter="\pi/2"]
+measure:M "M" right-of R by 160 #emerald
+
 P.out -> R.in #blue [quantum line]
 R.out -> M.in #purple [quantum line]
 ```

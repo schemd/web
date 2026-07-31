@@ -22,11 +22,11 @@ Every direction-sensitive family defaults to `orientation=right`; a rotationally
 
 ```schemd bounds="1040x420" title="Relay-switched motor drive"
 connector:J1 "mains in" at (90, 150) #slate
-protection:CB1 "breaker" at (260, 150) #amber [type=breaker]
-switch:K1 "contactor" at (450, 150) #cyan [type=relay]
-meter:M1 "A" at (650, 150) #purple [type=ammeter]
-load:MOT "motor" at (850, 150) #emerald [type=motor]
-testpoint:TP1 "TP1" at (650, 300) #cyan
+protection:CB1 "breaker" right-of J1 by 90 #amber [type=breaker]
+switch:K1 "contactor" right-of CB1 by 100 #cyan [type=relay]
+meter:M1 "A" right-of K1 by 100 #purple [type=ammeter]
+load:MOT "motor" right-of M1 by 100 #emerald [type=motor]
+testpoint:TP1 "TP1" below M1 by 90 aligned-x with M1 #cyan
 
 J1.out -> CB1.in #slate [line]
 CB1.out -> K1.in #amber [line]
@@ -55,10 +55,10 @@ Passives share `in`/`out`; diodes expose `anode`/`cathode`. Transistor controls 
 
 ```schemd bounds="1040x430" title="Variant family specimen"
 resistor:R1 "wiper" at (100, 150) #amber [type=potentiometer]
-capacitor:C1 "trimmer" at (290, 150) #cyan [type=variable orientation=down]
-inductor:L1 "coupled" at (480, 150) #purple [type=coupled]
-diode:D1 "triac" at (670, 150) #blue [type=triac]
-transistor:Q1 "p-JFET" at (860, 150) #emerald [type=pjfet orientation=up]
+capacitor:C1 "trimmer" right-of R1 by 110 #cyan [type=variable orientation=down]
+inductor:L1 "coupled" right-of C1 by 110 #purple [type=coupled]
+diode:D1 "triac" right-of L1 by 110 #blue [type=triac]
+transistor:Q1 "p-JFET" right-of D1 by 110 #emerald [type=pjfet orientation=up]
 ```
 
 Note that the variant changes the symbol, never the port contract. A potentiometer and a fixed resistor are both wired `in` to `out`, so swapping one for the other is a one-word edit rather than a rewiring.
@@ -85,13 +85,13 @@ Classical gates are `and`, `or`, `not`, `nand`, `nor`, `xor`, and `xnor`; they u
 
 ```schemd bounds="1140x520" title="Threshold comparator datapath"
 port:SAMPLE "sample" at (80, 130) #blue
-port:LIMIT "limit" at (80, 250) #amber
-comparator:CMP "sample ? limit" at (400, 190) #cyan
-junction:OVER "over" at (650, 190) #cyan
-mux:SEL "select" at (860, 190) #purple [type=mux]
-counter:CNT "overruns" at (650, 420) #emerald
-clock:CLK "CLK" at (200, 420) #amber
-port:RESULT "result" at (1050, 190) #emerald
+port:LIMIT "limit" below SAMPLE by 60 aligned-x with SAMPLE #amber
+comparator:CMP "sample ? limit" right-of SAMPLE by 200 #cyan
+junction:OVER "over" right-of CMP by 130 #cyan
+mux:SEL "select" right-of OVER by 130 #purple [type=mux]
+counter:CNT "overruns" below OVER by 150 aligned-x with OVER #emerald
+clock:CLK "CLK" left-of CNT by 260 #amber
+port:RESULT "result" right-of SEL by 120 #emerald
 
 SAMPLE.out -> CMP.in1 #blue [digital line]
 LIMIT.out -> CMP.in2 #amber [digital line]
@@ -125,11 +125,11 @@ Single-qubit shells are `hadamard`, `qgate`, `xgate`, `ygate`, `zgate`, `sgate`,
 
 ```schemd bounds="1000x520" title="Toffoli with classical readout"
 prepare:C0 "|1\rangle" at (80, 110) #blue
-prepare:C1 "|1\rangle" at (80, 250) #blue
-prepare:T0 "|0\rangle" at (80, 390) #blue
-toffoli:CCX "CCX" at (420, 250) #purple [controls=2 targets=1]
-measure:MT "M" at (700, 390) #cyan
-classical-bit:CB "c_0" at (880, 390) #emerald
+prepare:C1 "|1\rangle" below C0 by 80 aligned-x with C0 #blue
+prepare:T0 "|0\rangle" below C1 by 80 aligned-x with C1 #blue
+toffoli:CCX "CCX" right-of C1 by 220 #purple [controls=2 targets=1]
+measure:MT "M" right-of CCX by 150 aligned-y with T0 #cyan
+classical-bit:CB "c_0" right-of MT by 110 #emerald
 
 C0.out -> CCX.in1 #blue [quantum line]
 C1.out -> CCX.in2 #blue [quantum line]
@@ -144,10 +144,10 @@ The rails are indexed and continuous: `inN` enters, `outN` leaves, and the opera
 
 ```schemd bounds="900x340" title="Indexed CNOT rails"
 prepare:Q0 "|+\rangle" at (90, 110) #blue
-prepare:Q1 "|0\rangle" at (90, 250) #blue
-cnot:CX "CNOT" at (450, 180) #purple
-port:R0 "control out" at (780, 110) #emerald
-port:R1 "target out" at (780, 250) #emerald
+prepare:Q1 "|0\rangle" below Q0 by 40 aligned-x with Q0 #blue
+cnot:CX "CNOT" right-of Q0 by 230 aligned-y with Q1 #purple
+port:R0 "control out" right-of CX by 190 aligned-y with Q0 #emerald
+port:R1 "target out" below R0 by 40 aligned-x with R0 #emerald
 
 Q0.out -> CX.in1 #blue [quantum line]
 Q1.out -> CX.in2 #blue [quantum line]
@@ -171,10 +171,10 @@ Relations are `association`, `dependency`, `generalization`, `realization`, `agg
 
 ```schemd bounds="1000x540" title="Firmware rollout interaction"
 lifeline:FLEET "Fleet service" at (220, 270) #blue [width=170 height=400]
-lifeline:DEVICE "Edge device" at (620, 270) #purple [width=170 height=400]
+lifeline:DEVICE "Edge device" right-of FLEET by 230 aligned-y with FLEET #purple [width=170 height=400]
 artifact:IMG "firmware.bin" at (880, 110) #amber [width=170 height=80]
 
-FLEET.right90 -> DEVICE.left90 #blue [line synchronous label="offer(v0.4.0)"]
+FLEET.right90 -> DEVICE.left90 #blue [line synchronous label="offer(v0.5.0)"]
 DEVICE.left180 -> FLEET.right180 #purple [line return dashed label="accepted"]
 FLEET.right270 -> DEVICE.left270 #blue [line asynchronous label="stream image"]
 IMG.bottom -> DEVICE.top #amber [ortho dependency label="manifest"]

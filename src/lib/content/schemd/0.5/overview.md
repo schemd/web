@@ -28,13 +28,13 @@ $$
 and with $R_f = 2.2\,\text{k}\Omega$ and $C_f = 4.7\,\text{nF}$ that lands near $15.4\ \text{kHz}$ — above the signal band, below half the sample rate.
 
 ```schemd bounds="980x420" title="Instrumentation front end"
-source:BRIDGE "V_{sense}" at (80, 160) #blue [type=voltage-dc]
-amplifier:A1 "INA, G = 100" at (300, 160) #cyan [type=instrumentation]
-resistor:RF "2.2 k\Omega" at (520, 160) #amber
-junction:NODE "f_c" at (690, 160) #cyan
-capacitor:CF "4.7 nF" at (690, 280) #cyan [orientation=down]
-ground:GND "AGND" at (400, 350) #slate
-port:ADC "to ADC" at (890, 160) #emerald
+source:BRIDGE "V_{sense}" at (80, 140) #blue [type=voltage-dc]
+amplifier:A1 "INA, G = 100" right-of BRIDGE by 120 #cyan [type=instrumentation]
+resistor:RF "2.2 k\Omega" right-of A1 by 120 #amber
+junction:NODE "f_c" right-of RF by 110 #cyan
+capacitor:CF "4.7 nF" below NODE by 60 aligned-x with NODE #cyan [orientation=down]
+ground:GND "AGND" below RF by 90 aligned-x with RF #slate
+port:ADC "to ADC" right-of NODE by 150 #emerald
 
 BRIDGE.positive -> A1.in #blue [ortho]
 BRIDGE.negative -> GND.in #slate [ortho]
@@ -57,9 +57,9 @@ Existing documents keep compiling. Two changes are worth reading before we lean 
 
 ```schemd bounds="820x300" title="Canonical gate terminals"
 port:A "A" at (70, 100) #blue
-port:B "B" at (70, 210) #blue
-xor:X1 "A \oplus B" at (360, 155) #cyan
-port:Q "Q" at (720, 155) #emerald
+port:B "B" below A by 60 aligned-x with A #blue
+xor:X1 "A \oplus B" right-of A by 220 below A by 25 #cyan
+port:Q "Q" right-of X1 by 280 #emerald
 
 A.out -> X1.in1 #blue [line]
 B.out -> X1.in2 #blue [line]
@@ -82,9 +82,9 @@ A document that compiles is a drawing the compiler could place and route. It is 
 
 ```schemd bounds="880x360" title="Two nets, one crossing"
 port:CLK "CLK" at (70, 110) #amber
-port:DATA "DATA" at (70, 250) #blue
-port:CLKOUT "CLK'" at (790, 250) #amber
-port:DATAOUT "DATA'" at (790, 110) #emerald
+port:DATA "DATA" below CLK by 90 aligned-x with CLK #blue
+port:DATAOUT "DATA'" right-of CLK by 620 aligned-y with CLK #emerald
+port:CLKOUT "CLK'" below DATAOUT by 90 aligned-x with DATAOUT #amber
 
 CLK.out -> CLKOUT.in #amber [ortho net=CLOCK]
 DATA.out -> DATAOUT.in #blue [ortho net=PAYLOAD]

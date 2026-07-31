@@ -3,6 +3,7 @@
 	import Seo from '$lib/components/Seo.svelte';
 	import type { SchematicSourceMap } from '@schemd/core';
 	import { onMount } from 'svelte';
+	import { freezeToAbsolute, moveDeclaration } from '$lib/placement-edit';
 	import { browser } from '$app/environment';
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/state';
@@ -187,6 +188,7 @@
 			svgBytes: number;
 		};
 		sourceMap?: SchematicSourceMap;
+		placements?: readonly { id: string; line: number; resolved: { x: number; y: number } }[];
 		ms?: number;
 		error?: { message: string; line: number | undefined };
 	}
@@ -488,6 +490,130 @@
 
 	function onPreviewLeave(): void {
 		mappedLine = undefined;
+	}
+
+	/* ---------- Drag a component, edit its declaration ---------- */
+
+	/**
+	 * The picture is an editing surface, not just an output.
+	 *
+	 * A drag never mutates the SVG — it rewrites the declaration and lets the
+	 * compiler redraw. That keeps text the single source of truth, and it means a
+	 * relatively-placed part has its `by` distance adjusted rather than being
+	 * flattened into coordinates the moment someone nudges it.
+	 */
+	let drag = $state<
+		| {
+				line: number;
+				id: string;
+				origin: { x: number; y: number };
+				pointer: { x: number; y: number };
+		  }
+		| undefined
+	>();
+	let dragNote = $state<string | undefined>();
+
+	/** Pointer position in viewBox units, which is what a declaration states. */
+	function viewBoxPoint(event: PointerEvent): { x: number; y: number } | undefined {
+		const svg = previewHost?.querySelector('svg');
+		if (!(svg instanceof SVGSVGElement)) return undefined;
+		const matrix = svg.getScreenCTM();
+		if (!matrix) return undefined;
+		const point = svg.createSVGPoint();
+		point.x = event.clientX;
+		point.y = event.clientY;
+		const mapped = point.matrixTransform(matrix.inverse());
+		return { x: mapped.x, y: mapped.y };
+	}
+
+	/**
+	 * Find the component under the pointer by box, not by paint.
+	 *
+	 * SVG hit-testing answers "which painted pixel is here", so `closest()` on the
+	 * event target misses whenever someone grabs the middle of a resistor — the
+	 * gap between two strokes of the zigzag is not part of any shape, and the
+	 * event lands on the background instead. Testing the pointer against each
+	 * node's rendered box is what a user means by "grab the resistor", and it does
+	 * not depend on how a symbol happens to be drawn.
+	 *
+	 * The smallest containing box wins, so a part sitting inside a UML container
+	 * is grabbed rather than the container around it.
+	 */
+	function nodeAt(event: PointerEvent): Element | undefined {
+		if (!previewHost) return undefined;
+		let best: { element: Element; area: number } | undefined;
+		for (const candidate of previewHost.querySelectorAll('[data-node-id][data-source-line]')) {
+			const box = candidate.getBoundingClientRect();
+			if (
+				event.clientX < box.left ||
+				event.clientX > box.right ||
+				event.clientY < box.top ||
+				event.clientY > box.bottom
+			) {
+				continue;
+			}
+			const area = box.width * box.height;
+			if (best === undefined || area < best.area) best = { element: candidate, area };
+		}
+		return best?.element;
+	}
+
+	function onPreviewPointerDown(event: PointerEvent): void {
+		if (event.button !== 0) return;
+		const group = nodeAt(event);
+		const id = group?.getAttribute('data-node-id');
+		const rawLine = group?.getAttribute('data-source-line');
+		if (!group || id === null || id === undefined || !rawLine) return;
+		const start = viewBoxPoint(event);
+		if (!start) return;
+		/* The declaration states the origin; the pointer is wherever inside the
+		   body it happened to land. Tracking the offset between them stops the
+		   part jumping under the cursor on the first pixel of movement. */
+		const declared = result.placements?.find((placement) => placement.id === id)?.resolved;
+		const origin = declared ?? { x: start.x, y: start.y };
+		drag = { line: Number(rawLine), id, origin, pointer: start };
+		dragNote = undefined;
+		previewHost?.setPointerCapture?.(event.pointerId);
+		event.preventDefault();
+	}
+
+	function onPreviewPointerMove(event: PointerEvent): void {
+		if (!drag) return;
+		const point = viewBoxPoint(event);
+		if (!point) return;
+		const target = {
+			x: drag.origin.x + (point.x - drag.pointer.x),
+			y: drag.origin.y + (point.y - drag.pointer.y)
+		};
+		const edit = moveDeclaration(source, drag.line, target, drag.origin);
+		if (edit.kind === 'unsupported') {
+			dragNote = edit.reason;
+			drag = undefined;
+			return;
+		}
+		source = edit.text;
+		dragNote =
+			edit.kind === 'relative'
+				? `${drag.id}: by ${edit.gap}`
+				: `${drag.id}: (${edit.x}, ${edit.y})`;
+		/* The origin follows the edit so the next move measures from where the
+		   part now is, rather than compounding against a stale position. */
+		drag = { ...drag, origin: { x: target.x, y: target.y }, pointer: point };
+	}
+
+	function onPreviewPointerUp(): void {
+		drag = undefined;
+	}
+
+	/** Rewrite every relation as the coordinates it resolved to. */
+	function freezePlacements(): void {
+		const placements = result.placements ?? [];
+		if (placements.length === 0) {
+			dragNote = 'This document already states every position as coordinates.';
+			return;
+		}
+		source = freezeToAbsolute(source, placements);
+		dragNote = `Froze ${placements.length} relative ${placements.length === 1 ? 'placement' : 'placements'} to coordinates.`;
 	}
 
 	/* ---------- Raw SVG formatting ---------- */
@@ -836,6 +962,12 @@
 				}
 			},
 			{
+				id: 'freeze-placements',
+				label: 'Freeze relative placements to coordinates',
+				detail: 'Rewrite every relation as the position it resolved to',
+				run: freezePlacements
+			},
+			{
 				id: 'toggle-preview',
 				label: `${rightOpen ? 'Hide' : 'Show'} preview`,
 				detail: 'Toggle the compiler output pane',
@@ -1115,11 +1247,19 @@
 					class:stale={result.error !== undefined}
 					role="region"
 					aria-label="Compiled schematic preview"
+					class:is-dragging={drag !== undefined}
 					onpointerover={onPreviewOver}
 					onpointerleave={onPreviewLeave}
+					onpointerdown={onPreviewPointerDown}
+					onpointermove={onPreviewPointerMove}
+					onpointerup={onPreviewPointerUp}
+					onpointercancel={onPreviewPointerUp}
 				>
 					{@html result.svg}
 				</div>
+				{#if dragNote}
+					<p class="drag-note" aria-live="polite">{dragNote}</p>
+				{/if}
 			{:else if view === 'raw'}
 				<!-- Keyboard focus exposes overflowing source to Safari users. -->
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
@@ -1511,6 +1651,21 @@
 		letter-spacing: 0.08em;
 	}
 
+	.preview-stage :global([data-node-id]) {
+		cursor: grab;
+	}
+	.preview-stage.is-dragging,
+	.preview-stage.is-dragging :global([data-node-id]) {
+		cursor: grabbing;
+	}
+	.drag-note {
+		margin: var(--space-2) 0 0;
+		font-family: var(--font-mono);
+		font-size: var(--text-2xs);
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+		color: var(--ink-faint);
+	}
 	.preview-stage {
 		border: none;
 		overflow: auto;

@@ -18,10 +18,11 @@ The compiler emits explicit `width`, `height`, and `viewBox`, so the page can re
 
 ```schemd bounds="840x360" title="Responsive vertical filter"
 source:IN "AC" at (80, 120) #blue [type=voltage-ac]
-resistor:R "R" at (280, 120) #amber
-junction:J "node" at (460, 120) #cyan
-capacitor:C "C" at (460, 240) #cyan [orientation=down]
-port:OUT "out" at (720, 120) #emerald
+resistor:R "R" right-of IN by 120 #amber
+junction:J "node" right-of R by 120 #cyan
+capacitor:C "C" below J by 80 aligned-x with J #cyan [orientation=down]
+port:OUT "out" right-of J by 190 #emerald
+
 IN.positive -> R.in #blue [line]
 R.out -> J.node #amber [line]
 J.node -> C.in #cyan [ortho]
@@ -38,8 +39,9 @@ Reach for `content-visibility: auto` on a long gallery, with `contain-intrinsic-
 
 ```schemd bounds="700x280" title="Compact status circuit"
 logic:HI "1" at (90, 120) #blue [type=high]
-buffer:B "buffer" at (330, 120) #cyan [type=schmitt]
-load:L "lamp" at (590, 120) #emerald [type=lamp]
+buffer:B "buffer" right-of HI by 160 #cyan [type=schmitt]
+load:L "lamp" right-of B by 170 #emerald [type=lamp]
+
 HI.out -> B.in1 #blue [digital line]
 B.out1 -> L.in #emerald [line]
 ```

@@ -9,13 +9,13 @@ A netlist has three parts. `nodes` are the declared components with their stable
 Terminals that share an exact node are one net, exactly as the renderer sees them:
 
 ```schemd bounds="900x400" title="Supply, resistor, and return"
-source:V1 "AC" at (110, 150) #blue [type=voltage-ac]
-resistor:R1 "1 k\Omega" at (390, 150) #amber
-ground:GND "0 V" at (680, 150) #slate
+source:V9 "DC" at (110, 150) #blue [type=voltage-dc]
+inductor:L9 "4.7 mH" at (390, 150) #amber
+ground:RTN "return" at (680, 150) #slate
 
-V1.positive -> R1.in #blue [line]
-R1.out -> GND.in #slate [line]
-V1.negative -> GND.in #slate [ortho]
+V9.positive -> L9.in #blue [line]
+L9.out -> RTN.in #slate [line]
+V9.negative -> RTN.in #slate [ortho]
 ```
 
 ```ts
@@ -50,12 +50,12 @@ The diagram below ties the supply straight to ground through a shared net name. 
 <!-- schemd-expect: shorted-supply -->
 
 ```schemd bounds="900x400" title="A shorted rail"
-source:V1 "AC" at (110, 150) #blue [type=voltage-ac]
-resistor:R1 "1 k\Omega" at (390, 150) #amber
-ground:GND "0 V" at (680, 150) #slate
+source:V9 "DC" at (110, 150) #blue [type=voltage-dc]
+inductor:L9 "4.7 mH" at (390, 150) #amber
+ground:RTN "return" at (680, 150) #slate
 
-V1.positive -> R1.in #blue [line net=rail]
-R1.out -> GND.in #slate [line net=rail]
+V9.positive -> L9.in #blue [line net=bus]
+L9.out -> RTN.in #slate [line net=bus]
 ```
 
 ```text
@@ -75,12 +75,12 @@ The diagram below is contention, because the domain says so:
 <!-- schemd-expect: multiple-drivers -->
 
 ```schemd bounds="900x460" title="Two outputs, one node"
-port:A "A" at (110, 150) #blue
-port:B "B" at (110, 330) #blue
-and:G1 "AND" at (470, 240) #purple
+port:X "X" at (110, 150) #cyan
+port:Y "Y" at (110, 330) #cyan
+or:G9 "OR" at (470, 240) #purple
 
-A.out -> G1.in1 #blue [digital]
-B.out -> G1.in1 #blue [digital]
+X.out -> G9.in1 #cyan [digital]
+Y.out -> G9.in1 #cyan [digital]
 ```
 
 ```text

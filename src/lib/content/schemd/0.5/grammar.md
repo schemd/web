@@ -17,10 +17,10 @@ Identifiers are case-sensitive and become source-map keys. An unknown, duplicate
 
 ```schemd bounds="820x560" title="Half-bridge leg"
 source:VBUS "V_{bus}" at (390, 90) #blue [type=voltage-dc orientation=down]
-transistor:QH "high side" at (390, 240) #amber [type=nmos orientation=down]
-junction:SW "SW" at (390, 350) #cyan
-transistor:QL "low side" at (390, 460) #purple [type=nmos orientation=down]
-port:PHASE "phase" at (680, 350) #emerald
+transistor:QH "high side" below VBUS by 30 aligned-x with VBUS #amber [type=nmos orientation=down]
+junction:SW "SW" below QH by 20 aligned-x with QH #cyan
+transistor:QL "low side" below SW by 20 aligned-x with SW #purple [type=nmos orientation=down]
+port:PHASE "phase" right-of SW by 180 #emerald
 
 VBUS.positive -> QH.drain #blue [line]
 QH.source -> SW.node #amber [line]
@@ -47,14 +47,14 @@ Geometry is contract-checked. Bodies may touch at an edge but never overlap, and
 A reversal bus is the case that exercises all of it at once — every wire must cross every other:
 
 ```schemd bounds="880x500" title="Four-wire reversal bus"
-port:A0 "A0" at (90, 90) #blue [width=1]
-port:A1 "A1" at (90, 200) #cyan [width=1]
-port:A2 "A2" at (90, 310) #amber [width=1]
-port:A3 "A3" at (90, 420) #purple [width=1]
-port:B0 "B0" at (790, 420) #blue [width=1]
-port:B1 "B1" at (790, 310) #cyan [width=1]
-port:B2 "B2" at (790, 200) #amber [width=1]
-port:B3 "B3" at (790, 90) #purple [width=1]
+port:A0 "A0" at (90, 80) #blue [width=1]
+port:A1 "A1" below A0 by 40 aligned-x with A0 #cyan [width=1]
+port:A2 "A2" below A1 by 40 aligned-x with A1 #amber [width=1]
+port:A3 "A3" below A2 by 40 aligned-x with A2 #purple [width=1]
+port:B3 "B3" right-of A0 by 600 aligned-y with A0 #purple [width=1]
+port:B2 "B2" below B3 by 40 aligned-x with B3 #amber [width=1]
+port:B1 "B1" below B2 by 40 aligned-x with B2 #cyan [width=1]
+port:B0 "B0" below B1 by 40 aligned-x with B1 #blue [width=1]
 
 A0.out -> B0.in #blue [ortho digital net=BIT0]
 A1.out -> B1.in #cyan [ortho digital net=BIT1]
@@ -77,16 +77,15 @@ Options are validated by name against the kind we named. The common ones are `ty
 `ic` is the clearest case. Its quoted `left`, `right`, `top`, and `bottom` lists each become case-sensitive ports, and the body grows to fit the longest side, so we never hand-size the box:
 
 ```schemd bounds="960x520" title="Named-pin package"
-port:SDA "SDA" at (80, 190) #blue
-port:SCL "SCL" at (80, 290) #amber
-ic:U1 "ADC, 24-bit" at (460, 240) #cyan [left="SDA,SCL,DRDY" right="AIN0,AIN1" top="AVDD" bottom="AGND"]
-port:AIN "sensor" at (860, 200) #emerald
-ground:GND "AGND" at (460, 420) #slate
+port:SDA "SDA" at (80, 140) #blue
+port:SCL "SCL" below SDA by 40 aligned-x with SDA #amber
+ic:U1 "ADC, 24-bit" right-of SDA by 220 aligned-y with SCL #cyan [left="SDA,SCL,DRDY" right="AIN0,AIN1" top="AVDD" bottom="AGND"]
+port:AIN "sensor" right-of U1 by 200 aligned-y with SDA #emerald
+ground:GND "AGND" below U1 by 20 aligned-x with U1 #slate
 
 SDA.out -> U1.SDA #blue [ortho]
 SCL.out -> U1.SCL #amber [ortho]
 U1.AIN0 -> AIN.in #emerald [ortho marker-end=arrow]
-U1.AGND -> GND.in #slate [ortho]
 ```
 
 Note that we wired `U1.SDA` by its real pin name. `in` and `out` still fall back to the first suitable input and output side when we genuinely do not care which — but on a package with named pins, we usually do.

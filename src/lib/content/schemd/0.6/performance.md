@@ -16,12 +16,13 @@ _size_ and none of them bounds _time_. A small document with pathological geomet
 to route, and no count of output bytes will catch it.
 
 ```schemd bounds="800x360" title="Bounded rotated route"
-port:A "A" at (70, 100) #blue
-resistor:R "R" at (330, 100) #amber [orientation=down]
-component:BLOCK "obstacle" at (330, 250) #slate [width=150 height=70]
-port:B "B" at (700, 100) #emerald
-A.out -> R.in #blue [ortho]
-R.out -> B.in #emerald [ortho]
+port:M "M" at (70, 100) #cyan
+inductor:LR "L" at (330, 100) #purple [orientation=down]
+component:CAN "screen" at (330, 250) #slate [width=150 height=70]
+port:N "N" at (700, 100) #emerald
+
+M.out -> LR.in #cyan [ortho]
+LR.out -> N.in #emerald [ortho]
 ```
 
 The release gate measures two different client costs. A tree-shaken host that imports only
@@ -48,11 +49,12 @@ cannot. Concurrency and queue depth are finite, and a full queue returns a retry
 instead of multiplying memory by the rate-limit burst.
 
 ```schemd bounds="720x300" title="Cache-key reference"
-clock:C "CLK" at (90, 120) #blue
-counter:N "count" at (340, 120) #cyan [outputs=4]
-port:Q "Q" at (620, 120) #emerald
-C.out -> N.clock #blue [digital ortho]
-N.out1 -> Q.in #emerald [digital line]
+clock:CK "CLK" at (90, 120) #purple
+register:RG "latch" at (340, 120) #cyan [width=1]
+port:D "D" at (620, 120) #emerald
+
+CK.out -> RG.clock #purple [digital ortho]
+RG.out1 -> D.in #emerald [digital line]
 ```
 
 Successful and line-numbered failed compilations share a SHA-256-keyed LRU capped at 64 entries and

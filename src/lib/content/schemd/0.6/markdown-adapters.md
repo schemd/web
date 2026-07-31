@@ -11,11 +11,12 @@ return compileSchematic(token.text, { ...fence, mode: 'default' }).svg;
 ```
 
 ```schemd bounds="760x320" title="Markdown adapter fixture"
-source:V "5 V" at (80, 130) #blue [type=voltage-dc]
-protection:F "breaker" at (300, 130) #amber [type=breaker]
-load:B "buzzer" at (560, 130) #emerald [type=buzzer]
-V.positive -> F.in #blue [line]
-F.out -> B.in #emerald [line]
+source:VB "9 V" at (80, 130) #blue [type=voltage-dc]
+switch:SB "button" at (300, 130) #amber [type=pushbutton]
+load:LP "lamp" at (560, 130) #emerald [type=lamp]
+
+VB.positive -> SB.in #blue [line]
+SB.out -> LP.in #emerald [line]
 ```
 
 This site compiles every versioned fence in its own test suite, which is what stops a documentation example from being decoration. Each line keeps its own corpus, and newer syntax is never backfilled into an older one.

@@ -14,20 +14,20 @@ kind:ID "label" right-of VIN by 150 #color [options]
 Both forms are first-class and can appear in the same document. If we never write a relation, nothing changes — our diagram compiles to exactly the bytes it did before.
 
 ```schemd bounds="900x520" title="Relative placement"
-// Only VIN states coordinates.
-source:VIN "V_{in}" at (90, 150) #blue [type=voltage-ac]
-resistor:R1 "10 kΩ" right-of VIN by 150 #amber
-junction:VOUT "output node" right-of R1 by 150 #cyan
-capacitor:C1 "100 nF" below VOUT by 110 #cyan [orientation=down]
-port:OUT "V_{out}" right-of VOUT by 150 #emerald
-ground:GND "0 V" below R1 by 190 aligned-x with R1 #slate
+// Only VBAT states coordinates.
+source:VBAT "V_{bat}" at (90, 150) #blue [type=battery]
+inductor:L1 "100 \mu H" right-of VBAT by 150 #purple
+junction:SW "switch node" right-of L1 by 150 #cyan
+capacitor:CO "22 \mu F" below SW by 110 #cyan [type=polarized orientation=down]
+port:LOAD "V_{out}" right-of SW by 150 #emerald
+ground:RTN "0 V" below L1 by 190 aligned-x with L1 #slate
 
-VIN.positive -> R1.in #blue [line]
-R1.out -> VOUT.node #amber [line]
-VOUT.node -> C1.in #cyan [line]
-VOUT.node -> OUT.in #emerald [line marker-end=arrow]
-C1.out -> GND.in #cyan [ortho]
-VIN.negative -> GND.in #slate [ortho]
+VBAT.positive -> L1.in #blue [line]
+L1.out -> SW.node #purple [line]
+SW.node -> CO.in #cyan [line]
+SW.node -> LOAD.in #emerald [line marker-end=arrow]
+CO.out -> RTN.in #cyan [ortho]
+VBAT.negative -> RTN.in #slate [ortho]
 ```
 
 <!-- /schemd-section -->
@@ -50,14 +50,14 @@ Two details matter. A direction measures from the **body**, not the origin, so `
 And an axis that no relation sets is **inherited from the first reference**, so `right-of A` puts us beside A and level with it. An alignment overrides that, which is how a part takes its column from one component and its row from another:
 
 ```schemd bounds="880x520" title="Anchored to a terminal"
-port:IN "D" at (140, 150) #blue
-and:G1 "AND" right-of IN by 200 aligned-y with IN.out #purple
-port:OUT "Q" right-of G1 by 200 #emerald
-clock:CLK "CLK" below G1 by 150 aligned-x with G1 #amber
+port:S "S" at (140, 150) #cyan
+or:G2 "OR" right-of S by 200 aligned-y with S.out #purple
+port:T "T" right-of G2 by 200 #emerald
+clock:EN "EN" below G2 by 150 aligned-x with G2 #amber
 
-IN.out -> G1.in1 #blue [ortho]
-CLK.out -> G1.in2 #amber [ortho]
-G1.out -> OUT.in #purple [ortho]
+S.out -> G2.in1 #cyan [ortho]
+EN.out -> G2.in2 #amber [ortho]
+G2.out -> T.in #purple [ortho]
 ```
 
 <!-- /schemd-section -->
@@ -73,17 +73,17 @@ Resolution is one topological sort and one pass of arithmetic — no solver, no 
 - **Order of evaluation cannot affect the result.** A position depends only on its references' positions.
 
 ```schemd bounds="900x560" title="Mixed forms"
-source:V1 "V_{cc}" at (110, 260) #blue [type=voltage-dc]
-resistor:RB "100 kΩ" right-of V1 by 130 #amber
-transistor:Q1 "2N3904" right-of RB by 130 #purple [type=npn]
-resistor:RC "1 kΩ" above Q1 by 80 aligned-x with Q1 #amber
-ground:GND "0 V" at (560, 470) #slate
+source:VS "V_{ee}" at (110, 260) #purple [type=voltage-dc]
+resistor:RE "10 k\Omega" right-of VS by 130 #cyan
+transistor:QP2 "2N3906" right-of RE by 130 #blue [type=pnp]
+resistor:RL "470 \Omega" above QP2 by 80 aligned-x with QP2 #cyan
+ground:AGND "0 V" at (560, 470) #slate
 
-V1.positive -> RB.in #blue [line]
-RB.out -> Q1.gate #amber [line]
-RC.out -> Q1.drain #amber [ortho]
-Q1.source -> GND.in #slate [ortho]
-V1.negative -> GND.in #slate [ortho]
+VS.positive -> RE.in #purple [line]
+RE.out -> QP2.gate #cyan [line]
+RL.out -> QP2.drain #cyan [ortho]
+QP2.source -> AGND.in #slate [ortho]
+VS.negative -> AGND.in #slate [ortho]
 ```
 
 <!-- /schemd-section -->
@@ -114,14 +114,14 @@ const { placements } = compileSchematic(source, fence);
 It is empty when we used only coordinates, sorted by source line, and its relations carry canonical terminal names, so a reported relation always agrees with the netlist. The [inspector](/inspector/0.6.0) shows it in its Place stage.
 
 ```schemd bounds="960x400" title="Reading the resolved coordinates"
-port:A "A" at (120, 200) #blue
-resistor:R1 "R" right-of A by 160 #amber
-resistor:R2 "R" right-of R1 by 160 #cyan
-port:B "B" right-of R2 by 160 #emerald
+port:M "M" at (120, 200) #cyan
+capacitor:C1 "C" right-of M by 160 #purple
+capacitor:C2 "C" right-of C1 by 160 #amber
+port:N "N" right-of C2 by 160 #emerald
 
-A.out -> R1.in #blue [line]
-R1.out -> R2.in #amber [line]
-R2.out -> B.in #emerald [line]
+M.out -> C1.in #cyan [line]
+C1.out -> C2.in #purple [line]
+C2.out -> N.in #emerald [line]
 ```
 
 <!-- /schemd-section -->

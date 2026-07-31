@@ -26,6 +26,7 @@ import {
 	type SchematicDiagnostic
 } from '@schemd/core';
 import { describeNetlist } from '@schemd/core/describe';
+import { buildDiagramTour } from '$lib/server/diagram-tour';
 import { HOST_COMPILER_LIMITS } from '$lib/compile-contract';
 import { decodeWorkspaceState } from '$lib/state-uri';
 import { tokenizeLine, type SchemdTokenLine } from '$lib/tokenizer';
@@ -114,6 +115,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		const netlist = buildNetlist(compilation.document);
 		const diagnostics: readonly SchematicDiagnostic[] = verifyNetlist(netlist);
 		const description = describeNetlist(netlist);
+		/* Derived here so every visitor gets the same walk of the same diagram. */
+		const tour = buildDiagramTour(compilation.document);
 
 		/* Trace vertices come from the emitted `full`-mode markup rather than from a
 		   second routing pass: re-routing here could disagree with what was drawn,
@@ -153,6 +156,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 				severity: diagnostic.severity,
 				message: diagnostic.message
 			})),
+			tour,
 			description: {
 				headline: description.headline,
 				inventory: description.inventory,

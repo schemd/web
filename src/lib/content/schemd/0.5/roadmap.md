@@ -13,10 +13,10 @@ accessible descriptions, deterministic fuzzing, and source maps remain part of t
 
 ```schemd bounds="980x420" title="Cross-domain 0.5 specimen"
 source:AC "AC" at (90, 120) #blue [type=voltage-ac]
-capacitor:C "C" at (280, 120) #cyan [orientation=down]
-adder:FA "FA" at (500, 120) #amber [type=full]
-qgate:Q "R_z" at (710, 120) #purple [parameter="\theta"]
-component:SYS "system" at (870, 290) #slate [width=150 height=80]
+capacitor:C "C" right-of AC by 120 #cyan [orientation=down]
+adder:FA "FA" right-of C by 140 #amber [type=full]
+qgate:Q "R_z" right-of FA by 130 #purple [parameter="\theta"]
+component:SYS "system" below Q by 100 #slate [width=150 height=80]
 ```
 
 <!-- /schemd-section -->
@@ -42,8 +42,9 @@ that, which is why the sync job installs rather than links.
 
 ```schemd bounds="700x300" title="Release-gate signal"
 logic:READY "1" at (100, 120) #blue [type=high]
-testpoint:GATE "release gate" at (340, 120) #amber
-load:L "lamp" at (590, 120) #emerald [type=lamp]
+testpoint:GATE "release gate" right-of READY by 160 #amber
+load:L "lamp" right-of GATE by 170 #emerald [type=lamp]
+
 READY.out -> GATE.node #blue [digital line]
 GATE.node -> L.in #emerald [digital line]
 ```

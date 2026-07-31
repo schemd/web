@@ -16,11 +16,12 @@ Here is the reassuring part: every mode shares one parsed document, one layout, 
 With wire hooks enabled, every signal wire exposes its parser-resolved topology as `data-net-id`: named nets keep their author name and unnamed nets use deterministic `$N` identities. The compilation source map exposes the same value as `SchematicWireSource.netId`; relation-only UML connectors omit it.
 
 ```schemd bounds="760x320" title="Mode-parity specimen"
-source:S "pulse" at (90, 130) #blue [type=voltage-pulse]
-switch:SW "SPST" at (290, 130) #amber [type=spst]
-load:M "motor" at (520, 130) #emerald [type=motor]
-S.positive -> SW.in #blue [line]
-SW.out -> M.in #emerald [line]
+source:SQ "battery" at (90, 130) #blue [type=battery]
+switch:KB "changeover" at (290, 130) #amber [type=spdt]
+load:BZ2 "buzzer" at (520, 130) #emerald [type=buzzer]
+
+SQ.positive -> KB.in #blue [line]
+KB.out -> BZ2.in #emerald [line]
 ```
 
 `full` mode keeps diagram-local IDs and provides accessible port targets. It never injects scripts, external fonts, raster assets, data URLs, or `foreignObject`.
@@ -32,9 +33,9 @@ SW.out -> M.in #emerald [line]
 Identical components reference a single `<symbol>` definition, and orientation costs only an instance rotation on top of it. A family we never use adds exactly zero bytes to the diagram, which is why a large drawing of few distinct parts stays small.
 
 ```schemd bounds="820x300" title="Repeated passives"
-resistor:R1 "R" at (130, 120) #amber
-resistor:R2 "R" at (350, 120) #amber [orientation=down]
-resistor:R3 "R" at (580, 120) #amber [orientation=left]
+capacitor:C1 "C" at (130, 120) #cyan
+capacitor:C2 "C" at (350, 120) #cyan [orientation=down]
+capacitor:C3 "C" at (580, 120) #cyan [orientation=left]
 ```
 
 <!-- /schemd-section -->

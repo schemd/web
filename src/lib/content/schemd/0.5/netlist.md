@@ -10,8 +10,8 @@ Terminals that share an exact node are one net, exactly as the renderer sees the
 
 ```schemd bounds="900x400" title="Supply, resistor, and return"
 source:V1 "AC" at (110, 150) #blue [type=voltage-ac]
-resistor:R1 "1 k\Omega" at (390, 150) #amber
-ground:GND "0 V" at (680, 150) #slate
+resistor:R1 "1 k\Omega" right-of V1 by 190 #amber
+ground:GND "0 V" right-of R1 by 190 #slate
 
 V1.positive -> R1.in #blue [line]
 R1.out -> GND.in #slate [line]
@@ -51,8 +51,8 @@ The diagram below ties the supply straight to ground through a shared net name. 
 
 ```schemd bounds="900x400" title="A shorted rail"
 source:V1 "AC" at (110, 150) #blue [type=voltage-ac]
-resistor:R1 "1 k\Omega" at (390, 150) #amber
-ground:GND "0 V" at (680, 150) #slate
+resistor:R1 "1 k\Omega" right-of V1 by 190 #amber
+ground:GND "0 V" right-of R1 by 190 #slate
 
 V1.positive -> R1.in #blue [line net=rail]
 R1.out -> GND.in #slate [line net=rail]
@@ -76,8 +76,8 @@ The diagram below is contention, because the domain says so:
 
 ```schemd bounds="900x460" title="Two outputs, one node"
 port:A "A" at (110, 150) #blue
-port:B "B" at (110, 330) #blue
-and:G1 "AND" at (470, 240) #purple
+port:B "B" below A by 130 aligned-x with A #blue
+and:G1 "AND" right-of A by 260 below A by 40 #purple
 
 A.out -> G1.in1 #blue [digital]
 B.out -> G1.in1 #blue [digital]

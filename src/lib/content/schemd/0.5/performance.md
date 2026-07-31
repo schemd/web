@@ -17,9 +17,10 @@ to route, and no count of output bytes will catch it.
 
 ```schemd bounds="800x360" title="Bounded rotated route"
 port:A "A" at (70, 100) #blue
-resistor:R "R" at (330, 100) #amber [orientation=down]
-component:BLOCK "obstacle" at (330, 250) #slate [width=150 height=70]
-port:B "B" at (700, 100) #emerald
+resistor:R "R" right-of A by 190 #amber [orientation=down]
+component:BLOCK "obstacle" below R by 90 aligned-x with R #slate [width=150 height=70]
+port:B "B" right-of BLOCK by 200 aligned-y with A #emerald
+
 A.out -> R.in #blue [ortho]
 R.out -> B.in #emerald [ortho]
 ```
@@ -49,8 +50,9 @@ instead of multiplying memory by the rate-limit burst.
 
 ```schemd bounds="720x300" title="Cache-key reference"
 clock:C "CLK" at (90, 120) #blue
-counter:N "count" at (340, 120) #cyan [outputs=4]
-port:Q "Q" at (620, 120) #emerald
+counter:N "count" right-of C by 160 #cyan [outputs=4]
+port:Q "Q" right-of N by 180 #emerald
+
 C.out -> N.clock #blue [digital ortho]
 N.out1 -> Q.in #emerald [digital line]
 ```

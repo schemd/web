@@ -28,21 +28,21 @@ $$
 and with $R_f = 2.2\,\text{k}\Omega$ and $C_f = 4.7\,\text{nF}$ that lands near $15.4\ \text{kHz}$ — above the signal band, below half the sample rate.
 
 ```schemd bounds="980x420" title="Instrumentation front end"
-source:BRIDGE "V_{sense}" at (80, 160) #blue [type=voltage-dc]
-amplifier:A1 "INA, G = 100" at (300, 160) #cyan [type=instrumentation]
-resistor:RF "2.2 k\Omega" at (520, 160) #amber
-junction:NODE "f_c" at (690, 160) #cyan
-capacitor:CF "4.7 nF" at (690, 280) #cyan [orientation=down]
-ground:GND "AGND" at (400, 350) #slate
-port:ADC "to ADC" at (890, 160) #emerald
+source:CELL "V_{cell}" at (80, 160) #blue [type=voltage-dc]
+amplifier:A9 "OPA, G = 10" at (300, 160) #cyan [type=opamp]
+inductor:LF9 "100 \mu H" at (520, 160) #amber
+junction:TAP9 "f_0" at (690, 160) #cyan
+capacitor:CF9 "1 nF" at (690, 280) #cyan [orientation=down]
+ground:RTN "RTN" at (400, 350) #slate
+port:DAQ "to DAQ" at (890, 160) #emerald
 
-BRIDGE.positive -> A1.in #blue [ortho]
-BRIDGE.negative -> GND.in #slate [ortho]
-A1.out -> RF.in #cyan [line]
-RF.out -> NODE.node #amber [line]
-NODE.node -> CF.in #cyan [ortho]
-CF.out -> GND.in #cyan [ortho]
-NODE.node -> ADC.in #emerald [line marker-end=arrow]
+CELL.positive -> A9.positive #blue [ortho]
+CELL.negative -> RTN.in #slate [ortho]
+A9.out -> LF9.in #cyan [line]
+LF9.out -> TAP9.node #amber [line]
+TAP9.node -> CF9.in #cyan [ortho]
+CF9.out -> RTN.in #cyan [ortho]
+TAP9.node -> DAQ.in #emerald [line marker-end=arrow]
 ```
 
 <!-- /schemd-section -->
@@ -56,14 +56,14 @@ Existing documents keep compiling. Two changes are worth reading before we lean 
 **The component and connection ceilings are gone.** `MAX_SCHEMATIC_COMPONENTS`, `MAX_SCHEMATIC_CONNECTIONS`, and their `SCHEMATIC_LIMITS` entries were removed; the compiler is linear in both, and sixty-four thousand components compile in about a second. A per-compilation `limits` option replaces them — see [resource budgets](/docs/0.6/limits).
 
 ```schemd bounds="820x300" title="Canonical gate terminals"
-port:A "A" at (70, 100) #blue
-port:B "B" at (70, 210) #blue
-xor:X1 "A \oplus B" at (360, 155) #cyan
-port:Q "Q" at (720, 155) #emerald
+port:P "P" at (70, 100) #cyan
+port:Q "Q" at (70, 210) #cyan
+nand:N1 "\overline{P \land Q}" at (360, 155) #purple
+port:R "R" at (720, 155) #emerald
 
-A.out -> X1.in1 #blue [line]
-B.out -> X1.in2 #blue [line]
-X1.out -> Q.in #emerald [line marker-end=arrow]
+P.out -> N1.in1 #cyan [line]
+Q.out -> N1.in2 #cyan [line]
+N1.out -> R.in #emerald [line marker-end=arrow]
 ```
 
 That last connection is written with the `out` alias and emits `data-wire-source="X1.out1"`. Open it in the [playground](/playground/0.6.0) and read the raw SVG if that matters to us.
@@ -81,13 +81,13 @@ A document that compiles is a drawing the compiler could place and route. It is 
 - **Published performance figures are narrow.** Warm medians on one Apple Silicon and Node configuration. Run `bun run benchmark` on our own hardware.
 
 ```schemd bounds="880x360" title="Two nets, one crossing"
-port:CLK "CLK" at (70, 110) #amber
-port:DATA "DATA" at (70, 250) #blue
-port:CLKOUT "CLK'" at (790, 250) #amber
-port:DATAOUT "DATA'" at (790, 110) #emerald
+port:TX "TX" at (70, 110) #cyan
+port:RX "RX" at (70, 250) #purple
+port:TXOUT "TX'" at (790, 250) #cyan
+port:RXOUT "RX'" at (790, 110) #emerald
 
-CLK.out -> CLKOUT.in #amber [ortho net=CLOCK]
-DATA.out -> DATAOUT.in #blue [ortho net=PAYLOAD]
+TX.out -> TXOUT.in #cyan [ortho net=UPLINK]
+RX.out -> RXOUT.in #purple [ortho net=DOWNLINK]
 ```
 
 Those two traces must cross, and they belong to different nets — so the compiler draws a bridge rather than a junction. Had they carried the same `net=`, the crossing would have stayed continuous, because then it would be one conductor.

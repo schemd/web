@@ -15,11 +15,12 @@ export function renderDiagram(source: string) {
 ```
 
 ```schemd bounds="760x320" title="Framework-neutral source"
-connector:IN "input" at (80, 130) #blue
-amplifier:A "op-amp" at (340, 130) #cyan [type=opamp]
-connector:OUT "output" at (650, 130) #emerald
-IN.out -> A.positive #blue [line]
-A.out -> OUT.in #emerald [line]
+connector:SRC "probe" at (80, 130) #blue
+amplifier:BUF "comparator" at (340, 130) #cyan [type=comparator]
+connector:SINK "logger" at (650, 130) #emerald
+
+SRC.out -> BUF.positive #blue [line]
+BUF.out -> SINK.in #emerald [line]
 ```
 
 Svelte derives the SVG from source and fence alone; React memoizes on those same two values; Vue and Angular hand the string through their trusted-HTML boundary. Note that this boundary is for compiler output and nothing else — arbitrary user HTML must never travel the same door.

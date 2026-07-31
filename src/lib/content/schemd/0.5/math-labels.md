@@ -9,9 +9,9 @@ There is no TeX runtime here, and the labels still read like engineering. Groupe
 
 ```schemd bounds="900x340" title="Rotated components with upright math"
 source:V1 "V_{in}^{AC}" at (100, 150) #blue [type=voltage-ac]
-resistor:R1 "10 k\Omega" at (330, 150) #amber [orientation=down]
-qgate:Q1 "R_z" at (570, 150) #purple [parameter="\theta/2" phase="e^{i\phi}"]
-port:O1 "f_c = \infty" at (800, 150) #emerald
+resistor:R1 "10 k\Omega" right-of V1 by 150 #amber [orientation=down]
+qgate:Q1 "R_z" right-of R1 by 160 #purple [parameter="\theta/2" phase="e^{i\phi}"]
+port:O1 "f_c = \infty" right-of Q1 by 150 #emerald
 ```
 
 Width is estimated, never measured — no font is loaded at any point. The estimator is deterministic and deliberately conservative, and a long label grows the component's bounds _before_ placement is validated. That ordering is what lets the whole thing work without an SSR-incompatible `getBBox()`.
@@ -24,9 +24,10 @@ Width is estimated, never measured — no font is loaded at any point. The estim
 
 ```schemd bounds="860x320" title="Parameterized quantum register"
 prepare:P "|0\rangle" at (80, 130) #blue
-hadamard:H "H" at (260, 130) #cyan
-qgate:U "U" at (470, 130) #purple [parameter="\theta" matrix="[a,b;c,d]"]
-measure:M "M_z" at (690, 130) #emerald
+hadamard:H "H" right-of P by 110 #cyan
+qgate:U "U" right-of H by 130 #purple [parameter="\theta" matrix="[a,b;c,d]"]
+measure:M "M_z" right-of U by 140 #emerald
+
 P.out -> H.in #blue [quantum line]
 H.out -> U.in #cyan [quantum line]
 U.out -> M.in #purple [quantum line]

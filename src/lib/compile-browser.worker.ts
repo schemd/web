@@ -83,6 +83,7 @@ async function execute(message: WorkerRequest): Promise<WorkerResponse> {
 				svg: compiled.svg,
 				metrics: { ...compiled.metrics },
 				sourceMap: compiled.sourceMap,
+				placements: compiled.placements,
 				ms: Math.round((performance.now() - startedAt) * 100) / 100
 			}
 		};

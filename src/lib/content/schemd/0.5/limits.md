@@ -21,8 +21,9 @@ The rejection happens at the declaration that crosses the ceiling, during parsin
 
 ```schemd bounds="720x300" title="A modest diagram inside a tight budget"
 port:IN "in" at (80, 150) #blue
-resistor:R1 "1 k\Omega" at (300, 150) #amber
-port:OUT "out" at (620, 150) #emerald
+resistor:R1 "1 k\Omega" right-of IN by 150 #amber
+port:OUT "out" right-of R1 by 200 #emerald
+
 IN.out -> R1.in #blue [ortho]
 R1.out -> OUT.in #emerald [ortho]
 ```
@@ -49,9 +50,10 @@ The defaults that remain bound allocation, not diagram size. They sit far past a
 
 ```schemd bounds="800x360" title="Bounded orthogonal corridor"
 port:A "A" at (70, 100) #blue
-resistor:R "R" at (330, 100) #amber [orientation=down]
-component:BLOCK "obstacle" at (330, 250) #slate [width=150 height=70]
-port:B "B" at (700, 100) #emerald
+resistor:R "R" right-of A by 190 #amber [orientation=down]
+component:BLOCK "obstacle" below R by 90 aligned-x with R #slate [width=150 height=70]
+port:B "B" right-of R by 280 aligned-y with A #emerald
+
 A.out -> R.in #blue [ortho]
 R.out -> B.in #emerald [ortho]
 ```
@@ -69,10 +71,11 @@ R.out -> B.in #emerald [ortho]
 **`SCHEMATIC_LIMITS` reports the defaults.** Its two unlimited counts are `Infinity`, which `JSON.stringify` renders as `null`; pass a replacer if you expose them over an API.
 
 ```schemd bounds="760x340" title="Two nets, one canvas"
-port:L "L" at (80, 110) #blue
-port:R "R" at (660, 110) #blue
-port:T "T" at (370, 230) #cyan [orientation=up]
-port:B "B" at (370, 80) #cyan [orientation=down]
+port:L "L" at (80, 90) #blue
+port:R "R" right-of L by 480 #blue
+port:B "B" right-of L by 210 aligned-y with L #cyan [orientation=down]
+port:T "T" below B by 40 aligned-x with B #cyan [orientation=up]
+
 L.out -> R.in #blue [ortho net=DATA]
 B.out -> T.in #cyan [ortho net=CLOCK]
 ```
@@ -87,9 +90,10 @@ Pair a budget with a time limit you enforce yourself — a worker with a deadlin
 
 ```schemd bounds="720x320" title="Small source, real routing work"
 port:A1 "A" at (80, 90) #blue
-port:B1 "B" at (620, 230) #blue
-port:A2 "A" at (80, 230) #amber
-port:B2 "B" at (620, 90) #amber
+port:A2 "A" below A1 by 90 aligned-x with A1 #amber
+port:B2 "B" right-of A1 by 460 aligned-y with A1 #amber
+port:B1 "B" below B2 by 90 aligned-x with B2 #blue
+
 A1.out -> B1.in #blue [ortho]
 A2.out -> B2.in #amber [ortho]
 ```

@@ -16,8 +16,9 @@ export function renderDiagram(source: string) {
 
 ```schemd bounds="760x320" title="Framework-neutral source"
 connector:IN "input" at (80, 130) #blue
-amplifier:A "op-amp" at (340, 130) #cyan [type=opamp]
-connector:OUT "output" at (650, 130) #emerald
+amplifier:A "op-amp" right-of IN by 150 #cyan [type=opamp]
+connector:OUT "output" right-of A by 180 #emerald
+
 IN.out -> A.positive #blue [line]
 A.out -> OUT.in #emerald [line]
 ```

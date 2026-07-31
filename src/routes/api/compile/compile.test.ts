@@ -43,6 +43,7 @@ const success = {
 			svgBytes: 42
 		},
 		sourceMap: { nodes: [{ id: 'A', line: 1 }], wires: [] },
+		placements: [],
 		ms: 0.2
 	}
 };

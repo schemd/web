@@ -18,7 +18,12 @@
  * compiler's own union at type level, which costs nothing at runtime and still
  * fails the build if upstream adds a mode.
  */
-import type { SchemdOutputMode, SchematicLimitOptions, SchematicSourceMap } from '@schemd/core';
+import type {
+	SchematicCompilation,
+	SchemdOutputMode,
+	SchematicLimitOptions,
+	SchematicSourceMap
+} from '@schemd/core';
 
 /** Ceilings the compiler enforces, applied before it is ever reached. */
 export const COMPILE_LIMITS = {
@@ -82,6 +87,8 @@ export interface CompileSuccess {
 		readonly svgBytes: number;
 	};
 	readonly sourceMap: SchematicSourceMap;
+	/** What each relative declaration resolved to; empty without relations. */
+	readonly placements: SchematicCompilation['placements'];
 	readonly ms: number;
 }
 

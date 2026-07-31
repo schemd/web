@@ -20,11 +20,12 @@ compileSchematic(source, {
 The rejection happens at the declaration that crosses the ceiling, during parsing — before any geometry is validated, any wire is routed, or any markup is generated. That is the whole point: refusing cheaply is what a budget buys you.
 
 ```schemd bounds="720x300" title="A modest diagram inside a tight budget"
-port:IN "in" at (80, 150) #blue
-resistor:R1 "1 k\Omega" at (300, 150) #amber
-port:OUT "out" at (620, 150) #emerald
-IN.out -> R1.in #blue [ortho]
-R1.out -> OUT.in #emerald [ortho]
+port:CLKIN "clk" at (80, 150) #blue
+inductor:L1 "10 \mu H" at (300, 150) #amber
+port:CLKOUT "out" at (620, 150) #emerald
+
+CLKIN.out -> L1.in #blue [ortho]
+L1.out -> CLKOUT.in #emerald [ortho]
 ```
 
 <!-- /schemd-section -->
@@ -48,12 +49,13 @@ Every field is optional and every omitted field keeps its default, so passing no
 The defaults that remain bound allocation, not diagram size. They sit far past any readable drawing, so treat them as a backstop against a runaway input rather than as a policy you have chosen.
 
 ```schemd bounds="800x360" title="Bounded orthogonal corridor"
-port:A "A" at (70, 100) #blue
-resistor:R "R" at (330, 100) #amber [orientation=down]
-component:BLOCK "obstacle" at (330, 250) #slate [width=150 height=70]
-port:B "B" at (700, 100) #emerald
-A.out -> R.in #blue [ortho]
-R.out -> B.in #emerald [ortho]
+port:P "P" at (70, 100) #blue
+capacitor:CB "C" at (330, 100) #cyan [orientation=down]
+component:SHIELD "shield can" at (330, 250) #slate [width=150 height=70]
+port:Q "Q" at (700, 100) #emerald
+
+P.out -> CB.in #blue [ortho]
+CB.out -> Q.in #emerald [ortho]
 ```
 
 <!-- /schemd-section -->
@@ -69,12 +71,13 @@ R.out -> B.in #emerald [ortho]
 **`SCHEMATIC_LIMITS` reports the defaults.** Its two unlimited counts are `Infinity`, which `JSON.stringify` renders as `null`; pass a replacer if you expose them over an API.
 
 ```schemd bounds="760x340" title="Two nets, one canvas"
-port:L "L" at (80, 110) #blue
-port:R "R" at (660, 110) #blue
-port:T "T" at (370, 230) #cyan [orientation=up]
-port:B "B" at (370, 80) #cyan [orientation=down]
-L.out -> R.in #blue [ortho net=DATA]
-B.out -> T.in #cyan [ortho net=CLOCK]
+port:W "W" at (80, 110) #amber
+port:E "E" at (660, 110) #amber
+port:S "S" at (370, 230) #purple [orientation=up]
+port:N "N" at (370, 80) #purple [orientation=down]
+
+W.out -> E.in #amber [ortho net=ADDR]
+N.out -> S.in #purple [ortho net=STROBE]
 ```
 
 <!-- /schemd-section -->
@@ -86,12 +89,13 @@ Every field above bounds a _size_. None of them bounds _time_. A small document 
 Pair a budget with a time limit you enforce yourself — a worker with a deadline, an `AbortSignal` around the call site, a queue with a per-job ceiling. `wireCrossings` bounds the crossing pass specifically and is the closest thing to a work limit the compiler offers, but it is not a substitute.
 
 ```schemd bounds="720x320" title="Small source, real routing work"
-port:A1 "A" at (80, 90) #blue
-port:B1 "B" at (620, 230) #blue
-port:A2 "A" at (80, 230) #amber
-port:B2 "B" at (620, 90) #amber
-A1.out -> B1.in #blue [ortho]
-A2.out -> B2.in #amber [ortho]
+port:X1 "X" at (80, 90) #cyan
+port:Y1 "Y" at (620, 230) #cyan
+port:X2 "X" at (80, 230) #purple
+port:Y2 "Y" at (620, 90) #purple
+
+X1.out -> Y1.in #cyan [ortho]
+X2.out -> Y2.in #purple [ortho]
 ```
 
 <!-- /schemd-section -->

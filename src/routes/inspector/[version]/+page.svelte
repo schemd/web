@@ -9,6 +9,7 @@
 	 */
 	import Seo from '$lib/components/Seo.svelte';
 	import CodeEditor from '$lib/components/CodeEditor.svelte';
+	import DiagramTour from '$lib/components/DiagramTour.svelte';
 	import { encodeWorkspaceState } from '$lib/state-uri';
 	import { goto } from '$app/navigation';
 	import { untrack } from 'svelte';
@@ -45,6 +46,9 @@
 			noScroll: true
 		});
 	}
+
+	/** The element the guided tour lights nets inside. */
+	let tourHost = $state<HTMLElement | undefined>();
 
 	/** Peak occupancy, for scaling the heatmap. */
 	const peakLoad = $derived(
@@ -331,16 +335,16 @@
 					</table>
 				{:else if stage === 'describe'}
 					<p class="headline">{data.description.headline}</p>
-					<p class="note">{data.description.inventory}</p>
-					<ul class="connections">
-						{#each data.description.connections as sentence, index (index)}
-							<li>{sentence}</li>
-						{/each}
-					</ul>
 					<p class="note">
 						Derived from the netlist, not written by hand — the same connectivity the design rules
-						read. This is what a screen reader is given.
+						read. Play the tour and each net lights up in the diagram as it is described.
 					</p>
+					<!-- The tour lights nets inside this element, which is why the preview
+					     is rendered here rather than only in the Emit stage. -->
+					<div class="tour-stage" bind:this={tourHost}>
+						{@html data.svg}
+					</div>
+					<DiagramTour tour={data.tour} host={tourHost} />
 				{/if}
 			</div>
 		</section>
@@ -510,11 +514,6 @@
 	.rules,
 	.nets,
 	.findings,
-	.connections {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-	}
 	.lex li button,
 	.ast li button {
 		display: flex;
@@ -731,11 +730,6 @@
 	.headline {
 		font-size: var(--text-md);
 		margin: 0 0 var(--space-4);
-	}
-	.connections li {
-		padding: var(--space-1) 0;
-		color: var(--ink-mute);
-		font-size: var(--text-sm);
 	}
 	@media (max-width: 960px) {
 		.workbench {
