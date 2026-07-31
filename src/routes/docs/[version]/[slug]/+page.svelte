@@ -809,6 +809,9 @@
 		.docs-shell,
 		.docs-shell.nav-collapsed {
 			grid-template-columns: 1fr;
+			/* Vertical space the floating rail toggle occupies at the foot of the
+			   viewport: its own height plus the offset above and below it. */
+			--rail-toggle-clearance: calc(var(--space-4) * 2 + 2.75rem);
 		}
 
 		.doc-nav,
@@ -863,6 +866,15 @@
 			border-block-start: 1px solid var(--line-strong);
 			transform: translateY(100%);
 			transition: transform var(--dur-med) var(--ease-precise);
+			/*
+			 * The sheet shares the foot of the viewport with the floating toggle,
+			 * which is fixed and therefore does not scroll with this content. Without
+			 * clearance the rail's last control — "Open in playground" — comes to rest
+			 * exactly underneath it once the rail is scrolled to the end, and at 390px
+			 * the two occupied identical space. This reserves the toggle's footprint
+			 * so anything at the end of the rail can always be scrolled clear.
+			 */
+			padding-block-end: var(--rail-toggle-clearance);
 
 			&.open {
 				transform: translateY(0);
@@ -926,9 +938,16 @@
 			}
 		}
 
+		.docs-shell,
+		.docs-shell.nav-collapsed {
+			/* The toggle spans the full width here and sits closer to the edge. */
+			--rail-toggle-clearance: calc(var(--space-3) * 2 + 2.75rem);
+		}
+
 		.doc-rail {
 			block-size: min(82vh, 620px);
 			padding: var(--space-3);
+			padding-block-end: var(--rail-toggle-clearance);
 		}
 
 		.rail-toggle {
