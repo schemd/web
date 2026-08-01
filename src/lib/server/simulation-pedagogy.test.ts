@@ -7,9 +7,9 @@ describe('simulation learning design', () => {
 		const byId = new Map(environments.map((environment) => [environment.id, environment]));
 		const orders = environments.map((environment) => environment.curriculum.order);
 
-		expect(environments).toHaveLength(13);
+		expect(environments).toHaveLength(11);
 		expect([...orders].sort((a, b) => a - b)).toEqual(
-			Array.from({ length: 13 }, (_, index) => index + 1)
+			Array.from({ length: 11 }, (_, index) => index + 1)
 		);
 
 		for (const environment of environments) {

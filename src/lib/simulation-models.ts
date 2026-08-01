@@ -287,51 +287,6 @@ export function buckMetrics(input: {
 	};
 }
 
-export type ChuaState = readonly [number, number, number];
-
-export function chuaNonlinearity(x: number, m0: number, m1: number, bypassed = false): number {
-	if (bypassed) return x;
-	return m1 * x + 0.5 * (m0 - m1) * (Math.abs(x + 1) - Math.abs(x - 1));
-}
-
-export function chuaDerivative(
-	[x, y, z]: ChuaState,
-	alpha: number,
-	beta: number,
-	m0: number,
-	m1: number,
-	bypassed = false
-): ChuaState {
-	return [alpha * (y - x - chuaNonlinearity(x, m0, m1, bypassed)), x - y + z, -beta * y];
-}
-
-/** One deterministic RK4 step of Chua's normalized equations. */
-export function chuaStep(
-	state: ChuaState,
-	dt: number,
-	alpha: number,
-	beta: number,
-	m0: number,
-	m1: number,
-	bypassed = false
-): ChuaState {
-	const add = (base: ChuaState, slope: ChuaState, scale: number): ChuaState => [
-		base[0] + slope[0] * scale,
-		base[1] + slope[1] * scale,
-		base[2] + slope[2] * scale
-	];
-	const derivative = (value: ChuaState) => chuaDerivative(value, alpha, beta, m0, m1, bypassed);
-	const k1 = derivative(state);
-	const k2 = derivative(add(state, k1, dt / 2));
-	const k3 = derivative(add(state, k2, dt / 2));
-	const k4 = derivative(add(state, k3, dt));
-	return [
-		state[0] + (dt / 6) * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]),
-		state[1] + (dt / 6) * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]),
-		state[2] + (dt / 6) * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2])
-	];
-}
-
 export type GroverPhase = 'super' | 'oracle' | 'mean' | 'diffuse' | 'measure';
 
 /** Integer iteration count that maximizes Grover success before over-rotation. */
@@ -484,22 +439,6 @@ export function teleportFidelity(
 	if (m1 === 1 && m2 === 0) return (state.alpha ** 2 - state.betaMagnitude ** 2) ** 2;
 	if (m1 === 0 && m2 === 1) return (2 * state.alpha * state.betaReal) ** 2;
 	return (2 * state.alpha * state.betaImaginary) ** 2;
-}
-
-export function pllTargetFrequency(referenceFrequency: number, divider: number): number {
-	if (referenceFrequency <= 0 || divider <= 0) {
-		throw new RangeError('PLL reference and divider must be positive.');
-	}
-	return referenceFrequency * divider;
-}
-
-export function pllPpmError(vcoFrequency: number, targetFrequency: number): number {
-	if (targetFrequency <= 0) throw new RangeError('PLL target must be positive.');
-	return ((vcoFrequency - targetFrequency) / targetFrequency) * 1e6;
-}
-
-export function pllLocked(ppmError: number, confidence: number, referenceLost = false): boolean {
-	return !referenceLost && Math.abs(ppmError) < 50 && confidence > 0.82;
 }
 
 export type TrafficState = 'RED' | 'GREEN' | 'YELLOW';

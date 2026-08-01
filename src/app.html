@@ -8,6 +8,17 @@
 		<link rel="icon" type="image/svg+xml" href="/%sveltekit.assets%/favicon.svg" />
 		<link rel="shortcut icon" href="/%sveltekit.assets%/favicon.ico" />
 		<link rel="apple-touch-icon" sizes="180x180" href="/%sveltekit.assets%/apple-touch-icon.png" />
+		<!--
+			WebKit still probes `/apple-touch-icon-precomposed.png` at the site root
+			before falling back, which logged a 404 on every cold load. Pointing the
+			precomposed relation at the same asset answers the probe without
+			shipping a second copy of the image.
+		-->
+		<link
+			rel="apple-touch-icon-precomposed"
+			sizes="180x180"
+			href="/%sveltekit.assets%/apple-touch-icon.png"
+		/>
 		<meta name="apple-mobile-web-app-title" content="schemd" />
 		<link rel="manifest" href="/%sveltekit.assets%/site.webmanifest" />
 		<script nonce="%sveltekit.nonce%">

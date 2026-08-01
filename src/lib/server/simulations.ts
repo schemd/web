@@ -351,59 +351,6 @@ RLOAD.out -> RETURN.node #slate [ortho]
 VIN.negative -> RETURN.node #slate [ortho]
 RETURN.node -> GND.in #slate [ortho]`;
 
-const CHUA_SOURCE = `// Chua double-scroll oscillator with nonlinear negative-resistance element
-junction:X_NODE "v_{C1}" at (260, 150) #purple
-resistor:R1 "R" at (450, 150) #amber [type=variable]
-junction:Y_NODE "v_{C2}" at (640, 150) #cyan
-testpoint:X_PROBE "x(t)" at (260, 70) #purple
-testpoint:Y_PROBE "y(t)" at (640, 70) #cyan
-capacitor:C1 "C_1" at (260, 300) #purple [orientation=down]
-capacitor:C2 "C_2" at (640, 300) #cyan [orientation=down]
-inductor:L1 "L" at (820, 300) #emerald [orientation=down]
-ic:NR "g(v)" at (100, 300) #red [right="sense,sink"]
-junction:RETURN "common" at (520, 450) #slate
-ground:GND "0 V" at (520, 530) #slate
-
-X_PROBE.node -> X_NODE.node #purple [line]
-X_NODE.node -> R1.in #amber [line]
-R1.out -> Y_NODE.node #amber [line]
-Y_PROBE.node -> Y_NODE.node #cyan [line]
-X_NODE.node -> C1.in #purple [ortho]
-X_NODE.node -> NR.sense #red [ortho]
-NR.sink -> RETURN.node #red [ortho marker-end=arrow label="g(v)"]
-Y_NODE.node -> C2.in #cyan [ortho]
-Y_NODE.node -> L1.in #emerald [ortho]
-C1.out -> RETURN.node #purple [line]
-C2.out -> RETURN.node #cyan [line]
-L1.out -> RETURN.node #emerald [line]
-RETURN.node -> GND.in #slate [line]`;
-
-const PLL_SOURCE = `// Integer-N charge-pump phase-locked loop
-clock:REF "f_{ref}" at (70, 120) #blue
-ic:PFD "PFD" at (240, 170) #purple [left="ref,fb" right="up,down"]
-ic:CP "charge pump" at (430, 170) #amber [left="up,down" right="iout"]
-resistor:RLP "R_{loop}" at (600, 140) #amber
-junction:VCTRL "V_{ctrl}" at (740, 140) #cyan
-capacitor:CLP "C_{loop}" at (740, 300) #cyan [orientation=down]
-ic:VCO "VCO" at (900, 140) #emerald [left="vc" right="clk"]
-port:OUT "f_{out}" at (1080, 140) #emerald
-ic:DIV "÷N" at (900, 340) #blue [left="clk" right="fb"]
-junction:RETURN "analog return" at (740, 460) #slate
-ground:GND "0 V" at (740, 530) #slate
-
-REF.out -> PFD.ref #blue [line]
-PFD.up -> CP.up #purple [line]
-PFD.down -> CP.down #purple [ortho]
-CP.iout -> RLP.in #amber [line]
-RLP.out -> VCTRL.node #cyan [line]
-VCTRL.node -> VCO.vc #cyan [line]
-VCTRL.node -> CLP.in #cyan [ortho]
-CLP.out -> RETURN.node #cyan [line]
-VCO.clk -> OUT.in #emerald [line]
-VCO.clk -> DIV.clk #emerald [ortho]
-DIV.fb -> PFD.fb #blue [ortho marker-end=arrow label="feedback"]
-RETURN.node -> GND.in #slate [line]`;
-
 const STATECHART_SOURCE = `// Traffic-signal controller — an executable UML state machine
 initial:START "start" at (100, 120) #slate
 state:RED "Red" at (330, 120) #f2555a
@@ -522,8 +469,6 @@ const SOURCES: Record<string, { source: string; width: number; height: number }>
 	timer: { source: TIMER_SOURCE, width: 700, height: 480 },
 	teleport: { source: TELEPORT_SOURCE, width: 1020, height: 400 },
 	buck: { source: BUCK_SOURCE, width: 920, height: 640 },
-	chua: { source: CHUA_SOURCE, width: 920, height: 660 },
-	pll: { source: PLL_SOURCE, width: 1160, height: 660 },
 	statechart: { source: STATECHART_SOURCE, width: 980, height: 560 },
 	qec: { source: QEC_SOURCE, width: 1400, height: 480 },
 	wien: { source: WIEN_SOURCE, width: 1080, height: 560 },
@@ -796,93 +741,10 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<
 			]
 		}
 	},
-	{
-		id: 'chua',
-		index: '07',
-		title: 'Chua Double-Scroll Oscillator',
-		domain: 'Nonlinear dynamics',
-		tier: 'Frontier',
-		model: 'RK4 nonlinear ODE integration',
-		tagline: 'Tune a physical circuit through fixed points, limit cycles, and deterministic chaos.',
-		summary:
-			'Two capacitors, one inductor, a coupling resistor, and a piecewise-linear negative-resistance element form the canonical chaotic circuit. A fourth-order solver evolves the three state variables while a live phase portrait exposes orbit folding, attractor symmetry, and sensitivity to initial conditions.',
-		formula: '\\dot x = \\alpha(y-x-h(x)),\\quad \\dot y=x-y+z,\\quad \\dot z=-\\beta y',
-		inventory: [
-			'piecewise-linear Chua diode',
-			'C₁ / C₂ energy stores',
-			'coupling resistor R',
-			'inductor current state'
-		],
-		boundaries: ['α 7–18', 'β 18–35', 'bifurcation sweep on α'],
-		fault: 'nonlinear negative-resistance branch bypassed',
-		pedagogy: {
-			aha: 'Three simple, fully deterministic rules — and one bent resistor — are enough to make the future unknowable.',
-			principle:
-				'Nothing here is random. The state $(x, y, z)$ evolves by three exact equations, $\\dot x = \\alpha(y - x - h(x)),\\ \\dot y = x - y + z,\\ \\dot z = -\\beta y$, and the only unusual part is $h(x)$: a resistor with a *negative*, piecewise-linear slope. Yet two orbits that start $10^{-5}$ apart peel away exponentially until they share nothing — **sensitive dependence on initial conditions**, the fingerprint of chaos. This is the deep lesson: deterministic does not mean predictable. The bifurcation diagram makes it concrete — as you raise $\\alpha$, a single stable point splits, doubles, doubles again, and shatters into the double-scroll attractor.',
-			steps: [
-				{
-					label: 'Raise α slowly from 7 and watch the classifier.',
-					detail:
-						'Fixed point → limit cycle → period-doubling → chaos. Each threshold is a *bifurcation*: the system’s long-term behaviour changes character at a precise value.'
-				},
-				{
-					label: 'Open the bifurcation diagram.',
-					detail:
-						'Sweeping $\\alpha$ and plotting where the orbit turns around draws the classic fig-tree: the visual signature of the route to chaos.'
-				},
-				{
-					label: 'Perturb the orbit by $10^{-2}$.',
-					detail:
-						'The shadow trajectory diverges within a few scrolls. Same equations, almost the same start — completely different future.'
-				}
-			]
-		}
-	},
-	{
-		id: 'pll',
-		index: '08',
-		title: 'Adaptive Clock-Recovery PLL',
-		domain: 'Control + RF',
-		tier: 'Frontier',
-		model: 'second-order phase-domain loop',
-		tagline: 'Watch an integer-N synthesizer acquire, track, and lose phase lock.',
-		summary:
-			'A phase/frequency detector, charge pump, passive loop filter, VCO, and programmable divider form a complete frequency-synthesis loop. Change the reference, divide ratio, bandwidth, and damping; the phase-domain solver reveals pull-in, overshoot, control-voltage motion, lock confidence, and cycle slips.',
-		formula: 'f_{out}=Nf_{ref},\\quad \\ddot e + 2\\zeta\\omega_n\\dot e + \\omega_n^2e=0',
-		inventory: [
-			'phase/frequency detector',
-			'charge pump + loop filter',
-			'voltage-controlled oscillator',
-			'programmable ÷N feedback'
-		],
-		boundaries: ['N 2–64', 'loop bandwidth 0.2–8 kHz', 'lock threshold ±50 ppm'],
-		fault: 'reference clock disconnected',
-		pedagogy: {
-			aha: 'A loop that does nothing but chase its own phase error will tune an oscillator until it agrees with a clock it has never been told the frequency of.',
-			principle:
-				'The VCO free-runs at some frequency; the divider slices it by $N$; the phase detector compares that against a reference and coughs up an error. Feed the error back through a filter to the VCO’s tuning voltage, and the loop hunts until the error is zero — at which point $f_{out} = N f_{ref}$, locked. The dynamics are those of a mass on a spring: $\\ddot e + 2\\zeta\\omega_n\\dot e + \\omega_n^2 e = 0$, where the damping $\\zeta$ decides whether lock is a graceful glide or a ringing overshoot. The aha is that a purely *reactive* circuit — one that only ever reacts to being wrong — synthesises an exact integer multiple of a frequency nobody programmed in.',
-			steps: [
-				{
-					label: 'Watch the control voltage acquire lock.',
-					detail:
-						'From a cold start, $V_{ctrl}$ ramps and settles as the phase error drives to zero. When it flatlines, $f_{out} = N f_{ref}$ to within the lock threshold.'
-				},
-				{
-					label: 'Lower the damping ζ.',
-					detail:
-						'Underdamp the loop and lock arrives with overshoot and ringing — the same second-order behaviour as a springy suspension. Too little damping and it barely settles.'
-				},
-				{
-					label: 'Diagnose loss of frequency truth.',
-					detail:
-						'Inject the disturbance and inspect phase error, control voltage, and VCO drift. Infer which observation the feedback loop can no longer compare.'
-				}
-			]
-		}
-	},
+
 	{
 		id: 'statechart',
-		index: '09',
+		index: '07',
 		title: 'Live State Machine',
 		domain: 'UML statechart',
 		tier: 'Advanced',
@@ -925,7 +787,7 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<
 	},
 	{
 		id: 'qec',
-		index: '10',
+		index: '08',
 		title: 'Quantum Error Correction',
 		domain: 'Quantum',
 		tier: 'Frontier',
@@ -972,7 +834,7 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<
 	},
 	{
 		id: 'wien',
-		index: '11',
+		index: '09',
 		title: 'Wien-Bridge Oscillator',
 		domain: 'Active analog',
 		tier: 'Advanced',
@@ -1014,7 +876,7 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<
 	},
 	{
 		id: 'lfsr',
-		index: '12',
+		index: '10',
 		title: 'Maximal-Length LFSR',
 		domain: 'Sequential digital',
 		tier: 'Advanced',
@@ -1057,7 +919,7 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<
 	},
 	{
 		id: 'grover',
-		index: '13',
+		index: '11',
 		title: 'Grover 3-Qubit Search',
 		domain: 'Quantum',
 		tier: 'Frontier',
@@ -1430,91 +1292,10 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 		diagnosisPrompt:
 			'Disturb the power stage and compare duty command, switch-node activity, and $v_o$. Where does commanded energy stop entering the $LC$ network?'
 	},
-	chua: {
-		curriculum: {
-			order: 7,
-			prerequisites: ['rc'],
-			objective: 'Separate deterministic dynamics from long-term predictability.'
-		},
-		actions: [
-			action('input[min="7"][max="18"]', 'change', 'raise α and inspect the regime classifier'),
-			action('.button-row button:nth-of-type(4)', 'click', 'compute the bifurcation diagram'),
-			action(
-				'.button-row button:nth-of-type(3)',
-				'click',
-				'perturb the orbit and compare the shadow trajectory'
-			)
-		],
-		prediction: {
-			prompt:
-				'Two chaotic trajectories start $10^{-2}$ apart under identical equations. What happens?',
-			choices: [
-				{
-					id: 'diverge',
-					label: 'They diverge exponentially while remaining on the same attractor.',
-					correct: true,
-					feedback:
-						'Correct. Local separation grows even though both trajectories remain bounded by the double-scroll attractor.'
-				},
-				{
-					id: 'converge',
-					label: 'They converge because deterministic equations have one future.',
-					correct: false,
-					feedback:
-						'Determinism guarantees one future per exact initial state, not robustness to uncertainty. Chaos amplifies the tiny initial difference.'
-				}
-			]
-		},
-		diagnosisPrompt:
-			'Disturb the nonlinear branch and inspect the phase portrait. Which missing geometric feature explains the collapse from folded scrolls to a damped orbit?'
-	},
-	pll: {
-		curriculum: {
-			order: 8,
-			prerequisites: ['timer'],
-			objective: 'Relate damping and reference feedback to PLL acquisition behavior.'
-		},
-		actions: [
-			action('button.btn-solid', 'click', 'force a fresh lock-acquisition transient'),
-			action(
-				'input[min="0.25"][max="1.6"]',
-				'change',
-				'lower the damping-ratio control and reacquire'
-			),
-			action(
-				'.fault-switch [role="switch"]',
-				'change',
-				'inject the hidden loop disturbance and inspect the changed evidence',
-				1,
-				'fault'
-			)
-		],
-		prediction: {
-			prompt:
-				'Reduce the damping ratio $\\zeta$ while reacquiring the same target. What should the error trace do?',
-			choices: [
-				{
-					id: 'more-ringing',
-					label: 'Overshoot and ringing increase before lock.',
-					correct: true,
-					feedback:
-						'Yes. The second-order poles become less damped, so stored phase error crosses zero repeatedly before settling.'
-				},
-				{
-					id: 'less-ringing',
-					label: 'The trace becomes slower but strictly monotonic.',
-					correct: false,
-					feedback:
-						'That is the overdamped direction. Lower $\\zeta$ trades a faster initial response for more overshoot and oscillation.'
-				}
-			]
-		},
-		diagnosisPrompt:
-			'Disturb the loop and compare divider activity, phase error, and VCO drift. Which source of frequency truth disappeared?'
-	},
+
 	statechart: {
 		curriculum: {
-			order: 9,
+			order: 7,
 			prerequisites: ['adder'],
 			objective: 'Predict guarded state transitions and identify a liveness failure.'
 		},
@@ -1563,7 +1344,7 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 	},
 	qec: {
 		curriculum: {
-			order: 10,
+			order: 8,
 			prerequisites: ['bell'],
 			objective:
 				'Infer a single-qubit bit flip from syndrome parity without reading the logical state.'
@@ -1607,7 +1388,7 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 	},
 	wien: {
 		curriculum: {
-			order: 11,
+			order: 9,
 			prerequisites: ['rc'],
 			objective: 'Use loop gain and phase to predict oscillator startup or decay.'
 		},
@@ -1650,7 +1431,7 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 	},
 	lfsr: {
 		curriculum: {
-			order: 12,
+			order: 10,
 			prerequisites: ['adder'],
 			objective: 'Connect primitive feedback taps to the period of an LFSR sequence.'
 		},
@@ -1699,7 +1480,7 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 	},
 	grover: {
 		curriculum: {
-			order: 13,
+			order: 11,
 			prerequisites: ['bell'],
 			objective: 'Explain Grover search as amplitude rotation and identify over-rotation.'
 		},
@@ -1843,28 +1624,7 @@ const DETAIL_MATH_COPY: Readonly<Record<string, DetailMathCopy>> = {
 			'CCM / BCM / DCM classification'
 		]
 	},
-	chua: {
-		inventory: [
-			'piecewise-linear Chua diode',
-			'$C_1/C_2$ energy stores',
-			'coupling resistor $R$',
-			'inductor current state'
-		],
-		boundaries: ['$\\alpha: 7$–$18$', '$\\beta: 18$–$35$', 'bifurcation sweep on $\\alpha$']
-	},
-	pll: {
-		inventory: [
-			'phase/frequency detector',
-			'charge pump + loop filter',
-			'voltage-controlled oscillator',
-			'programmable $\\div N$ feedback'
-		],
-		boundaries: [
-			'$N: 2$–$64$',
-			'loop bandwidth $0.2$–$8\\ \\mathrm{kHz}$',
-			'lock threshold $\\pm 50\\ \\mathrm{ppm}$'
-		]
-	},
+
 	statechart: {
 		boundaries: ['deterministic $\\delta$', 'one active state', 'guarded, timed transitions']
 	},

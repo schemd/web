@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import { sveltekit } from '@sveltejs/kit/vite';
-import { katexModernFonts } from './src/lib/server/katex-css';
+import { katexModernFonts } from './src/lib/server/katex-css.ts';
 
 export default defineConfig({
 	plugins: [katexModernFonts(), sveltekit()],

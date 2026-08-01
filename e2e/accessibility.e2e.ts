@@ -80,8 +80,6 @@ const ROUTES = [
 	'/simulations/0.4.0/timer',
 	'/simulations/0.4.0/teleport',
 	'/simulations/0.4.0/buck',
-	'/simulations/0.4.0/chua',
-	'/simulations/0.4.0/pll',
 	'/simulations/0.4.0/statechart',
 	'/simulations/0.4.0/qec',
 	'/simulations/0.4.0/wien',
@@ -99,8 +97,6 @@ const LABS = [
 	'timer',
 	'teleport',
 	'buck',
-	'chua',
-	'pll',
 	'statechart',
 	'qec',
 	'wien',
@@ -108,16 +104,7 @@ const LABS = [
 	'grover'
 ] as const;
 
-const CONTINUOUS_MOTION_LABS = [
-	'rc',
-	'timer',
-	'teleport',
-	'buck',
-	'chua',
-	'pll',
-	'statechart',
-	'wien'
-] as const;
+const CONTINUOUS_MOTION_LABS = ['rc', 'timer', 'teleport', 'buck', 'statechart', 'wien'] as const;
 
 for (const route of ROUTES) {
 	test(`${route} has no detectable WCAG A/AA violations`, async ({ page }) => {

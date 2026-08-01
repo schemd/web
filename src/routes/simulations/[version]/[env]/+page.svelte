@@ -4,6 +4,8 @@
 	import { setContext, type Component } from 'svelte';
 	import SimulationPedagogy from '$lib/components/SimulationPedagogy.svelte';
 	import SimulationTimeline from '$lib/components/sims/SimulationTimeline.svelte';
+	import DeclarativeLab from '$lib/components/sims/DeclarativeLab.svelte';
+	import { isDeclarativeLab, loadLabManifest } from '$lib/labs';
 	import { provideSimulationTimelineModel } from '$lib/components/sims/simulation-timeline.svelte';
 	import 'katex/dist/katex.min.css';
 	import { SIMULATION_MATH_CONTEXT, type SimulationMathContext } from '$lib/simulation-math';
@@ -16,22 +18,21 @@
 	 * One route used to statically import every laboratory, forcing visitors to
 	 * download thirteen numerical models to run one. Keep the registry explicit
 	 * for exhaustiveness, but split every implementation into its own chunk.
+	 *
+	 * Laboratories that have been migrated to a manifest are deliberately absent:
+	 * they are driven by `DeclarativeLab` from `LAB_MANIFESTS`, and leaving a
+	 * dead loader entry here would keep emitting a chunk nothing loads.
 	 */
 	type SimulationComponent = Component<{ svg: string }>;
 	type SimulationModule = { default: SimulationComponent };
 	const COMPONENT_LOADERS: Readonly<Record<string, () => Promise<SimulationModule>>> = {
-		adder: () => import('$lib/components/sims/AdderSim.svelte'),
 		rc: () => import('$lib/components/sims/RcSim.svelte'),
-		bell: () => import('$lib/components/sims/BellSim.svelte'),
 		timer: () => import('$lib/components/sims/TimerSim.svelte'),
 		teleport: () => import('$lib/components/sims/TeleportSim.svelte'),
 		buck: () => import('$lib/components/sims/BuckSim.svelte'),
-		chua: () => import('$lib/components/sims/ChuaSim.svelte'),
-		pll: () => import('$lib/components/sims/PllSim.svelte'),
 		statechart: () => import('$lib/components/sims/StatechartSim.svelte'),
 		qec: () => import('$lib/components/sims/QecSim.svelte'),
 		wien: () => import('$lib/components/sims/WienSim.svelte'),
-		lfsr: () => import('$lib/components/sims/LfsrSim.svelte'),
 		grover: () => import('$lib/components/sims/GroverSim.svelte')
 	};
 	const loadedComponents = Object.create(null) as Record<
@@ -51,6 +52,13 @@
 	}
 
 	const sim = $derived(data.simulation);
+	/*
+	 * A laboratory runs from its manifest once it has one, and from its bespoke
+	 * component until then. Both paths render into the same host and share the
+	 * same timeline, so migration is per-lab and reversible rather than a
+	 * flag day across all thirteen.
+	 */
+	const declarative = $derived(isDeclarativeLab(sim.id));
 	const timeline = $derived(data.timeline);
 	let simulationHost = $state<HTMLElement | undefined>();
 	let interactionHost = $state<HTMLElement | undefined>();
@@ -188,8 +196,14 @@
 		/>
 		<div class="simulation-host" bind:this={simulationHost}>
 			{#key sim.id}
-				{@const SimComponent = await loadComponent(sim.id)}
-				<SimComponent svg={sim.svg} />
+				{#if declarative}
+					<!-- Migrated: the drawing, the controls, and the wiring are data. -->
+					{@const manifest = await loadLabManifest(sim.id)}
+					<DeclarativeLab {manifest} svg={sim.svg} />
+				{:else}
+					{@const SimComponent = await loadComponent(sim.id)}
+					<SimComponent svg={sim.svg} />
+				{/if}
 			{/key}
 		</div>
 	</div>

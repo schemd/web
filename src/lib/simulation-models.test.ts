@@ -5,18 +5,12 @@ import {
 	bellChsh,
 	bellCorrelator,
 	buckMetrics,
-	chuaDerivative,
-	chuaNonlinearity,
-	chuaStep,
 	groverPhases,
 	groverOptimalRounds,
 	groverState,
 	lfsrPeriod,
 	lfsrStep,
 	nextTrafficState,
-	pllLocked,
-	pllPpmError,
-	pllTargetFrequency,
 	qecAccused,
 	qecFidelity,
 	qecResidual,
@@ -197,18 +191,6 @@ describe('simulation reference models', () => {
 		).toMatchObject({ idealOutput: 0, rippleCurrent: 0, efficiency: 0 });
 	});
 
-	test('Chua diode is continuous, piecewise-linear, and its RK4 step remains finite', () => {
-		const m0 = -1.143;
-		const m1 = -0.714;
-		close(chuaNonlinearity(0, m0, m1), 0);
-		close(chuaNonlinearity(1 - 1e-9, m0, m1), chuaNonlinearity(1 + 1e-9, m0, m1), 7);
-		close(chuaNonlinearity(0.4, m0, m1, true), 0.4);
-		expect(chuaDerivative([0.11, 0, 0], 15.6, 28, m0, m1)).toHaveLength(3);
-		const next = chuaStep([0.11, 0, 0], 0.0045, 15.6, 28, m0, m1);
-		expect(next.every(Number.isFinite)).toBe(true);
-		expect(next).not.toEqual([0.11, 0, 0]);
-	});
-
 	test('Grover identifies the exact two-round optimum and exposes a third-round over-rotation', () => {
 		expect(groverOptimalRounds()).toBe(2);
 		expect(groverPhases()).toEqual([
@@ -323,16 +305,6 @@ describe('simulation reference models', () => {
 				}
 			}
 		}
-	});
-
-	test('PLL lock uses the target ratio, ppm window, confidence, and reference health', () => {
-		expect(pllTargetFrequency(10_000, 8)).toBe(80_000);
-		close(pllPpmError(80_004, 80_000), 50);
-		expect(pllLocked(49.999, 0.83)).toBe(true);
-		expect(pllLocked(50, 1)).toBe(false);
-		expect(pllLocked(0, 0.82)).toBe(false);
-		expect(pllLocked(0, 1, true)).toBe(false);
-		expect(() => pllTargetFrequency(0, 1)).toThrow(/positive/);
 	});
 
 	test('the traffic controller cycles deterministically and the inverted guard deadlocks yellow', () => {

@@ -338,8 +338,6 @@ test('every public page shell fits the mobile viewport without horizontal scroll
 		'timer',
 		'teleport',
 		'buck',
-		'chua',
-		'pll',
 		'statechart',
 		'qec',
 		'wien',

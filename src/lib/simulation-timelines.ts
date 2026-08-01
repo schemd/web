@@ -288,64 +288,6 @@ export const SIMULATION_TIMELINES: Readonly<Record<string, readonly SimulationSt
 			['VOUT_NODE.node', 'VOUT_PROBE.node', 'RETURN.node']
 		)
 	],
-	chua: [
-		stage(
-			'Seed the nonlinear node',
-			'A tiny initial imbalance is presented to Chua’s negative-resistance element.',
-			['NR', 'X_NODE', 'X_PROBE'],
-			['NR.sink', 'X_PROBE.node']
-		),
-		stage(
-			'Exchange through R',
-			'The coupling resistor transfers energy between the two capacitor voltages.',
-			['R1', 'Y_NODE', 'Y_PROBE'],
-			['X_NODE.node', 'R1.out', 'Y_PROBE.node']
-		),
-		stage(
-			'Store state in C₁ and C₂',
-			'The two capacitor voltages form two dimensions of the oscillator state.',
-			['C1', 'C2'],
-			['X_NODE.node', 'Y_NODE.node', 'C1.out', 'C2.out']
-		),
-		stage(
-			'Rotate through L',
-			'Inductor current supplies the third state variable and folds the trajectory back through the nonlinearity.',
-			['L1', 'RETURN', 'GND'],
-			['Y_NODE.node', 'L1.out', 'RETURN.node']
-		)
-	],
-	pll: [
-		stage(
-			'Compare phases',
-			'The PFD compares reference and divided feedback edges.',
-			['REF', 'PFD'],
-			['REF.out', 'DIV.fb']
-		),
-		stage(
-			'Pump phase error',
-			'UP/DOWN pulses become signed charge-pump current.',
-			['CP'],
-			['PFD.up', 'PFD.down', 'CP.iout']
-		),
-		stage(
-			'Filter into Vctrl',
-			'R and C remove pulse ripple while retaining the correction voltage.',
-			['RLP', 'VCTRL', 'CLP'],
-			['CP.iout', 'RLP.out', 'VCTRL.node', 'CLP.out']
-		),
-		stage(
-			'Tune the VCO',
-			'The control voltage changes oscillator frequency and phase.',
-			['VCO', 'OUT'],
-			['VCTRL.node', 'VCO.clk']
-		),
-		stage(
-			'Divide and close the loop',
-			'÷N returns a comparable feedback clock; lock means repeated phase error approaches zero.',
-			['DIV', 'PFD'],
-			['VCO.clk', 'DIV.fb']
-		)
-	],
 	statechart: [
 		stage(
 			'Enter the machine',

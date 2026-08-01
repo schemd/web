@@ -91,7 +91,7 @@
 
 <Seo
 	title={`Simulation laboratory · schemd v${data.version}`}
-	description={`${environments.length} interactive circuit laboratories spanning digital logic, analog filters, quantum protocols, power electronics, nonlinear chaos, and phase-locked control — each compiled from schemd source and instrumented with fault injection.`}
+	description={`${environments.length} interactive circuit laboratories spanning digital logic, analog filters, quantum protocols, power electronics, error correction, and power electronics — each compiled from schemd source and instrumented with fault injection.`}
 	canonicalPath={`/simulations/${data.latest}`}
 	{jsonLd}
 />
@@ -130,10 +130,6 @@
 			<path class="wire" d="M5 16h12M27 16h9M50 16h24M58 16v13M52 29h12M52 33h12M58 33v9" />
 			<path class="body" d="M17 8v16M17 12l10-4v16l-10-4M36 16c2-7 5-7 7 0s5 7 7 0" />
 			<path class="trace" d="M5 16h12M27 16h9M36 16c2-7 5-7 7 0s5 7 7 0h24" />
-		{:else if id === 'chua'}
-			<path class="wire" d="M5 18h13l3-6 5 12 5-12 5 12 3-6h14M18 18v22M53 18v22" />
-			<path class="body" d="M12 40h12M14 44h8M47 40h12M49 44h8M62 12c-10 0-10 12 0 12s10 12 0 12" />
-			<path class="trace" d="M5 18h13l3-6 5 12 5-12 5 12 3-6h14" />
 		{:else}
 			<path class="wire" d="M5 14h13M34 14h10M58 14h17M66 14v22H22V28" />
 			<rect class="body" x="18" y="7" width="16" height="14" />
@@ -153,9 +149,14 @@
 		<h1>Enter the circuit frontier.</h1>
 		<p class="terminal-lede">
 			{environments.length} live experiments span foundational circuits and frontier systems: switched-mode
-			power, deterministic chaos, phase-lock acquisition, quantum protocols, and classical logic. Every
-			test bed is compiled from the same <code>@schemd/core</code> source and instrumented with fault
-			injection, probes, and live numerical models.
+			power, filter response, quantum protocols, error correction, and classical logic. Every test bed
+			is compiled from the same <code>@schemd/core</code> source and instrumented with fault injection,
+			probes, and live numerical models.
+		</p>
+		<p class="terminal-lede">
+			Several are now described entirely as data rather than code — a compiled diagram, a
+			whitelisted model, and declarative bindings.
+			<a href={`/simulations/${data.version}/new`}>Describe one of your own →</a>
 		</p>
 		<div class="diagnostics" role="status" aria-live="polite">
 			<div class="diag-log">

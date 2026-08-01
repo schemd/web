@@ -80,8 +80,13 @@ const MAX_COMPILER_JS_GZIP = 39 * 1024;
  * per-page SVG they replaced had none of. That last part is why this is worth
  * 4.5 KiB rather than a saving: the retired chart's only readout was a native
  * `<title>` tooltip, which no keyboard reaches.
+ *
+ * Lowered from 172 KiB to 164 after retiring the Chua and PLL laboratories:
+ * measured 161.5 KiB. A ceiling left ten kilobytes above the artefact stops
+ * being a gate, so it comes back down whenever the catalogue shrinks — the same
+ * reason it goes up when the catalogue grows.
  */
-const MAX_DOCUMENT_JS_GZIP = 172 * 1024;
+const MAX_DOCUMENT_JS_GZIP = 164 * 1024;
 /* Exactly the sum of the two ceilings above, as the compiler note says. */
 const MAX_ALL_JS_GZIP = MAX_DOCUMENT_JS_GZIP + MAX_COMPILER_JS_GZIP;
 /*
@@ -93,8 +98,20 @@ const MAX_ALL_JS_GZIP = MAX_DOCUMENT_JS_GZIP + MAX_COMPILER_JS_GZIP;
  * one static registry entry per environment, so thirteen laboratories cost
  * more shell than five did. The models themselves stay in their own chunks —
  * the `isDynamicEntry` assertion below is what actually guards that.
+ *
+ * Raised from 38 KiB to 44 for the manifest interpreter, measured at 42.1 KiB.
+ * `DeclarativeLab` is shell code by the same argument as `SimulationTimeline`
+ * beside it: it is the machinery every migrated laboratory runs on, not one
+ * laboratory's implementation. Keeping it lazy would buy a visitor opening a
+ * not-yet-migrated lab about four kilobytes, at the price of a fourteenth
+ * dynamic import that would make the count assertion above ambiguous — and the
+ * saving shrinks to nothing as the remaining nine migrate. The per-lab
+ * manifests *are* lazy, which is the part that actually scales.
+ *
+ * Lowered from 44 KiB to 42 with the two retired laboratories, which took their
+ * registry entries out of the shell; measured 40.4 KiB.
  */
-const MAX_SIMULATION_SHELL_RAW = 38 * 1024;
+const MAX_SIMULATION_SHELL_RAW = 42 * 1024;
 const MAX_MODERN_MATH_FONTS = 320 * 1024;
 /*
  * Raw bytes of everything shipped, fonts and CSS included. Raised from 1,100
@@ -106,9 +123,29 @@ const MAX_MODERN_MATH_FONTS = 320 * 1024;
  * those changes removed. Raw grows faster than gzip here because most of the
  * addition is CSS — three components' worth of scoped styles, which compress
  * well and so barely move the gzip figure while still being shipped.
+ *
+ * Lowered from 1,160 KiB to 1,124 with the two retired laboratories; measured
+ * 1,116.7 KiB.
  */
-const MAX_CLIENT_OUTPUT = 1_160 * 1024;
-const EXPECTED_SIMULATIONS = 13;
+const MAX_CLIENT_OUTPUT = 1_124 * 1024;
+/*
+ * Eleven laboratories, each downloaded only when it is opened. Two of them are
+ * manifests rather than components, so the shell's lazy registry spans both
+ * prefixes — the invariant is "one laboratory per visit", not "one component
+ * per visit", and a migration must not be able to quietly opt out of it by
+ * turning a lazy component into a static import.
+ *
+ * Down from thirteen: the Chua oscillator and the PLL were retired, being the
+ * two the manifest schema could not express.
+ */
+const EXPECTED_SIMULATIONS = 11;
+const LAZY_LAB_PREFIXES = ['src/lib/components/sims/', 'src/lib/labs/'] as const;
+
+function lazyLabImports(entry: ManifestEntry): readonly string[] {
+	return (entry.dynamicImports ?? []).filter((source) =>
+		LAZY_LAB_PREFIXES.some((prefix) => source.startsWith(prefix))
+	);
+}
 
 function assertBudget(condition: unknown, message: string): asserts condition {
 	if (!condition) throw new Error(`Build budget failed: ${message}`);
@@ -192,14 +229,13 @@ assertBudget(
 );
 
 const simulationShell = Object.values(manifest).find(
-	(entry) =>
-		entry.dynamicImports?.filter((source) => source.startsWith('src/lib/components/sims/'))
-			.length === EXPECTED_SIMULATIONS
+	(entry) => lazyLabImports(entry).length === EXPECTED_SIMULATIONS
 );
-assertBudget(simulationShell, 'simulation route lost its explicit lazy-load registry');
-const simulationImports = simulationShell.dynamicImports!.filter((source) =>
-	source.startsWith('src/lib/components/sims/')
+assertBudget(
+	simulationShell,
+	`simulation route lost its explicit lazy-load registry; expected ${EXPECTED_SIMULATIONS} lazily loaded laboratories across ${LAZY_LAB_PREFIXES.join(' and ')}`
 );
+const simulationImports = lazyLabImports(simulationShell);
 assertBudget(
 	(await stat(join(CLIENT_ROOT, simulationShell.file))).size <= MAX_SIMULATION_SHELL_RAW,
 	`simulation shell exceeds ${kib(MAX_SIMULATION_SHELL_RAW)} raw`

@@ -13,8 +13,6 @@ const ENVIRONMENT_IDS = [
 	'timer',
 	'teleport',
 	'buck',
-	'chua',
-	'pll',
 	'statechart',
 	'qec',
 	'wien',

@@ -8,8 +8,6 @@ const ENVIRONMENTS = [
 	'timer',
 	'teleport',
 	'buck',
-	'chua',
-	'pll',
 	'statechart',
 	'qec',
 	'wien',
