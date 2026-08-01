@@ -27,8 +27,20 @@ const COMPILER_WORKER = /\/workers\/compile-browser\.worker-[^/]+\.js$/;
  * Worker isolation adds a small message/validation boundary to the compiler's
  * public entry. Budget it separately instead of concealing it inside an
  * inflated application allowance. The combined ceiling is exactly the sum.
+ *
+ * Raised from 36 KiB for `@schemd/core` 0.5, which added relative placement.
+ * That is a language feature, so it cannot tree-shake out of anything that
+ * parses — the compiler's own package budget went 35 → 37 KiB in the same
+ * release and this ceiling was simply never moved to match. Recorded here
+ * rather than absorbed.
+ *
+ * Importing the five symbols the worker actually uses through their subpaths
+ * was measured first and rejected: it saved 0.4 KiB, which is not enough to
+ * stay under 36 KiB, and it would leave nothing importing `index.js` — which
+ * is the module the leak assertion below keys on, so the guard would quietly
+ * become vacuous. A smaller number is not worth a weaker check.
  */
-const MAX_COMPILER_JS_GZIP = 36 * 1024;
+const MAX_COMPILER_JS_GZIP = 38 * 1024;
 /*
  * Raised from 146/182 KiB in 0.4. The laboratory grew from five environments
  * to thirteen, and each one ships its own lazily loaded chunk plus its share
@@ -40,9 +52,17 @@ const MAX_COMPILER_JS_GZIP = 36 * 1024;
  * Raised again for the live install-telemetry page: `query.live` ships a
  * streaming client runtime that static pages do not, and it is loaded by the
  * route that needs it.
+ *
+ * Raised from 162/198 KiB for three additions: the compiler inspector, which is
+ * a whole route and the largest of the three; the guided diagram tour; and
+ * drag-to-edit in the playground. All three are real client surfaces, so their
+ * cost belongs here rather than being hidden. Verified first that none of it is
+ * accidental — no `$lib/server` module reaches the client, and the tour's only
+ * import from one is a type, which is erased.
  */
-const MAX_DOCUMENT_JS_GZIP = 162 * 1024;
-const MAX_ALL_JS_GZIP = 198 * 1024;
+const MAX_DOCUMENT_JS_GZIP = 168 * 1024;
+/* Exactly the sum of the two ceilings above, as the compiler note says. */
+const MAX_ALL_JS_GZIP = MAX_DOCUMENT_JS_GZIP + MAX_COMPILER_JS_GZIP;
 /*
  * Prediction, evidence validation, progression, and the selected lab's async
  * loader are SSR-critical shell code. Keep the hard raw ceiling tight enough
@@ -55,7 +75,12 @@ const MAX_ALL_JS_GZIP = 198 * 1024;
  */
 const MAX_SIMULATION_SHELL_RAW = 38 * 1024;
 const MAX_MODERN_MATH_FONTS = 320 * 1024;
-const MAX_CLIENT_OUTPUT = 1_100 * 1024;
+/*
+ * Raw bytes of everything shipped, fonts and CSS included. Raised from 1,100
+ * KiB alongside the JavaScript ceilings above and for the same three features;
+ * a new route brings its own stylesheet as well as its script.
+ */
+const MAX_CLIENT_OUTPUT = 1_136 * 1024;
 const EXPECTED_SIMULATIONS = 13;
 
 function assertBudget(condition: unknown, message: string): asserts condition {

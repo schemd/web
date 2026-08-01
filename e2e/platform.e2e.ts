@@ -1,5 +1,28 @@
+import { readFileSync, readdirSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { failOnClientErrors } from './support';
+
+/*
+ * Derived, never written down. These assertions used to name `0.4` directly,
+ * which quietly became wrong the moment a newer documented line landed — the
+ * suite was asserting "the 0.4 line" where it meant "the current line".
+ *
+ * Both are read off disk rather than imported from `$lib/server`: those modules
+ * reach for `$app` and `import.meta.glob`, neither of which resolves in the
+ * plain Node context Playwright runs these in. The corpus directory and the
+ * installed package are the same facts those modules derive from anyway.
+ */
+const CURRENT_LINE = readdirSync('src/lib/content/schemd', { withFileTypes: true })
+	.filter((entry) => entry.isDirectory())
+	.map((entry) => entry.name)
+	.sort((left, right) =>
+		right.localeCompare(left, undefined, { numeric: true, sensitivity: 'base' })
+	)[0]!;
+const CURRENT_ENGINE = (
+	JSON.parse(readFileSync('node_modules/@schemd/core/package.json', 'utf8')) as {
+		version: string;
+	}
+).version;
 
 test.beforeEach(async ({ page }) => {
 	failOnClientErrors(page);
@@ -67,9 +90,13 @@ test('version selector preserves the slug and snaps future releases to the docum
 	await page.getByRole('combobox', { name: 'Documentation version' }).selectOption('0.2');
 	await expect(page).toHaveURL(/\/docs\/0\.2\/overview$/);
 
+	/* A release newer than anything documented snaps to the newest line there is,
+	   whichever that currently happens to be. */
 	const futureVersion = await request.get('/docs/9.9.9/overview');
 	expect(futureVersion.status()).toBe(200);
-	expect(futureVersion.url()).toMatch(/\/docs\/0\.4\/overview$/);
+	expect(futureVersion.url()).toMatch(
+		new RegExp(`/docs/${CURRENT_LINE.replace('.', '\\.')}/overview$`)
+	);
 	const missingSlug = await request.get('/docs/0.4.0/not-a-document');
 	expect(missingSlug.status()).toBe(404);
 });
@@ -175,9 +202,13 @@ test('release timeline and sitemap expose current and historical platform contex
 	request
 }) => {
 	await page.goto('/changelog');
-	await expect(page.getByRole('heading', { name: /v0\.4\.0/ })).toBeVisible();
+	/* The changelog leads with whatever engine this deployment actually installs,
+	   so both assertions read that rather than naming a release. */
+	await expect(
+		page.getByRole('heading', { name: new RegExp(`v${CURRENT_ENGINE.replaceAll('.', '\\.')}`) })
+	).toBeVisible();
 	await expect(page.locator('.stat').filter({ hasText: 'installed engine' })).toContainText(
-		'v0.4.0'
+		`v${CURRENT_ENGINE}`
 	);
 	/*
 	 * The offline seed is generated from npm's own packument now, so it carries
@@ -200,7 +231,7 @@ test('release timeline and sitemap expose current and historical platform contex
 	const xml = await sitemap.text();
 	expect(xml).toContain('/docs/0.4/component-reference');
 	expect(xml).toContain('/docs/0.2/component-reference');
-	expect(xml).toContain('/simulations/0.4.0/rc');
+	expect(xml).toContain(`/simulations/${CURRENT_ENGINE}/rc`);
 });
 
 test('every indexable page states a canonical, and duplicates consolidate onto it', async ({
@@ -209,10 +240,10 @@ test('every indexable page states a canonical, and duplicates consolidate onto i
 }) => {
 	/* One canonical per page, and never the query string: a playground URL
 	 * carries a whole document in `?code=`, which must not become a page. */
-	await page.goto('/playground/0.4.0?code=abc');
+	await page.goto(`/playground/${CURRENT_ENGINE}?code=abc`);
 	await expect(page.locator('link[rel=canonical]')).toHaveAttribute(
 		'href',
-		/\/playground\/0\.4\.0$/
+		new RegExp(`/playground/${CURRENT_ENGINE.replaceAll('.', '\\.')}$`)
 	);
 	await expect(page.locator('meta[name=robots]')).toHaveAttribute('content', /noindex/);
 
@@ -221,7 +252,7 @@ test('every indexable page states a canonical, and duplicates consolidate onto i
 	await page.goto('/simulations/0.3.2/rc');
 	await expect(page.locator('link[rel=canonical]')).toHaveAttribute(
 		'href',
-		/\/simulations\/0\.4\.0\/rc$/
+		new RegExp(`/simulations/${CURRENT_ENGINE.replaceAll('.', '\\.')}/rc$`)
 	);
 	await expect(page.locator('meta[name=robots]')).toHaveAttribute('content', /^index, follow/);
 	await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
@@ -247,7 +278,7 @@ test('every indexable page states a canonical, and duplicates consolidate onto i
 	expect(
 		locations
 			.filter((url) => url.includes('/simulations/'))
-			.every((url) => url.includes('/0.4.0/') || url.endsWith('/0.4.0'))
+			.every((url) => url.includes(`/${CURRENT_ENGINE}/`) || url.endsWith(`/${CURRENT_ENGINE}`))
 	).toBe(true);
 	expect(locations.filter((url) => url.includes('/playground/'))).toHaveLength(1);
 	expect(xml).toContain('<lastmod>');
