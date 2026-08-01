@@ -1,3 +1,5 @@
+import type { PropagationFrame } from './sim-dom';
+
 /** One causally ordered frame in a simulation's teaching timeline. */
 export interface SimulationStage {
 	readonly label: string;
@@ -468,6 +470,36 @@ export function timelineFor(simulationId: string): readonly SimulationStage[] {
  * authored order and deduplicate converging routes, so playback never performs
  * DOM traversal and Previous can deterministically rewind the latch.
  */
+/**
+ * Split one step of a run into the front that is arriving and the trail behind it.
+ *
+ * {@link cumulativeFrame} answers "everything reached by now", which is the right
+ * question for the trail and the wrong one for the front: painted as a single
+ * tier it ends every run with the whole drawing lit, and a uniformly lit drawing
+ * carries no direction — which is why propagation read as not working at all.
+ * The active stage is returned alone, with the cumulative frame of every
+ * *earlier* stage as the settled tier. Step 0 has no trail, and says so with
+ * `undefined` rather than an empty tier nothing distinguishes from one.
+ */
+export function travellingFrame(
+	stages: readonly SimulationStage[],
+	step: number
+): PropagationFrame | undefined {
+	const active = stages[step];
+	if (!active) return undefined;
+	const settled = step > 0 ? cumulativeFrame(stages, step - 1) : undefined;
+	return {
+		nodes: active.nodes,
+		wires: active.wires,
+		highNodes: active.highNodes,
+		highWires: active.highWires,
+		settledNodes: settled?.nodes,
+		settledWires: settled?.wires,
+		settledHighNodes: settled?.highNodes,
+		settledHighWires: settled?.highWires
+	};
+}
+
 export function cumulativeFrame(
 	stages: readonly SimulationStage[],
 	step: number

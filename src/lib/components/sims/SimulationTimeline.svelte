@@ -2,7 +2,7 @@
 	/** Universal, causal playback rail shared by every simulation environment. */
 	import { untrack } from 'svelte';
 	import { clearPropagationFrame, setPropagationFrame } from '$lib/sim-dom';
-	import { cumulativeFrame, type RenderedSimulationStage } from '$lib/simulation-timelines';
+	import { travellingFrame, type RenderedSimulationStage } from '$lib/simulation-timelines';
 	import type { SimulationTimelineModel } from './simulation-timeline.svelte';
 	import Stepper from './Stepper.svelte';
 	import LiveMath from './LiveMath.svelte';
@@ -15,7 +15,11 @@
 	}
 
 	let { simulationId, stages, host, model }: Props = $props();
-	let delayMs = $state(750);
+	/* 1500 ms, from 750 — and on the slider's own 250 ms step, so the control can
+	   actually return to its default. A four-stage lab ran its whole causal
+	   sequence in 2.25 s, faster than a reader can follow a front across a
+	   drawing. */
+	let delayMs = $state(1500);
 	const labels = $derived(stages.map((item) => item.label));
 	const current = $derived(stages[model.step]);
 
@@ -67,11 +71,16 @@
 	});
 
 	/* Paint exactly once per causal frame. Numerical models consume this same
-	 * context state, so they cannot display an answer before the SVG arrives. */
+	 * context state, so they cannot display an answer before the SVG arrives.
+	 *
+	 * Two tiers, not one. The stage being entered is the active front; everything
+	 * an earlier stage reached is settled behind it. Painting the cumulative set
+	 * as a single tier — which is what this did — ended every run with the whole
+	 * drawing lit, so there was nothing left to read as movement. */
 	$effect(() => {
 		void model.runId;
 		const root = host;
-		const frame = cumulativeFrame(stages, model.step);
+		const frame = travellingFrame(stages, model.step);
 		if (!root || !frame) return;
 		let cancelled = false;
 		/* Let the simulation commit its electrical classes first; high-only inputs
@@ -192,10 +201,18 @@
 	/* The teaching overlay is deliberately independent of electrical state. */
 	:global(.simulation-host.is-teaching [data-node-id]),
 	:global(.simulation-host.is-teaching [data-wire-source]) {
-		opacity: 0.2;
+		opacity: 0.15;
 		transition:
 			opacity 180ms var(--ease-precise),
 			filter 180ms var(--ease-precise);
+	}
+
+	/* Reached by an earlier stage: brighter than untouched, dimmer than the front,
+	   and deliberately without the glow — the drop-shadow is what the eye tracks,
+	   so only one tier may carry it. */
+	:global(.simulation-host.is-teaching [data-node-id].is-settled),
+	:global(.simulation-host.is-teaching [data-wire-source].is-settled) {
+		opacity: 0.55;
 	}
 
 	:global(.simulation-host.is-teaching [data-node-id].is-propagating),

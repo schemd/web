@@ -15,6 +15,8 @@ interface SimulationDomIndex {
 	readonly sourceByNet: ReadonlyMap<string, string>;
 	activeTeachingNodes: Set<Element>;
 	activeTeachingWires: Set<Element>;
+	settledTeachingNodes: Set<Element>;
+	settledTeachingWires: Set<Element>;
 }
 
 /**
@@ -68,7 +70,9 @@ function indexFor(host: Element): SimulationDomIndex {
 		wiresByNet,
 		sourceByNet,
 		activeTeachingNodes: new Set(),
-		activeTeachingWires: new Set()
+		activeTeachingWires: new Set(),
+		settledTeachingNodes: new Set(),
+		settledTeachingWires: new Set()
 	};
 	DOM_INDEX.set(host, index);
 	return index;
@@ -159,6 +163,67 @@ export interface PropagationFrame {
 	readonly wires?: readonly string[];
 	readonly highNodes?: readonly string[];
 	readonly highWires?: readonly string[];
+	/**
+	 * Reached by an earlier stage of the same run.
+	 *
+	 * A cumulative frame lights everything it has ever reached, so the last stage
+	 * of every lab ended with the whole drawing at full brightness — which is
+	 * indistinguishable from no animation at all, and is why propagation read as
+	 * broken. Splitting *reached earlier* from *arriving now* is what makes the
+	 * front visible: settled sits between the active glow and the untouched dark.
+	 */
+	readonly settledNodes?: readonly string[];
+	readonly settledWires?: readonly string[];
+	readonly settledHighNodes?: readonly string[];
+	readonly settledHighWires?: readonly string[];
+}
+
+/** Resolve node ids, plus high-only ids the simulation currently drives high. */
+function collectNodes(
+	index: SimulationDomIndex,
+	ids: readonly string[] | undefined,
+	highIds: readonly string[] | undefined
+): Set<Element> {
+	const collected = new Set<Element>();
+	for (const id of ids ?? []) {
+		for (const node of index.nodes.get(id) ?? []) collected.add(node);
+	}
+	for (const id of highIds ?? []) {
+		for (const node of index.nodes.get(id) ?? []) {
+			if (node.classList.contains('is-active')) collected.add(node);
+		}
+	}
+	return collected;
+}
+
+/** Resolve wire sources, plus high-only sources currently carrying logic 1. */
+function collectWires(
+	index: SimulationDomIndex,
+	sources: readonly string[] | undefined,
+	highSources: readonly string[] | undefined
+): Set<Element> {
+	const collected = new Set<Element>();
+	for (const source of sources ?? []) {
+		for (const wire of index.wiresBySource.get(source) ?? []) collected.add(wire);
+	}
+	for (const source of highSources ?? []) {
+		for (const wire of index.wiresBySource.get(source) ?? []) {
+			if (wire.classList.contains('net-high-signal') || wire.classList.contains('is-active')) {
+				collected.add(wire);
+			}
+		}
+	}
+	return collected;
+}
+
+/** Apply one tier's class, mutating only the elements that changed. */
+function retier(previous: Set<Element>, next: Set<Element>, className: string): void {
+	for (const element of previous) {
+		if (!next.has(element)) element.classList.remove(className);
+	}
+	for (const element of next) {
+		if (!previous.has(element)) element.classList.add(className);
+	}
 }
 
 /**
@@ -168,42 +233,24 @@ export interface PropagationFrame {
  */
 export function setPropagationFrame(host: Element, frame: PropagationFrame): void {
 	const index = indexFor(host);
-	const nextNodes = new Set<Element>();
-	const nextWires = new Set<Element>();
-	for (const id of frame.nodes ?? []) {
-		for (const node of index.nodes.get(id) ?? []) nextNodes.add(node);
-	}
-	for (const source of frame.wires ?? []) {
-		for (const wire of index.wiresBySource.get(source) ?? []) nextWires.add(wire);
-	}
-	for (const id of frame.highNodes ?? []) {
-		for (const node of index.nodes.get(id) ?? []) {
-			if (node.classList.contains('is-active')) nextNodes.add(node);
-		}
-	}
-	for (const source of frame.highWires ?? []) {
-		for (const wire of index.wiresBySource.get(source) ?? []) {
-			if (wire.classList.contains('net-high-signal') || wire.classList.contains('is-active')) {
-				nextWires.add(wire);
-			}
-		}
-	}
+	const nextNodes = collectNodes(index, frame.nodes, frame.highNodes);
+	const nextWires = collectWires(index, frame.wires, frame.highWires);
+	const nextSettledNodes = collectNodes(index, frame.settledNodes, frame.settledHighNodes);
+	const nextSettledWires = collectWires(index, frame.settledWires, frame.settledHighWires);
+	/* The active tier wins: an element arriving now is never merely settled, or
+	   it would carry both classes and the dimmer one could win the cascade. */
+	for (const node of nextNodes) nextSettledNodes.delete(node);
+	for (const wire of nextWires) nextSettledWires.delete(wire);
 
-	for (const node of index.activeTeachingNodes) {
-		if (!nextNodes.has(node)) node.classList.remove('is-propagating');
-	}
-	for (const node of nextNodes) {
-		if (!index.activeTeachingNodes.has(node)) node.classList.add('is-propagating');
-	}
-	for (const wire of index.activeTeachingWires) {
-		if (!nextWires.has(wire)) wire.classList.remove('is-propagating');
-	}
-	for (const wire of nextWires) {
-		if (!index.activeTeachingWires.has(wire)) wire.classList.add('is-propagating');
-	}
+	retier(index.activeTeachingNodes, nextNodes, 'is-propagating');
+	retier(index.activeTeachingWires, nextWires, 'is-propagating');
+	retier(index.settledTeachingNodes, nextSettledNodes, 'is-settled');
+	retier(index.settledTeachingWires, nextSettledWires, 'is-settled');
 
 	index.activeTeachingNodes = nextNodes;
 	index.activeTeachingWires = nextWires;
+	index.settledTeachingNodes = nextSettledNodes;
+	index.settledTeachingWires = nextSettledWires;
 	host.classList.add('is-teaching');
 }
 
@@ -212,8 +259,12 @@ export function clearPropagationFrame(host: Element): void {
 	const index = indexFor(host);
 	for (const node of index.activeTeachingNodes) node.classList.remove('is-propagating');
 	for (const wire of index.activeTeachingWires) wire.classList.remove('is-propagating');
+	for (const node of index.settledTeachingNodes) node.classList.remove('is-settled');
+	for (const wire of index.settledTeachingWires) wire.classList.remove('is-settled');
 	index.activeTeachingNodes.clear();
 	index.activeTeachingWires.clear();
+	index.settledTeachingNodes.clear();
+	index.settledTeachingWires.clear();
 	host.classList.remove('is-teaching');
 }
 

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { cumulativeFrame, SIMULATION_TIMELINES, timelineFor } from './simulation-timelines';
+import {
+	cumulativeFrame,
+	SIMULATION_TIMELINES,
+	timelineFor,
+	travellingFrame
+} from './simulation-timelines';
 
 const ENVIRONMENT_IDS = [
 	'adder',
@@ -94,5 +99,56 @@ describe('simulation teaching timelines', () => {
 
 	it('returns no fabricated route for an unknown simulation', () => {
 		expect(timelineFor('missing')).toEqual([]);
+	});
+
+	describe('travelling front', () => {
+		it('opens with a front and no trail behind it', () => {
+			const frame = travellingFrame(timelineFor('grover'), 0);
+			expect(frame?.settledNodes).toBeUndefined();
+			expect(frame?.settledWires).toBeUndefined();
+		});
+
+		it('carries only the current stage in the active tier', () => {
+			const stages = timelineFor('grover');
+			const frame = travellingFrame(stages, 2);
+			expect(frame?.nodes).toEqual(stages[2]!.nodes);
+			expect(frame?.wires).toEqual(stages[2]!.wires);
+		});
+
+		it('trails every earlier stage, and only earlier stages', () => {
+			const stages = timelineFor('grover');
+			const frame = travellingFrame(stages, 2);
+			const earlier = cumulativeFrame(stages, 1);
+			expect(frame?.settledNodes).toEqual(earlier!.nodes);
+			/* The stage after the front must not have been reached yet. */
+			for (const id of stages[3]?.nodes ?? []) {
+				if (!earlier!.nodes.includes(id)) expect(frame?.settledNodes).not.toContain(id);
+			}
+		});
+
+		/*
+		 * The regression this whole change exists for: painted as one cumulative
+		 * tier, the final step lit every element the run ever touched, which is
+		 * indistinguishable from no animation. The last front must stay a front.
+		 *
+		 * Across nodes *and* wires, because a stage may advance on either —
+		 * `statechart` ends on a transition, lighting no node its earlier stages
+		 * had not already reached. Asserting over nodes alone called that a
+		 * failure when it is simply what that lab's last step is.
+		 */
+		it.each(ENVIRONMENT_IDS)('%s ends on a front, not on a fully lit drawing', (id) => {
+			const stages = timelineFor(id);
+			const last = travellingFrame(stages, stages.length - 1);
+			const settledNodes = new Set(last?.settledNodes ?? []);
+			const settledWires = new Set(last?.settledWires ?? []);
+			const arriving =
+				(last?.nodes ?? []).filter((node) => !settledNodes.has(node)).length +
+				(last?.wires ?? []).filter((wire) => !settledWires.has(wire)).length;
+			expect(arriving).toBeGreaterThan(0);
+		});
+
+		it('has no stage for a step past the end', () => {
+			expect(travellingFrame(timelineFor('rc'), 99)).toBeUndefined();
+		});
 	});
 });
