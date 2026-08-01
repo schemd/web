@@ -5,7 +5,7 @@
     "": {
       "name": "schemd-web",
       "dependencies": {
-        "@schemd/core": "^0.6.0",
+        "@schemd/core": "0.6.0",
         "katex": "^0.18.1",
         "marked": "^18.0.7",
       },
