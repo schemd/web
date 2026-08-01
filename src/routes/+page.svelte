@@ -330,18 +330,6 @@
 			</article>
 		</div>
 	</section>
-
-	<aside class="landing-foot hairline-x" aria-label="Project links">
-		<span class="microlabel">{data.releaseCount} releases tracked · registry-synced</span>
-		<span>
-			<a href="/changelog">Changelog</a> ·
-			<a href="/downloads">Downloads</a> ·
-			<a href="/examples">Examples</a> ·
-			<a href="/coverage">Coverage</a> ·
-			<a href="https://github.com/schemd/core" rel="noopener" target="_blank">GitHub</a> ·
-			<a href="https://www.npmjs.com/package/@schemd/core" rel="noopener" target="_blank">npm</a>
-		</span>
-	</aside>
 </article>
 
 <style>
@@ -833,14 +821,6 @@
 	}
 
 	/* ---------- Footer ---------- */
-	.landing-foot {
-		display: flex;
-		justify-content: space-between;
-		flex-wrap: wrap;
-		gap: var(--space-3);
-		padding-block: var(--space-6);
-	}
-
 	/* ---------- Responsive ---------- */
 	@media (max-width: 960px) {
 		.hero {

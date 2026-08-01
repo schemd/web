@@ -39,8 +39,17 @@ const COMPILER_WORKER = /\/workers\/compile-browser\.worker-[^/]+\.js$/;
  * stay under 36 KiB, and it would leave nothing importing `index.js` — which
  * is the module the leak assertion below keys on, so the guard would quietly
  * become vacuous. A smaller number is not worth a weaker check.
+ *
+ * Raised again from 38 KiB for `@schemd/core` 0.7, which measured 38.4 KiB
+ * here. Three items in that release account for it: the `ByteWriter`, the
+ * router arena, and bundle nudging — roughly 0.94 KiB between them against
+ * 0.6, and the compiler's own tree-shaken budget moved 34 → 35 KiB in the same
+ * release for the same reason. None of it tree-shakes out of a worker that
+ * compiles: nudging is reached from the router, so every document that routes
+ * carries it. Recorded against the capability rather than absorbed, on the
+ * same terms as the 0.5 rise above.
  */
-const MAX_COMPILER_JS_GZIP = 38 * 1024;
+const MAX_COMPILER_JS_GZIP = 39 * 1024;
 /*
  * Raised from 146/182 KiB in 0.4. The laboratory grew from five environments
  * to thirteen, and each one ships its own lazily loaded chunk plus its share
@@ -59,8 +68,20 @@ const MAX_COMPILER_JS_GZIP = 38 * 1024;
  * cost belongs here rather than being hidden. Verified first that none of it is
  * accidental — no `$lib/server` module reaches the client, and the tour's only
  * import from one is a type, which is erased.
+ *
+ * Raised from 168 KiB for the site footer and the two shared chart components.
+ * Measured against the same build with only those changes removed: 166.1 →
+ * 170.6 KiB, so **4.5 KiB, none of it the compiler** — the worker chunk is
+ * byte-identical across both builds, and its own rise in the ceiling above is a
+ * separate matter with a separate cause. The footer lands in the shared entry
+ * because it is mounted in the layout; `TimeSeries` and `BarSeries` are shared
+ * by the downloads, coverage, and conformance routes, and they carry the
+ * crosshair, the keyboard stepping, and the table view that the hand-rolled
+ * per-page SVG they replaced had none of. That last part is why this is worth
+ * 4.5 KiB rather than a saving: the retired chart's only readout was a native
+ * `<title>` tooltip, which no keyboard reaches.
  */
-const MAX_DOCUMENT_JS_GZIP = 168 * 1024;
+const MAX_DOCUMENT_JS_GZIP = 172 * 1024;
 /* Exactly the sum of the two ceilings above, as the compiler note says. */
 const MAX_ALL_JS_GZIP = MAX_DOCUMENT_JS_GZIP + MAX_COMPILER_JS_GZIP;
 /*
@@ -79,8 +100,14 @@ const MAX_MODERN_MATH_FONTS = 320 * 1024;
  * Raw bytes of everything shipped, fonts and CSS included. Raised from 1,100
  * KiB alongside the JavaScript ceilings above and for the same three features;
  * a new route brings its own stylesheet as well as its script.
+ *
+ * Raised from 1,136 KiB for the footer and the chart components, measured the
+ * same way as the document ceiling above: 1,131.6 → 1,149.2 KiB with only
+ * those changes removed. Raw grows faster than gzip here because most of the
+ * addition is CSS — three components' worth of scoped styles, which compress
+ * well and so barely move the gzip figure while still being shipped.
  */
-const MAX_CLIENT_OUTPUT = 1_136 * 1024;
+const MAX_CLIENT_OUTPUT = 1_160 * 1024;
 const EXPECTED_SIMULATIONS = 13;
 
 function assertBudget(condition: unknown, message: string): asserts condition {

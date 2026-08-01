@@ -6,6 +6,7 @@
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import VersionSelect from '$lib/components/VersionSelect.svelte';
 	import Telemetry from '$lib/components/Telemetry.svelte';
+	import Footer from '$lib/components/Footer.svelte';
 	import {
 		BLUEPRINT_MODES,
 		BLUEPRINT_LABELS,
@@ -24,6 +25,17 @@
 	});
 
 	const version = $derived(page.params['version'] ?? data.latest);
+
+	/*
+	 * The instrument routes are exactly one viewport tall by construction —
+	 * `WorkspaceShell` sizes itself to `100vh - header - statusbar`, and the
+	 * embed route is someone else's iframe. Appending a footer to those would
+	 * introduce a scrollbar on a surface designed not to have one, and the
+	 * shells already end in a status bar that does the footer's job. Every
+	 * document-shaped route gets it.
+	 */
+	const CHROME_FREE = ['/playground', '/simulations', '/inspector', '/embed'];
+	const showFooter = $derived(!CHROME_FREE.some((prefix) => page.url.pathname.startsWith(prefix)));
 
 	const nav = $derived([
 		{ href: `/docs/${version}/overview`, label: 'Docs', match: '/docs' },
@@ -129,9 +141,18 @@
 	</div>
 </header>
 
-<main id="main">
+<main id="main" class:has-footer={showFooter}>
 	{@render children()}
 </main>
+
+{#if showFooter}
+	<Footer
+		latest={data.latest}
+		docLine={data.docLines[0] ?? data.latest}
+		registryLive={data.registryLive}
+		releases={data.versions.length}
+	/>
+{/if}
 
 <CommandPalette entries={data.paletteEntries} />
 <Telemetry />
@@ -338,6 +359,17 @@
 
 	main {
 		min-block-size: calc(100vh - var(--header-h));
+	}
+
+	/*
+	 * A footer changes what "fill the viewport" has to mean. Left at the full
+	 * `100vh - header`, a short page pushes the footer below the fold and it
+	 * reads as missing until you scroll. Reserving a nominal footer height here
+	 * keeps main + footer to one viewport, and `auto` lets a tall footer on a
+	 * narrow screen — where the columns stack — take the room it actually needs.
+	 */
+	main.has-footer {
+		min-block-size: calc(100vh - var(--header-h) - 320px);
 	}
 
 	@media (max-width: 1040px) {

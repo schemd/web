@@ -117,7 +117,6 @@ export const load: PageServerLoad = async () => {
 	return {
 		heroes: _compileHeroes(),
 		limits: { ...SCHEMATIC_LIMITS },
-		latest: registry.latest,
-		releaseCount: registry.releases.length
+		latest: registry.latest
 	};
 };

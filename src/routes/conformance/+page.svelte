@@ -8,10 +8,32 @@
 	 */
 	import type { PageProps } from './$types';
 	import Seo from '$lib/components/Seo.svelte';
+	import BarSeries, { type BarTone } from '$lib/components/charts/BarSeries.svelte';
 
 	let { data }: PageProps = $props();
 
 	const clean = $derived(data.totals.diagrams > 0 && data.flagged.length === 0);
+
+	/*
+	 * Severity maps onto the reserved status hues, never onto a categorical slot.
+	 * The palette validator puts warning and info inside the 6-8 CVD floor band
+	 * for protanopia, which is legal only alongside a second channel — so every
+	 * bar also prints its severity as text, and the ordering carries the rest.
+	 */
+	const TONE: Record<string, BarTone> = {
+		error: 'danger',
+		warning: 'warn',
+		info: 'ok'
+	};
+
+	const ruleBars = $derived(
+		data.byRule.map((rule) => ({
+			label: rule.code,
+			value: rule.count,
+			note: rule.summary,
+			tone: TONE[rule.severity] ?? 'default'
+		}))
+	);
 </script>
 
 <Seo
@@ -19,7 +41,7 @@
 	description="Every documented schemd diagram checked against the compiler's design rules: shorted rails, width and domain mismatches, contended drivers, and disconnected subcircuits."
 />
 
-<main class="conformance">
+<article class="conformance">
 	<header>
 		<p class="kicker">Corpus / Design rules</p>
 		<h1>Every documented diagram, checked</h1>
@@ -59,16 +81,11 @@
 	{#if data.byRule.length}
 		<section aria-labelledby="rules-heading">
 			<h2 id="rules-heading">Which rules fired</h2>
-			<ul class="rules">
-				{#each data.byRule as rule (rule.code)}
-					<li>
-						<span class="count">{rule.count}</span>
-						<span class="code">{rule.code}</span>
-						<span class="severity {rule.severity}">{rule.severity}</span>
-						<span class="summary">{rule.summary}</span>
-					</li>
-				{/each}
-			</ul>
+			<BarSeries
+				items={ruleBars}
+				summary="How many documented diagrams each design rule fired on, by severity."
+				unit="diagrams"
+			/>
 		</section>
 	{/if}
 
@@ -154,7 +171,7 @@
 			</ul>
 		{/if}
 	</section>
-</main>
+</article>
 
 <style>
 	.conformance {

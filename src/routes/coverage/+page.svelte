@@ -1,8 +1,31 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
 	import Seo from '$lib/components/Seo.svelte';
+	import BarSeries from '$lib/components/charts/BarSeries.svelte';
 
 	let { data }: PageProps = $props();
+
+	/** Anchor-safe id for a family label, so a bar can jump to its section. */
+	function slug(label: string): string {
+		return `family-${label.replace(/\s+/g, '-')}`;
+	}
+
+	/*
+	 * Coverage answered "is every primitive exercised" and nothing else, so the
+	 * one question the corpus can actually settle — where its examples are
+	 * concentrated — had no surface. Sorting families by usage puts that first,
+	 * and each bar is a link into the section it measures.
+	 */
+	const familyUsage = $derived(
+		data.coverage.groups
+			.map((group) => ({
+				label: group.label,
+				value: group.kinds.reduce((sum, kind) => sum + kind.count, 0),
+				note: `${group.kinds.length} primitives`,
+				href: `#${slug(group.label)}`
+			}))
+			.sort((left, right) => right.value - left.value)
+	);
 
 	const ratio = $derived(
 		data.coverage.total === 0 ? 0 : data.coverage.covered / data.coverage.total
@@ -38,9 +61,18 @@
 		</div>
 	</header>
 
+	<section class="usage plate" aria-label="Corpus usage by family">
+		<p class="microlabel group-label">where the corpus spends its examples</p>
+		<BarSeries
+			items={familyUsage}
+			summary="Documented usages of each component family, across the docs corpus and the canonical catalog."
+			unit="usages"
+		/>
+	</section>
+
 	<div class="groups">
 		{#each data.coverage.groups as group (group.label)}
-			<section class="group plate" aria-label={group.label}>
+			<section class="group plate" id={slug(group.label)} aria-label={group.label}>
 				<p class="microlabel group-label">{group.label}</p>
 				<ul class="kinds">
 					{#each group.kinds as entry (entry.kind)}
