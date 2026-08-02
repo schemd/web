@@ -495,7 +495,7 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<
 		model: 'event-driven Boolean solver',
 		tagline: 'Cascading ripple-carry gate matrix with a live combinational pass.',
 		summary:
-			'Eight full-adder cells built from XOR/AND/OR primitives. Clicking an input port toggles a bit and dispatches one synchronous logic pass; high nets glow as the carry ripples left to right.',
+			'Eight full-adder cells built from XOR/AND/OR primitives. Changing an operand or carry input dispatches one synchronous logic pass; high nets glow as the carry ripples left to right.',
 		formula:
 			'S_i = A_i \\oplus B_i \\oplus C_i \\;\\cdot\\; C_{i+1} = A_iB_i + C_i(A_i \\oplus B_i)',
 		inventory: [
@@ -521,9 +521,9 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<
 						'Set $A$ and $B$, then watch the glow: the low bits settle first and a bright carry front climbs upward. You are literally watching information propagate.'
 				},
 				{
-					label: 'Toggle bit 0 of an all-ones operand.',
+					label: 'Toggle carry-in with an all-ones operand.',
 					detail:
-						'Flip the lowest bit of $A = 11111111$ and a single carry sweeps all the way to $C_{out}$ — one bit of input, eight cells of consequence. This is the worst case, $t \\propto n$.'
+						'Set $A = 11111111$ and $B = 0$, then toggle $C_{in}$. A single carry sweeps all the way to $C_{out}$ — one bit of input, eight cells of consequence. This is the worst case, $t \\propto n$.'
 				},
 				{
 					label: 'Diagnose a missing overflow before inspecting the relay.',
@@ -1021,17 +1021,14 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 		},
 		actions: [
 			sequenceAction(
-				[
-					'.operands label:nth-child(1) input[type="number"]',
-					'.operands label:nth-child(2) input[type="number"]'
-				],
+				['[data-lab-input="a"][type="number"]', '[data-lab-input="b"][type="number"]'],
 				'input',
 				'enter an A value, then a B value'
 			),
 			action(
-				'.sim-stage [data-node-id="A0"] [role="button"]',
-				'click',
-				'toggle the A₀ input port in the schematic'
+				'[data-lab-input="carryIn"]',
+				'change',
+				'toggle the carry-in control after entering all ones'
 			),
 			action(
 				'.fault-switch [role="switch"]',

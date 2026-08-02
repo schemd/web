@@ -55,6 +55,28 @@
 	const frame = $derived(
 		model ? model({ inputs, faults, step: timeline.step }) : { signals: {}, notes: [] }
 	);
+	let latchedReadouts = $state<Record<string, number>>(initialReadouts());
+
+	function initialReadouts(): Record<string, number> {
+		const initialModel = resolveLabModel(manifest.model);
+		return initialModel
+			? { ...initialModel({ inputs, faults, step: Number.MAX_SAFE_INTEGER }).signals }
+			: {};
+	}
+
+	/* A combinational output is an observation register, not a preview. Keep the
+	   previous settled reading visible until the shared timeline reaches its last
+	   stage, then commit every latched instrument together. */
+	$effect(() => {
+		if (timeline.count === 0 || timeline.step < timeline.count - 1) return;
+		const next: Record<string, number> = {};
+		for (const instrument of manifest.instruments) {
+			if (instrument.kind === 'readout' && instrument.latchUntilSettled) {
+				next[instrument.signal] = frame.signals[instrument.signal] ?? 0;
+			}
+		}
+		latchedReadouts = next;
+	});
 
 	/** A signal counts as on at or above the binding's threshold. */
 	function on(signal: string, threshold: number): boolean {
@@ -119,6 +141,14 @@
 					: Math.round(value).toLocaleString('en-US');
 		return unit ? `${text} ${unit}` : text;
 	}
+
+	function readoutValue(
+		instrument: Extract<LabManifest['instruments'][number], { kind: 'readout' }>
+	): number {
+		const current = frame.signals[instrument.signal] ?? 0;
+		if (!instrument.latchUntilSettled || timeline.step >= timeline.count - 1) return current;
+		return latchedReadouts[instrument.signal] ?? current;
+	}
 </script>
 
 {#if !model}
@@ -135,12 +165,14 @@
 					{#if input.kind === 'toggle'}
 						<input
 							type="checkbox"
+							data-lab-input={input.key}
 							checked={inputs[input.key] === 1}
 							onchange={(event) => (inputs[input.key] = event.currentTarget.checked ? 1 : 0)}
 						/>
 					{:else if input.kind === 'slider'}
 						<input
 							type="range"
+							data-lab-input={input.key}
 							min={input.min}
 							max={input.max}
 							step={input.step}
@@ -151,6 +183,7 @@
 					{:else}
 						<input
 							type="number"
+							data-lab-input={input.key}
 							min={input.min}
 							max={input.max}
 							value={inputs[input.key]}
@@ -171,7 +204,13 @@
 		{/snippet}
 
 		{#snippet canvas()}
-			<div class="sim-stage" bind:this={host}>
+			<div
+				class="sim-stage schemd-frame net-optics"
+				bind:this={host}
+				role="group"
+				aria-label={`Interactive ${manifest.title} schematic`}
+				data-model-stage={timeline.step}
+			>
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
 				{@html svg}
 			</div>
@@ -182,8 +221,13 @@
 				<section class="instrument">
 					<p class="microlabel">{instrument.label}</p>
 					{#if instrument.kind === 'readout'}
-						<span class="readout big">
-							{present(frame.signals[instrument.signal] ?? 0, instrument.format, instrument.unit)}
+						{@const value = readoutValue(instrument)}
+						<span
+							class="readout big"
+							data-lab-signal={instrument.signal}
+							aria-label={`${instrument.label} equals ${present(value, instrument.format, instrument.unit)}`}
+						>
+							{present(value, instrument.format, instrument.unit)}
 						</span>
 					{:else if instrument.kind === 'bits'}
 						<ol class="bits">

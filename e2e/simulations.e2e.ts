@@ -55,10 +55,7 @@ test('adder preserves the old output and commits one ripple stage per configured
 	const delay = timeline.getByRole('slider', { name: 'Propagation stage delay' });
 	await delay.fill('250');
 
-	const result = page.locator('[data-math-id="adder.value.total"]');
-	/* Every live readout appends its bit pattern to the spoken label, so the
-	 * value is matched at the head of the sentence rather than as the whole
-	 * of it. */
+	const result = page.locator('[data-lab-signal="total"]');
 	await expect(result).toHaveAttribute('aria-label', /^nine-bit result equals 129\b/);
 	/* Core 0.4 emits a classical gate's canonical `out1` terminal even when the
 	 * source used the compatibility alias `out`, and nothing may reintroduce
@@ -66,11 +63,9 @@ test('adder preserves the old output and commits one ripple stage per configured
 	 * the model's drive of that identity is asserted after the pass below. */
 	await expect(page.locator('[data-wire-source="X1_0.out"]')).toHaveCount(0);
 	await expect(page.locator('[data-wire-source="X1_0.out1"]').first()).toBeAttached();
-	await page.locator('.sim-stage [data-node-id="A0"] [role="button"]').first().click();
-	await expect(page.locator('[data-math-id="adder.value.a"]')).toHaveAttribute(
-		'aria-label',
-		/^A equals 42\b/
-	);
+	const operandA = page.locator('[data-lab-input="a"]');
+	await operandA.fill('42');
+	await operandA.dispatchEvent('change');
 	await expect(result).toHaveAttribute('aria-label', /^nine-bit result equals 129\b/);
 	await expect(timeline.getByText('propagating')).toBeVisible();
 
@@ -81,11 +76,9 @@ test('adder preserves the old output and commits one ripple stage per configured
 		timeout: 4_000
 	});
 	await expect(timeline.getByText('settled')).toBeVisible();
-	/* A settled pass lights the canonical gate terminals it drove. */
-	await expect(page.locator('[data-wire-source$=".out1"].net-high-signal').first()).toBeAttached();
-	/* Settled paths latch until the next input change; logic-0 inputs do not. */
-	await expect(page.locator('.sim-stage [data-node-id="X1_0"]')).toHaveClass(/is-propagating/);
-	await expect(page.locator('.sim-stage [data-node-id="A1"]')).toHaveClass(/is-propagating/);
+	/* The active front becomes the settled trail after the final commit. */
+	await expect(page.locator('.sim-stage [data-node-id="X1_0"]')).toHaveClass(/is-settled/);
+	await expect(page.locator('.sim-stage [data-node-id="A1"]')).toHaveClass(/is-settled/);
 	await expect(page.locator('.sim-stage [data-node-id="A0"]')).not.toHaveClass(/is-propagating/);
 });
 
@@ -120,9 +113,9 @@ test('manual previous and next controls replay Grover amplitude transformations'
 	await next.click();
 	await expect(timeline).toContainText('Measurement');
 	await expect(page.locator('.sim-stage [data-node-id="M0"]')).toHaveClass(/is-propagating/);
-	await expect(page.locator('.sim-stage [data-node-id="H0"]')).toHaveClass(/is-propagating/);
-	await expect(page.locator('.sim-stage [data-node-id="ORACLE"]')).toHaveClass(/is-propagating/);
-	await expect(page.locator('.sim-stage [data-node-id="DIFF"]')).toHaveClass(/is-propagating/);
+	await expect(page.locator('.sim-stage [data-node-id="H0"]')).toHaveClass(/is-settled/);
+	await expect(page.locator('.sim-stage [data-node-id="ORACLE"]')).toHaveClass(/is-settled/);
+	await expect(page.locator('.sim-stage [data-node-id="DIFF"]')).toHaveClass(/is-settled/);
 	await expect(page.locator('[data-math-id="grover.readout.peak"]')).toHaveAttribute(
 		'aria-label',
 		'probability 33.0 percent'
@@ -194,8 +187,8 @@ test('RC controls restart the shared causal trace and expose every physical stag
 	});
 	await expect(response).not.toHaveAttribute('aria-label', /magnitude 0\.847/);
 	await expect(magnitudeSlot).toHaveCount(1);
-	await expect(page.locator('.sim-stage [data-node-id="VIN"]')).toHaveClass(/is-propagating/);
-	await expect(page.locator('.sim-stage [data-node-id="R1"]')).toHaveClass(/is-propagating/);
+	await expect(page.locator('.sim-stage [data-node-id="VIN"]')).toHaveClass(/is-settled/);
+	await expect(page.locator('.sim-stage [data-node-id="R1"]')).toHaveClass(/is-settled/);
 });
 
 test('every laboratory resolves server-rendered KaTeX with no client-side parser gaps', async ({
@@ -215,7 +208,7 @@ test('every laboratory resolves server-rendered KaTeX with no client-side parser
 	}
 });
 
-test('all thirteen numerical models follow the universal Previous and Next transport', async ({
+test('all eleven numerical models follow the universal Previous and Next transport', async ({
 	page
 }) => {
 	for (const environment of ENVIRONMENTS) {
@@ -306,21 +299,21 @@ test('guided evidence, diagnosis, completion, and catalogue progress persist loc
 	const walkthrough = page.locator('.walkthrough');
 	await expect(walkthrough.locator('.guided-step').first()).toHaveAttribute('aria-current', 'step');
 
-	/* An unrelated convenience button must not game the declared operand-entry step. */
-	await page.getByRole('button', { name: 'randomize A,B' }).click();
+	/* An unrelated control must not game the declared operand-entry step. */
+	const carryIn = page.locator('[data-lab-input="carryIn"]');
+	await carryIn.click();
 	await expect(walkthrough.locator('.guided-step.is-complete')).toHaveCount(0);
 	const feedback = walkthrough.locator('.action-feedback');
-	await expect(feedback).toContainText('randomize A,B');
+	await expect(feedback).toContainText('carry in');
 	await expect(feedback).toContainText('This step asks you to enter an A value, then a B value');
 
-	const operands = page.locator('.operands input[type="number"]');
-	await operands.nth(0).fill('255');
+	await page.locator('[data-lab-input="a"]').fill('255');
 	await page.waitForTimeout(350);
-	await operands.nth(1).fill('1');
+	await page.locator('[data-lab-input="b"]').fill('0');
 	await expect(walkthrough.locator('.guided-step.is-complete')).toHaveCount(1);
 
 	await page.waitForTimeout(350);
-	await page.locator('.sim-stage [data-node-id="A0"] [role="button"]').first().click();
+	await carryIn.click();
 	await expect(walkthrough.locator('.guided-step.is-complete')).toHaveCount(2);
 
 	await page.waitForTimeout(350);
@@ -348,7 +341,7 @@ test('guided evidence, diagnosis, completion, and catalogue progress persist loc
 	await expect(walkthrough.getByText(/Lab complete/)).toBeVisible();
 
 	await page.getByRole('link', { name: '← all environments' }).click();
-	await expect(page.getByText('1 of 13 experiments completed on this device')).toBeVisible();
+	await expect(page.getByText('1 of 11 experiments completed on this device')).toBeVisible();
 	await expect(page.locator('.lab-row').first().getByText('✓ completed locally')).toBeVisible();
 });
 

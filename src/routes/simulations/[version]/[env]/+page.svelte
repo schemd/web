@@ -127,6 +127,7 @@
 			{prerequisites}
 			next={curriculumNext}
 			host={interactionHost}
+			total={count}
 		/>
 
 		<div class="lab-model">

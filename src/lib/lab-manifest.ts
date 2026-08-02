@@ -97,6 +97,8 @@ export type LabInstrument =
 			readonly signal: string;
 			readonly format?: 'integer' | 'fixed2' | 'percent';
 			readonly unit?: string;
+			/** Hold the last settled value while a new causal pass is in flight. */
+			readonly latchUntilSettled?: boolean;
 	  }
 	| {
 			readonly kind: 'bits';

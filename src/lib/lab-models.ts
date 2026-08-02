@@ -61,6 +61,7 @@ const adder: LabModel = (input): LabFrame => {
 
 	const signals: Record<string, number> = {
 		sum: result.sum,
+		total: result.sum + (result.carry << ADDER_BITS),
 		carryOut: frontier >= ADDER_BITS ? result.carry : 0,
 		frontier
 	};

@@ -16,7 +16,8 @@ describe('SimulationPedagogy SSR', () => {
 				fault: simulation!.fault,
 				pedagogy: simulation!.pedagogy,
 				curriculum: simulation!.curriculum,
-				prerequisites: []
+				prerequisites: [],
+				total: listSimulationEnvironments().length
 			}
 		});
 

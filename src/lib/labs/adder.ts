@@ -65,8 +65,8 @@ export const adderLab: LabManifest = {
 	formula: 'S_i = A_i \\oplus B_i \\oplus C_i \\;\\cdot\\; C_{i+1} = A_iB_i + C_i(A_i \\oplus B_i)',
 	source: adderSource(),
 	inputs: [
-		{ kind: 'number', key: 'a', label: 'operand A', min: 0, max: 255, initial: 203 },
-		{ kind: 'number', key: 'b', label: 'operand B', min: 0, max: 255, initial: 91 },
+		{ kind: 'number', key: 'a', label: 'operand A', min: 0, max: 255, initial: 43 },
+		{ kind: 'number', key: 'b', label: 'operand B', min: 0, max: 255, initial: 86 },
 		{ kind: 'toggle', key: 'carryIn', label: 'carry in', initial: false }
 	],
 	bindings: [
@@ -88,8 +88,27 @@ export const adderLab: LabManifest = {
 		}
 	],
 	instruments: [
-		{ kind: 'readout', label: 'sum', signal: 'sum', format: 'integer' },
-		{ kind: 'readout', label: 'carry out', signal: 'carryOut', format: 'integer' },
+		{
+			kind: 'readout',
+			label: 'sum',
+			signal: 'sum',
+			format: 'integer',
+			latchUntilSettled: true
+		},
+		{
+			kind: 'readout',
+			label: 'carry out',
+			signal: 'carryOut',
+			format: 'integer',
+			latchUntilSettled: true
+		},
+		{
+			kind: 'readout',
+			label: 'nine-bit result',
+			signal: 'total',
+			format: 'integer',
+			latchUntilSettled: true
+		},
 		{ kind: 'bits', label: 'sum bits', signal: 'S{i}', count: 8 },
 		{ kind: 'scope', label: 'carry front', signal: 'frontier' }
 	]

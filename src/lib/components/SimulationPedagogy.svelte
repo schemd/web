@@ -35,9 +35,10 @@
 		readonly prerequisites: readonly LabLink[];
 		readonly next?: LabLink;
 		readonly host?: HTMLElement;
+		readonly total: number;
 	}
 
-	let { id, title, version, fault, pedagogy, curriculum, prerequisites, next, host }: Props =
+	let { id, title, version, fault, pedagogy, curriculum, prerequisites, next, host, total }: Props =
 		$props();
 
 	let progress = $state<SimulationProgress>(emptySimulationProgress());
@@ -246,7 +247,7 @@
 
 <section class="learning-loop" aria-labelledby={`prediction-${id}`}>
 	<div class="curriculum-line">
-		<span class="microlabel">recommended lab {curriculum.order} of 13</span>
+		<span class="microlabel">recommended lab {curriculum.order} of {total}</span>
 		<p>{curriculum.objective}</p>
 		{#if prerequisites.length > 0}
 			<p class="prerequisites">
