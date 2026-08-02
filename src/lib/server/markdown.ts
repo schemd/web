@@ -13,6 +13,7 @@ import { compileSchematic, parseSchematicFence, SchematicSyntaxError } from '@sc
 import { highlightSourceHtml } from '$lib/tokenizer';
 import mathExtension from './math-extension';
 import { schemdFencePattern } from '$lib/schemd-fence';
+import { highlightCodeHtml } from './code-highlight';
 import { describedDiagram } from './schemd-figure';
 
 /** One `h2` navigation section extracted while rendering. */
@@ -59,7 +60,14 @@ function escapeHtml(value: string): string {
 	return value.replace(/[&<>"]/g, (char) => ESCAPES[char] ?? char);
 }
 
-/** Marked instance: GFM + KaTeX, with non-schemd code blocks themed inline. */
+/**
+ * Marked instance: GFM + KaTeX, with non-schemd code blocks highlighted.
+ *
+ * `schemd` fences never reach this renderer — they are lifted out upstream and
+ * highlighted by the site's own tokenizer, which is the one grammar the
+ * playground also needs. Everything else is tokenized by Shiki, and anything it
+ * has no grammar for falls back to the escaped text this always emitted.
+ */
 const marked = new Marked({ gfm: true });
 marked.use(mathExtension());
 marked.use({
@@ -67,7 +75,11 @@ marked.use({
 		code({ text, lang }) {
 			const attr = lang ? ` data-lang="${escapeHtml(lang)}"` : '';
 			const label = lang ? `Scrollable ${escapeHtml(lang)} code` : 'Scrollable code block';
-			return `<pre class="codeblock" tabindex="0" role="region" aria-label="${label}"${attr}><code>${escapeHtml(text)}</code></pre>`;
+			/* Highlighted or escaped, the wrapper is identical — `pre.codeblock`
+			   carries the scroll region, the accent rule, and the a11y contract,
+			   and none of that should depend on whether a grammar existed. */
+			const body = highlightCodeHtml(text, lang) ?? escapeHtml(text);
+			return `<pre class="codeblock" tabindex="0" role="region" aria-label="${label}"${attr}><code>${body}</code></pre>`;
 		}
 	}
 });

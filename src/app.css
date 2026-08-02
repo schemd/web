@@ -794,6 +794,38 @@ pre.codeblock {
 	background-position: 0 0;
 }
 
+/*
+ * Shiki palette for the documentation's non-schemd fences.
+ *
+ * Every token carries one custom property per blueprint mode rather than a
+ * baked colour, so switching modes re-reads a variable instead of re-running a
+ * highlighter — the grammars never reach the browser, so a client-side
+ * re-highlight is not available even in principle.
+ *
+ * Matched on `style*='--shiki-'`, which is the thing Shiki actually emits, and
+ * deliberately *not* on the absence of `data-lang='schemd'`. The first attempt
+ * did the latter and silently unstyled two surfaces: the landing hero and the
+ * docs rail both render schemd source through the site tokenizer into
+ * `pre.codeblock` without that attribute, so a negative selector claimed their
+ * `.tok-*` spans and resolved to an undefined variable. Keying on what is
+ * present cannot reach a span the highlighter never produced.
+ */
+pre.codeblock span[style*='--shiki-'] {
+	background: transparent !important;
+}
+
+[data-blueprint='hud'] pre.codeblock span[style*='--shiki-'] {
+	color: var(--shiki-hud);
+}
+
+[data-blueprint='cyanotype'] pre.codeblock span[style*='--shiki-'] {
+	color: var(--shiki-cyanotype);
+}
+
+[data-blueprint='iso'] pre.codeblock span[style*='--shiki-'] {
+	color: var(--shiki-iso);
+}
+
 /* Tokenizer palette (shared by docs + playground) */
 .tok-kind {
 	color: var(--accent);
