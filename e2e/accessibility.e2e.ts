@@ -159,6 +159,7 @@ test('live KaTeX patches visual and MathML slot values together', async ({ page 
 	await expect(response.locator('.katex-html [data-math-slot="magnitude"]')).toHaveText('0.847');
 	await expect(response.locator('.katex-mathml [data-math-slot="magnitude"]')).toHaveText('0.847');
 
+	await page.getByText('Component calibration', { exact: true }).click();
 	await page.getByRole('slider', { name: 'Resistance' }).fill('5');
 	await page.getByRole('slider', { name: 'Resistance' }).dispatchEvent('change');
 	await expect(response.locator('.katex-html [data-math-slot="magnitude"]')).not.toHaveText(

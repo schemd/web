@@ -26,7 +26,9 @@
 	type SimulationComponent = Component<{ svg: string }>;
 	type SimulationModule = { default: SimulationComponent };
 	const COMPONENT_LOADERS: Readonly<Record<string, () => Promise<SimulationModule>>> = {
+		adder: () => import('$lib/components/sims/AdderSim.svelte'),
 		rc: () => import('$lib/components/sims/RcSim.svelte'),
+		bell: () => import('$lib/components/sims/BellSim.svelte'),
 		timer: () => import('$lib/components/sims/TimerSim.svelte'),
 		teleport: () => import('$lib/components/sims/TeleportSim.svelte'),
 		buck: () => import('$lib/components/sims/BuckSim.svelte'),
@@ -58,7 +60,8 @@
 	 * same timeline, so migration is per-lab and reversible rather than a
 	 * flag day across all thirteen.
 	 */
-	const declarative = $derived(isDeclarativeLab(sim.id));
+	const bespokeFeaturedLabs = new Set(['adder', 'bell']);
+	const declarative = $derived(isDeclarativeLab(sim.id) && !bespokeFeaturedLabs.has(sim.id));
 	const timeline = $derived(data.timeline);
 	let simulationHost = $state<HTMLElement | undefined>();
 	let interactionHost = $state<HTMLElement | undefined>();

@@ -47,13 +47,10 @@ test('catalogue and cyclic environment links navigate without JavaScript timers'
 	await expect(page).toHaveURL(/\/simulations\/0\.4\.0\/adder$/);
 });
 
-test('adder preserves the old output and commits one ripple stage per configured delay', async ({
+test('adder delegates input-port clicks and propagates the binary network instantly', async ({
 	page
 }) => {
 	await page.goto('/simulations/0.4.0/adder');
-	const timeline = page.getByRole('region', { name: 'Signal propagation timeline' });
-	const delay = timeline.getByRole('slider', { name: 'Propagation stage delay' });
-	await delay.fill('250');
 
 	const result = page.locator('[data-lab-signal="total"]');
 	await expect(result).toHaveAttribute('aria-label', /^nine-bit result equals 129\b/);
@@ -63,23 +60,17 @@ test('adder preserves the old output and commits one ripple stage per configured
 	 * the model's drive of that identity is asserted after the pass below. */
 	await expect(page.locator('[data-wire-source="X1_0.out"]')).toHaveCount(0);
 	await expect(page.locator('[data-wire-source="X1_0.out1"]').first()).toBeAttached();
-	const operandA = page.locator('[data-lab-input="a"]');
-	await operandA.fill('42');
-	await operandA.dispatchEvent('change');
-	await expect(result).toHaveAttribute('aria-label', /^nine-bit result equals 129\b/);
-	await expect(timeline.getByText('propagating')).toBeVisible();
 
-	await expect(page.locator('.sim-stage [data-node-id="X1_0"]')).toHaveClass(/is-propagating/, {
-		timeout: 1_500
-	});
-	await expect(result).toHaveAttribute('aria-label', /^nine-bit result equals 128\b/, {
-		timeout: 4_000
-	});
-	await expect(timeline.getByText('settled')).toBeVisible();
-	/* The active front becomes the settled trail after the final commit. */
-	await expect(page.locator('.sim-stage [data-node-id="X1_0"]')).toHaveClass(/is-settled/);
-	await expect(page.locator('.sim-stage [data-node-id="A1"]')).toHaveClass(/is-settled/);
-	await expect(page.locator('.sim-stage [data-node-id="A0"]')).not.toHaveClass(/is-propagating/);
+	const a0 = page.locator('[data-node-id="A0"]');
+	await expect(a0).toHaveAttribute('data-logic-state', '1');
+	await page.getByRole('button', { name: 'A0 port out' }).click();
+	await expect(a0).toHaveAttribute('data-logic-state', '0');
+	await expect(result).toHaveAttribute('aria-label', /^nine-bit result equals 128\b/);
+	await expect(page.locator('[data-wire-source="A0.out"]').first()).toHaveClass(/signal-low/);
+
+	await page.getByRole('button', { name: 'B0 port out' }).click();
+	await expect(result).toHaveAttribute('aria-label', /^nine-bit result equals 129\b/);
+	await expect(page.locator('[data-wire-source="B0.out"]').first()).toHaveClass(/signal-high/);
 });
 
 test('manual previous and next controls replay Grover amplitude transformations', async ({
@@ -161,9 +152,7 @@ test('motion tooling does not restart a paused causal stage', async ({ page }) =
 	await expect(timeline.getByText('propagating')).toHaveCount(0);
 });
 
-test('RC controls restart the shared causal trace and expose every physical stage', async ({
-	page
-}) => {
+test('RC controls update immediately and restart the shared causal trace', async ({ page }) => {
 	await page.goto('/simulations/0.4.0/rc');
 	const timeline = page.getByRole('region', { name: 'Signal propagation timeline' });
 	await timeline.getByRole('slider', { name: 'Propagation stage delay' }).fill('250');
@@ -171,11 +160,13 @@ test('RC controls restart the shared causal trace and expose every physical stag
 	await expect(response).toHaveAttribute('aria-label', /magnitude 0\.847/);
 	const magnitudeSlot = response.locator('[data-math-slot="magnitude"] .mathtt');
 	await expect(magnitudeSlot).toHaveText('0.847');
+	await page.getByText('Component calibration', { exact: true }).click();
 	await page.getByRole('slider', { name: 'Resistance' }).fill('5');
 	await page.getByRole('slider', { name: 'Resistance' }).dispatchEvent('change');
 
 	await expect(timeline.getByText('propagating')).toBeVisible();
-	await expect(response).toHaveAttribute('aria-label', /magnitude 0\.847/);
+	await expect(response).not.toHaveAttribute('aria-label', /magnitude 0\.847/);
+	await expect(magnitudeSlot).not.toHaveText('0.847');
 	await expect(page.locator('.sim-stage [data-node-id="R1"]')).toHaveClass(/is-propagating/, {
 		timeout: 1_500
 	});
@@ -185,10 +176,45 @@ test('RC controls restart the shared causal trace and expose every physical stag
 	await expect(page.locator('.sim-stage [data-node-id="VOUT"]')).toHaveClass(/is-propagating/, {
 		timeout: 1_500
 	});
-	await expect(response).not.toHaveAttribute('aria-label', /magnitude 0\.847/);
 	await expect(magnitudeSlot).toHaveCount(1);
 	await expect(page.locator('.sim-stage [data-node-id="VIN"]')).toHaveClass(/is-settled/);
 	await expect(page.locator('.sim-stage [data-node-id="R1"]')).toHaveClass(/is-settled/);
+});
+
+test('Bell controls expose operator transforms and measure a 50/50 entangled state', async ({
+	page
+}) => {
+	await page.goto('/simulations/0.4.0/bell');
+	const step = page.getByRole('button', { name: /Step through execution/ });
+	await step.click();
+	await page.locator('[data-node-id="H1"]').hover();
+	await expect(page.locator('.operator-hud')).toContainText('Hadamard transform');
+	await expect(page.locator('.operator-hud')).toContainText('(|0⟩ + |1⟩) / √2');
+
+	await step.click();
+	await expect(page.locator('.probability-panel')).toContainText('50%');
+	await expect(page.locator('.quantum-metrics')).toContainText('2.828');
+	await page.getByRole('button', { name: /Measure state/ }).click();
+	await expect(page.locator('.measurement-note')).toContainText('Projection complete');
+	await expect(page.locator('.quantum-metrics')).toContainText('1');
+});
+
+test('RC stopband sweep dims and fragments the compiler output trace', async ({ page }) => {
+	await page.goto('/simulations/0.4.0/rc');
+	const frequency = page.getByRole('slider', {
+		name: 'Stimulus frequency, 10 hertz to 100 kilohertz'
+	});
+	await frequency.fill('5');
+	const output = page.locator('[data-wire-source="VOUT.node"]').first();
+	await expect(output).toHaveClass(/is-attenuated/);
+	await expect(page.locator('[data-testid="analog-simulation-workbench"]')).toContainText(
+		'stopband attenuation'
+	);
+	await expect(output).toHaveAttribute('data-attenuation', '0.002');
+	await expect(page.locator('[data-math-id="rc.readout.h"]')).toHaveAttribute(
+		'aria-label',
+		/magnitude 0\.002/
+	);
 });
 
 test('every laboratory resolves server-rendered KaTeX with no client-side parser gaps', async ({

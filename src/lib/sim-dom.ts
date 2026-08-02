@@ -85,6 +85,21 @@ export function setWiresFrom(host: Element, sourceEndpoint: string, active: bool
 	}
 }
 
+/**
+ * Paint the binary state of every wire emitted from one canonical endpoint.
+ *
+ * Unlike `setNetLevel`, this deliberately addresses the compiler's
+ * `data-wire-source` hook. Digital simulations use it for an event-driven logic
+ * pass where both zero and one are meaningful rendered states.
+ */
+export function setWireSignalFrom(host: Element, sourceEndpoint: string, high: boolean): void {
+	for (const wire of indexFor(host).wiresBySource.get(sourceEndpoint) ?? []) {
+		wire.classList.toggle('signal-high', high);
+		wire.classList.toggle('signal-low', !high);
+		wire.setAttribute('data-signal-state', high ? '1' : '0');
+	}
+}
+
 /** Toggle `is-active` on a node group by component ID. */
 export function setNodeActive(host: Element, nodeId: string, active: boolean): void {
 	for (const node of indexFor(host).nodes.get(nodeId) ?? []) {
