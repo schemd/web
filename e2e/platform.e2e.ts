@@ -42,7 +42,9 @@ test('landing page is SSR-valid, stable, and proves rotated native geometry', as
 
 	const response = await page.goto('/');
 	expect(response?.status()).toBe(200);
-	await expect(page.getByRole('heading', { name: 'Schematics are source code.' })).toBeVisible();
+	await expect(
+		page.getByRole('heading', { name: 'Write the circuit. Get the drawing.' })
+	).toBeVisible();
 	await expect(page.getByLabel('schemd is pronounced skemd').first()).toContainText('skemd');
 	await expect(page.locator('[data-node-id="C1"]')).toHaveAttribute('data-orientation', 'down');
 

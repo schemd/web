@@ -9,7 +9,7 @@ import {
 	COMPONENT_KINDS
 } from '@schemd/core';
 import { decodeWorkspaceState } from '$lib/state-uri';
-import { _compileHeroes, _HERO_SPECS } from '../../routes/+page.server';
+import { FAMILY_SPECS, HERO_SPEC, landingFigures } from './landing';
 import { _PLAYGROUND_SAMPLE } from '../../routes/playground/[version]/+page.server';
 import { timelineFor } from '$lib/simulation-timelines';
 import { docManifest, docSearchIndex, loadDoc } from './docs';
@@ -67,14 +67,18 @@ describe('versioned registry and documentation', () => {
 		expect(packageManifestVersion(null)).toBeUndefined();
 	});
 
-	test('compiles every landing-page hero with strict geometry validation', () => {
-		const heroes = _compileHeroes();
-		expect(heroes).toHaveLength(4);
-		for (const hero of heroes) expect(hero.svg).toContain('data-schematic');
+	test('compiles every landing-page figure with strict geometry validation', () => {
+		const figures = landingFigures();
+		expect(figures.hero.svg).toContain('data-schematic');
+		/* The instrument links source lines to copper through the source map. */
+		expect(figures.hero.svg).toContain('data-source-line="13"');
+		expect(figures.hero.lines).toHaveLength(HERO_SPEC.source.split('\n').length);
+		expect(figures.hero.nets.length).toBeGreaterThan(0);
+		expect(figures.families.map(({ id }) => id)).toEqual(['logic', 'quantum', 'uml']);
+		expect(Object.keys(figures.figures)).toEqual(['junction', 'crossing']);
 
-		const analog = _HERO_SPECS.find(({ id }) => id === 'circuit')?.source ?? '';
-		expect(analog).not.toContain('initial:');
-		const quantum = _HERO_SPECS.find(({ id }) => id === 'quantum')?.source ?? '';
+		expect(HERO_SPEC.source).not.toContain('initial:');
+		const quantum = FAMILY_SPECS.find(({ id }) => id === 'quantum')?.source ?? '';
 		expect(quantum).toContain('CX.in1');
 		expect(quantum).toContain('CX.in2');
 		expect(quantum).toContain('CX.out1');
