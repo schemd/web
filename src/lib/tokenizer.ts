@@ -28,6 +28,15 @@ const COMPONENT_HEAD = /^([A-Za-z][A-Za-z0-9_-]*):([A-Za-z][A-Za-z0-9_-]*)\s+"/;
 const CONNECTION_HEAD =
 	/^([A-Za-z][A-Za-z0-9_-]*)\.([A-Za-z][A-Za-z0-9_-]*)\s*->\s*([A-Za-z][A-Za-z0-9_-]*)\.([A-Za-z][A-Za-z0-9_-]*)/;
 
+/** Mirrors a sub-circuit instance: `kind:ID at (x, y)`, which has no label. */
+const INSTANCE_HEAD =
+	/^([A-Za-z][A-Za-z0-9_-]*):([A-Za-z][A-Za-z0-9_-]*)(\s+)at(\s*)\((-?\d+(?:\.\d+)?),(\s*)(-?\d+(?:\.\d+)?)\)/;
+/** Mirrors a sub-circuit header: `subcircuit NAME [parameters] {`. */
+const SUBCIRCUIT_HEAD = /^subcircuit(\s+)([A-Za-z][A-Za-z0-9_-]*)/;
+/** Mirrors an exposed terminal: `expose NAME = ID.port`. */
+const EXPOSE_LINE =
+	/^expose(\s+)([A-Za-z][A-Za-z0-9_+-]*)(\s*)=(\s*)([A-Za-z][A-Za-z0-9_-]*)\.([A-Za-z][A-Za-z0-9_+-]*)/;
+
 function pushToken(out: SchemdToken[], text: string, cls?: string): void {
 	if (text.length > 0) out.push({ text, cls });
 }
@@ -137,6 +146,56 @@ export function tokenizeLine(line: string): SchemdTokenLine {
 			out
 		);
 		return { tokens: out, kind: 'connection' };
+	}
+
+	const instance = body.match(INSTANCE_HEAD);
+	if (instance) {
+		pushToken(out, instance[1]!, 'kind');
+		pushToken(out, ':', 'punct');
+		pushToken(out, instance[2]!, 'id');
+		pushToken(out, instance[3]!);
+		pushToken(out, 'at', 'keyword');
+		pushToken(out, instance[4]!);
+		pushToken(out, '(', 'punct');
+		pushToken(out, instance[5]!, 'number');
+		pushToken(out, ',', 'punct');
+		pushToken(out, instance[6]!);
+		pushToken(out, instance[7]!, 'number');
+		pushToken(out, ')', 'punct');
+		tokenizeTail(body.slice(instance[0].length), out);
+		return { tokens: out, kind: 'component' };
+	}
+
+	const header = body.match(SUBCIRCUIT_HEAD);
+	if (header) {
+		pushToken(out, 'subcircuit', 'keyword');
+		pushToken(out, header[1]!);
+		pushToken(out, header[2]!, 'kind');
+		const rest = body.slice(header[0].length);
+		const brace = rest.match(/\{\s*$/);
+		tokenizeTail(brace ? rest.slice(0, brace.index) : rest, out);
+		if (brace) pushToken(out, brace[0], 'punct');
+		return { tokens: out, kind: 'other' };
+	}
+
+	const exposure = body.match(EXPOSE_LINE);
+	if (exposure) {
+		pushToken(out, 'expose', 'keyword');
+		pushToken(out, exposure[1]!);
+		pushToken(out, exposure[2]!, 'kind');
+		pushToken(out, exposure[3]!);
+		pushToken(out, '=', 'punct');
+		pushToken(out, exposure[4]!);
+		pushToken(out, exposure[5]!, 'id');
+		pushToken(out, '.', 'punct');
+		pushToken(out, exposure[6]!, 'kind');
+		pushToken(out, body.slice(exposure[0].length));
+		return { tokens: out, kind: 'other' };
+	}
+
+	if (body.trim() === '}') {
+		pushToken(out, body, 'punct');
+		return { tokens: out, kind: 'other' };
 	}
 
 	pushToken(out, body);

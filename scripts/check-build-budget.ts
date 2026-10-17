@@ -48,8 +48,16 @@ const COMPILER_WORKER = /\/workers\/compile-browser\.worker-[^/]+\.js$/;
  * compiles: nudging is reached from the router, so every document that routes
  * carries it. Recorded against the capability rather than absorbed, on the
  * same terms as the 0.5 rise above.
+ *
+ * Raised again from 39 KiB to 43 for `@schemd/core` 0.8, which measured
+ * 41.7 KiB here — 3.3 KiB over 0.7, the same rise the compiler's own budgets
+ * recorded (35 → 38 KiB tree-shaken, 37 → 41 KiB for the whole entry). Trunk
+ * branches and sub-circuits are both syntax, so neither tree-shakes out of a
+ * worker that parses; about a third of each is diagnostic text the compiler
+ * keeps on purpose. The edge-price cache is 127 B of it. Headroom is left at
+ * roughly what 0.7 left, not widened.
  */
-const MAX_COMPILER_JS_GZIP = 39 * 1024;
+const MAX_COMPILER_JS_GZIP = 43 * 1024;
 /*
  * Raised from 146/182 KiB in 0.4. The laboratory grew from five environments
  * to thirteen, and each one ships its own lazily loaded chunk plus its share
@@ -142,8 +150,13 @@ const MAX_MODERN_MATH_FONTS = 320 * 1024;
  * scoped styles, which land here but barely move gzip. About 1.5 KiB of the
  * rise is the documentation highlighter's stylesheet; none of it is highlighter
  * JavaScript, which never leaves the server.
+ *
+ * Raised to 1,180 for `@schemd/core` 0.8, measured 1,168.8 KiB: the worker's
+ * compiler grew about 9 KiB minified for trunk branches and sub-circuits (the
+ * 3.3 KiB gzip rise recorded on the compiler ceiling above), plus the editor
+ * tokenizer learning `subcircuit`, `expose` and instance lines.
  */
-const MAX_CLIENT_OUTPUT = 1_168 * 1024;
+const MAX_CLIENT_OUTPUT = 1_180 * 1024;
 /*
  * Eleven laboratories, each downloaded only when it is opened. Two of them are
  * manifests rather than components, so the shell's lazy registry spans both

@@ -197,10 +197,11 @@ describe('versioned registry and documentation', () => {
 		const currentSlugs = current.map(({ slug }) => slug);
 		for (const { slug } of historical) expect(currentSlugs).toContain(slug);
 		expect(new Set(currentSlugs).size).toBe(current.length);
-		/* 15 since 0.6, which added the reading-back chapter. */
-		expect(current).toHaveLength(15);
+		/* 16 since 0.8, which added the sub-circuits chapter; 15 since 0.6's reading-back. */
+		expect(current).toHaveLength(16);
 		expect(currentSlugs).toContain('placement');
 		expect(currentSlugs).toContain('reading-back');
+		expect(currentSlugs).toContain('subcircuits');
 
 		for (const version of DOCUMENTATION_VERSIONS) {
 			for (const page of docManifest(version)) {

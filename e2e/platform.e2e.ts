@@ -185,15 +185,21 @@ test('RC laboratory uses native primitives and updates derived physics without r
 	const svgHandle = await schematic.elementHandle();
 	expect(svgHandle).not.toBeNull();
 
+	/*
+	 * The frequency-response plot is derived physics, not compiler output: moving
+	 * the stimulus must move its operating point along the response curve while
+	 * the schematic SVG stays the same element. (This used to read a stroke width
+	 * off `.cutoff-overlay .bode-curve`, which the lab no longer renders.)
+	 */
+	const operatingPoint = page.locator('.response-plot .operating-point');
+	await expect(page.locator('.response-plot .response-curve')).toHaveAttribute('d', /^M/);
+	const before = await operatingPoint.getAttribute('cx');
 	await page.getByRole('slider', { name: /Stimulus frequency/ }).fill('5');
 	await expect(page.locator('[data-math-id="rc.readout.h"]')).not.toHaveAttribute(
 		'aria-label',
 		/magnitude 0\.847/
 	);
-	await expect(page.locator('.cutoff-overlay .bode-curve')).toHaveAttribute(
-		'style',
-		/stroke-width:/
-	);
+	await expect(operatingPoint).not.toHaveAttribute('cx', before ?? '');
 	expect(await svgHandle?.evaluate((element) => element.isConnected)).toBe(true);
 });
 
