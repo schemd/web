@@ -1,16 +1,20 @@
 <script lang="ts">
 	/**
-	 * The site's base plate — the header bezel's counterpart.
+	 * The title block: every reading page ends in it.
 	 *
-	 * Before this existed, three pages ended in three different hand-rolled
-	 * `<aside>` feet and the rest ended in nothing at all, so "what else is
-	 * here" depended on which page you happened to land on. One component
-	 * mounted once in the layout is what makes that answer the same everywhere.
+	 * A drawing sheet keeps its state in one box in the corner — project,
+	 * revision, sheet, who drew it — and this is that box for the site. Before
+	 * it existed, three pages ended in three different hand-rolled `<aside>`
+	 * feet and the rest ended in nothing, so "what else is here" depended on
+	 * where you landed. One component mounted once in the layout makes the
+	 * answer the same everywhere.
 	 *
-	 * It carries its own status line rather than asserting freshness: the
-	 * registry indicator reads `registryLive`, so a footer served while npm is
-	 * unreachable says so instead of implying live data.
+	 * It reports, never asserts: the registry cell reads `registryLive`, so a
+	 * page served while npm is unreachable says so instead of implying live
+	 * figures.
 	 */
+	import { page } from '$app/state';
+
 	interface Props {
 		/** Newest published release, for version-pinned links. */
 		latest: string;
@@ -42,7 +46,7 @@
 				{ label: 'Inspector', href: `/inspector/${latest}` },
 				{ label: 'Simulation lab', href: `/simulations/${latest}` },
 				{ label: 'Examples', href: '/examples' },
-				{ label: 'Diff', href: '/diff' }
+				{ label: 'Diff', href: `/diff/${latest}` }
 			]
 		},
 		{
@@ -62,17 +66,22 @@
 		{ label: 'Author', href: 'https://www.johnowolabiidogun.dev' }
 	];
 
+	/* The sheet this page is: its first path segment, as a drawing would title it. */
+	const sheet = $derived.by(() => {
+		const segment = page.url.pathname.split('/').filter(Boolean)[0];
+		return segment === undefined ? 'Home' : segment[0]!.toUpperCase() + segment.slice(1);
+	});
+
 	const year = new Date().getFullYear();
 </script>
 
-<footer class="site-footer" aria-label="Site footer">
-	<hr class="signal-rule" />
-
-	<div class="footer-inner">
-		<div class="footer-identity">
-			<span class="footer-brand">schemd</span>
-			<p class="footer-blurb">
-				A zero-dependency text-to-SVG compiler for schematics and UML. Every diagram on this site is
+<footer class="title-block" aria-label="Title block">
+	<div class="tb">
+		<div class="cell project">
+			<span class="microlabel">Project</span>
+			<span class="brand">schemd</span>
+			<p class="blurb">
+				A zero-dependency text-to-SVG compiler for schematics and UML. Every drawing on this site is
 				compiled by the engine it documents.
 			</p>
 			<ul class="elsewhere">
@@ -84,8 +93,31 @@
 			</ul>
 		</div>
 
+		<div class="cell">
+			<span class="microlabel">Drawn by</span><span class="value mono">@schemd/core {latest}</span>
+		</div>
+		<div class="cell"><span class="microlabel">Sheet</span><span class="value">{sheet}</span></div>
+		<div class="cell">
+			<span class="microlabel">Docs line</span><span class="value mono">{docLine}</span>
+		</div>
+		<div class="cell">
+			<span class="microlabel">Registry</span>
+			<span class="value registry" class:offline={!registryLive}>
+				<span class="registry-dot" aria-hidden="true"></span>
+				{registryLive ? 'synced' : 'unreachable — figures may be stale'}
+			</span>
+		</div>
+		<div class="cell">
+			<span class="microlabel">Releases</span><span class="value mono">{releases} tracked</span>
+		</div>
+		<div class="cell">
+			<span class="microlabel">Licence</span><span class="value"
+				>MIT © {year} John Owolabi Idogun</span
+			>
+		</div>
+
 		{#each columns as column (column.heading)}
-			<nav class="footer-column" aria-label={column.heading}>
+			<nav class="cell links" aria-label={column.heading}>
 				<h3 class="microlabel">{column.heading}</h3>
 				<ul>
 					{#each column.links as link (link.href)}
@@ -95,53 +127,77 @@
 			</nav>
 		{/each}
 	</div>
-
-	<div class="footer-status hairline-x">
-		<span class="microlabel">
-			engine v{latest} · docs line {docLine} · {releases} releases tracked
-		</span>
-		<span class="microlabel registry" class:offline={!registryLive}>
-			<span class="registry-dot" aria-hidden="true"></span>
-			{registryLive ? 'registry synced' : 'registry unreachable — figures may be stale'}
-		</span>
-		<span class="microlabel">MIT © {year} John Owolabi Idogun</span>
-	</div>
 </footer>
 
 <style>
-	.site-footer {
+	.title-block {
 		margin-block-start: var(--space-16);
-		background-color: var(--bg-raised);
-		border-block-start: 1px solid var(--line);
+		padding: 0 clamp(1rem, 4vw, 2.5rem) var(--space-12);
 	}
 
-	.signal-rule {
-		/* The header terminates in this same rule; the footer opens with it
-		   mirrored, so the page reads as one instrument closed at both ends. */
-		transform: scaleX(-1);
-	}
-
-	.footer-inner {
+	/* Ruled like a real title block: every cell shares its borders. */
+	.tb {
 		display: grid;
-		grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
-		gap: var(--space-8);
-		padding: var(--space-12) clamp(1rem, 4vw, 3rem) var(--space-8);
-		max-inline-size: 1180px;
+		grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr));
+		max-inline-size: 1360px;
 		margin-inline: auto;
+		border: 1px solid var(--line-strong);
+		background: var(--bg-raised);
 	}
 
-	.footer-brand {
-		font-family: var(--font-mono);
+	.cell {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		padding: var(--space-4) var(--space-5);
+		border-inline-start: 1px solid var(--line-strong);
+		border-block-start: 1px solid var(--line-strong);
+		min-inline-size: 0;
+	}
+
+	.project {
+		grid-row: span 2;
+		border-inline-start: 0;
+		border-block-start: 0;
+	}
+
+	.tb > .cell:nth-child(2),
+	.tb > .cell:nth-child(3),
+	.tb > .cell:nth-child(4) {
+		border-block-start: 0;
+	}
+
+	.tb > nav:last-of-type {
+		grid-column: span 2;
+	}
+
+	.tb > .links:nth-of-type(1) {
+		border-inline-start: 0;
+	}
+
+	.brand {
 		font-size: var(--text-lg);
-		letter-spacing: var(--tracking-wide);
+		font-weight: 700;
+		letter-spacing: -0.02em;
 		color: var(--ink);
 	}
 
-	.footer-blurb {
-		margin: var(--space-3) 0 var(--space-4);
+	.blurb {
+		margin: 0;
 		color: var(--ink-mute);
 		font-size: var(--text-sm);
-		max-inline-size: 42ch;
+		max-inline-size: 46ch;
+		line-height: 1.55;
+	}
+
+	.value {
+		font-size: var(--text-base);
+		color: var(--ink);
+	}
+
+	.mono {
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
 	}
 
 	.elsewhere {
@@ -149,23 +205,25 @@
 		flex-wrap: wrap;
 		gap: var(--space-4);
 		list-style: none;
-		margin: 0;
+		margin: var(--space-2) 0 0;
 		padding: 0;
 	}
 
-	.footer-column h3 {
-		margin: 0 0 var(--space-3);
+	.links h3 {
+		margin: 0;
 	}
 
-	.footer-column ul {
+	.links ul {
 		display: grid;
-		gap: var(--space-2);
+		gap: var(--space-1);
 		list-style: none;
 		margin: 0;
 		padding: 0;
 	}
 
-	.site-footer a {
+	.title-block a {
+		display: inline-block;
+		padding-block: 0.2rem;
 		color: var(--ink-mute);
 		font-size: var(--text-sm);
 		text-decoration: none;
@@ -176,17 +234,6 @@
 		}
 	}
 
-	.footer-status {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-3);
-		padding: var(--space-4) clamp(1rem, 4vw, 3rem);
-		max-inline-size: 1180px;
-		margin-inline: auto;
-	}
-
 	.registry {
 		display: inline-flex;
 		align-items: center;
@@ -194,8 +241,8 @@
 	}
 
 	.registry-dot {
-		inline-size: 6px;
-		block-size: 6px;
+		inline-size: 7px;
+		block-size: 7px;
 		border-radius: 50%;
 		background: var(--ok);
 	}
@@ -209,20 +256,37 @@
 	}
 
 	@media (max-width: 900px) {
-		.footer-inner {
+		.tb {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: var(--space-6);
-			padding: var(--space-8) var(--space-5) var(--space-6);
 		}
 
-		.footer-status {
-			padding: var(--space-4) var(--space-5);
+		.project,
+		.tb > nav:last-of-type {
+			grid-column: 1 / -1;
+			grid-row: auto;
+		}
+
+		.tb > .cell {
+			border-block-start: 1px solid var(--line-strong) !important;
+			border-inline-start: 0;
+		}
+
+		.tb > .cell:nth-child(odd):not(.project) {
+			border-inline-start: 1px solid var(--line-strong);
+		}
+
+		.project {
+			border-block-start: 0 !important;
 		}
 	}
 
-	@media (max-width: 560px) {
-		.footer-inner {
+	@media (max-width: 520px) {
+		.tb {
 			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.tb > .cell:nth-child(odd):not(.project) {
+			border-inline-start: 0;
 		}
 	}
 </style>

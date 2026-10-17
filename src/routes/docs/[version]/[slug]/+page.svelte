@@ -114,6 +114,18 @@
 	 * headline, and this corpus already carries every field one needs: which
 	 * sheet of how many, which revision line, and what the sheet contains.
 	 */
+	/*
+	 * Drawing references. Each page is a sheet with a letter, in manifest
+	 * order, and each of its sections a numbered zone on it — "C2" — so the
+	 * index, the headings and the live figure name the same place.
+	 */
+	const sheetLetter = $derived(String.fromCharCode(65 + (Math.max(0, docIndex) % 26)));
+	function zoneOf(sectionId: string): string {
+		const index = data.doc.sections.findIndex((section) => section.id === sectionId);
+		return index < 0 ? sheetLetter : `${sheetLetter}${index + 1}`;
+	}
+	const activeZone = $derived(zoneOf(activeSectionId));
+
 	const titleBlock = $derived([
 		{ field: 'sheet', value: `${docIndex + 1} / ${data.manifest.length}` },
 		{ field: 'rev', value: `v${data.version}` },
@@ -217,6 +229,9 @@
 													class:active={section.id === activeSectionId}
 													onclick={() => (mobileIndexOpen = false)}
 												>
+													<span class="zone" class:is-current={section.id === activeSectionId}
+														>{zoneOf(section.id)}</span
+													>
 													{section.title}
 												</a>
 											</li>
@@ -252,7 +267,7 @@
 				{/each}
 			</dl>
 		</header>
-		<div class="prose">
+		<div class="prose zoned" style={`--sheet: '${sheetLetter}'`}>
 			{@html data.doc.html}
 		</div>
 
@@ -283,15 +298,15 @@
 		aria-label="Compiled example for the active section"
 	>
 		<div class="rail-head">
-			<span class="rail-lamp" aria-hidden="true"></span>
-			<span class="microlabel">compiled example</span>
-			<span class="microlabel rail-mode">mode=full</span>
+			<span class="zone is-current">{activeZone}</span>
+			<span class="microlabel">live figure</span>
+			<span class="microlabel rail-mode">@schemd/core · mode=full</span>
 		</div>
 		{#if activeExample}
 			{#key activeExample.id}
 				<div class="rail-body">
 					<p class="microlabel rail-title">{activeExample.title}</p>
-					<div class="schemd-frame">
+					<div class="schemd-frame trace-on">
 						{@html activeExample.svg}
 					</div>
 					<!-- Keyboard focus exposes overflowing source to Safari users. -->
@@ -559,7 +574,10 @@
 		margin-block: 2px var(--space-2);
 
 		& a {
-			font-size: var(--text-xs);
+			display: flex;
+			align-items: center;
+			gap: var(--space-2);
+			font-size: var(--text-sm);
 			color: var(--ink-faint);
 
 			&.active {
@@ -590,13 +608,13 @@
 		overflow: hidden;
 		border-radius: 2px;
 
+		/* A copper trace drawing along the sheet as you read. */
 		& span {
 			display: block;
 			block-size: 100%;
-			background: var(--accent-grad);
+			background: var(--accent);
 			transform-origin: left;
 			transition: transform 90ms linear;
-			box-shadow: 0 0 8px var(--glow);
 		}
 	}
 
@@ -614,20 +632,14 @@
 		display: grid;
 		gap: var(--space-1);
 		padding: var(--space-4);
-		border: 1px solid var(--line);
+		border: 1px solid var(--line-strong);
 		border-radius: var(--radius-md);
 		background-color: var(--bg-raised);
-		background-image: var(--sheen);
 		color: var(--ink-mute);
-		transition:
-			border-color var(--dur-kinetic) var(--ease-kinetic),
-			box-shadow var(--dur-kinetic) var(--ease-kinetic),
-			transform var(--dur-kinetic) var(--ease-kinetic);
+		transition: border-color var(--dur-med) var(--ease-kinetic);
 
 		&:hover {
 			border-color: var(--accent);
-			transform: translateY(-2px);
-			box-shadow: var(--shadow-lift);
 			text-decoration: none;
 		}
 
@@ -698,28 +710,43 @@
 		}
 	}
 
-	/* Section eyebrow injected before each h2 by the markdown pipeline. */
+	/* Section eyebrow injected before each h2 by the markdown pipeline. It
+	   leads with the section's zone on this sheet: the same "C2" the index and
+	   the live figure show. */
+	.zoned {
+		counter-reset: zone;
+	}
+
+	.zoned :global(h2[id]) {
+		counter-increment: zone;
+	}
+
 	.prose :global(h2 .doc-eyebrow) {
-		display: block;
-		font-family: var(--font-mono);
-		font-size: var(--text-2xs);
-		font-weight: 500;
-		letter-spacing: var(--tracking-wide);
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		font-family: var(--font-label);
+		font-size: 0.625rem;
+		font-weight: 400;
+		letter-spacing: 0.08em;
 		text-transform: uppercase;
+		color: var(--ink-faint);
+		margin-block-end: var(--space-2);
+	}
+
+	.zoned :global(h2 .doc-eyebrow)::before {
+		content: var(--sheet) counter(zone);
+		padding: 0.28em 0.5em;
+		border: 1px solid var(--accent);
+		border-radius: var(--radius-sm);
 		color: var(--accent);
-		margin-block-end: var(--space-1);
+		line-height: 1;
 	}
 
 	/* ----- right rail: the scope ----- */
 	.doc-rail {
 		border-inline-start: 1px solid var(--line);
-		background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--accent) 3.5%, transparent),
-				transparent 200px
-			),
-			var(--bg-raised);
+		background: var(--bg-raised);
 		position: sticky;
 		inset-block-start: var(--header-h);
 		block-size: calc(100vh - var(--header-h));
@@ -745,25 +772,6 @@
 		& .rail-mode {
 			margin-inline-start: auto;
 			color: var(--ink-faint);
-		}
-	}
-
-	.rail-lamp {
-		inline-size: 6px;
-		block-size: 6px;
-		border-radius: 50%;
-		background: var(--accent);
-		box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
-		animation: lamp 2.6s var(--ease-precise) infinite;
-	}
-
-	@keyframes lamp {
-		0%,
-		100% {
-			opacity: 0.45;
-		}
-		50% {
-			opacity: 1;
 		}
 	}
 

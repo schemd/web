@@ -56,8 +56,15 @@ const COMPILER_WORKER = /\/workers\/compile-browser\.worker-[^/]+\.js$/;
  * worker that parses; about a third of each is diagnostic text the compiler
  * keeps on purpose. The edge-price cache is 127 B of it. Headroom is left at
  * roughly what 0.7 left, not widened.
+ *
+ * Raised again from 43 KiB to 48 for `@schemd/core` 1.0, which measured
+ * 46.7 KiB here — about 5 KiB over 0.8, the rise the compiler's own budgets
+ * recorded for the rebuild (40 → 42 KiB tree-shaken, 43 → 45 KiB for the whole
+ * entry, on top of the 0.8 figures): routing by net with negotiated
+ * congestion, exact integer geometry, measured text, and the diagnostics
+ * model behind `diagnoseSchematic`. Headroom stays near what 0.8 left.
  */
-const MAX_COMPILER_JS_GZIP = 43 * 1024;
+const MAX_COMPILER_JS_GZIP = 48 * 1024;
 /*
  * Raised from 146/182 KiB in 0.4. The laboratory grew from five environments
  * to thirteen, and each one ships its own lazily loaded chunk plus its share
@@ -155,8 +162,15 @@ const MAX_MODERN_MATH_FONTS = 320 * 1024;
  * compiler grew about 9 KiB minified for trunk branches and sub-circuits (the
  * 3.3 KiB gzip rise recorded on the compiler ceiling above), plus the editor
  * tokenizer learning `subcircuit`, `expose` and instance lines.
+ *
+ * Raised to 1,290 for the sheet redesign with `@schemd/core` 1.0, measured
+ * 1,275.4 KiB. 82.9 KiB of the rise is the three self-hosted typefaces —
+ * Latin subset of the weight axis only, cut from about 540 KiB the font
+ * packages would have shipped — and the rest is the 1.0 compiler in the
+ * worker (the gzip rise recorded on the compiler ceiling above) and the
+ * sheet's frame, title block and landing styles.
  */
-const MAX_CLIENT_OUTPUT = 1_180 * 1024;
+const MAX_CLIENT_OUTPUT = 1_290 * 1024;
 /*
  * Eleven laboratories, each downloaded only when it is opened. Two of them are
  * manifests rather than components, so the shell's lazy registry spans both

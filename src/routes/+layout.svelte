@@ -1,4 +1,5 @@
 <script lang="ts">
+	import '$lib/assets/fonts/fonts.css';
 	import '../app.css';
 	import type { LayoutProps } from './$types';
 	import { onMount } from 'svelte';
@@ -10,6 +11,7 @@
 	import {
 		BLUEPRINT_MODES,
 		BLUEPRINT_LABELS,
+		BLUEPRINT_SHORT,
 		hydrateUiPreferences,
 		setAudio,
 		setBlueprint,
@@ -56,7 +58,12 @@
 
 <header class="site-header">
 	<a class="brand" href="/" aria-label="schemd home">
-		<img src="/brand/schemd-mark.svg" alt="" width="22" height="22" />
+		<!-- The mark is a junction: three wires meeting at a copper dot. -->
+		<svg class="mark" viewBox="0 0 30 30" width="26" height="26" aria-hidden="true">
+			<path d="M2 15 H13 M15 2 V13 M15 17 V28" />
+			<path class="lead" d="M17 15 H28" />
+			<circle cx="15" cy="15" r="3.6" />
+		</svg>
 		<span class="brand-name">schemd</span>
 		<span class="brand-ipa" aria-hidden="true">/skɛmd/</span>
 	</a>
@@ -115,7 +122,7 @@
 			aria-label={`Blueprint mode: ${BLUEPRINT_LABELS[ui.blueprint]}. Activate to switch.`}
 		>
 			<span class="blueprint-dot" data-mode={ui.blueprint} aria-hidden="true"></span>
-			<span class="microlabel">{ui.blueprint}</span>
+			<span class="microlabel">{BLUEPRINT_SHORT[ui.blueprint]}</span>
 		</button>
 		<button
 			type="button"
@@ -183,28 +190,14 @@
 		gap: var(--space-6);
 		block-size: var(--header-h);
 		padding-inline: var(--space-4);
-		background:
-			linear-gradient(180deg, color-mix(in srgb, var(--bg-raised) 55%, transparent), transparent),
-			color-mix(in srgb, var(--bg) 86%, transparent);
-		backdrop-filter: blur(10px) saturate(1.15);
+		background: color-mix(in srgb, var(--bg) 90%, transparent);
+		backdrop-filter: blur(10px);
 		border-block-end: 1px solid var(--line);
-
-		&::after {
-			content: '';
-			position: absolute;
-			inset-inline: 0;
-			inset-block-end: -1px;
-			block-size: 1px;
-			background: var(--accent-grad);
-			mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
-			opacity: 0.3;
-			pointer-events: none;
-		}
 	}
 
 	.brand {
 		display: inline-flex;
-		align-items: baseline;
+		align-items: center;
 		gap: var(--space-2);
 		color: var(--ink);
 
@@ -212,20 +205,47 @@
 			text-decoration: none;
 		}
 
-		& img {
-			align-self: center;
+		& .mark {
+			fill: none;
+			stroke: var(--ink-mute);
+			stroke-width: 1.6;
+			stroke-linecap: round;
+
+			& .lead {
+				stroke: var(--accent);
+			}
+
+			& circle {
+				fill: var(--accent);
+				stroke: none;
+			}
+		}
+
+		&:hover .mark .lead {
+			animation: brand-lead 600ms var(--ease-kinetic);
 		}
 
 		& .brand-name {
-			font-family: var(--font-mono);
+			font-size: 1.25rem;
 			font-weight: 700;
 			letter-spacing: -0.02em;
 		}
 
 		& .brand-ipa {
-			font-family: var(--font-mono);
-			font-size: var(--text-2xs);
+			font-family: var(--font-label);
+			font-size: 0.625rem;
 			color: var(--ink-faint);
+		}
+	}
+
+	@keyframes brand-lead {
+		from {
+			stroke-dasharray: 12;
+			stroke-dashoffset: 12;
+		}
+		to {
+			stroke-dasharray: 12;
+			stroke-dashoffset: 0;
 		}
 	}
 
@@ -235,10 +255,13 @@
 
 		& a {
 			position: relative;
+			display: inline-flex;
+			align-items: center;
+			min-block-size: 40px;
 			padding: 0.3rem 0.7rem;
 			border-radius: var(--radius-sm);
-			font-size: var(--text-sm);
-			font-weight: 560;
+			font-size: var(--text-base);
+			font-weight: 500;
 			color: var(--ink-mute);
 			transition: color var(--dur-fast) var(--ease-precise);
 
@@ -247,11 +270,11 @@
 			&::after {
 				content: '';
 				position: absolute;
-				inset-block-end: -2px;
+				inset-block-end: -8px;
 				inset-inline: 0.7rem;
 				block-size: 2px;
-				border-radius: 2px;
-				background: var(--accent-grad);
+				border-radius: 0;
+				background: var(--accent);
 				transform: scaleX(0);
 				transform-origin: center;
 				transition: transform var(--dur-med) var(--ease-kinetic);
@@ -267,11 +290,10 @@
 			}
 
 			&[aria-current='page'] {
-				color: var(--accent);
+				color: var(--ink);
 
 				&::after {
 					transform: scaleX(1);
-					box-shadow: 0 0 8px var(--glow);
 				}
 			}
 		}
@@ -289,20 +311,14 @@
 		align-items: center;
 		gap: var(--space-2);
 		padding: 0.3rem 0.55rem;
-		border: 1px solid var(--line);
-		border-radius: var(--radius-sm);
-		background-color: var(--bg-raised);
-		background-image: var(--sheen);
-		box-shadow: inset 0 1px 0 var(--edge-hi);
-		transition:
-			border-color var(--dur-fast) var(--ease-precise),
-			box-shadow var(--dur-med) var(--ease-precise);
+		min-block-size: 36px;
+		border: 1px solid var(--line-strong);
+		border-radius: var(--radius-md);
+		background-color: transparent;
+		transition: border-color var(--dur-fast) var(--ease-precise);
 
 		&:hover {
-			border-color: var(--line-strong);
-			box-shadow:
-				inset 0 1px 0 var(--edge-hi),
-				0 6px 16px -12px var(--glow);
+			border-color: var(--accent);
 		}
 	}
 
@@ -342,8 +358,8 @@
 		border: 1px solid var(--line-strong);
 
 		&[data-mode='hud'] {
-			background: #0a0d10;
-			box-shadow: inset 0 0 3px #57d7c4;
+			background: #0e1013;
+			box-shadow: inset 0 0 0 2px #e2793f;
 		}
 
 		&[data-mode='cyanotype'] {
@@ -352,8 +368,8 @@
 		}
 
 		&[data-mode='iso'] {
-			background: #f7f8f7;
-			box-shadow: inset 0 0 3px #0b7d6c;
+			background: #f5f2ea;
+			box-shadow: inset 0 0 0 2px #b2501c;
 		}
 	}
 

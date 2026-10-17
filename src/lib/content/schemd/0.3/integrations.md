@@ -11,7 +11,7 @@ flipflop:FF "T" at (380, 210) #cyan [type=t]
 testpoint:TP "probe" at (620, 210) #purple
 load:LED "indicator" at (810, 210) #emerald [type=lamp]
 
-HI.out -> FF.enable #slate [digital ortho]
+HI.out -> FF.t #slate [digital ortho]
 CLK.out -> FF.clock #amber [digital ortho]
 FF.q -> TP.node #cyan [digital line]
 TP.node -> LED.in #emerald [digital line]

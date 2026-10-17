@@ -12,10 +12,17 @@ import { browser } from '$app/environment';
 export const BLUEPRINT_MODES = ['hud', 'cyanotype', 'iso'] as const;
 export type BlueprintMode = (typeof BLUEPRINT_MODES)[number];
 
+/** The one-word name a mode shows in the header; storage keys stay as they were. */
+export const BLUEPRINT_SHORT: Record<BlueprintMode, string> = {
+	hud: 'graphite',
+	cyanotype: 'cyanotype',
+	iso: 'print'
+};
+
 export const BLUEPRINT_LABELS: Record<BlueprintMode, string> = {
-	hud: 'Laboratory HUD',
+	hud: 'Graphite sheet',
 	cyanotype: 'Cyanotype blueprint',
-	iso: 'ISO print'
+	iso: 'Vellum print'
 };
 
 export function parseBlueprintPreference(raw: string | null): BlueprintMode {
