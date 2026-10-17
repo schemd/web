@@ -1045,6 +1045,18 @@
 					<span class="grammar-tag microlabel">wire</span>
 					<code>A.port -&gt; B.port #color [line|bezier|ortho]</code>
 				</div>
+				<div class="grammar-row">
+					<span class="grammar-tag microlabel">tree</span>
+					<code>A.port -&gt; C.port #color [ortho trunk]</code>
+				</div>
+				<div class="grammar-row">
+					<span class="grammar-tag microlabel">block</span>
+					<code>subcircuit NAME [p="v"] &#123; … expose T = X.port &#125;</code>
+				</div>
+				<div class="grammar-row">
+					<span class="grammar-tag microlabel">place</span>
+					<code>NAME:ID at (x, y) [p="v"]</code>
+				</div>
 			</div>
 			<p class="microlabel">quarter-turn source controls</p>
 			<div class="orientation-controls" aria-label="Insert an oriented resistor declaration">

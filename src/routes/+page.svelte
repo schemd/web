@@ -104,7 +104,7 @@
 			n: '01',
 			span: 3,
 			title: 'Two-line grammar',
-			body: 'Components and connections. Everything else is bracketed options, validated by name against the kind you chose — so a typo is an error at compile time, never a silent wrong drawing.'
+			body: 'Components and connections. Everything else is bracketed options, validated by name against the kind you chose — so a typo is an error at compile time, never a silent wrong drawing. A block you draw twice is written once as a sub-circuit and placed by name.'
 		},
 		{
 			n: '02',
@@ -122,7 +122,7 @@
 			n: '04',
 			span: 2,
 			title: 'Obstacle-aware routing',
-			body: 'Orthogonal traces route around bodies with clearance; crossings get draftsman bridge arcs, never false junctions.'
+			body: 'Orthogonal traces route around bodies with clearance; crossings get draftsman bridge arcs, never false junctions, and a multi-terminal net can branch as a tree with a dot at every join.'
 		},
 		{
 			n: '05',
