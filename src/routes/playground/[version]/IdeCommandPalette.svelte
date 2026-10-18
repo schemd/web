@@ -23,7 +23,7 @@
 	let query = $state('');
 	let active = $state(0);
 	let input = $state<HTMLInputElement | undefined>();
-	let dialog = $state<HTMLElement | undefined>();
+	let closeButton = $state<HTMLButtonElement | undefined>();
 	let restoreFocus: HTMLElement | undefined;
 
 	const results = $derived.by(() => {
@@ -47,16 +47,6 @@
 	$effect(() => {
 		void results;
 		active = 0;
-	});
-
-	$effect(() => {
-		const command = results[active];
-		if (!open || !command) return;
-		queueMicrotask(() =>
-			dialog
-				?.querySelector<HTMLElement>(`#ide-command-${CSS.escape(command.id)}`)
-				?.scrollIntoView({ block: 'nearest' })
-		);
 	});
 
 	$effect(() => {
@@ -119,20 +109,16 @@
 		}
 	}
 
+	/* Options are reached through the input's aria-activedescendant, not Tab,
+	 * so the ring is the input and the close button, both bound. */
 	function trapFocus(event: KeyboardEvent): void {
-		if (event.key !== 'Tab') return;
-		const focusable = dialog?.querySelectorAll<HTMLElement>(
-			'input, button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
-		);
-		if (!focusable || focusable.length === 0) return;
-		const first = focusable[0]!;
-		const last = focusable[focusable.length - 1]!;
-		if (event.shiftKey && document.activeElement === first) {
+		if (event.key !== 'Tab' || !input || !closeButton) return;
+		if (event.shiftKey && document.activeElement === input) {
 			event.preventDefault();
-			last.focus();
-		} else if (!event.shiftKey && document.activeElement === last) {
+			closeButton.focus();
+		} else if (!event.shiftKey && document.activeElement === closeButton) {
 			event.preventDefault();
-			first.focus();
+			input.focus();
 		}
 	}
 </script>
@@ -148,7 +134,6 @@
 		}}
 	>
 		<div
-			bind:this={dialog}
 			class="palette"
 			role="dialog"
 			tabindex="-1"
@@ -176,7 +161,12 @@
 						spellcheck="false"
 					/>
 				</div>
-				<button type="button" onclick={close} aria-label="Close playground commands">×</button>
+				<button
+					bind:this={closeButton}
+					type="button"
+					onclick={close}
+					aria-label="Close playground commands">×</button
+				>
 			</header>
 
 			<ul id="ide-command-results" role="listbox" aria-label="Playground commands">
@@ -186,7 +176,11 @@
 							id={`ide-command-${command.id}`}
 							type="button"
 							role="option"
+							tabindex="-1"
 							aria-selected={index === active}
+							{@attach (node) => {
+								if (index === active) node.scrollIntoView({ block: 'nearest' });
+							}}
 							onpointerenter={() => (active = index)}
 							onclick={() => void run(command)}
 						>

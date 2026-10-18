@@ -69,6 +69,40 @@ test('landing page is SSR-valid, stable, and proves rotated native geometry', as
 	expect(cumulativeShift).toBeLessThanOrEqual(0.1);
 });
 
+test('hero views switch freely and a traced net lights only its own copper', async ({ page }) => {
+	/* Regression: leaving the drawing view unmounted the drawing, and the focus
+	 * effect then queried a null element ("can't access property querySelectorAll"). */
+	await page.goto('/');
+	const tab = (name: string) => page.getByRole('tab', { name, exact: true });
+	for (let round = 0; round < 3; round += 1) {
+		await tab('Netlist').click();
+		await tab('SVG out').click();
+		await tab('Source + drawing').click();
+	}
+	await page.getByRole('button', { name: 'Trace line 1', exact: true }).hover();
+	await tab('Netlist').click();
+	await page
+		.getByRole('button', { name: /^Trace net / })
+		.first()
+		.click();
+	await expect(tab('Source + drawing')).toHaveAttribute('aria-selected', 'true');
+
+	const drawing = page.locator('[data-hero-drawing]');
+	await expect(drawing.locator('svg')).toBeVisible();
+	/* Focus fades in, so read it once the transition settles. */
+	await expect
+		.poll(async () =>
+			[
+				...new Set(
+					await drawing
+						.locator('[data-source-line]')
+						.evaluateAll((elements) => elements.map((element) => getComputedStyle(element).opacity))
+				)
+			].sort()
+		)
+		.toEqual(['0.14', '1']);
+});
+
 test('version selector preserves the slug and snaps future releases to the documented line', async ({
 	page,
 	request

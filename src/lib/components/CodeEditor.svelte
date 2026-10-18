@@ -228,12 +228,6 @@
 		activeItem = 0;
 	}
 
-	$effect(() => {
-		const id = activeId;
-		if (!id) return;
-		queueMicrotask(() => document.getElementById(id)?.scrollIntoView({ block: 'nearest' }));
-	});
-
 	function acceptCompletion(index = activeItem): void {
 		const context = completion;
 		const item = context?.items[index];
@@ -634,6 +628,9 @@
 					role="option"
 					aria-selected={index === activeItem}
 					class:active={index === activeItem}
+					{@attach (node) => {
+						if (index === activeItem) node.scrollIntoView({ block: 'nearest' });
+					}}
 				>
 					<button
 						type="button"
