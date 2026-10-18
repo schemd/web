@@ -59,7 +59,7 @@ Each diagnostic carries a `code` a host can switch on without parsing prose. `SC
 | `geometry`  | a part outside the fence, or bodies that overlap                         |
 | `routing`   | a wire the router could not place, with what to move                     |
 
-Two rules keep the list honest. **A declaration that fails does not cascade.** Its id is set aside, so a mistyped kind on one line does not reappear as "unknown part" on every line that wires to it. **Geometry and routing run only on a document whose declarations are sound**, because a drawing of a document with a broken declaration would be a drawing of something we did not write.
+Two rules keep the list honest. **A declaration that fails does not cascade.** Its id is set aside, so a mistyped kind on one line does not reappear as "unknown part" on every line that wires to it. **Geometry and routing run only on a document whose declarations are sound**, because a drawing of a document with a broken declaration would be a drawing of something we did not write. References are a different matter. A terminal's name depends on its part's kind, never on where the part sits, so since 1.0.2 a broken relative placement no longer hides a mistyped terminal elsewhere: every connection is still checked.
 
 ```schemd bounds="760x440" title="A sound document"
 port:EN "EN" at (100, 120) #blue
@@ -90,7 +90,7 @@ try {
 
 A line rewritten by a [sub-circuit](/docs/1.0/subcircuits) parameter carries no column, since its columns would point at text the author never wrote; its line still points at the declaration.
 
-The [playground](/playground/1.0.0) does exactly this as we type: it underlines every reported range, lists the problems beside the source, and keeps the last drawing that compiled on screen, dimmed, until the document is sound again.
+The [playground](/playground/1.0.2) does exactly this as we type: it underlines every reported range, lists the problems beside the source, and keeps the last drawing that compiled on screen, dimmed, until the document is sound again.
 
 ```schemd bounds="760x340" title="Live in the playground"
 port:SRC "S" at (100, 150) #violet
