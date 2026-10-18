@@ -19,35 +19,35 @@
 	/*
 	 * Linking a line to its copper uses the compiler's own source map: every
 	 * part and wire in full mode carries `data-source-line`, and every wire its
-	 * `data-net-id`. The drawing is the compiler's DOM, so focus is applied by
-	 * toggling a class on what it emitted — nothing is redrawn.
+	 * `data-net-id`. The drawing is the compiler's markup, which Svelte cannot
+	 * bind into, so focus is state turned into a stylesheet keyed on those
+	 * attributes: nothing is queried, nothing is redrawn, and it holds whether or
+	 * not the drawing is mounted.
 	 */
 	let focusLine = $state<number | undefined>(undefined);
 	let focusNet = $state<string | undefined>(undefined);
-	let drawing = $state<HTMLDivElement | undefined>(undefined);
 	let replay = $state(0);
 
-	$effect(() => {
-		const root = drawing;
-		const line = focusLine;
-		const net = focusNet;
-		void replay;
-		if (root === undefined) return;
-		const lines =
-			net === undefined
+	const focusLines = $derived(
+		focusLine !== undefined
+			? [focusLine]
+			: focusNet === undefined
 				? undefined
-				: new Set(data.hero.nets.find((entry) => entry.id === net)?.lines ?? []);
-		for (const element of root.querySelectorAll<SVGElement>('[data-source-line]')) {
-			const at = Number(element.dataset['sourceLine']);
-			const lit =
-				line === undefined && lines === undefined
-					? true
-					: line !== undefined
-						? at === line
-						: lines!.has(at);
-			element.classList.toggle('is-dim', !lit);
-			element.classList.toggle('is-lit', (line !== undefined || lines !== undefined) && lit);
-		}
+				: (data.hero.nets.find((entry) => entry.id === focusNet)?.lines ?? [])
+	);
+	const focusStyle = $derived.by(() => {
+		if (focusLines === undefined) return '';
+		const lit = focusLines
+			.filter(Number.isInteger)
+			.map((line) => `[data-source-line="${line}"]`)
+			.join(',');
+		const host = '[data-hero-drawing]';
+		const dim = lit === '' ? '' : `:not(${lit})`;
+		const glow =
+			lit === ''
+				? ''
+				: `${host} :is(${lit}) .schematic-trace{stroke-width:2.6;filter:drop-shadow(0 0 5px currentColor)}`;
+		return `<style>${host} [data-source-line]${dim}{opacity:.14}${glow}</style>`;
 	});
 
 	/* A net chosen in the netlist view is traced back on the drawing. */
@@ -142,6 +142,11 @@
 	{jsonLd}
 />
 
+<svelte:head>
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -- built from integer line numbers only -->
+	{@html focusStyle}
+</svelte:head>
+
 <article class="landing">
 	<div class="wrap">
 		<SheetFrame label="Introduction" scan>
@@ -229,7 +234,7 @@
 								{/each}
 							</ol>
 							{#key replay}
-								<div class="drawing trace-on" bind:this={drawing} data-schematic-host>
+								<div class="drawing trace-on" data-hero-drawing data-schematic-host>
 									{@html data.hero.svg}
 								</div>
 							{/key}
@@ -715,15 +720,6 @@
 
 		& :global([data-source-line]) {
 			transition: opacity var(--dur-med) var(--ease-precise);
-		}
-
-		& :global(.is-dim) {
-			opacity: 0.14;
-		}
-
-		& :global(.is-lit .schematic-trace) {
-			stroke-width: 2.6;
-			filter: drop-shadow(0 0 5px currentColor);
 		}
 	}
 

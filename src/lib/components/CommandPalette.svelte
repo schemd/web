@@ -20,8 +20,7 @@
 	let query = $state('');
 	let activeIndex = $state(0);
 	let input = $state<HTMLInputElement | undefined>();
-	let listbox = $state<HTMLElement | undefined>();
-	let dialog = $state<HTMLElement | undefined>();
+	let closeButton = $state<HTMLButtonElement | undefined>();
 	let restoreFocus: HTMLElement | undefined;
 
 	const results = $derived.by(() => {
@@ -61,20 +60,17 @@
 		}
 	});
 
+	/* The options are not tab stops (the input owns them through
+	 * aria-activedescendant), so the dialog's ring is the input and the close
+	 * button, both bound. */
 	function trapFocus(event: KeyboardEvent): void {
-		if (event.key !== 'Tab') return;
-		const focusable = dialog?.querySelectorAll<HTMLElement>(
-			'input:not([tabindex="-1"]), button:not([disabled]):not([tabindex="-1"]), [href]:not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])'
-		);
-		if (!focusable || focusable.length === 0) return;
-		const first = focusable[0]!;
-		const last = focusable[focusable.length - 1]!;
-		if (event.shiftKey && document.activeElement === first) {
+		if (event.key !== 'Tab' || !input || !closeButton) return;
+		if (event.shiftKey && document.activeElement === input) {
 			event.preventDefault();
-			last.focus();
-		} else if (!event.shiftKey && document.activeElement === last) {
+			closeButton.focus();
+		} else if (!event.shiftKey && document.activeElement === closeButton) {
 			event.preventDefault();
-			first.focus();
+			input.focus();
 		}
 	}
 
@@ -99,7 +95,6 @@
 			const target = results[activeIndex];
 			if (target) activate(target);
 		}
-		listbox?.querySelector(`[data-index="${activeIndex}"]`)?.scrollIntoView({ block: 'nearest' });
 	}
 
 	function activate(entry: PaletteEntry): void {
@@ -119,7 +114,6 @@
 		}}
 	>
 		<div
-			bind:this={dialog}
 			class="palette plate"
 			role="dialog"
 			tabindex="-1"
@@ -144,13 +138,14 @@
 					spellcheck="false"
 				/>
 				<button
+					bind:this={closeButton}
 					type="button"
 					class="palette-close"
 					onclick={() => (ui.paletteOpen = false)}
 					aria-label="Close command palette">×</button
 				>
 			</div>
-			<ul id="palette-results" role="listbox" bind:this={listbox} aria-label="Search results">
+			<ul id="palette-results" role="listbox" aria-label="Search results">
 				{#each results as entry, index (entry.href)}
 					<li role="presentation">
 						<button
@@ -159,8 +154,10 @@
 							class="palette-option"
 							role="option"
 							aria-selected={index === activeIndex}
-							data-index={index}
 							tabindex="-1"
+							{@attach (node) => {
+								if (index === activeIndex) node.scrollIntoView({ block: 'nearest' });
+							}}
 							onclick={() => activate(entry)}
 							onpointerenter={() => (activeIndex = index)}
 						>
