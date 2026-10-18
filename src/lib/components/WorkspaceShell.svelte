@@ -14,11 +14,20 @@
 	 */
 	import type { Snippet } from 'svelte';
 
+	/** One ruled cell of the title block: the instrument's state, named. */
+	export interface TitleBlockCell {
+		readonly label: string;
+		readonly value: string;
+		readonly tone?: 'accent' | 'danger' | 'ok';
+	}
+
 	interface Props {
 		left?: Snippet;
 		center: Snippet;
 		right?: Snippet;
 		statusExtra?: Snippet;
+		/** State shown as a drawing's title block along the foot of the shell. */
+		titleBlock?: readonly TitleBlockCell[];
 		leftLabel?: string;
 		rightLabel?: string;
 		leftInitial?: number;
@@ -34,6 +43,7 @@
 		center,
 		right,
 		statusExtra,
+		titleBlock = [],
 		leftLabel = 'Explorer',
 		rightLabel = 'Preview',
 		leftInitial = 240,
@@ -158,7 +168,7 @@
 	{/if}
 </div>
 
-<footer class="statusbar">
+<footer class="statusbar" aria-label="Title block">
 	{#if left}
 		<button type="button" aria-pressed={leftOpen} onclick={() => (leftOpen = !leftOpen)}>
 			⧉ {leftLabel}
@@ -168,6 +178,16 @@
 		<button type="button" aria-pressed={rightOpen} onclick={() => (rightOpen = !rightOpen)}>
 			⧉ {rightLabel}
 		</button>
+	{/if}
+	{#if titleBlock.length > 0}
+		<dl class="title-cells">
+			{#each titleBlock as cell (cell.label)}
+				<div data-tone={cell.tone}>
+					<dt>{cell.label}</dt>
+					<dd>{cell.value}</dd>
+				</div>
+			{/each}
+		</dl>
 	{/if}
 	{#if statusExtra}
 		<div class="status-extra">
@@ -245,21 +265,27 @@
 		}
 	}
 
+	/* The foot of the sheet is its title block: ruled cells that name the
+	   instrument's state, then the pane toggles and the host's actions. */
 	.statusbar {
 		display: flex;
-		align-items: center;
-		gap: var(--space-2);
+		align-items: stretch;
+		gap: 0;
 		block-size: var(--statusbar-h);
-		padding-inline: var(--space-2);
+		padding-inline: 0 var(--space-2);
 		background: var(--bg-raised);
-		border-block-start: 1px solid var(--line);
+		border-block-start: 1px solid var(--line-strong);
 		font-family: var(--font-mono);
-		font-size: var(--text-2xs);
+		font-size: var(--text-xs);
 
 		& > button {
-			padding: 0.1rem 0.5rem;
-			color: var(--ink-faint);
+			padding: 0 var(--space-4);
+			border-inline-end: 1px solid var(--line);
+			font-family: var(--font-label);
+			font-size: 0.625rem;
 			letter-spacing: 0.06em;
+			text-transform: uppercase;
+			color: var(--ink-faint);
 
 			&[aria-pressed='true'] {
 				color: var(--accent);
@@ -268,6 +294,57 @@
 			&:hover {
 				color: var(--ink);
 			}
+		}
+	}
+
+	/* Cells shrink and truncate rather than scroll: a scrolling strip would
+	   need its own tab stop, and the full values are in the panes above. */
+	.title-cells {
+		display: flex;
+		margin: 0;
+		min-inline-size: 0;
+		overflow: hidden;
+
+		& div {
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			gap: 2px;
+			min-inline-size: 0;
+			padding: 0 var(--space-4);
+			border-inline-end: 1px solid var(--line);
+			white-space: nowrap;
+		}
+
+		& dd {
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		& dt {
+			font-family: var(--font-label);
+			font-size: 0.5625rem;
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+			color: var(--ink-faint);
+		}
+
+		& dd {
+			margin: 0;
+			font-size: var(--text-xs);
+			color: var(--ink);
+		}
+
+		& [data-tone='accent'] dd {
+			color: var(--accent);
+		}
+
+		& [data-tone='danger'] dd {
+			color: var(--danger);
+		}
+
+		& [data-tone='ok'] dd {
+			color: var(--ok);
 		}
 	}
 

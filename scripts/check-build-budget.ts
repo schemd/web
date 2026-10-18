@@ -111,7 +111,13 @@ const MAX_COMPILER_JS_GZIP = 48 * 1024;
  * Explicitly *not* the documentation highlighter: Shiki runs only in
  * `$lib/server`, and the same build measures 169.2 KiB with and without it.
  */
-const MAX_DOCUMENT_JS_GZIP = 172 * 1024;
+/*
+ * Raised to 174 for the sheet migration of the instruments and evidence pages,
+ * measured 173.0 KiB: `SheetFrame` now frames eight more route mastheads and
+ * the playground canvas, and the workspace shell carries a title block, about
+ * 1 KiB between them.
+ */
+const MAX_DOCUMENT_JS_GZIP = 174 * 1024;
 /* Exactly the sum of the two ceilings above, as the compiler note says. */
 const MAX_ALL_JS_GZIP = MAX_DOCUMENT_JS_GZIP + MAX_COMPILER_JS_GZIP;
 /*

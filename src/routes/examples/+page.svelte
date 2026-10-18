@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SheetFrame from '$lib/components/SheetFrame.svelte';
 	import type { PageProps } from './$types';
 	import Seo from '$lib/components/Seo.svelte';
 
@@ -19,14 +20,16 @@
 />
 
 <article class="gallery grid-backdrop">
-	<header class="gallery-head">
-		<p class="microlabel">compiled corpus · {data.items.length} examples · v{data.latest}</p>
-		<h1>Example gallery</h1>
-		<p class="lede">
-			Every diagram below is real engine output, compiled server-side from the documentation's own
-			<code>schemd</code> fences. Open any one in the playground to take it apart.
-		</p>
-	</header>
+	<SheetFrame label="Example gallery">
+		<header class="gallery-head sheet-head">
+			<p class="microlabel">compiled corpus · {data.items.length} examples · v{data.latest}</p>
+			<h1>Example gallery</h1>
+			<p class="lede">
+				Every diagram below is real engine output, compiled server-side from the documentation's own
+				<code>schemd</code> fences. Open any one in the playground to take it apart.
+			</p>
+		</header>
+	</SheetFrame>
 
 	<ul class="grid" aria-label="Example schematics">
 		{#each data.items as item (item.id)}

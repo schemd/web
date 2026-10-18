@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SheetFrame from '$lib/components/SheetFrame.svelte';
 	import type { PageProps } from './$types';
 	import Seo from '$lib/components/Seo.svelte';
 	import BarSeries from '$lib/components/charts/BarSeries.svelte';
@@ -39,27 +40,30 @@
 />
 
 <article class="coverage grid-backdrop">
-	<header class="coverage-head">
-		<p class="microlabel">compiler vocabulary · v{data.latest}</p>
-		<h1>Language coverage</h1>
-		<p class="lede">
-			This page is generated from the compiler's own <code>COMPONENT_KINDS</code> registry. Every
-			primitive carries a canonical, compiling example, so coverage is a genuine 100% — and the
-			documentation's <code>schemd</code> fences add real-world usages on top. Open any primitive to take
-			it apart in the playground.
-		</p>
-		<div class="summary plate">
-			<div class="summary-figures">
-				<span class="readout big">{data.coverage.covered} / {data.coverage.total}</span>
-				<span class="microlabel">primitives exercised across {data.coverage.examples} examples</span
-				>
+	<SheetFrame label="Language coverage">
+		<header class="coverage-head sheet-head">
+			<p class="microlabel">compiler vocabulary · v{data.latest}</p>
+			<h1>Language coverage</h1>
+			<p class="lede">
+				This page is generated from the compiler's own <code>COMPONENT_KINDS</code> registry. Every
+				primitive carries a canonical, compiling example, so coverage is a genuine 100% — and the
+				documentation's <code>schemd</code> fences add real-world usages on top. Open any primitive to
+				take it apart in the playground.
+			</p>
+			<div class="summary plate">
+				<div class="summary-figures">
+					<span class="readout big">{data.coverage.covered} / {data.coverage.total}</span>
+					<span class="microlabel"
+						>primitives exercised across {data.coverage.examples} examples</span
+					>
+				</div>
+				<div class="meter" role="img" aria-label={`${percent}% of primitives covered`}>
+					<span class="meter-fill" style={`transform: scaleX(${ratio})`}></span>
+				</div>
+				<span class="meter-value readout">{percent}%</span>
 			</div>
-			<div class="meter" role="img" aria-label={`${percent}% of primitives covered`}>
-				<span class="meter-fill" style={`transform: scaleX(${ratio})`}></span>
-			</div>
-			<span class="meter-value readout">{percent}%</span>
-		</div>
-	</header>
+		</header>
+	</SheetFrame>
 
 	<section class="usage plate" aria-label="Corpus usage by family">
 		<p class="microlabel group-label">where the corpus spends its examples</p>

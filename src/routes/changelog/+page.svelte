@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SheetFrame from '$lib/components/SheetFrame.svelte';
 	import type { PageProps } from './$types';
 	import Seo from '$lib/components/Seo.svelte';
 
@@ -111,21 +112,23 @@
 />
 
 <article class="changelog grid-backdrop">
-	<header class="changelog-head">
-		<p class="microlabel sync" class:live={data.live}>
-			<span class="sync-dot" aria-hidden="true"></span>
-			{data.live
-				? `registry synced ${dateFormat.format(new Date(data.syncedAt))}`
-				: 'serving seed — registry refresh runs in the background'}
-		</p>
-		<h1>Changelog</h1>
-		<p class="lede">
-			The server returns a deterministic snapshot immediately, then refreshes npm and GitHub in the
-			background. npm’s <code>latest</code> tag identifies the public release after a live refresh; the
-			installed engine version is read independently from its package manifest. Unpublished local builds
-			and cold-start seeds remain explicitly marked as publication-unconfirmed.
-		</p>
-	</header>
+	<SheetFrame label="Changelog">
+		<header class="changelog-head sheet-head">
+			<p class="microlabel sync" class:live={data.live}>
+				<span class="sync-dot" aria-hidden="true"></span>
+				{data.live
+					? `registry synced ${dateFormat.format(new Date(data.syncedAt))}`
+					: 'serving seed — registry refresh runs in the background'}
+			</p>
+			<h1>Changelog</h1>
+			<p class="lede">
+				The server returns a deterministic snapshot immediately, then refreshes npm and GitHub in
+				the background. npm’s <code>latest</code> tag identifies the public release after a live refresh;
+				the installed engine version is read independently from its package manifest. Unpublished local
+				builds and cold-start seeds remain explicitly marked as publication-unconfirmed.
+			</p>
+		</header>
+	</SheetFrame>
 
 	<dl class="stat-band" aria-label="Compiler at a glance">
 		{#each stats as stat (stat.label)}

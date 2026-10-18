@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SheetFrame from '$lib/components/SheetFrame.svelte';
 	import type { PageProps } from './$types';
 	import Seo from '$lib/components/Seo.svelte';
 	import { setContext, type Component } from 'svelte';
@@ -103,71 +104,73 @@
 />
 
 <div class="lab-page grid-backdrop">
-	<header class="lab-head plate">
-		<div class="lab-crumbs">
-			<a href={`/simulations/${data.version}`} class="back">← all environments</a>
-			<span class="microlabel">{sim.index} · {sim.tier} · {sim.domain} · v{data.version}</span>
-		</div>
-
-		<div class="lab-identity">
-			<div class="lab-title-row">
-				<h1>{sim.title}</h1>
-				<span class="domain-badge">{sim.domain}</span>
+	<SheetFrame label="Laboratory">
+		<header class="lab-head sheet-head">
+			<div class="lab-crumbs">
+				<a href={`/simulations/${data.version}`} class="back">← all environments</a>
+				<span class="microlabel">{sim.index} · {sim.tier} · {sim.domain} · v{data.version}</span>
 			</div>
-			<p class="lab-summary">{@html sim.summaryHtml}</p>
-			<p class="microlabel lab-metrics">
-				{sim.components} components · {sim.connections} connections · {@html sim.modelHtml}
-			</p>
-		</div>
 
-		<SimulationPedagogy
-			id={sim.id}
-			title={sim.title}
-			version={data.version}
-			fault={sim.fault}
-			pedagogy={sim.pedagogy}
-			curriculum={sim.curriculum}
-			{prerequisites}
-			next={curriculumNext}
-			host={interactionHost}
-			total={count}
-		/>
+			<div class="lab-identity">
+				<div class="lab-title-row">
+					<h1>{sim.title}</h1>
+					<span class="domain-badge">{sim.domain}</span>
+				</div>
+				<p class="lab-summary">{@html sim.summaryHtml}</p>
+				<p class="microlabel lab-metrics">
+					{sim.components} components · {sim.connections} connections · {@html sim.modelHtml}
+				</p>
+			</div>
 
-		<div class="lab-model">
-			<div class="model-card">
-				<span class="microlabel">governing model</span>
-				<!-- Keyboard focus exposes horizontally overflowing equations to Safari users. -->
-				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-				<div class="lab-formula" role="region" aria-label="Governing model" tabindex="0">
-					{@html sim.formulaHtml}
+			<SimulationPedagogy
+				id={sim.id}
+				title={sim.title}
+				version={data.version}
+				fault={sim.fault}
+				pedagogy={sim.pedagogy}
+				curriculum={sim.curriculum}
+				{prerequisites}
+				next={curriculumNext}
+				host={interactionHost}
+				total={count}
+			/>
+
+			<div class="lab-model">
+				<div class="model-card">
+					<span class="microlabel">governing model</span>
+					<!-- Keyboard focus exposes horizontally overflowing equations to Safari users. -->
+					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+					<div class="lab-formula" role="region" aria-label="Governing model" tabindex="0">
+						{@html sim.formulaHtml}
+					</div>
+				</div>
+				<div class="lab-spec">
+					<div class="spec-group">
+						<span class="microlabel">structural inventory</span>
+						<ul class="chips">
+							{#each sim.inventoryHtml as item, index (sim.inventory[index])}
+								<li>{@html item}</li>
+							{/each}
+						</ul>
+					</div>
+					<div class="spec-group">
+						<span class="microlabel">boundaries</span>
+						<ul class="bounds">
+							{#each sim.boundariesHtml as bound, index (sim.boundaries[index])}
+								<li>{@html bound}</li>
+							{/each}
+						</ul>
+					</div>
+					<div class="spec-group">
+						<span class="microlabel">diagnosis challenge</span>
+						<span class="fault-note"
+							>Fault identity withheld: infer it from the changed outputs first.</span
+						>
+					</div>
 				</div>
 			</div>
-			<div class="lab-spec">
-				<div class="spec-group">
-					<span class="microlabel">structural inventory</span>
-					<ul class="chips">
-						{#each sim.inventoryHtml as item, index (sim.inventory[index])}
-							<li>{@html item}</li>
-						{/each}
-					</ul>
-				</div>
-				<div class="spec-group">
-					<span class="microlabel">boundaries</span>
-					<ul class="bounds">
-						{#each sim.boundariesHtml as bound, index (sim.boundaries[index])}
-							<li>{@html bound}</li>
-						{/each}
-					</ul>
-				</div>
-				<div class="spec-group">
-					<span class="microlabel">diagnosis challenge</span>
-					<span class="fault-note"
-						>Fault identity withheld: infer it from the changed outputs first.</span
-					>
-				</div>
-			</div>
-		</div>
-	</header>
+		</header>
+	</SheetFrame>
 
 	<nav class="env-nav" aria-label="Simulation environments">
 		<a class="env-step prev" href={`/simulations/${data.version}/${previous.id}`}>

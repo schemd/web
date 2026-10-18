@@ -7,6 +7,7 @@
 	 * document reaches depend on how far it got: a rejected document still has a
 	 * token stream and a diagnostic, which is exactly when this page is most useful.
 	 */
+	import SheetFrame from '$lib/components/SheetFrame.svelte';
 	import Seo from '$lib/components/Seo.svelte';
 	import CodeEditor from '$lib/components/CodeEditor.svelte';
 	import DiagramTour from '$lib/components/DiagramTour.svelte';
@@ -62,15 +63,17 @@
 />
 
 <div class="inspector">
-	<header class="masthead">
-		<p class="eyebrow">Compiler inspector · engine {data.engineVersion}</p>
-		<h1>Watch it compile</h1>
-		<p class="lede">
-			Every stage below is the real thing: one <code>compileSchematic</code> call on the server, taken
-			apart. Edit the document and run it again — the URL carries the source, so an inspector link is
-			a citable bug report.
-		</p>
-	</header>
+	<SheetFrame label="Compiler inspector">
+		<header class="masthead sheet-head">
+			<p class="eyebrow">Compiler inspector · engine {data.engineVersion}</p>
+			<h1>Watch it compile</h1>
+			<p class="lede">
+				Every stage below is the real thing: one <code>compileSchematic</code> call on the server, taken
+				apart. Edit the document and run it again — the URL carries the source, so an inspector link is
+				a citable bug report.
+			</p>
+		</header>
+	</SheetFrame>
 
 	<div class="workbench">
 		<section class="editor" aria-label="Document">
@@ -315,7 +318,7 @@
 							<dd>{data.metrics.sourceCharacters.toLocaleString('en-US')}</dd>
 						</div>
 					</dl>
-					<div class="preview">{@html data.svg}</div>
+					<div class="preview sheet-grid trace-on">{@html data.svg}</div>
 					<h3>Source map</h3>
 					<table class="grid">
 						<thead><tr><th>Line</th><th>Vector</th></tr></thead>
@@ -357,18 +360,8 @@
 		margin: 0 auto;
 		padding: var(--space-8) var(--space-5) var(--space-16);
 	}
-	.masthead {
-		border-bottom: 1px solid var(--line-strong);
-		padding-bottom: var(--space-6);
+	.inspector > :global(.sheet) {
 		margin-bottom: var(--space-6);
-	}
-	.eyebrow {
-		font-family: var(--font-mono);
-		font-size: var(--text-2xs);
-		letter-spacing: var(--tracking-ultra);
-		text-transform: uppercase;
-		color: var(--accent);
-		margin: 0 0 var(--space-2);
 	}
 	h1 {
 		font-size: var(--text-xl);
@@ -392,8 +385,8 @@
 	}
 	.editor,
 	.stages {
-		border: 1px solid var(--line);
-		border-radius: var(--radius-md);
+		border: 1px solid var(--line-strong);
+		border-radius: var(--radius-lg);
 		background: var(--bg-raised);
 		overflow: hidden;
 	}
@@ -407,20 +400,21 @@
 	}
 	.panel-head h2 {
 		margin: 0;
-		font-size: var(--text-sm);
-		font-family: var(--font-mono);
-		letter-spacing: var(--tracking-wide);
+		font-size: 0.625rem;
+		font-family: var(--font-label);
+		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--ink-faint);
 		font-weight: 500;
 	}
 	.run {
-		font-family: var(--font-mono);
-		font-size: var(--text-xs);
-		letter-spacing: var(--tracking-wide);
+		font-family: var(--font-label);
+		font-size: 0.625rem;
+		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		padding: var(--space-1) var(--space-3);
-		border-radius: var(--radius-sm);
+		min-block-size: 36px;
+		padding: 0 var(--space-4);
+		border-radius: var(--radius-md);
 		border: 1px solid var(--accent);
 		background: var(--accent);
 		color: var(--accent-ink);
@@ -457,26 +451,34 @@
 		color: var(--ink-mute);
 		cursor: pointer;
 		white-space: nowrap;
-		font-family: var(--font-mono);
-		font-size: var(--text-xs);
-		letter-spacing: var(--tracking-wide);
+		font-family: var(--font-label);
+		font-size: 0.6875rem;
+		letter-spacing: 0.06em;
 		text-transform: uppercase;
+		min-block-size: 48px;
 	}
 	.stage-tab:hover {
 		color: var(--ink);
 	}
 	.stage-tab.is-active {
-		color: var(--accent);
+		color: var(--ink);
 		border-bottom-color: var(--accent);
 	}
+	/* Each stage is a zone on the sheet, numbered left to right. */
 	.stage-index {
 		display: inline-grid;
 		place-items: center;
-		width: 18px;
-		height: 18px;
+		min-width: 22px;
+		height: 20px;
+		padding: 0 4px;
 		border-radius: var(--radius-sm);
-		border: 1px solid currentColor;
-		font-size: var(--text-2xs);
+		border: 1px solid var(--line-strong);
+		font-size: 0.625rem;
+		color: var(--ink-mute);
+	}
+	.stage-tab.is-active .stage-index {
+		border-color: var(--accent);
+		color: var(--accent);
 	}
 	.stage-body {
 		padding: var(--space-5);
@@ -489,9 +491,9 @@
 		font-size: var(--text-sm);
 	}
 	h3 {
-		font-family: var(--font-mono);
-		font-size: var(--text-xs);
-		letter-spacing: var(--tracking-wide);
+		font-family: var(--font-label);
+		font-size: 0.625rem;
+		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--ink-faint);
 		margin: var(--space-6) 0 var(--space-3);
@@ -508,12 +510,21 @@
 		font-family: var(--font-mono);
 		color: var(--ink);
 	}
+	/* The lists themselves are plain stacks. They used to share the flex rule
+	   meant for their buttons, which laid every line out as a narrow column,
+	   one character wide, side by side. */
 	.lex,
 	.ast,
 	.traces,
 	.rules,
 	.nets,
-	.findings,
+	.findings {
+		display: grid;
+		gap: 2px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
 	.lex li button,
 	.ast li button {
 		display: flex;
@@ -716,12 +727,16 @@
 	.net-terminals {
 		color: var(--ink-mute);
 	}
+	/* The emitted drawing, on the sheet's ruled paper rather than its own panel. */
 	.preview {
-		border: 1px solid var(--line);
-		border-radius: var(--radius-sm);
-		background: var(--bg-inset);
+		--schematic-surface: transparent;
+		border: 1px solid var(--line-strong);
+		border-radius: var(--radius-md);
 		padding: var(--space-4);
 		overflow-x: auto;
+	}
+	.preview :global(.schematic-grid) {
+		display: none;
 	}
 	.preview :global(svg) {
 		max-width: 100%;
