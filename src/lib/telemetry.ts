@@ -1,4 +1,4 @@
-import { browser, dev } from '$app/environment';
+import { browser, dev } from '$app/env';
 
 export type VitalName = 'CLS' | 'INP' | 'LCP' | 'TTFB';
 export type VitalRating = 'good' | 'needs-improvement' | 'poor';

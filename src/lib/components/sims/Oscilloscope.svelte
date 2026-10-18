@@ -8,7 +8,7 @@
 	 * new frame — path serialization for a few hundred points is far below frame
 	 * budget, and no external charting engine comes anywhere near this.
 	 */
-	import type { MathReading } from '$lib/simulation-math';
+	import type { MathReading } from '#lib/simulation-math.ts';
 	import LiveMath from './LiveMath.svelte';
 
 	interface Channel {

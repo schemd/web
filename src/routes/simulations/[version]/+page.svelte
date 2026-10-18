@@ -1,10 +1,10 @@
 <script lang="ts">
-	import SheetFrame from '$lib/components/SheetFrame.svelte';
+	import SheetFrame from '#lib/components/SheetFrame.svelte';
 	import type { PageProps } from './$types';
-	import Seo from '$lib/components/Seo.svelte';
+	import Seo from '#lib/components/Seo.svelte';
 	import { onMount } from 'svelte';
-	import { playTick } from '$lib/audio';
-	import { ui } from '$lib/ui.svelte';
+	import { playTick } from '#lib/audio.ts';
+	import { ui } from '#lib/ui.svelte.ts';
 	import {
 		SIMULATION_PROGRESS_EVENT,
 		browserSimulationProgressStorage,
@@ -13,7 +13,7 @@
 		isLabComplete,
 		readSimulationProgress,
 		type SimulationProgress
-	} from '$lib/simulation-progress';
+	} from '#lib/simulation-progress.ts';
 	import 'katex/dist/katex.min.css';
 
 	let { data }: PageProps = $props();
@@ -208,13 +208,11 @@
 	<ul class="lab-list" aria-label="Simulation environments">
 		{#each visibleEnvironments as environment, index (environment.id)}
 			<li class="lab-row plate" style={`--i: ${index}`}>
-				<a
-					class="lab-icon"
-					href={`/simulations/${data.version}/${environment.id}`}
-					aria-label={environment.title}
-				>
+				<a class="lab-icon" href={`/simulations/${data.version}/${environment.id}`}>
 					{@render miniIcon(environment.id)}
 					<span class="lab-index microlabel">{environment.index} · {environment.domain}</span>
+					<!-- Named by what it shows, then the lab it opens. -->
+					<span class="visually-hidden">{environment.title}</span>
 				</a>
 
 				<div class="lab-info">

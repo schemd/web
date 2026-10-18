@@ -6,8 +6,8 @@
 	 * `active` into its fault state) and emits a distinct error tone; restoring
 	 * it clears the fault with a soft confirm tick.
 	 */
-	import { playError, playTick } from '$lib/audio';
-	import { ui } from '$lib/ui.svelte';
+	import { playError, playTick } from '#lib/audio.ts';
+	import { ui } from '#lib/ui.svelte.ts';
 
 	interface Props {
 		label: string;

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { afterNavigate, beforeNavigate } from '$app/navigation';
 	import { onDestroy } from 'svelte';
-	import { observeWebVitals, trackPageView } from '$lib/telemetry';
+	import { observeWebVitals, trackPageView } from '#lib/telemetry.ts';
 
 	let stopVitals = (): void => {};
 	let nextRouteStartedAt = 0;

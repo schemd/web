@@ -8,10 +8,10 @@ import {
 	parseSchematicFence,
 	COMPONENT_KINDS
 } from '@schemd/core';
-import { decodeWorkspaceState } from '$lib/state-uri';
+import { decodeWorkspaceState } from '#lib/state-uri.ts';
 import { FAMILY_SPECS, HERO_SPEC, landingFigures } from './landing';
 import { _PLAYGROUND_SAMPLE } from '../../routes/playground/[version]/+page.server';
-import { timelineFor } from '$lib/simulation-timelines';
+import { timelineFor } from '#lib/simulation-timelines.ts';
 import { docManifest, docSearchIndex, loadDoc } from './docs';
 import { loadGallery } from './gallery';
 import {

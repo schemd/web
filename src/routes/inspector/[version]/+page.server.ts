@@ -15,7 +15,7 @@
  */
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getRegistry, resolveReleaseVersion, WEBSITE_CORE_VERSION } from '$lib/server/registry';
+import { getRegistry, resolveReleaseVersion, WEBSITE_CORE_VERSION } from '#lib/server/registry.ts';
 import {
 	buildNetlist,
 	compileSchematic,
@@ -26,11 +26,11 @@ import {
 	type SchematicDiagnostic
 } from '@schemd/core';
 import { describeNetlist } from '@schemd/core/describe';
-import { buildDiagramTour } from '$lib/server/diagram-tour';
-import { HOST_COMPILER_LIMITS } from '$lib/compile-contract';
-import { decodeWorkspaceState } from '$lib/state-uri';
-import { tokenizeLine, type SchemdTokenLine } from '$lib/tokenizer';
-import { RELATIVE_PLACEMENT_SOURCE } from '$lib/diagrams';
+import { buildDiagramTour } from '#lib/server/diagram-tour.ts';
+import { HOST_COMPILER_LIMITS } from '#lib/compile-contract.ts';
+import { decodeWorkspaceState } from '#lib/state-uri.ts';
+import { tokenizeLine, type SchemdTokenLine } from '#lib/tokenizer.ts';
+import { RELATIVE_PLACEMENT_SOURCE } from '#lib/diagrams.ts';
 
 /** Fence the inspector compiles against; wide enough for the sample to breathe. */
 const INSPECTOR_BOUNDS = { width: 900, height: 520 } as const;

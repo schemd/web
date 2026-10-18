@@ -1,9 +1,9 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getRegistry, resolveReleaseVersion } from '$lib/server/registry';
-import { getSimulation, listSimulationEnvironments } from '$lib/server/simulations';
-import { renderSimulationMath, renderSimulationTimeline } from '$lib/server/simulation-math';
-import { timelineFor } from '$lib/simulation-timelines';
+import { getRegistry, resolveReleaseVersion } from '#lib/server/registry.ts';
+import { getSimulation, listSimulationEnvironments } from '#lib/server/simulations.ts';
+import { renderSimulationMath, renderSimulationTimeline } from '#lib/server/simulation-math.ts';
+import { timelineFor } from '#lib/simulation-timelines.ts';
 
 export const load: PageServerLoad = async ({ params, url }) => {
 	const registry = await getRegistry();

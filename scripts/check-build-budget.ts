@@ -81,7 +81,7 @@ const MAX_COMPILER_JS_GZIP = 48 * 1024;
  * a whole route and the largest of the three; the guided diagram tour; and
  * drag-to-edit in the playground. All three are real client surfaces, so their
  * cost belongs here rather than being hidden. Verified first that none of it is
- * accidental — no `$lib/server` module reaches the client, and the tour's only
+ * accidental — no `#lib/server` module reaches the client, and the tour's only
  * import from one is a type, which is erased.
  *
  * Raised from 168 KiB for the site footer and the two shared chart components.
@@ -109,15 +109,22 @@ const MAX_COMPILER_JS_GZIP = 48 * 1024;
  * absorbed, and verified by measuring the same build with it stashed.
  *
  * Explicitly *not* the documentation highlighter: Shiki runs only in
- * `$lib/server`, and the same build measures 169.2 KiB with and without it.
+ * `#lib/server`, and the same build measures 169.2 KiB with and without it.
  */
 /*
  * Raised to 174 for the sheet migration of the instruments and evidence pages,
  * measured 173.0 KiB: `SheetFrame` now frames eight more route mastheads and
  * the playground canvas, and the workspace shell carries a title block, about
  * 1 KiB between them.
+ *
+ * Raised to 176 for SvelteKit 3 and Svelte 5.57, measured 174.7 KiB against
+ * 173.5 before. The build of the previous main, measured beside this one,
+ * shows the growth entirely in the shared chunks the framework runtime lives
+ * in (101.8 to 104.2 KiB gzip across all of them); the route nodes, which
+ * hold the site's own code, shrank from 68.6 to 67.9. No application code
+ * changed beyond import specifiers.
  */
-const MAX_DOCUMENT_JS_GZIP = 174 * 1024;
+const MAX_DOCUMENT_JS_GZIP = 176 * 1024;
 /* Exactly the sum of the two ceilings above, as the compiler note says. */
 const MAX_ALL_JS_GZIP = MAX_DOCUMENT_JS_GZIP + MAX_COMPILER_JS_GZIP;
 /*

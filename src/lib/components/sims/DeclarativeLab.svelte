@@ -9,9 +9,9 @@
 	 * supplies the machinery. Nothing here evaluates anything a manifest says —
 	 * the model comes from a code-owned registry and the formula is rendered.
 	 */
-	import { setNetLevel, setNodeActive, setNodeDegraded, setWiresFrom } from '$lib/sim-dom';
-	import { expandBindings, type LabManifest, fillIndex } from '$lib/lab-manifest';
-	import { resolveLabModel } from '$lib/lab-models';
+	import { setNetLevel, setNodeActive, setNodeDegraded, setWiresFrom } from '#lib/sim-dom.ts';
+	import { expandBindings, type LabManifest, fillIndex } from '#lib/lab-manifest.ts';
+	import { resolveLabModel } from '#lib/lab-models.ts';
 	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';

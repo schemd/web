@@ -7,11 +7,11 @@
 	 * document reaches depend on how far it got: a rejected document still has a
 	 * token stream and a diagnostic, which is exactly when this page is most useful.
 	 */
-	import SheetFrame from '$lib/components/SheetFrame.svelte';
-	import Seo from '$lib/components/Seo.svelte';
-	import CodeEditor from '$lib/components/CodeEditor.svelte';
-	import DiagramTour from '$lib/components/DiagramTour.svelte';
-	import { encodeWorkspaceState } from '$lib/state-uri';
+	import SheetFrame from '#lib/components/SheetFrame.svelte';
+	import Seo from '#lib/components/Seo.svelte';
+	import CodeEditor from '#lib/components/CodeEditor.svelte';
+	import DiagramTour from '#lib/components/DiagramTour.svelte';
+	import { encodeWorkspaceState } from '#lib/state-uri.ts';
 	import { goto } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import type { PageData } from './$types';
@@ -43,8 +43,7 @@
 
 	function run() {
 		void goto(`/inspector/${data.version}?code=${encodeWorkspaceState(draft)}`, {
-			keepFocus: true,
-			noScroll: true
+			reset: false
 		});
 	}
 

@@ -15,7 +15,7 @@ import {
 	type CompileFailure,
 	type CompileOutcome,
 	type CompileRequest
-} from '$lib/compile-contract';
+} from '#lib/compile-contract.ts';
 
 interface WorkerRequest {
 	readonly id: number;

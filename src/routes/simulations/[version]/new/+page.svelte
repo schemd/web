@@ -13,13 +13,13 @@
 	 * authoring tools untrustworthy.
 	 */
 	import type { PageProps } from './$types';
-	import Seo from '$lib/components/Seo.svelte';
-	import DeclarativeLab from '$lib/components/sims/DeclarativeLab.svelte';
-	import { provideSimulationTimelineModel } from '$lib/components/sims/simulation-timeline.svelte';
-	import SimulationTimeline from '$lib/components/sims/SimulationTimeline.svelte';
-	import { encodeWorkspaceState, MAX_WORKSPACE_URL_CHARACTERS } from '$lib/state-uri';
+	import Seo from '#lib/components/Seo.svelte';
+	import DeclarativeLab from '#lib/components/sims/DeclarativeLab.svelte';
+	import { provideSimulationTimelineModel } from '#lib/components/sims/simulation-timeline.svelte.ts';
+	import SimulationTimeline from '#lib/components/sims/SimulationTimeline.svelte';
+	import { encodeWorkspaceState, MAX_WORKSPACE_URL_CHARACTERS } from '#lib/state-uri.ts';
 	import { goto } from '$app/navigation';
-	import { timelineFor } from '$lib/simulation-timelines';
+	import { timelineFor } from '#lib/simulation-timelines.ts';
 
 	let { data }: PageProps = $props();
 	const timelineModel = provideSimulationTimelineModel();
@@ -55,7 +55,7 @@
 	async function apply(): Promise<void> {
 		const url = new URL(window.location.href);
 		url.searchParams.set('lab', encodeWorkspaceState(draft));
-		await goto(`${url.pathname}${url.search}`, { keepFocus: true, noScroll: true });
+		await goto(`${url.pathname}${url.search}`, { reset: false });
 		/* The server's copy is now the draft; drop the override so it shows. */
 		edited = undefined;
 	}

@@ -5,7 +5,7 @@ import {
 	renderSimulationTimeline,
 	simulationMathTemplateIds
 } from './simulation-math';
-import { timelineFor } from '$lib/simulation-timelines';
+import { timelineFor } from '#lib/simulation-timelines.ts';
 
 describe('server-rendered live simulation math', () => {
 	test('renders a complete, error-free, simulation-scoped KaTeX registry', () => {

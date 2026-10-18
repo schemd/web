@@ -16,7 +16,7 @@ import {
 	NO_STORE,
 	rateLimitHeaders,
 	readLimitedJson
-} from '$lib/server/request-guard';
+} from '#lib/server/request-guard.ts';
 import {
 	COMPILE_LIMITS,
 	HOST_COMPILER_LIMITS,
@@ -24,12 +24,12 @@ import {
 	type CompileFailure,
 	type CompileRequest,
 	type CompileSuccess
-} from '$lib/compile-contract';
+} from '#lib/compile-contract.ts';
 import {
 	compileExecutor,
 	SERVER_COMPILE_DEADLINE_MS,
 	type CompileExecution
-} from '$lib/server/compile-executor';
+} from '#lib/server/compile-executor.ts';
 import type { SchematicLimitOptions } from '@schemd/core';
 
 const MAX_CACHE_ENTRIES = 64;

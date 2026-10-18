@@ -24,14 +24,14 @@ import {
 	type CompileFailure,
 	type CompileOutcome,
 	type CompileRequest
-} from '$lib/compile-contract';
+} from '#lib/compile-contract.ts';
 
 export type {
 	CompileFailure,
 	CompileOutcome,
 	CompileRequest,
 	CompileSuccess
-} from '$lib/compile-contract';
+} from '#lib/compile-contract.ts';
 
 type InspectionOutcome =
 	| {

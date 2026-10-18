@@ -8,7 +8,7 @@ import { COMPONENT_KINDS } from '@schemd/core';
 import { latestRawSources } from './versions';
 import { COMPONENT_CATALOG } from './component-catalog';
 import { KIND_GROUPS } from './kinds';
-import { fencedDiagrams } from '$lib/schemd-fence';
+import { fencedDiagrams } from '#lib/schemd-fence.ts';
 
 /** Coverage for one component kind. */
 export interface KindCoverage {

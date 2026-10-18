@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
-import { loadGallery } from '$lib/server/gallery';
-import { getRegistry } from '$lib/server/registry';
+import { loadGallery } from '#lib/server/gallery.ts';
+import { getRegistry } from '#lib/server/registry.ts';
 
 export const load: PageServerLoad = async () => {
 	const registry = await getRegistry();

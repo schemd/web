@@ -4,9 +4,9 @@
  * playground. A browsable, SEO-friendly index of what the language can draw.
  */
 import { compileSchematic, parseSchematicFence } from '@schemd/core';
-import { encodeWorkspaceState } from '$lib/state-uri';
+import { encodeWorkspaceState } from '#lib/state-uri.ts';
 import { latestRawSources } from './versions';
-import { fencedDiagrams } from '$lib/schemd-fence';
+import { fencedDiagrams } from '#lib/schemd-fence.ts';
 import { describedDiagram } from './schemd-figure';
 
 export interface GalleryItem {

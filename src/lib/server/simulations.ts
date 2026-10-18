@@ -12,7 +12,7 @@
  */
 import { compileSchematic, parseSchematicFence } from '@schemd/core';
 import katex from 'katex';
-import { RC_FILTER_BOUNDS, RC_FILTER_SOURCE } from '$lib/diagrams';
+import { RC_FILTER_BOUNDS, RC_FILTER_SOURCE } from '#lib/diagrams.ts';
 
 /**
  * Pre-render a LaTeX governing model to static KaTeX HTML at module load.

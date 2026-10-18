@@ -1,14 +1,14 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getRegistry, resolveReleaseVersion, WEBSITE_CORE_VERSION } from '$lib/server/registry';
+import { getRegistry, resolveReleaseVersion, WEBSITE_CORE_VERSION } from '#lib/server/registry.ts';
 import { COMPONENT_KINDS, SCHEMATIC_ORIENTATIONS, SEMANTIC_COLORS } from '@schemd/core';
-import { RC_FILTER_SOURCE } from '$lib/diagrams';
+import { RC_FILTER_SOURCE } from '#lib/diagrams.ts';
 /*
  * The component vocabulary and its grouping are read straight from the
  * installed compiler via one shared catalogue, so the reference panel is always
  * exactly as current as `@schemd/core` and always agrees with `/coverage`.
  */
-import { serializableKindGroups } from '$lib/server/kinds';
+import { serializableKindGroups } from '#lib/server/kinds.ts';
 
 /** Default workspace program shown before the visitor types or shares. */
 export const _PLAYGROUND_SAMPLE = RC_FILTER_SOURCE;

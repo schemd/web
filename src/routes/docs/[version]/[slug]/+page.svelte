@@ -1,11 +1,11 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
-	import Seo from '$lib/components/Seo.svelte';
+	import Seo from '#lib/components/Seo.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { page } from '$app/state';
-	import Pronounce from '$lib/components/Pronounce.svelte';
-	import { encodeWorkspaceState } from '$lib/state-uri';
-	import { ui, setDocsNavCollapsed } from '$lib/ui.svelte';
+	import Pronounce from '#lib/components/Pronounce.svelte';
+	import { encodeWorkspaceState } from '#lib/state-uri.ts';
+	import { ui, setDocsNavCollapsed } from '#lib/ui.svelte.ts';
 	import 'katex/dist/katex.min.css';
 
 	let { data }: PageProps = $props();

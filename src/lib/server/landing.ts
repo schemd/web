@@ -9,7 +9,7 @@
  * compiler.
  */
 import { buildNetlist, compileSchematic, verifyNetlist } from '@schemd/core';
-import { highlightLineHtml } from '$lib/tokenizer';
+import { highlightLineHtml } from '#lib/tokenizer.ts';
 
 /** A canonical source with the fence it compiles under. */
 interface Spec {

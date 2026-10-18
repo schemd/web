@@ -1,12 +1,12 @@
 import type { RequestHandler } from './$types';
-import { clientAddress, consumeRateLimit, readLimitedJson } from '$lib/server/request-guard';
+import { clientAddress, consumeRateLimit, readLimitedJson } from '#lib/server/request-guard.ts';
 import {
 	vitalRating,
 	type InteractionName,
 	type TelemetryEvent,
 	type VitalName,
 	type VitalRating
-} from '$lib/telemetry';
+} from '#lib/telemetry.ts';
 
 const MAX_BODY_BYTES = 16 * 1024;
 const MAX_EVENTS = 20;

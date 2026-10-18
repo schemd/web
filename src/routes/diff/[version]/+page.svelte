@@ -7,14 +7,14 @@
 	 * terminals, which connections were rerouted. Pixels move for a hundred
 	 * uninteresting reasons; topology does not.
 	 */
-	import SheetFrame from '$lib/components/SheetFrame.svelte';
-	import { browser } from '$app/environment';
-	import Seo from '$lib/components/Seo.svelte';
+	import SheetFrame from '#lib/components/SheetFrame.svelte';
+	import { browser } from '$app/env';
+	import Seo from '#lib/components/Seo.svelte';
 	import { untrack } from 'svelte';
-	import CodeEditor from '$lib/components/CodeEditor.svelte';
-	import { inspectInBrowser, prefetchCompiler } from '$lib/compile-client';
-	import { COMPILE_LIMITS } from '$lib/compile-contract';
-	import { diffNetlists, type DiagramDelta } from '$lib/diagram-diff';
+	import CodeEditor from '#lib/components/CodeEditor.svelte';
+	import { inspectInBrowser, prefetchCompiler } from '#lib/compile-client.ts';
+	import { COMPILE_LIMITS } from '#lib/compile-contract.ts';
+	import { diffNetlists, type DiagramDelta } from '#lib/diagram-diff.ts';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();

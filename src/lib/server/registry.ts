@@ -7,7 +7,7 @@
  * stale-while-revalidate refresh loop, so no request blocks on registry I/O,
  * including the first request in a cold process.
  */
-import { building } from '$app/environment';
+import { building } from '$app/env';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';

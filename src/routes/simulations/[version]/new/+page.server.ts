@@ -1,10 +1,10 @@
 import { error, redirect } from '@sveltejs/kit';
 import { compileSchematic } from '@schemd/core';
 import type { PageServerLoad } from './$types';
-import { getRegistry, resolveReleaseVersion } from '$lib/server/registry';
-import { decodeWorkspaceState } from '$lib/state-uri';
-import { LAB_MODEL_NAMES } from '$lib/lab-models';
-import { validateLabManifest, type LabManifest } from '$lib/lab-manifest';
+import { getRegistry, resolveReleaseVersion } from '#lib/server/registry.ts';
+import { decodeWorkspaceState } from '#lib/state-uri.ts';
+import { LAB_MODEL_NAMES } from '#lib/lab-models.ts';
+import { validateLabManifest, type LabManifest } from '#lib/lab-manifest.ts';
 import { STARTER_LAB } from './starter';
 
 /** Bound an author-supplied document the same way the compile endpoint does. */

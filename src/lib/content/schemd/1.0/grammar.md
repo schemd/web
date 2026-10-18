@@ -70,7 +70,7 @@ I5.out -> O5.in #cyan [ortho digital net=L5]
 
 1.0 routes this differently in kind from 0.8. Each net is searched once on a lattice of channel-pitch lines plus the coordinates that matter, in an order derived from where its terminals sit — never from declaration order — and contact between nets is forbidden on that pass. A net that still cannot be placed is placed at a price, and the nets in contact are torn up and rerouted with the price raised and a history cost on every location contested before. Every cost is an integer, so the result is the same on every engine.
 
-`compileSchematic` reports what the router had to do in `routing`: `attempts` counts negotiation rounds, `rippedUp` the wires torn up in them, and `congestion` the load on each lattice cell. A contended twelve-wire bus routes in the first pass in about 1.5 ms. The per-connection router, its reorder and rip-up rescue, and 0.7's bundle nudging are gone, so `routing.nudged` is always `false`. The [inspector](/inspector/1.0.0) draws the report.
+`compileSchematic` reports what the router had to do in `routing`: `attempts` counts negotiation rounds, `rippedUp` the wires torn up in them, and `congestion` the load on each lattice cell. A contended twelve-wire bus routes in the first pass in about 1.5 ms. The per-connection router, its reorder and rip-up rescue, and 0.7's bundle nudging are gone, so `routing.nudged` is always `false`. The [inspector](/inspector/1.0.2) draws the report.
 
 <!-- /schemd-section -->
 

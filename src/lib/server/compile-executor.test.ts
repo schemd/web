@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HOST_COMPILER_LIMITS, type CompileRequest } from '$lib/compile-contract';
+import { HOST_COMPILER_LIMITS, type CompileRequest } from '#lib/compile-contract.ts';
 import { CompileExecutor } from './compile-executor';
 
 const request = (source: string): CompileRequest => ({

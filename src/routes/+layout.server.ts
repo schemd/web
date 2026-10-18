@@ -1,11 +1,11 @@
 import type { LayoutServerLoad } from './$types';
-import { getRegistry } from '$lib/server/registry';
-import { DOC_SLUGS_BY_LINE, docSearchIndex } from '$lib/server/docs';
+import { getRegistry } from '#lib/server/registry.ts';
+import { DOC_SLUGS_BY_LINE, docSearchIndex } from '#lib/server/docs.ts';
 import {
 	DOCUMENTED_VERSIONS,
 	LATEST_DOCUMENTED_VERSION,
 	resolveDocVersion
-} from '$lib/server/versions';
+} from '#lib/server/versions.ts';
 
 export const load: LayoutServerLoad = async ({ params }) => {
 	const registry = await getRegistry();

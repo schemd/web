@@ -101,7 +101,7 @@ VBB.negative -> EGND.in #slate [ortho]
 | A terminal that does not exist      | `A has no terminal named clock, so B cannot be placed against it. Reference A itself, or name a terminal it declares.`           |
 | Too long a chain                    | `P5 sits 5 placements deep, past the 4 chain budget. Anchor one component in the chain with at (x, y).`                          |
 
-[`diagnoseSchematic`](/docs/1.0/diagnostics) reports every broken relation at once, each at the columns of the reference at fault, and a cycle once, at its first stuck line; nothing placed against a broken declaration is blamed again. Placement arithmetic is in integer milli-units, so a relation and its mirror image land exactly opposite each other.
+[`diagnoseSchematic`](/docs/1.0/diagnostics) reports every broken relation at once, each at the columns of the reference at fault, and a cycle once, at its first stuck line; nothing placed against a broken declaration is blamed again. Since 1.0.2 that includes a declaration whose own line failed, such as one with an unknown option: what is placed against it is left unplaced, not reported as referencing something undeclared. Placement arithmetic is in integer milli-units, so a relation and its mirror image land exactly opposite each other.
 
 A relation that pushes a part off the canvas is not a new kind of error — it reaches the same out-of-bounds diagnostic a bad `at (x, y)` would, naming a coordinate that fits.
 
@@ -113,7 +113,7 @@ const { placements } = compileSchematic(source, fence);
 //    relations: [{ kind: 'right-of', ref: 'VIN', gap: 150 }] }, …]
 ```
 
-It is empty when we used only coordinates, sorted by source line, and its relations carry canonical terminal names, so a reported relation always agrees with the netlist. The [inspector](/inspector/1.0.0) shows it in its Place stage.
+It is empty when we used only coordinates, sorted by source line, and its relations carry canonical terminal names, so a reported relation always agrees with the netlist. The [inspector](/inspector/1.0.2) shows it in its Place stage.
 
 ```schemd bounds="960x400" title="Reading the resolved coordinates"
 port:SRC "S" at (120, 200) #violet

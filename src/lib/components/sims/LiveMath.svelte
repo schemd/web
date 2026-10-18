@@ -4,7 +4,7 @@
 		SIMULATION_MATH_CONTEXT,
 		type MathSlotValues,
 		type SimulationMathContext
-	} from '$lib/simulation-math';
+	} from '#lib/simulation-math.ts';
 
 	interface Props {
 		id: string;

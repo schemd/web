@@ -9,7 +9,7 @@
  * prose docs happen to mention.
  */
 import { COMPONENT_KINDS } from '@schemd/core';
-import { encodeWorkspaceState } from '$lib/state-uri';
+import { encodeWorkspaceState } from '#lib/state-uri.ts';
 import { groupOfKind } from './kinds';
 
 /** One demonstrable primitive: its kind, category, source, and openable link. */

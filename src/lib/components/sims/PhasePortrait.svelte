@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { MathReading } from '$lib/simulation-math';
+	import type { MathReading } from '#lib/simulation-math.ts';
 	import LiveMath from './LiveMath.svelte';
 	interface Point {
 		x: number;

@@ -11,8 +11,8 @@
 	 * `data-*` path the simulations use, so this never draws or mutates SVG.
 	 */
 	import { onDestroy } from 'svelte';
-	import { clearPropagationFrame, setPropagationFrame } from '$lib/sim-dom';
-	import type { DiagramTour } from '$lib/server/diagram-tour';
+	import { clearPropagationFrame, setPropagationFrame } from '#lib/sim-dom.ts';
+	import type { DiagramTour } from '#lib/server/diagram-tour.ts';
 
 	let {
 		tour,

@@ -1,7 +1,7 @@
 <script lang="ts">
 	/** Bell-state visualizer with compiler-root operator delegation and native SVG metrics. */
-	import { bellAmplitudesAtStage, bellChsh, type Basis2 } from '$lib/simulation-models';
-	import { delegatedNodeId, setNodeActive, setWiresFrom } from '$lib/sim-dom';
+	import { bellAmplitudesAtStage, bellChsh, type Basis2 } from '#lib/simulation-models.ts';
+	import { delegatedNodeId, setNodeActive, setWiresFrom } from '#lib/sim-dom.ts';
 	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import SimulationWorkbench from './SimulationWorkbench.svelte';

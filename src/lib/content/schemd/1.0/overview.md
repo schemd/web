@@ -59,7 +59,7 @@ The language is read exactly as before — 1.0's front end is 0.8's declaration 
 
 **A line or Bézier wire through another part's terminal is rejected.** It would read as a connection it is not. An orthogonal wire is routed around instead.
 
-**The compiler is larger.** The compile path is 41.7 KiB gzip, about 4.5 KiB more than 0.8, paid for routing by net, exact integer geometry, measured text, and the diagnostics model. A host that counts bytes should know before upgrading.
+**The compiler is larger.** The compile path is 41.8 KiB gzip in 1.0.2, about 4.6 KiB more than 0.8, paid for routing by net, exact integer geometry, measured text, and the diagnostics model. A host that counts bytes should know before upgrading.
 
 ```schemd bounds="840x480" title="One rail, one tree"
 source:LDO "3V3" at (100, 240) #blue [type=voltage-dc]

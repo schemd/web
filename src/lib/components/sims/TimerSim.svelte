@@ -13,9 +13,9 @@
 		delegatedNodeId,
 		delegatedWireSource,
 		styleWiresFrom
-	} from '$lib/sim-dom';
-	import { playPulse } from '$lib/audio';
-	import { ui } from '$lib/ui.svelte';
+	} from '#lib/sim-dom.ts';
+	import { playPulse } from '#lib/audio.ts';
+	import { ui } from '#lib/ui.svelte.ts';
 	import Oscilloscope from './Oscilloscope.svelte';
 	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
@@ -23,13 +23,13 @@
 	import LiveMath from './LiveMath.svelte';
 	import SimulationMotionControl from './SimulationMotionControl.svelte';
 	import { createSimulationMotion } from './simulation-motion.svelte';
-	import { reading, type MathReading } from '$lib/simulation-math';
+	import { reading, type MathReading } from '#lib/simulation-math.ts';
 	import {
 		timer555,
 		timer555AstableWaveform,
 		timer555MonostableCapacitor,
 		timer555PresentationFrequency
-	} from '$lib/simulation-models';
+	} from '#lib/simulation-models.ts';
 	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 
 	interface Props {

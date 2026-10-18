@@ -10,8 +10,8 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { compileSchematic, parseSchematicFence, SchematicSyntaxError } from '@schemd/core';
-import { getRegistry, resolveVersion } from '$lib/server/registry';
-import { decodeWorkspaceState } from '$lib/state-uri';
+import { getRegistry, resolveVersion } from '#lib/server/registry.ts';
+import { decodeWorkspaceState } from '#lib/state-uri.ts';
 
 const FALLBACK_SOURCE = `port:VIN "V_{in}" at (80, 110) #blue
 resistor:R1 "R" at (300, 110) #amber

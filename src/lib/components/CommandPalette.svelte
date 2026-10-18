@@ -7,7 +7,7 @@
 	 * Escape. Focus is trapped inside the dialog while it is open.
 	 */
 	import { goto } from '$app/navigation';
-	import { ui } from '$lib/ui.svelte';
+	import { ui } from '#lib/ui.svelte.ts';
 
 	export interface PaletteEntry {
 		readonly title: string;

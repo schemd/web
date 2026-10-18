@@ -1,7 +1,7 @@
 <script lang="ts">
-	import SheetFrame from '$lib/components/SheetFrame.svelte';
+	import SheetFrame from '#lib/components/SheetFrame.svelte';
 	import type { PageProps } from './$types';
-	import Seo from '$lib/components/Seo.svelte';
+	import Seo from '#lib/components/Seo.svelte';
 
 	let { data }: PageProps = $props();
 

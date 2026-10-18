@@ -16,10 +16,10 @@
  * own prose and its own examples, so each line is submitted in full.
  */
 import type { RequestHandler } from './$types';
-import { getRegistry } from '$lib/server/registry';
-import { docManifest } from '$lib/server/docs';
-import { DOCUMENTED_VERSIONS, LATEST_DOCUMENTED_VERSION } from '$lib/server/versions';
-import { SIM_ENVIRONMENTS } from '$lib/server/simulations';
+import { getRegistry } from '#lib/server/registry.ts';
+import { docManifest } from '#lib/server/docs.ts';
+import { DOCUMENTED_VERSIONS, LATEST_DOCUMENTED_VERSION } from '#lib/server/versions.ts';
+import { SIM_ENVIRONMENTS } from '#lib/server/simulations.ts';
 
 interface SitemapEntry {
 	readonly path: string;

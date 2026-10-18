@@ -14,9 +14,9 @@
 		styleWiresFrom,
 		delegatedNodeId,
 		delegatedWireSource
-	} from '$lib/sim-dom';
-	import { playTick } from '$lib/audio';
-	import { ui } from '$lib/ui.svelte';
+	} from '#lib/sim-dom.ts';
+	import { playTick } from '#lib/audio.ts';
+	import { ui } from '#lib/ui.svelte.ts';
 	import LabShell from './LabShell.svelte';
 	import Oscilloscope from './Oscilloscope.svelte';
 	import PhasePortrait from './PhasePortrait.svelte';
@@ -25,8 +25,8 @@
 	import LiveMath from './LiveMath.svelte';
 	import SimulationMotionControl from './SimulationMotionControl.svelte';
 	import { createSimulationMotion } from './simulation-motion.svelte';
-	import { reading, type MathReading } from '$lib/simulation-math';
-	import { wienDamping, wienFrequency, wienRegime } from '$lib/simulation-models';
+	import { reading, type MathReading } from '#lib/simulation-math.ts';
+	import { wienDamping, wienFrequency, wienRegime } from '#lib/simulation-models.ts';
 	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 
 	interface Props {

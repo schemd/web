@@ -9,6 +9,14 @@
 
 Behind 1.0 sit 0.8's sub-circuits and trunk syntax, 0.6's `snapshotSchematic` and `parseSchematicSvg`, 0.5's relative placement, and 0.4's removal of the global component and connection ceilings. Quarter-turn geometry, typed primitives, net semantics, collision validation, netlist inspection, structural design rules, accessible descriptions, deterministic fuzzing, and source maps remain part of the same compiler.
 
+**Patch releases.** Install `^1.0.2`. 1.0.1 is 1.0.0's code under a new number: it was tagged before the fixes meant for it had merged, so upgrading from 1.0.0 to 1.0.1 changes nothing. 1.0.2 carries those fixes and one found by fuzzing:
+
+- A part placed relative to a declaration that failed is left unplaced without a second diagnostic, instead of being told that declaration "the document never declares".
+- A broken relative placement no longer hides a mistyped terminal elsewhere: `diagnoseSchematic` checks every connection either way.
+- A connection to a [junction](/docs/1.0/nets#junctions) that its net's copper already runs through follows that copper, instead of drawing a small detour loop beside the dot.
+
+1.0.2 also adds a contract fuzzer to the compiler's release gate. It breaks real documents the way an editor does mid-keystroke, then checks that `compileSchematic` throws only `SchematicSyntaxError`, that `diagnoseSchematic` never throws, and that the two agree. The release workflow now refuses a tag whose version has no changelog entry, and checks this before anything reaches npm.
+
 ```schemd bounds="980x420" title="Cross-domain 1.0 specimen"
 source:AC1 "AC" at (90, 120) #purple [type=voltage-ac]
 capacitor:CX1 "C" at (280, 120) #cyan

@@ -36,7 +36,7 @@ N1.node -> RB.in #amber [ortho]
 N1.node -> CB.in #amber [ortho]
 ```
 
-A junction has four sides. A fifth wire written to it is not an error: it joins the net's copper beside the junction instead, with a dot of its own. And whatever we place relative to a junction lands exactly where it always did — placement measures from the junction's centred text rows, not from the text it now draws beside the dot.
+A junction has four sides. A fifth wire written to it is not an error: it joins the net's copper beside the junction instead, with a dot of its own. If an earlier wire of the net already runs straight through the junction's dot, the junction is on the tree before anything is written to it, so a connection to it is drawn along that copper and adds no ink. Before 1.0.2 such a connection could draw a small detour loop beside the dot. And whatever we place relative to a junction lands exactly where it always did — placement measures from the junction's centred text rows, not from the text it now draws beside the dot.
 
 <!-- /schemd-section -->
 

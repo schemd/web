@@ -12,7 +12,7 @@
  *   loader, so the async highlighter would have forced that whole path to
  *   become async for a cosmetic feature. `createHighlighterCoreSync` with the
  *   JavaScript regex engine avoids the WASM load that makes Shiki async.
- * - **Server only.** This module lives under `$lib/server`, so SvelteKit
+ * - **Server only.** This module lives under `#lib/server`, so SvelteKit
  *   refuses to bundle it into the client, and the build budget already asserts
  *   no server module reaches a visitor. Grammars are megabytes; none of it
  *   ships.

@@ -9,21 +9,21 @@
 	 * syndrome up and flips the accused qubit back. Logical fidelity is 1 only
 	 * when the residual error is trivial — which a miswired decoder breaks.
 	 */
-	import { setNodeActive, setNodeDegraded, setWiresFrom, delegatedNodeId } from '$lib/sim-dom';
-	import { playSuccess, playError, playTick } from '$lib/audio';
-	import { ui } from '$lib/ui.svelte';
+	import { setNodeActive, setNodeDegraded, setWiresFrom, delegatedNodeId } from '#lib/sim-dom.ts';
+	import { playSuccess, playError, playTick } from '#lib/audio.ts';
+	import { ui } from '#lib/ui.svelte.ts';
 	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
-	import { reading, type MathReading } from '$lib/simulation-math';
+	import { reading, type MathReading } from '#lib/simulation-math.ts';
 	import {
 		qecAccused,
 		qecFidelity,
 		qecResidual,
 		qecSyndrome,
 		type QecError
-	} from '$lib/simulation-models';
+	} from '#lib/simulation-models.ts';
 	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 
 	interface Props {

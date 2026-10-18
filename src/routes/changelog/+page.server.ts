@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { compileSchematic, parseSchematicFence } from '@schemd/core';
-import { getRegistry, WEBSITE_CORE_VERSION } from '$lib/server/registry';
+import { getRegistry, WEBSITE_CORE_VERSION } from '#lib/server/registry.ts';
 
 /** Reference workload used for the installed-version benchmark. */
 const BENCH_SOURCE = `port:P0 "in" at (60, 100) #blue

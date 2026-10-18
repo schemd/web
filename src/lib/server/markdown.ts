@@ -10,9 +10,9 @@
  */
 import { Marked } from 'marked';
 import { compileSchematic, parseSchematicFence, SchematicSyntaxError } from '@schemd/core';
-import { highlightSourceHtml } from '$lib/tokenizer';
+import { highlightSourceHtml } from '#lib/tokenizer.ts';
 import mathExtension from './math-extension';
-import { schemdFencePattern } from '$lib/schemd-fence';
+import { schemdFencePattern } from '#lib/schemd-fence.ts';
 import { highlightCodeHtml } from './code-highlight';
 import { describedDiagram } from './schemd-figure';
 

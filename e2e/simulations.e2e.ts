@@ -146,7 +146,7 @@ test('motion tooling does not restart a paused causal stage', async ({ page }) =
 	await expect(timeline).toContainText('Drive current through R');
 
 	await page
-		.getByRole('button', { name: 'Pause RC waveform and frequency-response animation' })
+		.getByRole('button', { name: 'Pause animation: RC waveform and frequency-response' })
 		.click();
 	await expect(timeline).toContainText('Drive current through R');
 	await expect(timeline.getByText('propagating')).toHaveCount(0);
