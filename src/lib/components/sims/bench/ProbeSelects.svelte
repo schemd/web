@@ -18,14 +18,20 @@
 			<span class="ch ch-a" aria-hidden="true">A</span>
 			<select bind:value={a} aria-label="Probe A">
 				<option value={null}>off</option>
-				{#each nets as net (net.id)}<option value={net.id}>{net.label}</option>{/each}
+				<!-- A net already on the other channel is offered but not selectable: two
+				     identical traces would only hide each other. -->
+				{#each nets as net (net.id)}<option value={net.id} disabled={net.id === b}
+						>{net.label}</option
+					>{/each}
 			</select>
 		</label>
 		<label>
 			<span class="ch ch-b" aria-hidden="true">B</span>
 			<select bind:value={b} aria-label="Probe B">
 				<option value={null}>off</option>
-				{#each nets as net (net.id)}<option value={net.id}>{net.label}</option>{/each}
+				{#each nets as net (net.id)}<option value={net.id} disabled={net.id === a}
+						>{net.label}</option
+					>{/each}
 			</select>
 		</label>
 	</div>

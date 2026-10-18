@@ -147,6 +147,8 @@
 
 	/* 1-2-5 values with an SI prefix: 20 µA/div, 0.2 V/div, 5 mV/div. */
 	function formatScale(value: number, unit: string): string {
+		/* Amplitudes and logic levels have no unit, so no prefix either. */
+		if (!unit) return String(Number(value.toPrecision(2)));
 		const prefixes: ReadonlyArray<readonly [number, string]> = [
 			[1e6, 'M'],
 			[1e3, 'k'],
@@ -179,7 +181,7 @@
 	</div>
 	<figcaption>
 		<ul class="legend">
-			{#each channels as channel, index (channel.id)}
+			{#each channels as channel, index (channel.letter)}
 				<li>
 					<i class="swatch" style={`background:${channel.color}`} bind:this={swatches[index]}></i>
 					<b>{channel.letter}{channel.ac ? '~' : ''}</b>

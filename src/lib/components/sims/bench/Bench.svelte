@@ -39,7 +39,8 @@
 				<span class="microlabel">live circuit · mode=full</span>
 				<span class="state" role="status"><i aria-hidden="true"></i>{status}</span>
 			</header>
-			<div class="stage-body sheet-grid">
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex (on a phone the drawing scrolls sideways, so the keyboard must reach it) -->
+			<div class="stage-body sheet-grid" role="region" aria-label={`${title} drawing`} tabindex="0">
 				{@render stage()}
 			</div>
 			<p class="stage-hint">{hint}</p>
@@ -109,6 +110,8 @@
 	.stage-body {
 		position: relative;
 		min-inline-size: 0;
+		overflow-x: auto;
+		overscroll-behavior-inline: contain;
 		padding: clamp(var(--space-3), 3vw, var(--space-8));
 	}
 
@@ -135,6 +138,49 @@
 		gap: var(--space-4) var(--space-6);
 		padding: var(--space-4);
 		background: var(--bg-panel);
+	}
+
+	/* Every drawing fits its stage; on a phone, dense ones keep a legible width
+	   and the stage scrolls sideways instead. */
+	.bench :global(.sim-stage svg) {
+		display: block;
+		inline-size: 100%;
+		block-size: auto;
+		max-block-size: 64vh;
+	}
+
+	@media (max-width: 760px) {
+		.bench :global(.sim-stage svg) {
+			min-inline-size: 640px;
+			max-block-size: none;
+		}
+	}
+
+	/* Shared layout for what labs put in the dock and the deck. */
+	.bench :global(.bench-block) {
+		display: grid;
+		gap: var(--space-2);
+		min-inline-size: 0;
+	}
+
+	.bench :global(.bench-group) {
+		display: grid;
+		gap: var(--space-2);
+		align-content: start;
+		min-inline-size: 0;
+	}
+
+	.bench :global(.bench-readouts) {
+		display: grid;
+		gap: var(--space-2);
+		font-size: var(--text-sm);
+		overflow-wrap: anywhere;
+	}
+
+	.bench :global(.bench-row) {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
 	}
 
 	/* Current on the wires (see bench/flow.ts). */

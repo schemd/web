@@ -131,8 +131,12 @@ const MAX_COMPILER_JS_GZIP = 48 * 1024;
  * over, the components the bench replaces (LabShell, SimulationWorkbench,
  * Oscilloscope, ProbeHud) lose their last importer and come out, which should
  * bring this back down.
+ *
+ * Lowered to 180 with every lab on the bench and those four components
+ * removed, measured 179.6 KiB: the bench is shared by eleven labs now, so it
+ * costs its 4.9 KiB once.
  */
-const MAX_DOCUMENT_JS_GZIP = 182 * 1024;
+const MAX_DOCUMENT_JS_GZIP = 180 * 1024;
 /* Exactly the sum of the two ceilings above, as the compiler note says. */
 const MAX_ALL_JS_GZIP = MAX_DOCUMENT_JS_GZIP + MAX_COMPILER_JS_GZIP;
 /*
@@ -191,9 +195,10 @@ const MAX_MODERN_MATH_FONTS = 320 * 1024;
  * worker (the gzip rise recorded on the compiler ceiling above) and the
  * sheet's frame, title block and landing styles.
  */
-/* Raised to 1,305 for the v2 laboratory bench, measured 1,299.8 KiB; see the
-   document ceiling for what it is and what should bring it back down. */
-const MAX_CLIENT_OUTPUT = 1_305 * 1024;
+/* Briefly 1,305 while the v2 bench lived beside the components it replaces;
+   back to 1,290 (measured 1,289.9 KiB) once all eleven labs moved onto it and
+   LabShell, SimulationWorkbench, Oscilloscope and ProbeHud came out. */
+const MAX_CLIENT_OUTPUT = 1_290 * 1024;
 /*
  * Eleven laboratories, each downloaded only when it is opened. Two of them are
  * manifests rather than components, so the shell's lazy registry spans both

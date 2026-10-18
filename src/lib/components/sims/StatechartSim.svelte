@@ -11,14 +11,14 @@
 	import { setNodeActive, setWiresFrom, delegatedNodeId } from '#lib/sim-dom.ts';
 	import { playTick, playError } from '#lib/audio.ts';
 	import { ui } from '#lib/ui.svelte.ts';
-	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
-	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
 	import { createSimulationMotion } from './simulation-motion.svelte';
 	import { reading, type MathReading } from '#lib/simulation-math.ts';
 	import { nextTrafficState, type TrafficState as State } from '#lib/simulation-models.ts';
 	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
+	import Bench from './bench/Bench.svelte';
+	import PartReadout from './bench/PartReadout.svelte';
 
 	interface Props {
 		svg: string;
@@ -156,8 +156,15 @@
 	}
 </script>
 
-<LabShell {controls} {canvas} {instruments} />
-<ProbeHud read={probe} />
+<Bench
+	title="Executable state machine"
+	tone="digital"
+	status={`state ${current}${deadlocked ? ' · deadlocked' : ''}`}
+	hint="Run the machine or fire events by hand. Click a state or transition to read it."
+	stage={canvas}
+	dock={instruments}
+	deck={controls}
+/>
 
 {#snippet controls()}
 	<div class="stack">
@@ -253,6 +260,7 @@
 			{/each}
 		</ol>
 	</div>
+	<PartReadout {host} read={probe} />
 {/snippet}
 
 <style>
@@ -306,10 +314,6 @@
 
 	.sim-stage {
 		position: relative;
-
-		:global(svg) {
-			min-inline-size: 900px;
-		}
 
 		:global([data-node-id].is-selected) {
 			filter: drop-shadow(0 0 8px var(--glow));
