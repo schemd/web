@@ -1,5 +1,4 @@
 <script lang="ts">
-	import SheetFrame from '#lib/components/SheetFrame.svelte';
 	import type { PageProps } from './$types';
 	import Seo from '#lib/components/Seo.svelte';
 	import { setContext, type Component } from 'svelte';
@@ -103,25 +102,56 @@
 	{jsonLd}
 />
 
-<div class="lab-page grid-backdrop">
-	<SheetFrame label="Laboratory">
-		<header class="lab-head sheet-head">
-			<div class="lab-crumbs">
-				<a href={`/simulations/${data.version}`} class="back">← all environments</a>
-				<span class="microlabel">{sim.index} · {sim.tier} · {sim.domain} · v{data.version}</span>
-			</div>
+<div class="lab-page">
+	<!-- The circuit comes first. A slim bar names the lab; everything a reader
+	     studies about it sits in the notebook under the bench. -->
+	<header class="lab-bar">
+		<div class="lab-name">
+			<a href={`/simulations/${data.version}`} class="back">← Labs</a>
+			<span class="zone is-current">{sim.index}</span>
+			<h1>{sim.title}</h1>
+			<span class="domain-badge">{sim.domain}</span>
+		</div>
+		<nav class="lab-steps" aria-label="Neighbouring labs">
+			<a href={`/simulations/${data.version}/${previous.id}`} title={previous.title}
+				><span aria-hidden="true">←</span>
+				<span class="visually-hidden">Previous lab: </span>{previous.index}</a
+			>
+			<a href="#notebook" class="notebook-link">Notebook ↓</a>
+			<a href={`/simulations/${data.version}/${next.id}`} title={next.title}
+				><span class="visually-hidden">Next lab: </span>{next.index}
+				<span aria-hidden="true">→</span></a
+			>
+		</nav>
+		<p class="lab-summary">{@html sim.summaryHtml}</p>
+	</header>
 
-			<div class="lab-identity">
-				<div class="lab-title-row">
-					<h1>{sim.title}</h1>
-					<span class="domain-badge">{sim.domain}</span>
-				</div>
-				<p class="lab-summary">{@html sim.summaryHtml}</p>
-				<p class="microlabel lab-metrics">
-					{sim.components} components · {sim.connections} connections · {@html sim.modelHtml}
-				</p>
-			</div>
+	<div id="live-laboratory" class="laboratory-interaction" bind:this={interactionHost}>
+		<div class="simulation-host" bind:this={simulationHost}>
+			{#key sim.id}
+				{#if declarative}
+					<!-- Migrated: the drawing, the controls, and the wiring are data. -->
+					{@const manifest = await loadLabManifest(sim.id)}
+					<DeclarativeLab {manifest} svg={sim.svg} />
+				{:else}
+					{@const SimComponent = await loadComponent(sim.id)}
+					<SimComponent svg={sim.svg} />
+				{/if}
+			{/key}
+		</div>
+		<SimulationTimeline
+			simulationId={sim.id}
+			stages={timeline}
+			host={simulationHost}
+			model={timelineModel}
+		/>
+	</div>
 
+	<section class="notebook" id="notebook" aria-labelledby="notebook-title">
+		<h2 class="microlabel" id="notebook-title">
+			Notebook · {sim.components} parts · {sim.connections} wires · {@html sim.modelHtml}
+		</h2>
+		<div class="notebook-grid">
 			<SimulationPedagogy
 				id={sim.id}
 				title={sim.title}
@@ -134,7 +164,6 @@
 				host={interactionHost}
 				total={count}
 			/>
-
 			<div class="lab-model">
 				<div class="model-card">
 					<span class="microlabel">governing model</span>
@@ -144,33 +173,31 @@
 						{@html sim.formulaHtml}
 					</div>
 				</div>
-				<div class="lab-spec">
-					<div class="spec-group">
-						<span class="microlabel">structural inventory</span>
-						<ul class="chips">
-							{#each sim.inventoryHtml as item, index (sim.inventory[index])}
-								<li>{@html item}</li>
-							{/each}
-						</ul>
-					</div>
-					<div class="spec-group">
-						<span class="microlabel">boundaries</span>
-						<ul class="bounds">
-							{#each sim.boundariesHtml as bound, index (sim.boundaries[index])}
-								<li>{@html bound}</li>
-							{/each}
-						</ul>
-					</div>
-					<div class="spec-group">
-						<span class="microlabel">diagnosis challenge</span>
-						<span class="fault-note"
-							>Fault identity withheld: infer it from the changed outputs first.</span
-						>
-					</div>
+				<div class="spec-group">
+					<span class="microlabel">structural inventory</span>
+					<ul class="chips">
+						{#each sim.inventoryHtml as item, index (sim.inventory[index])}
+							<li>{@html item}</li>
+						{/each}
+					</ul>
+				</div>
+				<div class="spec-group">
+					<span class="microlabel">boundaries</span>
+					<ul class="bounds">
+						{#each sim.boundariesHtml as bound, index (sim.boundaries[index])}
+							<li>{@html bound}</li>
+						{/each}
+					</ul>
+				</div>
+				<div class="spec-group">
+					<span class="microlabel">diagnosis challenge</span>
+					<span class="fault-note"
+						>Fault identity withheld: infer it from the changed outputs first.</span
+					>
 				</div>
 			</div>
-		</header>
-	</SheetFrame>
+		</div>
+	</section>
 
 	<nav class="env-nav" aria-label="Simulation environments">
 		<a class="env-step prev" href={`/simulations/${data.version}/${previous.id}`}>
@@ -193,35 +220,86 @@
 			<span class="env-step-title">{next.title}</span>
 		</a>
 	</nav>
-
-	<div id="live-laboratory" class="laboratory-interaction" bind:this={interactionHost}>
-		<SimulationTimeline
-			simulationId={sim.id}
-			stages={timeline}
-			host={simulationHost}
-			model={timelineModel}
-		/>
-		<div class="simulation-host" bind:this={simulationHost}>
-			{#key sim.id}
-				{#if declarative}
-					<!-- Migrated: the drawing, the controls, and the wiring are data. -->
-					{@const manifest = await loadLabManifest(sim.id)}
-					<DeclarativeLab {manifest} svg={sim.svg} />
-				{:else}
-					{@const SimComponent = await loadComponent(sim.id)}
-					<SimComponent svg={sim.svg} />
-				{/if}
-			{/key}
-		</div>
-	</div>
 </div>
 
 <style>
 	.lab-page {
-		padding: clamp(1rem, 3vw, 2.5rem);
+		padding: clamp(1rem, 2.4vw, 2rem);
 		padding-block-end: 96px; /* clearance for the base HUD */
 		display: grid;
 		gap: var(--space-5);
+	}
+
+	.lab-bar {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+		gap: var(--space-2) var(--space-5);
+	}
+
+	.lab-name {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2) var(--space-3);
+		min-inline-size: 0;
+
+		& h1 {
+			margin: 0;
+			font-size: clamp(1.35rem, 2.6vw, 1.9rem);
+			line-height: 1.15;
+			letter-spacing: -0.015em;
+			text-wrap: balance;
+		}
+	}
+
+	.back {
+		font: var(--text-sm) / 1.3 var(--font-mono);
+		color: var(--ink-mute);
+		text-decoration: none;
+
+		&:hover {
+			color: var(--accent);
+		}
+	}
+
+	.domain-badge {
+		padding: 2px 8px;
+		border: 1px solid var(--line-strong);
+		border-radius: 999px;
+		font: var(--text-xs) / 1.4 var(--font-mono);
+		color: var(--ink-mute);
+	}
+
+	.lab-steps {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+
+		& a {
+			display: inline-flex;
+			align-items: center;
+			gap: 4px;
+			min-block-size: 32px;
+			padding: 4px 10px;
+			border: 1px solid var(--line-strong);
+			border-radius: var(--radius-sm);
+			font: var(--text-sm) / 1.3 var(--font-mono);
+			color: var(--ink);
+			text-decoration: none;
+
+			&:hover {
+				border-color: var(--accent);
+				color: var(--accent);
+			}
+		}
+	}
+
+	.lab-summary {
+		grid-column: 1 / -1;
+		margin: 0;
+		max-inline-size: 90ch;
+		color: var(--ink-mute);
 	}
 
 	.simulation-host {
@@ -230,244 +308,163 @@
 
 	.laboratory-interaction {
 		display: grid;
-		gap: var(--space-5);
+		gap: var(--space-4);
 		min-inline-size: 0;
 		scroll-margin-block-start: var(--space-6);
 	}
 
-	.lab-head {
+	.notebook {
 		display: grid;
-		gap: var(--space-3);
-		padding: clamp(var(--space-4), 3vw, var(--space-6));
-	}
-
-	.lab-crumbs {
-		display: flex;
-		justify-content: space-between;
 		gap: var(--space-4);
-		flex-wrap: wrap;
-		align-items: baseline;
-	}
+		padding-block-start: var(--space-5);
+		border-block-start: 1px solid var(--line-strong);
+		scroll-margin-block-start: var(--space-6);
 
-	.back {
-		font-size: var(--text-sm);
-		font-weight: 560;
-	}
-
-	.lab-title-row {
-		display: flex;
-		align-items: baseline;
-		gap: var(--space-3);
-		flex-wrap: wrap;
-
-		& h1 {
-			font-size: var(--text-xl);
-			letter-spacing: -0.02em;
+		& > h2 {
+			margin: 0;
 		}
 	}
 
-	.domain-badge {
-		font-family: var(--font-mono);
-		font-size: var(--text-2xs);
-		letter-spacing: var(--tracking-wide);
-		text-transform: uppercase;
-		color: var(--accent);
-		border: 1px solid var(--line-strong);
-		padding: 0.15em 0.6em;
-		border-radius: 999px;
-	}
-
-	/* KaTeX governing model card. */
-	.model-card {
+	.notebook-grid {
 		display: grid;
-		gap: var(--space-2);
-		padding: var(--space-3) var(--space-4);
-		background: var(--bg-inset);
-		border: 1px solid var(--line);
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-6);
 	}
 
-	.lab-formula {
-		overflow-x: auto;
-		font-size: var(--text-md);
-		color: var(--ink);
-	}
-
-	.lab-identity {
-		display: grid;
-		gap: var(--space-3);
-		align-content: start;
+	@media (min-width: 1100px) {
+		.notebook-grid {
+			grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+			align-items: start;
+		}
 	}
 
 	.lab-model {
 		display: grid;
-		gap: var(--space-3);
-		align-content: start;
-	}
-
-	.lab-summary {
-		margin: 0;
-		color: var(--ink-mute);
-	}
-
-	.lab-metrics {
-		margin: 0;
-	}
-
-	.lab-spec {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
 		gap: var(--space-4);
-		padding-block-start: var(--space-3);
-		border-block-start: 1px solid var(--line);
+		min-inline-size: 0;
 	}
 
-	.lab-spec .spec-group:last-child {
-		grid-column: 1 / -1;
+	.model-card {
+		display: grid;
+		gap: var(--space-2);
+		padding: var(--space-4);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-sm);
+		background: var(--bg-panel);
+	}
+
+	.lab-formula {
+		overflow-x: auto;
+		padding-block: var(--space-2);
 	}
 
 	.spec-group {
 		display: grid;
 		gap: var(--space-2);
-		align-content: start;
 	}
 
 	.chips {
-		list-style: none;
-		margin: 0;
-		padding: 0;
 		display: flex;
 		flex-wrap: wrap;
-		gap: var(--space-1);
+		gap: var(--space-2);
+		margin: 0;
+		padding: 0;
+		list-style: none;
 
 		& li {
-			font-family: var(--font-mono);
-			font-size: var(--text-2xs);
-			padding: 0.1em 0.5em;
+			padding: 3px 9px;
 			border: 1px solid var(--line);
-			background: var(--bg-inset);
-			color: var(--ink-mute);
+			border-radius: 999px;
+			font-size: var(--text-sm);
 		}
 	}
 
 	.bounds {
+		display: grid;
+		gap: 4px;
 		margin: 0;
-		padding-inline-start: 1.1em;
-		font-size: var(--text-xs);
+		padding: 0;
+		list-style: none;
+		font: var(--text-sm) / 1.5 var(--font-mono);
 		color: var(--ink-mute);
-
-		& li {
-			margin-block: 1px;
-		}
 	}
 
 	.fault-note {
-		font-family: var(--font-mono);
-		font-size: var(--text-2xs);
-		color: var(--danger);
+		font-size: var(--text-sm);
+		color: var(--ink-mute);
 	}
 
-	/* ---------- Prev / next environment navigation ---------- */
 	.env-nav {
 		display: grid;
-		grid-template-columns: 1fr auto 1fr;
-		gap: var(--space-3);
+		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
 		align-items: center;
+		gap: var(--space-4);
+		padding-block-start: var(--space-4);
+		border-block-start: 1px solid var(--line);
 	}
 
 	.env-step {
 		display: grid;
 		gap: 2px;
-		padding: var(--space-3);
-		border: 1px solid var(--line);
-		background: var(--bg-panel);
-		color: var(--ink-mute);
-		transition:
-			border-color var(--dur-kinetic) var(--ease-kinetic),
-			transform var(--dur-kinetic) var(--ease-kinetic);
-
-		&:hover {
-			border-color: var(--accent);
-			color: var(--ink);
-			text-decoration: none;
-			transform: translateY(-2px);
-		}
+		min-inline-size: 0;
+		text-decoration: none;
+		color: var(--ink);
 
 		&.next {
 			text-align: end;
 		}
 
-		& .env-step-title {
-			font-size: var(--text-sm);
-			font-weight: 560;
-			color: var(--ink);
+		&:hover .env-step-title {
+			color: var(--accent);
 		}
+	}
+
+	.env-step-title {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.env-tabs {
 		display: flex;
-		gap: 1px;
-		background: var(--line);
-		border: 1px solid var(--line);
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 4px;
 
 		& a {
-			padding: 0.4rem 0.7rem;
-			font-family: var(--font-mono);
-			font-size: var(--text-2xs);
+			display: grid;
+			place-items: center;
+			min-inline-size: 30px;
+			min-block-size: 30px;
+			border: 1px solid var(--line);
+			border-radius: var(--radius-sm);
+			font: var(--text-xs) / 1 var(--font-mono);
 			color: var(--ink-mute);
-			background: var(--bg-raised);
-			transition:
-				color var(--dur-fast) var(--ease-precise),
-				background-color var(--dur-fast) var(--ease-precise);
+			text-decoration: none;
+
+			&[aria-current='page'] {
+				border-color: var(--accent);
+				color: var(--accent);
+			}
 
 			&:hover {
 				color: var(--ink);
-				text-decoration: none;
-			}
-
-			&[aria-current='page'] {
-				color: var(--accent-ink);
-				background: var(--accent);
 			}
 		}
 	}
 
 	@media (max-width: 720px) {
-		.lab-page {
-			padding: var(--space-3);
-			padding-block-end: 90px;
-			gap: var(--space-3);
-		}
-
-		.lab-head {
-			padding: var(--space-3);
-		}
-
-		.lab-title-row h1 {
-			font-size: clamp(1.5rem, 8.5vw, var(--text-xl));
-		}
-
-		.lab-spec {
-			grid-template-columns: 1fr;
-		}
-
-		.lab-spec .spec-group:last-child {
-			grid-column: auto;
+		.lab-bar {
+			grid-template-columns: minmax(0, 1fr);
 		}
 
 		.env-nav {
-			grid-template-columns: 1fr;
-			min-inline-size: 0;
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 		}
 
 		.env-tabs {
-			order: -1;
-			justify-content: flex-start;
-			overflow-x: auto;
-			max-inline-size: 100%;
-		}
-
-		.env-step.next {
-			text-align: start;
+			grid-column: 1 / -1;
+			order: 3;
 		}
 	}
 </style>

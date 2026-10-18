@@ -13,9 +13,9 @@
 	import { expandBindings, type LabManifest, fillIndex } from '#lib/lab-manifest.ts';
 	import { resolveLabModel } from '#lib/lab-models.ts';
 	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
-	import LabShell from './LabShell.svelte';
+	import Bench from './bench/Bench.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
-	import Oscilloscope from './Oscilloscope.svelte';
+	import Scope from './bench/Scope.svelte';
 
 	interface Props {
 		manifest: LabManifest;
@@ -149,6 +149,13 @@
 		if (!instrument.latchUntilSettled || timeline.step >= timeline.count - 1) return current;
 		return latchedReadouts[instrument.signal] ?? current;
 	}
+
+	/* The bench's status line: the manifest's first readout, live. */
+	const benchStatus = $derived.by(() => {
+		const first = manifest.instruments.find((item) => item.kind === 'readout');
+		if (!first || first.kind !== 'readout') return manifest.title;
+		return `${first.label} ${present(readoutValue(first), first.format, first.unit)}`;
+	});
 </script>
 
 {#if !model}
@@ -157,8 +164,13 @@
 		manifest can only select a model the application already ships.
 	</p>
 {:else}
-	<LabShell>
-		{#snippet controls()}
+	<Bench
+		title={manifest.title}
+		tone="digital"
+		status={benchStatus}
+		hint="Change an input; step the timeline to watch the logic settle."
+	>
+		{#snippet deck()}
 			{#each manifest.inputs as input (input.key)}
 				<label class="control">
 					<span class="microlabel">{input.label}</span>
@@ -203,7 +215,7 @@
 			{/each}
 		{/snippet}
 
-		{#snippet canvas()}
+		{#snippet stage()}
 			<div
 				class="sim-stage schemd-frame net-optics"
 				bind:this={host}
@@ -216,7 +228,7 @@
 			</div>
 		{/snippet}
 
-		{#snippet instruments()}
+		{#snippet dock()}
 			{#each manifest.instruments as instrument (instrument.label)}
 				<section class="instrument">
 					<p class="microlabel">{instrument.label}</p>
@@ -236,7 +248,26 @@
 							{/each}
 						</ol>
 					{:else}
-						<Oscilloscope samples={scope} />
+						<Scope
+							channels={[
+								{
+									id: 'scope',
+									letter: 'A',
+									label: instrument.label,
+									color: 'var(--accent)',
+									unit: '',
+									summary: `${scope.filter((sample) => sample > 0.5).length} high of ${scope.length}`,
+									/* One sample per committed run, drawn as logic levels. */
+									sample: (x: number) =>
+										(scope[Math.min(scope.length - 1, Math.floor(x * scope.length))] ?? 0) > 0.5
+											? 1
+											: 0
+								}
+							]}
+							running={false}
+							timebase="one division per ten runs"
+							revision={scope.join('')}
+						/>
 					{/if}
 				</section>
 			{/each}
@@ -245,7 +276,7 @@
 				<p class="note">{note}</p>
 			{/each}
 		{/snippet}
-	</LabShell>
+	</Bench>
 {/if}
 
 <style>

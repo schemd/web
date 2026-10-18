@@ -12,9 +12,7 @@
 	import { setNodeActive, setNodeDegraded, setWiresFrom, delegatedNodeId } from '#lib/sim-dom.ts';
 	import { playSuccess, playError, playTick } from '#lib/audio.ts';
 	import { ui } from '#lib/ui.svelte.ts';
-	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
-	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
 	import { reading, type MathReading } from '#lib/simulation-math.ts';
 	import {
@@ -25,6 +23,8 @@
 		type QecError
 	} from '#lib/simulation-models.ts';
 	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
+	import Bench from './bench/Bench.svelte';
+	import PartReadout from './bench/PartReadout.svelte';
 
 	interface Props {
 		svg: string;
@@ -121,8 +121,15 @@
 	}
 </script>
 
-<LabShell {controls} {canvas} {instruments} />
-<ProbeHud read={probe} />
+<Bench
+	title="Quantum error correction"
+	tone="quantum"
+	status={`syndrome ${syndromeLabel} · fidelity ${fidelity}`}
+	hint="Inject a bit flip, then step the timeline through syndrome, decode, and correct. Click a qubit or gate to read it."
+	stage={canvas}
+	dock={instruments}
+	deck={controls}
+/>
 
 {#snippet controls()}
 	<div class="stack">
@@ -231,6 +238,7 @@
 			/></strong
 		>
 	</div>
+	<PartReadout {host} read={probe} />
 {/snippet}
 
 <style>
@@ -360,10 +368,6 @@
 	}
 
 	.sim-stage {
-		:global(svg) {
-			min-inline-size: 1340px;
-		}
-
 		:global([data-node-id].is-active) {
 			filter: drop-shadow(0 0 5px var(--glow));
 		}

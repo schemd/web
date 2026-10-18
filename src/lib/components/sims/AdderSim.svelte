@@ -4,7 +4,7 @@
 	import { delegatedNodeId, setNodeActive, setWireSignalFrom } from '#lib/sim-dom.ts';
 	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
-	import SimulationWorkbench from './SimulationWorkbench.svelte';
+	import Bench from './bench/Bench.svelte';
 
 	interface Props {
 		svg: string;
@@ -135,14 +135,14 @@
 	});
 </script>
 
-<SimulationWorkbench
-	eyebrow="simulation 01 · digital"
-	title="Interactive ripple-carry matrix"
-	status="logic network online"
+<Bench
+	title="Ripple-carry adder"
 	tone="digital"
-	{canvas}
-	{controls}
-	{readouts}
+	status={`${operandA} + ${operandB}${carryIn ? ' + 1' : ''} = ${total}${stuckCarry ? ' · carry stuck' : ''}`}
+	hint="Click an input port to flip its bit; the carry ripples through the chain."
+	stage={canvas}
+	dock={readouts}
+	deck={controls}
 />
 
 {#snippet canvas()}
@@ -245,7 +245,6 @@
 <style>
 	.adder-stage {
 		position: relative;
-		min-inline-size: 760px;
 		border: 0;
 		border-radius: 0;
 		background: transparent;
@@ -259,7 +258,6 @@
 	.adder-stage :global(svg) {
 		display: block;
 		inline-size: 100%;
-		min-inline-size: 760px;
 		background: transparent !important;
 	}
 

@@ -11,16 +11,18 @@
 	import { delegatedNodeId, setNodeActive, setNodeDegraded } from '#lib/sim-dom.ts';
 	import { playTick, playSuccess } from '#lib/audio.ts';
 	import { ui } from '#lib/ui.svelte.ts';
-	import Oscilloscope from './Oscilloscope.svelte';
-	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
-	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
 	import SimulationMotionControl from './SimulationMotionControl.svelte';
 	import { createSimulationMotion } from './simulation-motion.svelte';
 	import { reading, type MathReading } from '#lib/simulation-math.ts';
 	import { teleportFidelity, teleportState } from '#lib/simulation-models.ts';
 	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
+	import Bench from './bench/Bench.svelte';
+	import PartControls from './bench/PartControls.svelte';
+	import PartReadout from './bench/PartReadout.svelte';
+	import Scope from './bench/Scope.svelte';
+	import type { PartControl } from './bench/types';
 
 	interface Props {
 		svg: string;
@@ -36,9 +38,6 @@
 	let m2 = $state<0 | 1 | undefined>();
 	let hover = $state<{ x: number; y: number; math: MathReading } | undefined>();
 	let faults = $state({ lostClassicalBit: false });
-	let scopeAlpha = $state<number[]>([]);
-	let scopeBeta = $state<number[]>([]);
-	let wavePhase = $state(0);
 	const motion = createSimulationMotion('Quantum-state phasor animation');
 	const timeline = useSimulationTimelineModel();
 	const playing = $derived(timeline.playing);
@@ -142,32 +141,57 @@
 		}
 	});
 
-	/* 60 FPS phasor scope: α reference (real) vs β at phase φ. */
-	$effect(() => {
-		if (motion.animationBlocked) return;
-		let frame = 0;
-		let stopped = false;
-		const loop = (): void => {
-			if (stopped) return;
-			wavePhase += 0.05;
-			const points = 96;
-			const nextAlpha: number[] = [];
-			const nextBeta: number[] = [];
-			for (let index = 0; index < points; index += 1) {
-				const t = (index / points) * Math.PI * 4 + wavePhase;
-				nextAlpha.push(0.5 + 0.42 * alpha * Math.cos(t));
-				nextBeta.push(0.5 + 0.42 * betaMagnitude * Math.cos(t + phi));
-			}
-			scopeAlpha = nextAlpha;
-			scopeBeta = nextBeta;
-			frame = requestAnimationFrame(loop);
-		};
-		frame = requestAnimationFrame(loop);
-		return () => {
-			stopped = true;
-			cancelAnimationFrame(frame);
-		};
-	});
+	/* The input state's two amplitudes as phasors: α the reference, β at phase φ. */
+	const channels = $derived([
+		{
+			id: 'alpha',
+			letter: 'α',
+			label: 'α (reference)',
+			color: 'var(--accent)',
+			unit: '',
+			summary: `|α| = ${alpha.toFixed(3)}`,
+			sample: (x: number, phase: number) => alpha * Math.cos(Math.PI * 4 * x - phase)
+		},
+		{
+			id: 'beta',
+			letter: 'β',
+			label: 'β at phase φ',
+			color: 'var(--schematic-color-cyan)',
+			unit: '',
+			summary: `|β| = ${betaMagnitude.toFixed(3)} ∠ ${(phi / Math.PI).toFixed(2)}π`,
+			sample: (x: number, phase: number) => betaMagnitude * Math.cos(Math.PI * 4 * x - phase + phi)
+		}
+	]);
+
+	/* θ and φ are tuned on the state being teleported. */
+	const partControls = $derived<PartControl[]>([
+		{
+			id: 'teleport-theta',
+			node: 'PSI',
+			label: 'θ',
+			ariaLabel: 'Theta',
+			min: 0,
+			max: Math.PI,
+			step: 0.01,
+			value: theta,
+			display: `${(theta / Math.PI).toFixed(2)}π`,
+			set: (value) => (theta = value),
+			place: 'below'
+		},
+		{
+			id: 'teleport-phi',
+			node: 'PSI',
+			label: 'φ',
+			ariaLabel: 'Phi',
+			min: 0,
+			max: Math.PI * 2,
+			step: 0.01,
+			value: phi,
+			display: `${(phi / Math.PI).toFixed(2)}π`,
+			set: (value) => (phi = value),
+			place: 'right'
+		}
+	]);
 
 	function gateMath(id: string): MathReading | undefined {
 		if (id === 'PSI')
@@ -240,31 +264,18 @@
 	}
 </script>
 
-<LabShell {controls} {canvas} {instruments} />
-<ProbeHud read={probe} />
+<Bench
+	title="Quantum teleportation"
+	tone="quantum"
+	status={`step ${step + 1} of ${STEPS.length} · ${STEPS[step]?.label ?? ''}${corrupted ? ' · state degraded' : ''}`}
+	hint="Drag θ and φ on the input state. Hover a gate for its action; click one to read it."
+	stage={canvas}
+	dock={instruments}
+	deck={controls}
+/>
 
 {#snippet controls()}
 	<div class="controls">
-		<label>
-			<span class="microlabel"
-				><LiveMath
-					id="teleport.control.theta"
-					label={`theta ${(theta / Math.PI).toFixed(2)} pi`}
-					values={{ value: (theta / Math.PI).toFixed(2) }}
-				/></span
-			>
-			<input type="range" min="0" max={Math.PI} step="0.01" bind:value={theta} aria-label="Theta" />
-		</label>
-		<label>
-			<span class="microlabel"
-				><LiveMath
-					id="teleport.control.phi"
-					label={`phi ${(phi / Math.PI).toFixed(2)} pi`}
-					values={{ value: (phi / Math.PI).toFixed(2) }}
-				/></span
-			>
-			<input type="range" min="0" max={Math.PI * 2} step="0.01" bind:value={phi} aria-label="Phi" />
-		</label>
 		<p class="readout">
 			<LiveMath
 				id="teleport.state"
@@ -324,10 +335,11 @@
 		onpointerleave={() => (hover = undefined)}
 		role="group"
 		data-model-stage={timeline.step}
-		aria-label="Quantum teleportation register. Hover gates for their Dirac-notation action."
+		aria-label="Quantum teleportation register. Drag theta and phi on the input state; hover gates for their Dirac-notation action."
 	>
 		{@html svg}
 	</div>
+	<PartControls {host} controls={partControls} />
 {/snippet}
 
 {#snippet instruments()}
@@ -385,13 +397,16 @@
 			>
 		</div>
 	</div>
-	<Oscilloscope
-		channels={[
-			{ samples: scopeAlpha, math: reading('teleport.scope.alpha', 'alpha') },
-			{ samples: scopeBeta, math: reading('teleport.scope.beta', 'beta at phase phi') }
-		]}
-		label="state phasor"
-	/>
+	<section class="bench-block" aria-label="State phasors">
+		<p class="microlabel">State phasors</p>
+		<Scope
+			{channels}
+			running={!(motion.paused || motion.animationBlocked)}
+			timebase="two turns of the phasor"
+			revision={`${theta}:${phi}`}
+		/>
+	</section>
+	<PartReadout {host} read={probe} hint="Click a gate or a qubit to read its action and state." />
 {/snippet}
 
 {#if hover}
@@ -406,15 +421,6 @@
 	.switchboard {
 		display: grid;
 		gap: var(--space-2);
-
-		& label {
-			display: grid;
-			gap: 2px;
-		}
-
-		& input[type='range'] {
-			accent-color: var(--accent);
-		}
 	}
 
 	.controls .readout {

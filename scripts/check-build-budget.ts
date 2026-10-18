@@ -123,8 +123,20 @@ const MAX_COMPILER_JS_GZIP = 48 * 1024;
  * in (101.8 to 104.2 KiB gzip across all of them); the route nodes, which
  * hold the site's own code, shrank from 68.6 to 67.9. No application code
  * changed beyond import specifiers.
+ *
+ * Raised to 182 for the v2 laboratory bench, measured 180.1 KiB: on-part
+ * controls, probe clips, a canvas oscilloscope, and current flow, shared by the
+ * labs that move onto it (RC and buck first). It is one lazy chunk of 4.9 KiB
+ * that loads only with a lab, never with a document. As the remaining labs move
+ * over, the components the bench replaces (LabShell, SimulationWorkbench,
+ * Oscilloscope, ProbeHud) lose their last importer and come out, which should
+ * bring this back down.
+ *
+ * Lowered to 180 with every lab on the bench and those four components
+ * removed, measured 179.6 KiB: the bench is shared by eleven labs now, so it
+ * costs its 4.9 KiB once.
  */
-const MAX_DOCUMENT_JS_GZIP = 176 * 1024;
+const MAX_DOCUMENT_JS_GZIP = 180 * 1024;
 /* Exactly the sum of the two ceilings above, as the compiler note says. */
 const MAX_ALL_JS_GZIP = MAX_DOCUMENT_JS_GZIP + MAX_COMPILER_JS_GZIP;
 /*
@@ -183,6 +195,9 @@ const MAX_MODERN_MATH_FONTS = 320 * 1024;
  * worker (the gzip rise recorded on the compiler ceiling above) and the
  * sheet's frame, title block and landing styles.
  */
+/* Briefly 1,305 while the v2 bench lived beside the components it replaces;
+   back to 1,290 (measured 1,289.9 KiB) once all eleven labs moved onto it and
+   LabShell, SimulationWorkbench, Oscilloscope and ProbeHud came out. */
 const MAX_CLIENT_OUTPUT = 1_290 * 1024;
 /*
  * Eleven laboratories, each downloaded only when it is opened. Two of them are

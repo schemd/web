@@ -4,7 +4,7 @@
 	import { delegatedNodeId, setNodeActive, setWiresFrom } from '#lib/sim-dom.ts';
 	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
-	import SimulationWorkbench from './SimulationWorkbench.svelte';
+	import Bench from './bench/Bench.svelte';
 
 	interface Props {
 		svg: string;
@@ -174,14 +174,14 @@
 	});
 </script>
 
-<SimulationWorkbench
-	eyebrow="simulation 03 · quantum"
-	title="Bell-state execution field"
-	status={stageName}
+<Bench
+	title="Bell-state entanglement"
 	tone="quantum"
-	{canvas}
-	{controls}
-	{readouts}
+	status={stageName}
+	hint="Step through execution, hover a gate for its operator, then measure."
+	stage={canvas}
+	dock={readouts}
+	deck={controls}
 />
 
 {#snippet canvas()}

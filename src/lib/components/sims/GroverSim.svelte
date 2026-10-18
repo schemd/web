@@ -14,9 +14,7 @@
 	import { setNodeActive, setWiresFrom, delegatedNodeId } from '#lib/sim-dom.ts';
 	import { playSuccess, playTick } from '#lib/audio.ts';
 	import { ui } from '#lib/ui.svelte.ts';
-	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
-	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
 	import { reading, type MathReading } from '#lib/simulation-math.ts';
 	import {
@@ -26,6 +24,8 @@
 		type GroverPhase as PhaseKind
 	} from '#lib/simulation-models.ts';
 	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
+	import Bench from './bench/Bench.svelte';
+	import PartReadout from './bench/PartReadout.svelte';
 
 	interface Props {
 		svg: string;
@@ -196,8 +196,15 @@
 	}
 </script>
 
-<LabShell {controls} {canvas} {instruments} />
-<ProbeHud read={probe} />
+<Bench
+	title="Grover search"
+	tone="quantum"
+	status={`${currentPhase.label} · P(target) = ${(pTarget * 100).toFixed(0)} %`}
+	hint="Toggle the qubits to choose the marked item; step the timeline to watch amplitudes rotate. Click a gate to read it."
+	stage={canvas}
+	dock={instruments}
+	deck={controls}
+/>
 
 {#snippet controls()}
 	<div class="stack">
@@ -307,6 +314,7 @@
 			/></span
 		>
 	</div>
+	<PartReadout {host} read={probe} />
 {/snippet}
 
 <style>
@@ -471,12 +479,6 @@
 
 		& .peak.hit {
 			color: var(--ok);
-		}
-	}
-
-	.sim-stage {
-		:global(svg) {
-			min-inline-size: 1180px;
 		}
 	}
 </style>
