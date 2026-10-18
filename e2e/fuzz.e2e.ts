@@ -37,6 +37,7 @@ const EXTRA_PATHS = [
 	'/docs/1.0/does-not-exist',
 	'/no-such-page'
 ];
+const NOT_FOUND = new Set(['/docs/1.0/does-not-exist', '/no-such-page']);
 
 /* Source fragments for editors: sound, broken, and hostile. */
 const SNIPPETS = [
@@ -110,6 +111,7 @@ interface Target {
 	readonly label: string;
 	readonly max?: number;
 	readonly min?: number;
+	readonly step?: number;
 	readonly options?: number;
 }
 
@@ -159,7 +161,8 @@ async function pickTarget(page: Page, roll: number): Promise<Target | undefined>
 					kind: 'range',
 					label: name,
 					min: Number(element.min || 0),
-					max: Number(element.max || 100)
+					max: Number(element.max || 100),
+					step: Number(element.step) > 0 ? Number(element.step) : 1
 				} as const;
 			}
 			if (element.type === 'checkbox' || element.type === 'radio') {
@@ -182,7 +185,11 @@ async function walk(page: Page, path: string, seed: number): Promise<void> {
 	const failures: string[] = [];
 	page.on('pageerror', (error) => failures.push(`pageerror: ${error.message}`));
 	page.on('console', (message) => {
-		if (message.type() === 'error') failures.push(`console: ${message.text()}`);
+		if (message.type() !== 'error') return;
+		/* A not-found probe's own document status is the expected answer, not a fault. */
+		const at = message.location().url;
+		if (NOT_FOUND.has(path) && at !== '' && new URL(at).pathname === path) return;
+		failures.push(`console: ${message.text()}`);
 	});
 
 	/* Parallel walks share one address, so together they exceed the per-address
@@ -193,7 +200,9 @@ async function walk(page: Page, path: string, seed: number): Promise<void> {
 	const viewport = VIEWPORTS[Math.floor(random() * VIEWPORTS.length)]!;
 	await page.setViewportSize(viewport);
 	trail.push(`open ${path} at ${viewport.width}×${viewport.height}`);
-	const response = await page.goto(path, { waitUntil: 'networkidle' });
+	/* `load`, not `networkidle`: /downloads holds a live stream open by design. */
+	const response = await page.goto(path, { waitUntil: 'load' });
+	await page.waitForTimeout(300);
 	expect(response, `no response for ${path}`).not.toBeNull();
 	const origin = new URL(page.url()).pathname;
 
@@ -219,9 +228,13 @@ async function walk(page: Page, path: string, seed: number): Promise<void> {
 					await page.keyboard.press('End');
 					await page.keyboard.insertText(text);
 				} else if (target.kind === 'range') {
-					const value = Math.round(target.min! + random() * (target.max! - target.min!));
+					/* A range input rejects values off its step, so land on one. */
+					const steps = Math.floor((target.max! - target.min!) / target.step!);
+					const value = target.min! + Math.round(random() * steps) * target.step!;
 					trail.push(`slide ${target.label} to ${value}`);
-					await locator.fill(String(value), { timeout: 800 });
+					const decimals = (String(target.step).split('.')[1] ?? '').length;
+					/* Written as the input normalises it: step precision, no trailing zeros. */
+					await locator.fill(String(Number(value.toFixed(decimals))), { timeout: 800 });
 				} else if (target.kind === 'select') {
 					const index = Math.floor(random() * Math.max(1, target.options!));
 					trail.push(`select option ${index} of ${target.label}`);
@@ -250,7 +263,7 @@ async function walk(page: Page, path: string, seed: number): Promise<void> {
 		/* A click that navigated is fine; bring the walk home and continue. */
 		if (new URL(page.url()).pathname !== origin) {
 			trail.push(`(navigated to ${new URL(page.url()).pathname}; returning)`);
-			await page.goto(path, { waitUntil: 'networkidle' });
+			await page.goto(path, { waitUntil: 'load' });
 		}
 	}
 	await page.waitForTimeout(150);
