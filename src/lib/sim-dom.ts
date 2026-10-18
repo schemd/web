@@ -52,7 +52,8 @@ function indexFor(host: Element): SimulationDomIndex {
 		const source = wire.getAttribute('data-wire-source');
 		if (!source) continue;
 		append(wiresBySource, source, wire);
-		for (const path of wire.querySelectorAll<SVGElement>('path')) {
+		/* `.flow-dots` are the bench's current overlay, cloned beside a trace; never a wire. */
+		for (const path of wire.querySelectorAll<SVGElement>('path:not(.flow-dots)')) {
 			append(wirePathsBySource, source, path);
 		}
 		const netId = wire.getAttribute('data-net-id');
@@ -121,6 +122,21 @@ export function delegatedNodeId(element: Element): string | undefined {
 		element.closest('[data-parent-node]')?.getAttribute('data-parent-node') ??
 		undefined
 	);
+}
+
+/** Every element drawn for one part (a part can render as more than one group). */
+export function nodeElements(host: Element, nodeId: string): readonly Element[] {
+	return indexFor(host).nodes.get(nodeId) ?? [];
+}
+
+/** Every trace path drawn for a wire, by its source endpoint. */
+export function wirePaths(host: Element, sourceEndpoint: string): readonly SVGElement[] {
+	return indexFor(host).wirePathsBySource.get(sourceEndpoint) ?? [];
+}
+
+/** Toggle a presentation class on a part, such as the bench's `is-tuning`. */
+export function setNodeClass(host: Element, nodeId: string, className: string, on: boolean): void {
+	for (const node of indexFor(host).nodes.get(nodeId) ?? []) node.classList.toggle(className, on);
 }
 
 /** Resolve a wire's source endpoint (`ID.port`) for a delegated element. */

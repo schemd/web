@@ -1,25 +1,33 @@
 <script lang="ts">
-	/** Closed-loop buck converter with an averaged L–C state solver and reconstructed ripple. */
-	import {
-		delegatedNodeId,
-		delegatedWireSource,
-		setNodeActive,
-		setNodeDegraded,
-		styleWiresFrom
-	} from '#lib/sim-dom.ts';
+	/**
+	 * Closed-loop buck converter on the v2 bench.
+	 *
+	 * An averaged L–C state (RK4) runs continuously; the switching ripple is
+	 * reconstructed on top of it for the scope. Every part carries its own value:
+	 * input on the source, duty on the controller, switching frequency on the
+	 * switch, L, C, and the load on theirs. Current pulses through the high-side
+	 * switch, freewheels up through the diode, runs steadily through the
+	 * inductor into the load, and sloshes in and out of the output capacitor.
+	 */
+	import { setNodeActive, setNodeDegraded, styleWiresFrom } from '#lib/sim-dom.ts';
 	import { playTick } from '#lib/audio.ts';
 	import { ui } from '#lib/ui.svelte.ts';
 	import FaultSwitch from './FaultSwitch.svelte';
-	import LabShell from './LabShell.svelte';
-	import Oscilloscope from './Oscilloscope.svelte';
-	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
 	import SimulationMotionControl from './SimulationMotionControl.svelte';
 	import { createSimulationMotion } from './simulation-motion.svelte';
-	import { reading, type MathReading } from '#lib/simulation-math.ts';
+	import { reading } from '#lib/simulation-math.ts';
 	import { buckMetrics } from '#lib/simulation-models.ts';
 	import { reportSimulationEvidence } from '#lib/simulation-evidence.ts';
 	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
+	import Bench from './bench/Bench.svelte';
+	import PartControls from './bench/PartControls.svelte';
+	import ProbeLayer from './bench/ProbeLayer.svelte';
+	import ProbeSelects from './bench/ProbeSelects.svelte';
+	import Scope from './bench/Scope.svelte';
+	import { setFlow } from './bench/flow';
+	import { probeChannels } from './bench/channels';
+	import type { PartControl, ProbeNet } from './bench/types';
 
 	interface Props {
 		svg: string;
@@ -35,10 +43,9 @@
 	let frequencyKilo = $state(120);
 	let inductorCurrent = $state(1.25);
 	let outputVoltage = $state(7.5);
-	let scopeSwitch = $state<number[]>([]);
-	let scopeCurrent = $state<number[]>([]);
-	let scopeOutput = $state<number[]>([]);
 	let faults = $state({ gateLost: false });
+	let probeA = $state<string | null>('sw');
+	let probeB = $state<string | null>('il');
 	const motion = createSimulationMotion('Buck-converter animation');
 	const timeline = useSimulationTimelineModel();
 
@@ -63,13 +70,21 @@
 	const loadCurrent = $derived(metrics.loadCurrent);
 	const rippleCurrent = $derived(metrics.rippleCurrent);
 	const rippleVoltage = $derived(metrics.rippleVoltage);
+	const efficiency = $derived(metrics.efficiency);
 	const conduction = $derived.by(() => {
 		if (faults.gateLost || outputVoltage < 0.05) return 'OFF';
 		if (inductorCurrent > rippleCurrent * 0.58) return 'CCM';
 		if (inductorCurrent > rippleCurrent * 0.42) return 'BCM';
 		return 'DCM';
 	});
-	const efficiency = $derived(metrics.efficiency);
+	const regime = $derived(
+		{
+			CCM: 'continuous conduction',
+			BCM: 'boundary conduction',
+			DCM: 'discontinuous conduction',
+			OFF: 'power stage off'
+		}[conduction]
+	);
 	const timelineProjection = $derived(
 		[idealOutput, effectiveDuty, inductorCurrent, outputVoltage, efficiency][timeline.step] ?? 0
 	);
@@ -102,8 +117,9 @@
 		outputVoltage = Math.max(0, Math.min(v, vin * 1.08));
 	}
 
+	/* The averaged state keeps settling even while the animation is paused, so a
+	   paused reader still sees where the operating point lands. */
 	$effect(() => {
-		if (motion.animationBlocked) return;
 		let frame = 0;
 		let stopped = false;
 		let last = performance.now();
@@ -112,57 +128,7 @@
 			const realDt = Math.min(0.035, (now - last) / 1000);
 			last = now;
 			const simulatedDt = realDt * 0.018;
-			const steps = 48;
-			for (let index = 0; index < steps; index += 1) integrate(simulatedDt / steps);
-
-			const points = 96;
-			const nextSwitch: number[] = [];
-			const nextCurrent: number[] = [];
-			const nextOutput: number[] = [];
-			for (let index = 0; index < points; index += 1) {
-				const carrier = ((index / points) * 4) % 1;
-				const high = !faults.gateLost && carrier < duty;
-				const triangle =
-					carrier < duty
-						? carrier / Math.max(duty, 0.01)
-						: 1 - (carrier - duty) / Math.max(1 - duty, 0.01);
-				nextSwitch.push(high ? 0.9 : 0.1);
-				nextCurrent.push(
-					Math.max(
-						0.05,
-						Math.min(
-							0.95,
-							0.5 + ((triangle - 0.5) * rippleCurrent) / Math.max(inductorCurrent * 2.4, 0.5)
-						)
-					)
-				);
-				nextOutput.push(Math.max(0.05, Math.min(0.95, 0.5 + (triangle - 0.5) * rippleVoltage * 3)));
-			}
-			scopeSwitch = nextSwitch;
-			scopeCurrent = nextCurrent;
-			scopeOutput = nextOutput;
-
-			const root = host;
-			if (root) {
-				const alive = !faults.gateLost && effectiveDuty > 0;
-				setNodeActive(root, 'QH', alive);
-				setNodeActive(root, 'VOUT_NODE', outputVoltage > 0.2);
-				setNodeActive(root, 'VOUT_PROBE', outputVoltage > 0.2);
-				setNodeDegraded(root, 'QH', faults.gateLost);
-				styleWiresFrom(root, 'QH.drain', 'opacity', alive ? '1' : '0.18');
-				styleWiresFrom(
-					root,
-					'L1.out',
-					'--schematic-stroke-width',
-					(1 + Math.min(inductorCurrent / 3, 3)).toFixed(2)
-				);
-				styleWiresFrom(
-					root,
-					'VOUT_NODE.node',
-					'opacity',
-					String(0.25 + 0.75 * Math.min(outputVoltage / Math.max(idealOutput, 1), 1))
-				);
-			}
+			for (let index = 0; index < 48; index += 1) integrate(simulatedDt / 48);
 			frame = requestAnimationFrame(loop);
 		};
 		frame = requestAnimationFrame(loop);
@@ -172,6 +138,54 @@
 		};
 	});
 
+	/* The compiled drawing reflects the stage: the switch, the rails, and the current. */
+	$effect(() => {
+		const root = host;
+		if (!root) return;
+		const alive = !faults.gateLost && effectiveDuty > 0;
+		setNodeActive(root, 'QH', alive);
+		setNodeActive(root, 'VOUT_NODE', outputVoltage > 0.2);
+		setNodeActive(root, 'VOUT_PROBE', outputVoltage > 0.2);
+		setNodeDegraded(root, 'QH', faults.gateLost);
+		styleWiresFrom(root, 'QH.drain', 'opacity', alive ? '1' : '0.18');
+		styleWiresFrom(
+			root,
+			'L1.out',
+			'--schematic-stroke-width',
+			(1 + Math.min(inductorCurrent / 3, 3)).toFixed(2)
+		);
+		styleWiresFrom(
+			root,
+			'VOUT_NODE.node',
+			'opacity',
+			String(0.25 + 0.75 * Math.min(outputVoltage / Math.max(idealOutput, 1), 1))
+		);
+
+		const iL = Math.min(1, inductorCurrent / 4);
+		const iLoad = Math.min(1, loadCurrent / 4);
+		const highSide = alive ? iL * Math.sqrt(effectiveDuty) : 0;
+		const freewheel = alive ? iL * Math.sqrt(1 - effectiveDuty) : iL;
+		const ripple = Math.min(1, rippleCurrent / Math.max(inductorCurrent, 0.4));
+		setFlow(root, 'VIN.positive', highSide);
+		setFlow(root, 'QH.drain', highSide);
+		setFlow(root, 'SW.node', iL, { target: 'L1.in' });
+		/* The diode conducts upward, from return to the switch node: against the drawn wire. */
+		setFlow(root, 'SW.node', -freewheel, { target: 'D1.cathode' });
+		setFlow(root, 'D1.anode', -freewheel);
+		setFlow(root, 'L1.out', iL);
+		setFlow(root, 'VOUT_NODE.node', iLoad, { target: 'RLOAD.in' });
+		setFlow(root, 'VOUT_NODE.node', ripple * 0.6, {
+			target: 'COUT.in',
+			alternate: true,
+			period: 0.5
+		});
+		setFlow(root, 'VOUT_NODE.node', 0, { target: 'VOUT_PROBE.node' });
+		setFlow(root, 'VOUT_PROBE.node', 0);
+		setFlow(root, 'RLOAD.out', iLoad);
+		setFlow(root, 'COUT.out', ripple * 0.6, { alternate: true, period: 0.5 });
+		setFlow(root, 'VIN.negative', -highSide);
+	});
+
 	function applyPreset(nextVin: number, nextDuty: number, nextLoad: number): void {
 		vin = nextVin;
 		duty = nextDuty;
@@ -179,52 +193,269 @@
 		if (ui.audio) playTick(560);
 	}
 
-	function probe(element: Element): MathReading | undefined {
-		const wire = delegatedWireSource(element);
-		if (wire === 'VIN.positive')
-			return reading('buck.probe.input', `input rail ${vin.toFixed(1)} volts DC`, {
-				value: vin.toFixed(1)
-			});
-		if (wire === 'QH.drain' || wire === 'SW.node')
-			return reading(
-				'buck.probe.pwm',
-				`switch node PWM ${Math.round(duty * 100)} percent at ${frequencyKilo.toFixed(0)} kilohertz`,
-				{ duty: Math.round(duty * 100), frequency: frequencyKilo.toFixed(0) }
-			);
-		if (wire === 'L1.out')
-			return reading(
-				'buck.probe.inductor',
-				`inductor current ${inductorCurrent.toFixed(3)} amperes, ${conduction}`,
-				{ current: inductorCurrent.toFixed(3), ripple: rippleCurrent.toFixed(3), mode: conduction }
-			);
-		if (wire === 'VOUT_NODE.node' || wire === 'VOUT_PROBE.node')
-			return reading('buck.probe.output', `output ${outputVoltage.toFixed(3)} volts`, {
-				voltage: outputVoltage.toFixed(3),
-				ripple: (rippleVoltage * 1e3).toFixed(1)
-			});
-		const id = delegatedNodeId(element);
-		if (id === 'QH')
-			return reading(
-				'buck.probe.switch',
-				faults.gateLost ? 'high-side gate drive lost' : `high-side switch duty ${duty.toFixed(3)}`,
-				{ state: faults.gateLost ? 'gate drive LOST' : 'switching', duty: duty.toFixed(3) }
-			);
-		if (id === 'COUT')
-			return reading(
-				'buck.probe.cap',
-				`output capacitance ${capacitanceMicro.toFixed(0)} microfarads`,
-				{ value: capacitanceMicro.toFixed(0) }
-			);
-		return undefined;
-	}
+	const controls = $derived<PartControl[]>([
+		{
+			id: 'buck-vin',
+			node: 'VIN',
+			label: 'Vin',
+			ariaLabel: 'Input voltage',
+			min: 5,
+			max: 36,
+			step: 0.1,
+			value: vin,
+			display: `${vin.toFixed(1)} V`,
+			set: (v) => (vin = v),
+			place: 'below'
+		},
+		{
+			id: 'buck-duty',
+			node: 'CTRL',
+			label: 'duty',
+			ariaLabel: 'Duty cycle',
+			min: 0.05,
+			max: 0.95,
+			step: 0.005,
+			value: duty,
+			display: `${(duty * 100).toFixed(1)} %`,
+			set: (v) => (duty = v),
+			place: 'below'
+		},
+		{
+			id: 'buck-fsw',
+			node: 'QH',
+			label: 'fsw',
+			ariaLabel: 'Switching frequency',
+			min: 20,
+			max: 500,
+			step: 1,
+			value: frequencyKilo,
+			display: `${frequencyKilo.toFixed(0)} kHz`,
+			set: (v) => (frequencyKilo = v),
+			place: 'above'
+		},
+		{
+			id: 'buck-l',
+			node: 'L1',
+			label: 'L',
+			ariaLabel: 'Inductance',
+			min: 10,
+			max: 220,
+			step: 1,
+			value: inductanceMicro,
+			display: `${inductanceMicro.toFixed(0)} µH`,
+			set: (v) => (inductanceMicro = v),
+			place: 'above'
+		},
+		{
+			id: 'buck-c',
+			node: 'COUT',
+			label: 'C',
+			ariaLabel: 'Output capacitance',
+			min: 22,
+			max: 470,
+			step: 1,
+			value: capacitanceMicro,
+			display: `${capacitanceMicro.toFixed(0)} µF`,
+			set: (v) => (capacitanceMicro = v),
+			place: 'left'
+		},
+		{
+			id: 'buck-load',
+			node: 'RLOAD',
+			label: 'load',
+			ariaLabel: 'Load resistance',
+			min: 1,
+			max: 30,
+			step: 0.1,
+			value: load,
+			display: `${load.toFixed(1)} Ω`,
+			set: (v) => (load = v),
+			change: () => (loadExperimentArmed = true),
+			place: 'right'
+		}
+	]);
+
+	/* Three switching periods across the scope screen. */
+	const PERIODS = 3;
+	const carrierAt = (x: number, phase: number) =>
+		(((x * PERIODS - phase / (Math.PI * 2)) % 1) + 1) % 1;
+	const triangleAt = (carrier: number) =>
+		carrier < effectiveDuty
+			? carrier / Math.max(effectiveDuty, 0.01)
+			: 1 - (carrier - effectiveDuty) / Math.max(1 - effectiveDuty, 0.01);
+	const nets = $derived<ProbeNet[]>([
+		{
+			id: 'vin',
+			sources: ['VIN.positive'],
+			label: 'Vin',
+			unit: 'V',
+			sample: () => vin,
+			summary: () => `${vin.toFixed(1)} V DC`,
+			reading: () =>
+				reading('buck.probe.input', `input rail ${vin.toFixed(1)} volts DC`, {
+					value: vin.toFixed(1)
+				})
+		},
+		{
+			id: 'sw',
+			sources: ['QH.drain', 'SW.node'],
+			label: 'switch node',
+			unit: 'V',
+			sample: (x, phase) => (carrierAt(x, phase) < effectiveDuty ? vin : -0.4),
+			summary: () => `PWM ${Math.round(effectiveDuty * 100)} % at ${frequencyKilo.toFixed(0)} kHz`,
+			reading: () =>
+				reading(
+					'buck.probe.pwm',
+					`switch node PWM ${Math.round(duty * 100)} percent at ${frequencyKilo.toFixed(0)} kilohertz`,
+					{
+						duty: Math.round(duty * 100),
+						frequency: frequencyKilo.toFixed(0)
+					}
+				)
+		},
+		{
+			id: 'il',
+			sources: ['L1.out'],
+			label: 'i_L',
+			unit: 'A',
+			sample: (x, phase) =>
+				Math.max(0, inductorCurrent + (triangleAt(carrierAt(x, phase)) - 0.5) * rippleCurrent),
+			summary: () => `${inductorCurrent.toFixed(2)} A avg · ${rippleCurrent.toFixed(2)} A p-p`,
+			reading: () =>
+				reading(
+					'buck.probe.inductor',
+					`inductor current ${inductorCurrent.toFixed(3)} amperes, ${conduction}`,
+					{
+						current: inductorCurrent.toFixed(3),
+						ripple: rippleCurrent.toFixed(3),
+						mode: conduction
+					}
+				)
+		},
+		{
+			id: 'vout',
+			sources: ['VOUT_NODE.node', 'VOUT_PROBE.node'],
+			label: 'Vout',
+			unit: 'V',
+			ac: true,
+			/* The capacitor integrates the inductor ripple: a quarter-period lag, parabolic. */
+			sample: (x, phase) =>
+				outputVoltage +
+				Math.sin(Math.PI * 2 * (carrierAt(x, phase) - effectiveDuty / 2)) * (rippleVoltage / 2),
+			summary: () =>
+				`${outputVoltage.toFixed(3)} V · ${(rippleVoltage * 1e3).toFixed(1)} mV ripple`,
+			reading: () =>
+				reading('buck.probe.output', `output ${outputVoltage.toFixed(3)} volts`, {
+					voltage: outputVoltage.toFixed(3),
+					ripple: (rippleVoltage * 1e3).toFixed(1)
+				})
+		}
+	]);
+	const channels = $derived(probeChannels(nets, probeA, probeB));
+	const revision = $derived(
+		`${vin}:${duty}:${load}:${inductanceMicro}:${capacitanceMicro}:${frequencyKilo}:${faults.gateLost}:${probeA}:${probeB}:${outputVoltage.toFixed(2)}`
+	);
 </script>
 
-<LabShell {controls} {canvas} {instruments} />
-<ProbeHud read={probe} />
+<Bench
+	title="Closed-loop buck converter"
+	tone="analog"
+	status={`${regime} · ${outputVoltage.toFixed(2)} V out`}
+	{stage}
+	{dock}
+	{deck}
+/>
 
-{#snippet controls()}
-	<div class="presets">
-		<p class="microlabel">operating-point presets</p>
+{#snippet stage()}
+	<div class="buck-canvas" class:motion-paused={motion.paused || motion.animationBlocked}>
+		<div
+			class="sim-stage buck-stage schemd-frame"
+			bind:this={host}
+			role="group"
+			data-model-stage={timeline.step}
+			data-model-value={timelineProjection}
+			aria-label="Buck converter. Drag the value tags on the source, controller, switch, inductor, capacitor, and load; click a wire to clip a probe on."
+		>
+			{@html svg}
+		</div>
+		<PartControls {host} {controls} />
+		<ProbeLayer {host} {nets} bind:a={probeA} bind:b={probeB} />
+	</div>
+{/snippet}
+
+{#snippet dock()}
+	<section class="dock-block" aria-label="Oscilloscope">
+		<p class="microlabel">Oscilloscope</p>
+		<Scope
+			{channels}
+			running={!(motion.paused || motion.animationBlocked)}
+			timebase={`${((PERIODS * 100) / frequencyKilo).toPrecision(2)} µs/div · three switching periods`}
+			{revision}
+		/>
+	</section>
+	<div class="mode-card" class:faulted={faults.gateLost} aria-live="polite" aria-atomic="true">
+		<span class="microlabel">conduction regime</span>
+		<strong>{conduction}</strong>
+		<span>
+			{conduction === 'CCM'
+				? 'inductor current stays above zero'
+				: conduction === 'BCM'
+					? 'at the conduction boundary'
+					: conduction === 'DCM'
+						? 'inductor fully demagnetizes'
+						: 'power stage disabled'}
+		</span>
+		<span class="visually-hidden">
+			{faults.gateLost ? 'High-side switch degraded: gate drive lost.' : 'High-side switch active.'}
+			{motion.status}
+		</span>
+	</div>
+	<section class="dock-block" aria-label="Readouts">
+		<p class="microlabel">Readouts</p>
+		<div class="readouts">
+			<span class="readout"
+				><LiveMath
+					id="buck.readout.vout"
+					label={`output ${outputVoltage.toFixed(3)} volts; ideal ${idealOutput.toFixed(2)} volts`}
+					values={{ output: outputVoltage.toFixed(3), ideal: idealOutput.toFixed(2) }}
+				/></span
+			>
+			<span class="readout"
+				><LiveMath
+					id="buck.readout.current"
+					label={`load current ${loadCurrent.toFixed(3)} amperes; inductor current ${inductorCurrent.toFixed(3)} amperes`}
+					values={{ load: loadCurrent.toFixed(3), inductor: inductorCurrent.toFixed(3) }}
+				/></span
+			>
+			<span class="readout"
+				><LiveMath
+					id="buck.readout.ripple.i"
+					label={`inductor ripple ${rippleCurrent.toFixed(3)} amperes peak-to-peak`}
+					values={{ value: rippleCurrent.toFixed(3) }}
+				/></span
+			>
+			<span class="readout"
+				><LiveMath
+					id="buck.readout.ripple.v"
+					label={`voltage ripple ${(rippleVoltage * 1e3).toFixed(1)} millivolts peak-to-peak`}
+					values={{ value: (rippleVoltage * 1e3).toFixed(1) }}
+				/></span
+			>
+			<span class="readout"
+				><LiveMath
+					id="buck.readout.efficiency"
+					label={`estimated efficiency ${(efficiency * 100).toFixed(1)} percent`}
+					values={{ value: (efficiency * 100).toFixed(1) }}
+				/></span
+			>
+		</div>
+	</section>
+{/snippet}
+
+{#snippet deck()}
+	<ProbeSelects {nets} bind:a={probeA} bind:b={probeB} />
+	<div class="deck-group">
+		<span class="microlabel">Operating points</span>
 		<div class="button-row">
 			<button type="button" class="btn" data-timeline-input onclick={() => applyPreset(12, 0.42, 5)}
 				><LiveMath
@@ -253,199 +484,66 @@
 			>
 		</div>
 	</div>
-	<div class="controls">
-		<label
-			><span class="microlabel"
-				><LiveMath
-					id="buck.control.vin"
-					label={`input voltage ${vin.toFixed(1)} volts`}
-					values={{ value: vin.toFixed(1) }}
-				/></span
-			><input type="range" min="5" max="36" step="0.1" bind:value={vin} /></label
-		>
-		<label
-			><span class="microlabel"
-				><LiveMath
-					id="buck.control.duty"
-					label={`duty ${(duty * 100).toFixed(1)} percent`}
-					values={{ value: (duty * 100).toFixed(1) }}
-				/></span
-			><input type="range" min="0.05" max="0.95" step="0.005" bind:value={duty} /></label
-		>
-		<label
-			><span class="microlabel"
-				><LiveMath
-					id="buck.control.load"
-					label={`load resistance ${load.toFixed(1)} ohms`}
-					values={{ value: load.toFixed(1) }}
-				/></span
-			><input
-				type="range"
-				min="1"
-				max="30"
-				step="0.1"
-				bind:value={load}
-				onchange={() => (loadExperimentArmed = true)}
-			/></label
-		>
-		<label
-			><span class="microlabel"
-				><LiveMath
-					id="buck.control.l"
-					label={`inductance ${inductanceMicro.toFixed(0)} microhenries`}
-					values={{ value: inductanceMicro.toFixed(0) }}
-				/></span
-			><input type="range" min="10" max="220" step="1" bind:value={inductanceMicro} /></label
-		>
-		<label
-			><span class="microlabel"
-				><LiveMath
-					id="buck.control.c"
-					label={`capacitance ${capacitanceMicro.toFixed(0)} microfarads`}
-					values={{ value: capacitanceMicro.toFixed(0) }}
-				/></span
-			><input type="range" min="22" max="470" step="1" bind:value={capacitanceMicro} /></label
-		>
-		<label
-			><span class="microlabel"
-				><LiveMath
-					id="buck.control.fsw"
-					label={`switching frequency ${frequencyKilo.toFixed(0)} kilohertz`}
-					values={{ value: frequencyKilo.toFixed(0) }}
-				/></span
-			><input type="range" min="20" max="500" step="1" bind:value={frequencyKilo} /></label
-		>
+	<div class="deck-group">
+		<SimulationMotionControl {motion} label="buck-converter waveform and switching animation" />
 	</div>
-	<SimulationMotionControl {motion} label="buck-converter waveform and switching animation" />
-	<div class="switchboard">
-		<p class="microlabel">switchboard · fault injection</p>
+	<div class="deck-group">
 		<FaultSwitch label="high-side gate drive lost" bind:active={faults.gateLost} />
 	</div>
 {/snippet}
 
-{#snippet canvas()}
-	<div
-		class="sim-stage schemd-frame"
-		bind:this={host}
-		role="group"
-		data-model-stage={timeline.step}
-		data-model-value={timelineProjection}
-		aria-label="Buck converter model"
-	>
-		{@html svg}
-	</div>
-{/snippet}
-
-{#snippet instruments()}
-	<div class="mode-card" class:faulted={faults.gateLost} aria-live="polite" aria-atomic="true">
-		<span class="microlabel">conduction regime</span>
-		<strong>{conduction}</strong>
-		<span class="visually-hidden"
-			>{faults.gateLost
-				? 'High-side switch degraded: gate drive lost.'
-				: 'High-side switch active.'}
-			{motion.status}</span
-		>
-		<span
-			>{conduction === 'CCM'
-				? 'inductor current stays above zero'
-				: conduction === 'BCM'
-					? 'at the conduction boundary'
-					: conduction === 'DCM'
-						? 'inductor fully demagnetizes'
-						: 'power stage disabled'}</span
-		>
-	</div>
-	<div class="readouts">
-		<span class="readout"
-			><LiveMath
-				id="buck.readout.vout"
-				label={`output ${outputVoltage.toFixed(3)} volts; ideal ${idealOutput.toFixed(2)} volts`}
-				values={{ output: outputVoltage.toFixed(3), ideal: idealOutput.toFixed(2) }}
-			/></span
-		>
-		<span class="readout"
-			><LiveMath
-				id="buck.readout.current"
-				label={`load current ${loadCurrent.toFixed(3)} amperes; inductor current ${inductorCurrent.toFixed(3)} amperes`}
-				values={{ load: loadCurrent.toFixed(3), inductor: inductorCurrent.toFixed(3) }}
-			/></span
-		>
-		<span class="readout"
-			><LiveMath
-				id="buck.readout.ripple.i"
-				label={`inductor ripple ${rippleCurrent.toFixed(3)} amperes peak-to-peak`}
-				values={{ value: rippleCurrent.toFixed(3) }}
-			/></span
-		>
-		<span class="readout"
-			><LiveMath
-				id="buck.readout.ripple.v"
-				label={`voltage ripple ${(rippleVoltage * 1e3).toFixed(1)} millivolts peak-to-peak`}
-				values={{ value: (rippleVoltage * 1e3).toFixed(1) }}
-			/></span
-		>
-		<span class="readout"
-			><LiveMath
-				id="buck.readout.efficiency"
-				label={`estimated efficiency ${(efficiency * 100).toFixed(1)} percent`}
-				values={{ value: (efficiency * 100).toFixed(1) }}
-			/></span
-		>
-	</div>
-	<Oscilloscope
-		channels={[
-			{ samples: scopeSwitch, name: 'SW' },
-			{ samples: scopeCurrent, math: reading('buck.scope.il', 'inductor current') },
-			{ samples: scopeOutput, math: reading('buck.scope.vo', 'output voltage') }
-		]}
-		label="switching reconstruction"
-	/>
-{/snippet}
-
 <style>
-	.controls,
-	.presets,
-	.switchboard,
+	.buck-canvas {
+		position: relative;
+	}
+
+	.buck-stage :global(svg) {
+		display: block;
+		inline-size: 100%;
+		block-size: auto;
+		max-block-size: 64vh;
+	}
+
+	.dock-block,
 	.readouts {
 		display: grid;
 		gap: var(--space-2);
 	}
-	.controls label {
-		display: grid;
-		gap: 2px;
+
+	.readout {
+		font-size: var(--text-sm);
+		overflow-wrap: anywhere;
 	}
-	.controls input[type='range'] {
-		accent-color: var(--accent);
-	}
-	.button-row {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-1);
-	}
+
 	.mode-card {
 		display: grid;
 		gap: 2px;
 		padding: var(--space-3);
-		border: 1px solid var(--ok);
-		background: var(--bg-inset);
-	}
-	.mode-card strong {
-		color: var(--ok);
-		font-family: var(--font-mono);
-		font-size: var(--text-lg);
-	}
-	.mode-card span:last-child {
+		border: 1px solid var(--line);
+		border-inline-start: 3px solid var(--accent);
+		border-radius: var(--radius-sm);
+		font-size: var(--text-sm);
 		color: var(--ink-mute);
-		font-size: var(--text-xs);
+
+		& strong {
+			font: 600 var(--text-lg) / 1.1 var(--font-mono);
+			color: var(--ink);
+		}
+
+		&.faulted {
+			border-inline-start-color: var(--ink-faint);
+		}
 	}
-	.mode-card.faulted {
-		border-color: var(--danger);
+
+	.deck-group {
+		display: grid;
+		gap: var(--space-2);
+		align-content: start;
 	}
-	.mode-card.faulted strong {
-		color: var(--danger);
-	}
-	.sim-stage :global(svg) {
-		min-inline-size: 880px;
+
+	.button-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
 	}
 </style>

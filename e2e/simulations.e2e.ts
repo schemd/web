@@ -160,7 +160,7 @@ test('RC controls update immediately and restart the shared causal trace', async
 	await expect(response).toHaveAttribute('aria-label', /magnitude 0\.847/);
 	const magnitudeSlot = response.locator('[data-math-slot="magnitude"] .mathtt');
 	await expect(magnitudeSlot).toHaveText('0.847');
-	await page.getByText('Component calibration', { exact: true }).click();
+	/* R is tuned on the resistor itself: its tag is the slider. */
 	await page.getByRole('slider', { name: 'Resistance' }).fill('5');
 	await page.getByRole('slider', { name: 'Resistance' }).dispatchEvent('change');
 
@@ -264,7 +264,7 @@ test('the diagnostic probe renders its live reading through server-authored KaTe
 	page
 }) => {
 	await page.goto('/simulations/0.4.0/rc');
-	await page.getByRole('switch', { name: /arm probe/i }).click();
+	/* Probes are always live on the v2 bench: clicking a clipped wire opens its reading. */
 	await page.locator('.sim-stage [data-wire-source="VIN.positive"]').first().click();
 	const reading = page.locator('.probe-tip [data-math-id="rc.probe.input"]');
 	await expect(reading).toBeVisible();
@@ -366,7 +366,7 @@ test('guided evidence, diagnosis, completion, and catalogue progress persist loc
 	await page.reload();
 	await expect(walkthrough.getByText(/Lab complete/)).toBeVisible();
 
-	await page.getByRole('link', { name: '← all environments' }).click();
+	await page.getByRole('link', { name: '← Labs' }).click();
 	await expect(page.getByText('1 of 11 experiments completed on this device')).toBeVisible();
 	await expect(page.locator('.lab-row').first().getByText('✓ completed locally')).toBeVisible();
 });
