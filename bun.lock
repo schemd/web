@@ -5,7 +5,7 @@
     "": {
       "name": "schemd-web",
       "dependencies": {
-        "@schemd/core": "^0.8.0",
+        "@schemd/core": "^1.0.0",
         "katex": "^0.18.1",
         "marked": "^18.0.7",
         "shiki": "^4.4.1",
@@ -179,7 +179,7 @@
 
     "@rollup/rollup-win32-x64-msvc": ["@rollup/rollup-win32-x64-msvc@4.62.2", "", { "os": "win32", "cpu": "x64" }, "sha512-BfzEnDJOt9T8M989/lA37EcJgat01wLRnoi5dQf3QzOH7jzpqTAzdDbVfRljVr5r+jzKqpbHeyOfAaXxAd0PAA=="],
 
-    "@schemd/core": ["@schemd/core@0.8.0", "", {}, "sha512-WneujZ0kj/+cTagk4Sim05Lox/KBdCpLkEef95O7A6LZk/LkFnvMoz2yQ3/hFB5x42VigCJFlQpTv34Ht9fNzw=="],
+    "@schemd/core": ["@schemd/core@1.0.0", "", {}, "sha512-tYtkeLx+FWpOg1lsnbzHnAtnu8odv2g0UFxYuXEG2Lv3uAkRFnKhQQD3bhncXmoKgbUBTZw8jS9tmLbOJ4ophA=="],
 
     "@shikijs/core": ["@shikijs/core@4.4.1", "", { "dependencies": { "@shikijs/primitive": "4.4.1", "@shikijs/types": "4.4.1", "@shikijs/vscode-textmate": "^10.0.2", "@types/hast": "^3.0.5", "hast-util-to-html": "^9.0.5" } }, "sha512-VeR2CY6Nn9/WbisoYLOQZ7HZOnwTrpBuOw4wExjqLnBCi62BNWynBUO6K2uPIASPFJwAv7cX1fUu+LrPlSstcw=="],
 

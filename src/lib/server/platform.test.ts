@@ -201,8 +201,9 @@ describe('versioned registry and documentation', () => {
 		const currentSlugs = current.map(({ slug }) => slug);
 		for (const { slug } of historical) expect(currentSlugs).toContain(slug);
 		expect(new Set(currentSlugs).size).toBe(current.length);
-		/* 16 since 0.8, which added the sub-circuits chapter; 15 since 0.6's reading-back. */
-		expect(current).toHaveLength(16);
+		/* 18 since 1.0, which added nets-and-junctions and diagnostics; 16 since 0.8's
+		   sub-circuits chapter; 15 since 0.6's reading-back. */
+		expect(current).toHaveLength(18);
 		expect(currentSlugs).toContain('placement');
 		expect(currentSlugs).toContain('reading-back');
 		expect(currentSlugs).toContain('subcircuits');
