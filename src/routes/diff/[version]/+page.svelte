@@ -7,6 +7,7 @@
 	 * terminals, which connections were rerouted. Pixels move for a hundred
 	 * uninteresting reasons; topology does not.
 	 */
+	import SheetFrame from '$lib/components/SheetFrame.svelte';
 	import { browser } from '$app/environment';
 	import Seo from '$lib/components/Seo.svelte';
 	import { untrack } from 'svelte';
@@ -90,14 +91,16 @@
 />
 
 <main class="review">
-	<header>
-		<p class="kicker">Review / {data.version}</p>
-		<h1>What changed in this diagram?</h1>
-		<p class="lede">
-			Both revisions compile in this tab with the installed {data.engineVersion} engine. The delta below
-			is topological: it reports the components, nets, and connections that differ, not the pixels.
-		</p>
-	</header>
+	<SheetFrame label="Diagram diff">
+		<header class="sheet-head">
+			<p class="kicker">Review / {data.version}</p>
+			<h1>What changed in this diagram?</h1>
+			<p class="lede">
+				Both revisions compile in this tab with the installed {data.engineVersion} engine. The delta below
+				is topological: it reports the components, nets, and connections that differ, not the pixels.
+			</p>
+		</header>
+	</SheetFrame>
 
 	<section class="panes" aria-label="Revisions">
 		{#each [{ side: 'before' as const, label: 'Before' }, { side: 'after' as const, label: 'After' }] as pane (pane.side)}

@@ -6,6 +6,7 @@
 	 * time from the same sources the docs render. A rule demonstrated on toy
 	 * fixtures proves nothing; this is the corpus a reader can open and check.
 	 */
+	import SheetFrame from '$lib/components/SheetFrame.svelte';
 	import type { PageProps } from './$types';
 	import Seo from '$lib/components/Seo.svelte';
 	import BarSeries, { type BarTone } from '$lib/components/charts/BarSeries.svelte';
@@ -42,14 +43,16 @@
 />
 
 <article class="conformance">
-	<header>
-		<p class="kicker">Corpus / Design rules</p>
-		<h1>Every documented diagram, checked</h1>
-		<p class="lede">
-			`verifyNetlist` runs over every `schemd` fence in the documentation. The rules are the
-			compiler's own, so what passes here is what passes in your build.
-		</p>
-	</header>
+	<SheetFrame label="Conformance">
+		<header class="sheet-head">
+			<p class="kicker">Corpus / Design rules</p>
+			<h1>Every documented diagram, checked</h1>
+			<p class="lede">
+				`verifyNetlist` runs over every `schemd` fence in the documentation. The rules are the
+				compiler's own, so what passes here is what passes in your build.
+			</p>
+		</header>
+	</SheetFrame>
 
 	<dl class="tally">
 		<div>

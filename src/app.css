@@ -79,7 +79,8 @@
 	--space-16: 4rem;
 
 	--header-h: 56px;
-	--statusbar-h: 28px;
+	/* Tall enough for a title block: a label over a value. */
+	--statusbar-h: 44px;
 
 	/* Precision radii — enough to stop the brutal 0px, never enough to
 	   read as a rounded UI kit. */
@@ -343,6 +344,18 @@ h4 {
 		linear-gradient(90deg, var(--sheet-line) 1px, transparent 1px);
 	background-size: var(--sheet-pitch) var(--sheet-pitch);
 	background-position: -1px -1px;
+}
+
+/* A page's masthead drawn inside a SheetFrame: the frame owns the border and
+   the ruled paper, so the header gives up its own. The section and header
+   types lift this above a page's scoped header rules. */
+section.sheet header.sheet-head {
+	margin: 0;
+	padding: clamp(1.5rem, 4vw, 3rem) clamp(1.25rem, 3.5vw, 3rem);
+	border: 0;
+	border-radius: 0;
+	background: none;
+	box-shadow: none;
 }
 
 /* A zone reference — "C3" — wherever a section, figure or error is named. */

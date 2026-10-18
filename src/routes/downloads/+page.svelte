@@ -7,6 +7,7 @@
 	 * movement: npm settles a day's counts hours after the day closes, so the
 	 * numbers step rather than tick, and the header says when it last looked.
 	 */
+	import SheetFrame from '$lib/components/SheetFrame.svelte';
 	import { liveDownloads } from './downloads.remote';
 	import Seo from '$lib/components/Seo.svelte';
 	import TimeSeries from '$lib/components/charts/TimeSeries.svelte';
@@ -72,25 +73,27 @@
 />
 
 <article class="downloads grid-backdrop">
-	<header class="downloads-head">
-		<p class="microlabel stream" class:live={stream.connected}>
-			<span class="stream-dot" aria-hidden="true"></span>
-			{#if !stream.ready}
-				opening the stream…
-			{:else if snapshot?.live}
-				streaming · checked {clock.format(new Date(snapshot.checkedAt))}
-			{:else}
-				registry unreachable · showing the last good reading
-			{/if}
-		</p>
-		<h1>Install telemetry</h1>
-		<p class="lede">
-			npm publishes counts, not a feed, so this page holds one streaming connection open and the
-			server polls the registry once a minute on behalf of every reader. The counts step rather than
-			tick — npm settles a day hours after it closes — so the header reports when it last looked
-			instead of animating a number that has not moved.
-		</p>
-	</header>
+	<SheetFrame label="Install telemetry">
+		<header class="downloads-head sheet-head">
+			<p class="microlabel stream" class:live={stream.connected}>
+				<span class="stream-dot" aria-hidden="true"></span>
+				{#if !stream.ready}
+					opening the stream…
+				{:else if snapshot?.live}
+					streaming · checked {clock.format(new Date(snapshot.checkedAt))}
+				{:else}
+					registry unreachable · showing the last good reading
+				{/if}
+			</p>
+			<h1>Install telemetry</h1>
+			<p class="lede">
+				npm publishes counts, not a feed, so this page holds one streaming connection open and the
+				server polls the registry once a minute on behalf of every reader. The counts step rather
+				than tick — npm settles a day hours after it closes — so the header reports when it last
+				looked instead of animating a number that has not moved.
+			</p>
+		</header>
+	</SheetFrame>
 
 	{#if stream.error}
 		<p class="notice plate" role="alert">

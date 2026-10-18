@@ -8,6 +8,7 @@
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/state';
 	import WorkspaceShell from '$lib/components/WorkspaceShell.svelte';
+	import SheetFrame from '$lib/components/SheetFrame.svelte';
 	import CodeEditor from '$lib/components/CodeEditor.svelte';
 	import IdeCommandPalette from './IdeCommandPalette.svelte';
 	import { compileInBrowser, prefetchCompiler } from '$lib/compile-client';
@@ -84,7 +85,6 @@
 	}
 	let editorApi = $state<EditorApi | undefined>();
 	let paletteApi = $state<PaletteApi | undefined>();
-	let cursor = $state({ line: 0, column: 0 });
 
 	function initializeDraftWorkspace(): string | undefined {
 		try {
@@ -104,6 +104,9 @@
 	}
 
 	onMount(() => {
+		/* On a phone the panes stack, and the reference would push the editor
+		   below the fold; it starts closed there, one tap away on its toggle. */
+		if (matchMedia('(max-width: 860px)').matches) leftOpen = false;
 		const workspaceId = initializeDraftWorkspace();
 		if (!workspaceId) {
 			draftState = shared === null ? 'unavailable' : 'shared';
@@ -1014,6 +1017,42 @@
 			editorApi?.focusLine(result.error.line - 1);
 		}
 	}
+
+	/* The foot of the workspace is the drawing's title block. */
+	const titleBlock = $derived([
+		{ label: 'Sheet', value: title },
+		{
+			label: 'State',
+			value: result.error
+				? `error${result.error.line ? ` · line ${result.error.line}` : ''}`
+				: compiling
+					? 'compiling'
+					: result.metrics
+						? 'compiled'
+						: 'ready',
+			tone: result.error ? ('danger' as const) : result.metrics ? ('ok' as const) : undefined
+		},
+		{ label: 'Parts', value: String(result.metrics?.components ?? '—') },
+		{ label: 'Wires', value: String(result.metrics?.connections ?? '—') },
+		{
+			label: 'Output',
+			value: result.metrics ? `${(result.metrics.svgBytes / 1024).toFixed(1)} KB` : '—'
+		},
+		{
+			label: 'Compile',
+			value: result.ms === undefined ? '—' : `${result.ms} ms`,
+			tone: 'accent' as const
+		},
+		{ label: 'Rev', value: data.engineVersion }
+	]);
+
+	/*
+	 * The drawing traces its copper on when its shape changes — a part or a
+	 * wire added or removed — not on every keystroke, which would flicker.
+	 */
+	const traceKey = $derived(
+		result.metrics ? `${result.metrics.components}:${result.metrics.connections}` : ''
+	);
 </script>
 
 <svelte:window onkeydown={onWindowKeydown} />
@@ -1032,6 +1071,7 @@
 	rightInitial={Math.min(560, browser ? window.innerWidth * 0.45 : 560)}
 	bind:leftOpen
 	bind:rightOpen
+	{titleBlock}
 >
 	{#snippet left()}
 		<aside class="ref">
@@ -1159,12 +1199,6 @@
 									? 'compiled'
 									: 'ready'}
 					</span>
-					{#if result.metrics && !result.error}
-						<span class="readout">
-							{result.metrics.components} nodes · {result.metrics.connections} wires ·
-							{result.metrics.svgBytes.toLocaleString('en-US')} B · {result.ms} ms
-						</span>
-					{/if}
 					<button
 						type="button"
 						class="command-trigger"
@@ -1187,7 +1221,6 @@
 				{mappedLine}
 				errorLine={result.error?.line !== undefined ? result.error.line - 1 : undefined}
 				oncaretline={(line) => (caretLine = line)}
-				onpositionchange={(position) => (cursor = position)}
 				oncompile={requestCompile}
 				maxLength={COMPILE_LIMITS.maxSourceCharacters}
 			/>
@@ -1253,21 +1286,27 @@
 			</div>
 
 			{#if view === 'render'}
-				<div
-					bind:this={previewHost}
-					class="schemd-frame preview-stage"
-					class:stale={result.error !== undefined}
-					role="region"
-					aria-label="Compiled schematic preview"
-					class:is-dragging={drag !== undefined}
-					onpointerover={onPreviewOver}
-					onpointerleave={onPreviewLeave}
-					onpointerdown={onPreviewPointerDown}
-					onpointermove={onPreviewPointerMove}
-					onpointerup={onPreviewPointerUp}
-					onpointercancel={onPreviewPointerUp}
-				>
-					{@html result.svg}
+				<div class="sheet-host">
+					<SheetFrame label="Drawing sheet">
+						{#key traceKey}
+							<div
+								bind:this={previewHost}
+								class="schemd-frame preview-stage trace-on"
+								class:stale={result.error !== undefined}
+								role="region"
+								aria-label="Compiled schematic preview"
+								class:is-dragging={drag !== undefined}
+								onpointerover={onPreviewOver}
+								onpointerleave={onPreviewLeave}
+								onpointerdown={onPreviewPointerDown}
+								onpointermove={onPreviewPointerMove}
+								onpointerup={onPreviewPointerUp}
+								onpointercancel={onPreviewPointerUp}
+							>
+								{@html result.svg}
+							</div>
+						{/key}
+					</SheetFrame>
 				</div>
 				{#if dragNote}
 					<p class="drag-note" aria-live="polite">{dragNote}</p>
@@ -1301,7 +1340,6 @@
 	{/snippet}
 
 	{#snippet statusExtra()}
-		<span class="microlabel">Ln {cursor.line + 1}, Col {cursor.column + 1}</span>
 		<span class="draft-status" data-state={draftState}>
 			{draftState === 'dirty'
 				? '● unsaved'
@@ -1313,7 +1351,6 @@
 							? 'recovered'
 							: 'saved locally'}
 		</span>
-		<span class="microlabel">mode={mode}</span>
 		<button type="button" class="status-action" onclick={copySource}>
 			{sourceCopied ? '✓ source copied' : '⧉ source'}
 		</button>
@@ -1678,14 +1715,33 @@
 		text-transform: uppercase;
 		color: var(--ink-faint);
 	}
+	/* The drawing sits on a ruled sheet with zone rulers; its own surface and
+	   grid give way to the sheet's. While the source has an error the last
+	   drawing that compiled stays on the sheet, dimmed. */
+	.sheet-host {
+		min-block-size: 0;
+		overflow: auto;
+		padding: var(--space-3);
+	}
+
 	.preview-stage {
+		--schematic-surface: transparent;
 		border: none;
+		background: none;
+		box-shadow: none;
 		overflow: auto;
 		padding: var(--space-4);
-		transition: opacity var(--dur-fast) var(--ease-precise);
+		transition:
+			opacity var(--dur-med) var(--ease-precise),
+			filter var(--dur-med) var(--ease-precise);
+
+		& :global(.schematic-grid) {
+			display: none;
+		}
 
 		&.stale {
-			opacity: 0.45;
+			opacity: 0.35;
+			filter: grayscale(1);
 		}
 	}
 
@@ -1750,10 +1806,6 @@
 		.compile-summary {
 			justify-content: space-between;
 			inline-size: 100%;
-		}
-
-		.readout {
-			display: none;
 		}
 
 		.diagnostic-panel {

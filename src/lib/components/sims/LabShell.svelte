@@ -27,7 +27,7 @@
 
 <div class="lab-shell">
 	<section class="region console" aria-label="Control console">
-		<p class="region-tag microlabel">control console</p>
+		<p class="region-tag microlabel"><span class="zone">A</span>control console</p>
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex (keyboard-focusable scroll region) -->
 		<div class="region-body" role="region" aria-label="Scrollable control console" tabindex="0">
 			{@render controls()}
@@ -35,7 +35,7 @@
 	</section>
 
 	<section class="region testbed" aria-label="Test bed workspace">
-		<p class="region-tag microlabel">test bed · mode=full</p>
+		<p class="region-tag microlabel"><span class="zone is-current">B</span>test bed · mode=full</p>
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex (keyboard-focusable scroll region) -->
 		<div class="region-body" role="region" aria-label="Scrollable test bed" tabindex="0">
 			{@render canvas()}
@@ -43,7 +43,7 @@
 	</section>
 
 	<section class="region rack" aria-label="Instrumentation rack">
-		<p class="region-tag microlabel">instrumentation rack</p>
+		<p class="region-tag microlabel"><span class="zone">C</span>instrumentation rack</p>
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex (keyboard-focusable scroll region) -->
 		<div
 			class="region-body"
@@ -57,12 +57,14 @@
 </div>
 
 <style>
+	/* Three zones of one sheet: controls, the drawing on ruled paper, and the
+	   instruments that read it. */
 	.lab-shell {
 		display: grid;
 		grid-template-columns: minmax(260px, 320px) minmax(0, 1fr) minmax(300px, 360px);
 		gap: 1px;
-		background: var(--line);
-		border: 1px solid var(--line);
+		background: var(--line-strong);
+		border: 1px solid var(--line-strong);
 	}
 
 	.region {
@@ -73,8 +75,13 @@
 	}
 
 	.region-tag {
-		padding: var(--space-2) var(--space-3);
-		border-block-end: 1px solid var(--line);
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin: 0;
+		min-block-size: 44px;
+		padding: 0 var(--space-3);
+		border-block-end: 1px solid var(--line-strong);
 		background: var(--bg-raised);
 	}
 
@@ -106,6 +113,14 @@
 
 	.testbed .region-body {
 		overflow-x: auto;
+	}
+
+	.testbed {
+		background-color: var(--bg-panel);
+		background-image:
+			linear-gradient(var(--sheet-line) 1px, transparent 1px),
+			linear-gradient(90deg, var(--sheet-line) 1px, transparent 1px);
+		background-size: var(--sheet-pitch) var(--sheet-pitch);
 	}
 
 	@media (max-width: 1100px) {

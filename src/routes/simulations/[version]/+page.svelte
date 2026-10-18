@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SheetFrame from '$lib/components/SheetFrame.svelte';
 	import type { PageProps } from './$types';
 	import Seo from '$lib/components/Seo.svelte';
 	import { onMount } from 'svelte';
@@ -141,49 +142,51 @@
 {/snippet}
 
 <div class="selector grid-backdrop">
-	<header class="terminal plate">
-		<div class="terminal-head">
-			<span class="microlabel">schemd · simulation laboratory</span>
-			<span class="microlabel">v{data.version} · {environments.length} environments</span>
-		</div>
-		<h1>Enter the circuit frontier.</h1>
-		<p class="terminal-lede">
-			{environments.length} live experiments span foundational circuits and frontier systems: switched-mode
-			power, filter response, quantum protocols, error correction, and classical logic. Every test bed
-			is compiled from the same <code>@schemd/core</code> source and instrumented with fault injection,
-			probes, and live numerical models.
-		</p>
-		<p class="terminal-lede">
-			Several are now described entirely as data rather than code — a compiled diagram, a
-			whitelisted model, and declarative bindings.
-			<a href={`/simulations/${data.version}/new`}>Describe one of your own →</a>
-		</p>
-		<div class="diagnostics" role="status" aria-live="polite">
-			<div class="diag-log">
-				{#each BOOT_LINES.slice(0, bootIndex) as line (line)}
-					<p>{line}</p>
-				{/each}
-				<p class="diag-cursor">
-					{bootIndex >= BOOT_LINES.length ? '· all systems nominal' : '·'}<span class="caret"
-					></span>
-				</p>
+	<SheetFrame label="Simulation laboratory">
+		<header class="terminal sheet-head">
+			<div class="terminal-head">
+				<span class="microlabel">schemd · simulation laboratory</span>
+				<span class="microlabel">v{data.version} · {environments.length} environments</span>
 			</div>
-			<dl class="diag-metrics">
-				<div>
-					<dt>domains</dt>
-					<dd class="readout">{domainCount}</dd>
+			<h1>Enter the circuit frontier.</h1>
+			<p class="terminal-lede">
+				{environments.length} live experiments span foundational circuits and frontier systems: switched-mode
+				power, filter response, quantum protocols, error correction, and classical logic. Every test bed
+				is compiled from the same <code>@schemd/core</code> source and instrumented with fault injection,
+				probes, and live numerical models.
+			</p>
+			<p class="terminal-lede">
+				Several are now described entirely as data rather than code — a compiled diagram, a
+				whitelisted model, and declarative bindings.
+				<a href={`/simulations/${data.version}/new`}>Describe one of your own →</a>
+			</p>
+			<div class="diagnostics" role="status" aria-live="polite">
+				<div class="diag-log">
+					{#each BOOT_LINES.slice(0, bootIndex) as line (line)}
+						<p>{line}</p>
+					{/each}
+					<p class="diag-cursor">
+						{bootIndex >= BOOT_LINES.length ? '· all systems nominal' : '·'}<span class="caret"
+						></span>
+					</p>
 				</div>
-				<div>
-					<dt>environments</dt>
-					<dd class="readout">{environments.length}</dd>
-				</div>
-				<div>
-					<dt>frontier labs</dt>
-					<dd class="readout">{frontierCount}</dd>
-				</div>
-			</dl>
-		</div>
-	</header>
+				<dl class="diag-metrics">
+					<div>
+						<dt>domains</dt>
+						<dd class="readout">{domainCount}</dd>
+					</div>
+					<div>
+						<dt>environments</dt>
+						<dd class="readout">{environments.length}</dd>
+					</div>
+					<div>
+						<dt>frontier labs</dt>
+						<dd class="readout">{frontierCount}</dd>
+					</div>
+				</dl>
+			</div>
+		</header>
+	</SheetFrame>
 
 	<div class="catalog-bar plate">
 		<div>
