@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { loadConformance } from '$lib/server/conformance';
+import { loadConformance } from '#lib/server/conformance.ts';
 
 /** The published corpus, checked against the compiler's own design rules. */
 export const load: PageServerLoad = async () => {

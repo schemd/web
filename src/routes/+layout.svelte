@@ -1,13 +1,13 @@
 <script lang="ts">
-	import '$lib/assets/fonts/fonts.css';
+	import '#lib/assets/fonts/fonts.css';
 	import '../app.css';
 	import type { LayoutProps } from './$types';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import CommandPalette from '$lib/components/CommandPalette.svelte';
-	import VersionSelect from '$lib/components/VersionSelect.svelte';
-	import Telemetry from '$lib/components/Telemetry.svelte';
-	import Footer from '$lib/components/Footer.svelte';
+	import CommandPalette from '#lib/components/CommandPalette.svelte';
+	import VersionSelect from '#lib/components/VersionSelect.svelte';
+	import Telemetry from '#lib/components/Telemetry.svelte';
+	import Footer from '#lib/components/Footer.svelte';
 	import {
 		BLUEPRINT_MODES,
 		BLUEPRINT_LABELS,
@@ -16,8 +16,8 @@
 		setAudio,
 		setBlueprint,
 		ui
-	} from '$lib/ui.svelte';
-	import { playTick } from '$lib/audio';
+	} from '#lib/ui.svelte.ts';
+	import { playTick } from '#lib/audio.ts';
 
 	let { data, children }: LayoutProps = $props();
 	let clientReady = $state(false);
@@ -65,7 +65,9 @@
 			<circle cx="15" cy="15" r="3.6" />
 		</svg>
 		<span class="brand-name">schemd</span>
-		<span class="brand-ipa" aria-hidden="true">/skɛmd/</span>
+		<!-- The pronunciation is generated content with empty alt text: seen, but
+		     not part of the link's name, so the name holds everything shown. -->
+		<span class="brand-ipa" aria-hidden="true"></span>
 	</a>
 
 	<nav aria-label="Primary">
@@ -110,10 +112,12 @@
 			class="tool search-tool"
 			disabled={!clientReady}
 			onclick={() => (ui.paletteOpen = true)}
-			aria-label="Open command palette"
+			aria-keyshortcuts="Meta+K Control+K"
 		>
+			<!-- Named by what it shows, so a voice command of "search" finds it. -->
 			<span class="microlabel">search</span>
 			<kbd>⌘K</kbd>
+			<span class="visually-hidden">, opens the command palette</span>
 		</button>
 		<button
 			type="button"
@@ -235,6 +239,10 @@
 			font-family: var(--font-label);
 			font-size: 0.625rem;
 			color: var(--ink-faint);
+
+			&::before {
+				content: '/skɛmd/' / '';
+			}
 		}
 	}
 

@@ -8,7 +8,7 @@
  * the compiler itself uses.
  */
 import type { RequestHandler } from './$types';
-import { loadConformance } from '$lib/server/conformance';
+import { loadConformance } from '#lib/server/conformance.ts';
 
 const HEIGHT = 20;
 const CHAR = 6.6;

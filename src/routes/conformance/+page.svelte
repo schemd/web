@@ -6,10 +6,10 @@
 	 * time from the same sources the docs render. A rule demonstrated on toy
 	 * fixtures proves nothing; this is the corpus a reader can open and check.
 	 */
-	import SheetFrame from '$lib/components/SheetFrame.svelte';
+	import SheetFrame from '#lib/components/SheetFrame.svelte';
 	import type { PageProps } from './$types';
-	import Seo from '$lib/components/Seo.svelte';
-	import BarSeries, { type BarTone } from '$lib/components/charts/BarSeries.svelte';
+	import Seo from '#lib/components/Seo.svelte';
+	import BarSeries, { type BarTone } from '#lib/components/charts/BarSeries.svelte';
 
 	let { data }: PageProps = $props();
 

@@ -7,7 +7,7 @@ import { failOnClientErrors } from './support';
  * which quietly became wrong the moment a newer documented line landed — the
  * suite was asserting "the 0.4 line" where it meant "the current line".
  *
- * Both are read off disk rather than imported from `$lib/server`: those modules
+ * Both are read off disk rather than imported from `#lib/server`: those modules
  * reach for `$app` and `import.meta.glob`, neither of which resolves in the
  * plain Node context Playwright runs these in. The corpus directory and the
  * installed package are the same facts those modules derive from anyway.
@@ -79,7 +79,7 @@ test('hero views switch freely and a traced net lights only its own copper', asy
 		await tab('SVG out').click();
 		await tab('Source + drawing').click();
 	}
-	await page.getByRole('button', { name: 'Trace line 1', exact: true }).hover();
+	await page.getByRole('button', { name: /^Trace line 1 / }).hover();
 	await tab('Netlist').click();
 	await page
 		.getByRole('button', { name: /^Trace net / })
@@ -141,7 +141,9 @@ test('command palette traps focus and keyboard-navigates the versioned search in
 	page
 }) => {
 	await page.goto('/docs/0.4.0/overview');
-	await expect(page.getByRole('button', { name: 'Open command palette' })).toBeEnabled();
+	await expect(
+		page.getByRole('button', { name: /^search .*opens the command palette$/ })
+	).toBeEnabled();
 	await page.keyboard.press('Control+K');
 	const dialog = page.getByRole('dialog');
 	await expect(dialog).toBeVisible();

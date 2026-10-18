@@ -7,6 +7,10 @@
 	}
 
 	let { motion, label = 'simulation animation' }: Props = $props();
+
+	/* The visible words lead the name, so a voice command of what the button
+	 * says reaches it: "Resume animation: buck-converter waveform …". */
+	const subject = $derived(label.replace(/\s*animation$/i, ''));
 </script>
 
 <div class="motion-control">
@@ -14,7 +18,7 @@
 		type="button"
 		class="btn"
 		aria-pressed={motion.paused}
-		aria-label={`${motion.paused ? 'Resume' : 'Pause'} ${label}`}
+		aria-label={`${motion.paused ? 'Resume' : 'Pause'} animation: ${subject}`}
 		onclick={() => motion.toggle()}
 	>
 		{motion.paused ? 'resume animation' : 'pause animation'}

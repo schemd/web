@@ -1,6 +1,6 @@
 import katex from 'katex';
-import type { SimulationMathRegistry } from '$lib/simulation-math';
-import type { RenderedSimulationStage, SimulationStage } from '$lib/simulation-timelines';
+import type { SimulationMathRegistry } from '#lib/simulation-math.ts';
+import type { RenderedSimulationStage, SimulationStage } from '#lib/simulation-timelines.ts';
 
 /**
  * A value slot is typeset once on the server. LiveMath replaces only its text

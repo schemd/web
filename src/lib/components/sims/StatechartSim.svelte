@@ -8,16 +8,16 @@
 	 * the taken transition pulses. Inverting a guard strands the token — a
 	 * deadlock you watch happen rather than read about.
 	 */
-	import { setNodeActive, setWiresFrom, delegatedNodeId } from '$lib/sim-dom';
-	import { playTick, playError } from '$lib/audio';
-	import { ui } from '$lib/ui.svelte';
+	import { setNodeActive, setWiresFrom, delegatedNodeId } from '#lib/sim-dom.ts';
+	import { playTick, playError } from '#lib/audio.ts';
+	import { ui } from '#lib/ui.svelte.ts';
 	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
 	import { createSimulationMotion } from './simulation-motion.svelte';
-	import { reading, type MathReading } from '$lib/simulation-math';
-	import { nextTrafficState, type TrafficState as State } from '$lib/simulation-models';
+	import { reading, type MathReading } from '#lib/simulation-math.ts';
+	import { nextTrafficState, type TrafficState as State } from '#lib/simulation-models.ts';
 	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 
 	interface Props {
@@ -170,7 +170,9 @@
 				type="button"
 				class="btn"
 				aria-pressed={!autoRunning}
-				aria-label={`${autoRunning ? 'Pause' : 'Resume'} state-machine auto-run animation`}
+				aria-label={autoRunning
+					? 'Pause auto-run of the state machine'
+					: 'Run state machine automatically'}
 				onclick={toggleRunning}
 			>
 				{autoRunning ? 'pause auto-run' : 'run state machine'}

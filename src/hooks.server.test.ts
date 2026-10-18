@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { applySecurityHeaders, canonicalDocsTarget, legacyTarget } from './hooks.server';
-import { LATEST_DOCUMENTED_VERSION, OLDEST_DOCUMENTED_VERSION } from '$lib/server/versions';
+import { LATEST_DOCUMENTED_VERSION, OLDEST_DOCUMENTED_VERSION } from '#lib/server/versions.ts';
 
 describe('standalone legacy route mapping', () => {
 	test.each([

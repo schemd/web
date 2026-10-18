@@ -8,7 +8,7 @@
 	 * position; source is rendered as Svelte text nodes, never injected HTML.
 	 */
 	import { onMount } from 'svelte';
-	import { tokenizeLine, type SchemdTokenLine } from '$lib/tokenizer';
+	import { tokenizeLine, type SchemdTokenLine } from '#lib/tokenizer.ts';
 	import {
 		deleteEmptyPair,
 		findText,
@@ -20,13 +20,13 @@
 		replaceMatches,
 		toggleLineComments,
 		type EditorEdit
-	} from '$lib/editor-operations';
+	} from '#lib/editor-operations.ts';
 	import {
 		completionAt,
 		completionInsertion,
 		type CompletionContext,
 		type CompletionVocabulary
-	} from '$lib/completion';
+	} from '#lib/completion.ts';
 
 	export interface CodeEditorApi {
 		readonly focus: () => void;

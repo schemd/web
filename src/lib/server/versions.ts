@@ -16,7 +16,7 @@
  */
 
 /** Raw markdown for every documented line, keyed by absolute module path. */
-const versionedSources = import.meta.glob<string>('$lib/content/schemd/*/*.md', {
+const versionedSources = import.meta.glob<string>('/src/lib/content/schemd/*/*.md', {
 	query: '?raw',
 	import: 'default',
 	eager: true

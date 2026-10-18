@@ -1,15 +1,15 @@
 <script lang="ts">
-	import SheetFrame from '$lib/components/SheetFrame.svelte';
+	import SheetFrame from '#lib/components/SheetFrame.svelte';
 	import type { PageProps } from './$types';
-	import Seo from '$lib/components/Seo.svelte';
+	import Seo from '#lib/components/Seo.svelte';
 	import { setContext, type Component } from 'svelte';
-	import SimulationPedagogy from '$lib/components/SimulationPedagogy.svelte';
-	import SimulationTimeline from '$lib/components/sims/SimulationTimeline.svelte';
-	import DeclarativeLab from '$lib/components/sims/DeclarativeLab.svelte';
-	import { isDeclarativeLab, loadLabManifest } from '$lib/labs';
-	import { provideSimulationTimelineModel } from '$lib/components/sims/simulation-timeline.svelte';
+	import SimulationPedagogy from '#lib/components/SimulationPedagogy.svelte';
+	import SimulationTimeline from '#lib/components/sims/SimulationTimeline.svelte';
+	import DeclarativeLab from '#lib/components/sims/DeclarativeLab.svelte';
+	import { isDeclarativeLab, loadLabManifest } from '#lib/labs/index.ts';
+	import { provideSimulationTimelineModel } from '#lib/components/sims/simulation-timeline.svelte.ts';
 	import 'katex/dist/katex.min.css';
-	import { SIMULATION_MATH_CONTEXT, type SimulationMathContext } from '$lib/simulation-math';
+	import { SIMULATION_MATH_CONTEXT, type SimulationMathContext } from '#lib/simulation-math.ts';
 
 	let { data }: PageProps = $props();
 	setContext<SimulationMathContext>(SIMULATION_MATH_CONTEXT, () => data.math);
@@ -27,16 +27,16 @@
 	type SimulationComponent = Component<{ svg: string }>;
 	type SimulationModule = { default: SimulationComponent };
 	const COMPONENT_LOADERS: Readonly<Record<string, () => Promise<SimulationModule>>> = {
-		adder: () => import('$lib/components/sims/AdderSim.svelte'),
-		rc: () => import('$lib/components/sims/RcSim.svelte'),
-		bell: () => import('$lib/components/sims/BellSim.svelte'),
-		timer: () => import('$lib/components/sims/TimerSim.svelte'),
-		teleport: () => import('$lib/components/sims/TeleportSim.svelte'),
-		buck: () => import('$lib/components/sims/BuckSim.svelte'),
-		statechart: () => import('$lib/components/sims/StatechartSim.svelte'),
-		qec: () => import('$lib/components/sims/QecSim.svelte'),
-		wien: () => import('$lib/components/sims/WienSim.svelte'),
-		grover: () => import('$lib/components/sims/GroverSim.svelte')
+		adder: () => import('#lib/components/sims/AdderSim.svelte'),
+		rc: () => import('#lib/components/sims/RcSim.svelte'),
+		bell: () => import('#lib/components/sims/BellSim.svelte'),
+		timer: () => import('#lib/components/sims/TimerSim.svelte'),
+		teleport: () => import('#lib/components/sims/TeleportSim.svelte'),
+		buck: () => import('#lib/components/sims/BuckSim.svelte'),
+		statechart: () => import('#lib/components/sims/StatechartSim.svelte'),
+		qec: () => import('#lib/components/sims/QecSim.svelte'),
+		wien: () => import('#lib/components/sims/WienSim.svelte'),
+		grover: () => import('#lib/components/sims/GroverSim.svelte')
 	};
 	const loadedComponents = Object.create(null) as Record<
 		string,

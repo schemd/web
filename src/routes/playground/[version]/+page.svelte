@@ -1,35 +1,35 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
-	import Seo from '$lib/components/Seo.svelte';
+	import Seo from '#lib/components/Seo.svelte';
 	import type { SchematicSourceMap } from '@schemd/core';
 	import { onMount } from 'svelte';
-	import { freezeToAbsolute, moveDeclaration } from '$lib/placement-edit';
-	import { browser } from '$app/environment';
+	import { freezeToAbsolute, moveDeclaration } from '#lib/placement-edit.ts';
+	import { browser } from '$app/env';
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/state';
-	import WorkspaceShell from '$lib/components/WorkspaceShell.svelte';
-	import SheetFrame from '$lib/components/SheetFrame.svelte';
-	import CodeEditor from '$lib/components/CodeEditor.svelte';
+	import WorkspaceShell from '#lib/components/WorkspaceShell.svelte';
+	import SheetFrame from '#lib/components/SheetFrame.svelte';
+	import CodeEditor from '#lib/components/CodeEditor.svelte';
 	import IdeCommandPalette from './IdeCommandPalette.svelte';
-	import { compileInBrowser, prefetchCompiler } from '$lib/compile-client';
-	import { COMPILE_LIMITS } from '$lib/compile-contract';
-	import { rasterExportScale } from '$lib/playground-export';
+	import { compileInBrowser, prefetchCompiler } from '#lib/compile-client.ts';
+	import { COMPILE_LIMITS } from '#lib/compile-contract.ts';
+	import { rasterExportScale } from '#lib/playground-export.ts';
 	import {
 		decodeWorkspaceState,
 		shareableWorkspaceUrl,
 		WORKSPACE_OUTPUT_MODES,
 		workspaceOutputMode
-	} from '$lib/state-uri';
-	import { playError, playSuccess } from '$lib/audio';
-	import { trackInteraction } from '$lib/telemetry';
-	import { ui } from '$lib/ui.svelte';
+	} from '#lib/state-uri.ts';
+	import { playError, playSuccess } from '#lib/audio.ts';
+	import { trackInteraction } from '#lib/telemetry.ts';
+	import { ui } from '#lib/ui.svelte.ts';
 	import {
 		isPlaygroundWorkspaceId,
 		parsePlaygroundDraft,
 		playgroundDraftKey,
 		PLAYGROUND_DRAFT_SESSION_KEY,
 		serializePlaygroundDraft
-	} from '$lib/playground-draft';
+	} from '#lib/playground-draft.ts';
 
 	let { data }: PageProps = $props();
 
@@ -1203,10 +1203,11 @@
 						type="button"
 						class="command-trigger"
 						onclick={() => paletteApi?.open()}
-						aria-label="Open playground command palette"
+						aria-keyshortcuts="F1 Meta+Shift+P Control+Shift+P"
 						title="Playground commands (F1 or Command/Control Shift P)"
 					>
 						commands <kbd>F1</kbd>
+						<span class="visually-hidden">, opens the playground command palette</span>
 					</button>
 				</div>
 			</div>

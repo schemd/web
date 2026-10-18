@@ -36,7 +36,7 @@ describe('simulation model architecture', () => {
 				new URL(`./components/sims/${component}.svelte`, import.meta.url),
 				'utf8'
 			);
-			expect(source).toContain("from '$lib/simulation-models'");
+			expect(source).toContain("from '#lib/simulation-models.ts'");
 			for (const name of functions) {
 				const occurrences = source.match(new RegExp(`\\b${name}\\b`, 'g'))?.length ?? 0;
 				expect(occurrences, `${component} must import and invoke ${name}`).toBeGreaterThanOrEqual(

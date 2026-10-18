@@ -8,9 +8,9 @@
 	 * attributes asks the active simulation for a reading and pins it inside a
 	 * cursor-tracking tooltip.
 	 */
-	import { playTick } from '$lib/audio';
-	import { ui } from '$lib/ui.svelte';
-	import type { MathReading } from '$lib/simulation-math';
+	import { playTick } from '#lib/audio.ts';
+	import { ui } from '#lib/ui.svelte.ts';
+	import type { MathReading } from '#lib/simulation-math.ts';
 	import LiveMath from './LiveMath.svelte';
 
 	interface Props {

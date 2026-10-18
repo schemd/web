@@ -19,7 +19,7 @@
 	 */
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 
 	interface Props {
 		/** Published npm releases, newest first. */
@@ -86,7 +86,7 @@
 	});
 
 	function onChange(event: Event & { currentTarget: HTMLSelectElement }): void {
-		void goto(pathFor(event.currentTarget.value), { noScroll: false });
+		void goto(pathFor(event.currentTarget.value));
 	}
 </script>
 

@@ -11,20 +11,20 @@
 	 * the diffuser. The active gate lights in the compiled circuit and a HUD shows
 	 * the exact transformation for the current step.
 	 */
-	import { setNodeActive, setWiresFrom, delegatedNodeId } from '$lib/sim-dom';
-	import { playSuccess, playTick } from '$lib/audio';
-	import { ui } from '$lib/ui.svelte';
+	import { setNodeActive, setWiresFrom, delegatedNodeId } from '#lib/sim-dom.ts';
+	import { playSuccess, playTick } from '#lib/audio.ts';
+	import { ui } from '#lib/ui.svelte.ts';
 	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import ProbeHud from './ProbeHud.svelte';
 	import LiveMath from './LiveMath.svelte';
-	import { reading, type MathReading } from '$lib/simulation-math';
+	import { reading, type MathReading } from '#lib/simulation-math.ts';
 	import {
 		groverOptimalRounds,
 		groverPhases,
 		groverState,
 		type GroverPhase as PhaseKind
-	} from '$lib/simulation-models';
+	} from '#lib/simulation-models.ts';
 	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 
 	interface Props {

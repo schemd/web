@@ -17,7 +17,7 @@ import {
 	NO_STORE,
 	rateLimitHeaders,
 	readLimitedJson
-} from '$lib/server/request-guard';
+} from '#lib/server/request-guard.ts';
 import {
 	inspectSchematic,
 	parseSchematic,

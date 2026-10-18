@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
-	import Seo from '$lib/components/Seo.svelte';
-	import Pronounce from '$lib/components/Pronounce.svelte';
-	import SheetFrame from '$lib/components/SheetFrame.svelte';
-	import { trackInteraction } from '$lib/telemetry';
+	import Seo from '#lib/components/Seo.svelte';
+	import Pronounce from '#lib/components/Pronounce.svelte';
+	import SheetFrame from '#lib/components/SheetFrame.svelte';
+	import { trackInteraction } from '#lib/telemetry.ts';
 
 	let { data }: PageProps = $props();
 
@@ -222,12 +222,12 @@
 											type="button"
 											class="ln"
 											class:on={focusLine === line.n}
-											aria-label={`Trace line ${line.n}`}
 											onmouseenter={() => ((focusNet = undefined), (focusLine = line.n))}
 											onfocus={() => ((focusNet = undefined), (focusLine = line.n))}
 											onblur={() => (focusLine = undefined)}
 										>
-											<span class="n" aria-hidden="true">{line.n}</span>
+											<span class="visually-hidden">Trace line</span>
+											<span class="n">{line.n}</span>
 											<code>{@html line.html}</code>
 										</button>
 									</li>

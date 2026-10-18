@@ -1,9 +1,9 @@
 import type { PageServerLoad } from './$types';
-import { getRegistry } from '$lib/server/registry';
-import { landingFigures } from '$lib/server/landing';
-import { languageCoverage } from '$lib/server/coverage';
-import { loadConformance } from '$lib/server/conformance';
-import junction08 from '$lib/assets/figures/junction-0.8.svg?raw';
+import { getRegistry } from '#lib/server/registry.ts';
+import { landingFigures } from '#lib/server/landing.ts';
+import { languageCoverage } from '#lib/server/coverage.ts';
+import { loadConformance } from '#lib/server/conformance.ts';
+import junction08 from '#lib/assets/figures/junction-0.8.svg?raw';
 
 export const load: PageServerLoad = async () => {
 	const registry = await getRegistry();

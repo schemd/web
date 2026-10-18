@@ -6,9 +6,9 @@
 		setNodeActive,
 		setNodeDegraded,
 		styleWiresFrom
-	} from '$lib/sim-dom';
-	import { playTick } from '$lib/audio';
-	import { ui } from '$lib/ui.svelte';
+	} from '#lib/sim-dom.ts';
+	import { playTick } from '#lib/audio.ts';
+	import { ui } from '#lib/ui.svelte.ts';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import LabShell from './LabShell.svelte';
 	import Oscilloscope from './Oscilloscope.svelte';
@@ -16,9 +16,9 @@
 	import LiveMath from './LiveMath.svelte';
 	import SimulationMotionControl from './SimulationMotionControl.svelte';
 	import { createSimulationMotion } from './simulation-motion.svelte';
-	import { reading, type MathReading } from '$lib/simulation-math';
-	import { buckMetrics } from '$lib/simulation-models';
-	import { reportSimulationEvidence } from '$lib/simulation-evidence';
+	import { reading, type MathReading } from '#lib/simulation-math.ts';
+	import { buckMetrics } from '#lib/simulation-models.ts';
+	import { reportSimulationEvidence } from '#lib/simulation-evidence.ts';
 	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 
 	interface Props {

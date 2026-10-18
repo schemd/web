@@ -8,9 +8,9 @@
 	 * controlled X^{m₂}/Z^{m₁} corrections; hovering any gate reveals its
 	 * action in Dirac notation inside a floating HUD.
 	 */
-	import { delegatedNodeId, setNodeActive, setNodeDegraded } from '$lib/sim-dom';
-	import { playTick, playSuccess } from '$lib/audio';
-	import { ui } from '$lib/ui.svelte';
+	import { delegatedNodeId, setNodeActive, setNodeDegraded } from '#lib/sim-dom.ts';
+	import { playTick, playSuccess } from '#lib/audio.ts';
+	import { ui } from '#lib/ui.svelte.ts';
 	import Oscilloscope from './Oscilloscope.svelte';
 	import LabShell from './LabShell.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
@@ -18,8 +18,8 @@
 	import LiveMath from './LiveMath.svelte';
 	import SimulationMotionControl from './SimulationMotionControl.svelte';
 	import { createSimulationMotion } from './simulation-motion.svelte';
-	import { reading, type MathReading } from '$lib/simulation-math';
-	import { teleportFidelity, teleportState } from '$lib/simulation-models';
+	import { reading, type MathReading } from '#lib/simulation-math.ts';
+	import { teleportFidelity, teleportState } from '#lib/simulation-models.ts';
 	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 
 	interface Props {

@@ -1,4 +1,4 @@
-import { COMPILE_LIMITS, isCompileOutputMode, type CompileRequest } from '$lib/compile-contract';
+import { COMPILE_LIMITS, isCompileOutputMode, type CompileRequest } from '#lib/compile-contract.ts';
 
 /** Prefix only; each tab/version receives a separate recovery slot. */
 export const PLAYGROUND_DRAFT_KEY = 'schemd.playground.draft.v2';

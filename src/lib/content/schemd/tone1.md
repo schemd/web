@@ -224,7 +224,7 @@ Since $i^2 = (\sqrt{-1})^2= -1$.
 
 #### Check:
 
-$\mathcal{P}_{\ket{0}} +  \mathcal{P}_{\ket{1}} = \frac{1}{2} + \frac{1}{2} = 1$.
+$\mathcal{P}_{\ket{0}} + \mathcal{P}_{\ket{1}} = \frac{1}{2} + \frac{1}{2} = 1$.
 
 > Simulating the circuit with Qiskit or Cirq is left as an exercise to the reader.
 

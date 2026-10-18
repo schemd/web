@@ -175,7 +175,11 @@ test('reduced-motion users receive a stopped simulation with an explicit opt-in'
 }) => {
 	for (const lab of CONTINUOUS_MOTION_LABS) {
 		await page.goto(`/simulations/0.4.0/${lab}`);
-		const resume = page.getByRole('button', { name: /resume .*animation/i });
+		/* Each control is named by its visible words (WCAG 2.5.3); the statechart's
+		 * opt-in reads "run state machine", as its reduced-motion note says. */
+		const resume = page.getByRole('button', {
+			name: /^resume animation|^run state machine/i
+		});
 		await expect(resume, `${lab}: reduced-motion pause control`).toBeVisible();
 		await expect(resume).toHaveAttribute('aria-pressed', 'true');
 		await expect(page.getByText(/paused for your reduced-motion preference/i)).toBeVisible();
@@ -185,7 +189,9 @@ test('reduced-motion users receive a stopped simulation with an explicit opt-in'
 test('command palette modal has no detectable WCAG A/AA violations', async ({ page }) => {
 	await page.goto('/');
 	await settled(page);
-	await expect(page.getByRole('button', { name: 'Open command palette' })).toBeEnabled();
+	await expect(
+		page.getByRole('button', { name: /^search .*opens the command palette$/ })
+	).toBeEnabled();
 	await page.keyboard.press('Control+K');
 	await expect(page.getByRole('dialog')).toBeVisible();
 	const results = await new AxeBuilder({ page })

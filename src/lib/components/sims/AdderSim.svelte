@@ -1,7 +1,7 @@
 <script lang="ts">
 	/** Interactive 8-bit ripple-carry adder driven by compiler delegation hooks. */
-	import { rippleCarry } from '$lib/simulation-models';
-	import { delegatedNodeId, setNodeActive, setWireSignalFrom } from '$lib/sim-dom';
+	import { rippleCarry } from '#lib/simulation-models.ts';
+	import { delegatedNodeId, setNodeActive, setWireSignalFrom } from '#lib/sim-dom.ts';
 	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 	import FaultSwitch from './FaultSwitch.svelte';
 	import SimulationWorkbench from './SimulationWorkbench.svelte';

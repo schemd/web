@@ -5,14 +5,15 @@
  * Those paths 308-redirect into the versioned information architecture so
  * previously indexed URLs keep resolving.
  */
-import { redirect, type Handle } from '@sveltejs/kit';
-import { getRegistry, HISTORICAL_CORE_VERSION } from '$lib/server/registry';
+import { redirect } from '@sveltejs/kit';
+import type { Handle } from '@sveltejs/kit/hooks';
+import { getRegistry, HISTORICAL_CORE_VERSION } from '#lib/server/registry.ts';
 import {
 	isDocumentedVersion,
 	LATEST_DOCUMENTED_VERSION,
 	OLDEST_DOCUMENTED_VERSION,
 	resolveDocVersion
-} from '$lib/server/versions';
+} from '#lib/server/versions.ts';
 
 export function legacyTarget(pathname: string): string | undefined {
 	const normalized = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;

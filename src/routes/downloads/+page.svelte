@@ -7,11 +7,11 @@
 	 * movement: npm settles a day's counts hours after the day closes, so the
 	 * numbers step rather than tick, and the header says when it last looked.
 	 */
-	import SheetFrame from '$lib/components/SheetFrame.svelte';
+	import SheetFrame from '#lib/components/SheetFrame.svelte';
 	import { liveDownloads } from './downloads.remote';
-	import Seo from '$lib/components/Seo.svelte';
-	import TimeSeries from '$lib/components/charts/TimeSeries.svelte';
-	import BarSeries from '$lib/components/charts/BarSeries.svelte';
+	import Seo from '#lib/components/Seo.svelte';
+	import TimeSeries from '#lib/components/charts/TimeSeries.svelte';
+	import BarSeries from '#lib/components/charts/BarSeries.svelte';
 
 	const stream = liveDownloads();
 	const snapshot = $derived(stream.ready ? stream.current : undefined);

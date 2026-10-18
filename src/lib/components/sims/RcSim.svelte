@@ -1,9 +1,9 @@
 <script lang="ts">
 	/** Frequency-first RC low-pass laboratory with fully derived response optics. */
-	import { delegatedWireSource, setNodeDegraded, styleWiresFrom } from '$lib/sim-dom';
-	import { rcLowPass } from '$lib/simulation-models';
-	import { reading, type MathReading } from '$lib/simulation-math';
-	import { reportSimulationEvidence } from '$lib/simulation-evidence';
+	import { delegatedWireSource, setNodeDegraded, styleWiresFrom } from '#lib/sim-dom.ts';
+	import { rcLowPass } from '#lib/simulation-models.ts';
+	import { reading, type MathReading } from '#lib/simulation-math.ts';
+	import { reportSimulationEvidence } from '#lib/simulation-evidence.ts';
 	import { useSimulationTimelineModel } from './simulation-timeline.svelte';
 	import { createSimulationMotion } from './simulation-motion.svelte';
 	import SimulationMotionControl from './SimulationMotionControl.svelte';

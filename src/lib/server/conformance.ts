@@ -17,9 +17,9 @@ import {
 	type SchematicDiagnostic,
 	type SchematicRuleCode
 } from '@schemd/core';
-import { encodeWorkspaceState } from '$lib/state-uri';
+import { encodeWorkspaceState } from '#lib/state-uri.ts';
 import { latestRawSources } from './versions';
-import { fencedDiagrams } from '$lib/schemd-fence';
+import { fencedDiagrams } from '#lib/schemd-fence.ts';
 
 /**
  * Documentation deliberately contains diagrams that break rules — a page that

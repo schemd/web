@@ -3,7 +3,7 @@ import type { SchematicLimitOptions } from '@schemd/core';
 import {
 	HOST_COMPILER_LIMITS,
 	type CompileRequest as CompileRequestPayload
-} from '$lib/compile-contract';
+} from '#lib/compile-contract.ts';
 import { _compileCacheSnapshot, _createCompileHandler } from './+server';
 
 function compileRequest(title: string): Request {

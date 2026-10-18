@@ -1,6 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getRegistry, resolveReleaseVersion, WEBSITE_CORE_VERSION } from '$lib/server/registry';
+import { getRegistry, resolveReleaseVersion, WEBSITE_CORE_VERSION } from '#lib/server/registry.ts';
 
 /** The pair a first-time visitor lands on: one revision of the same filter. */
 const BEFORE = `source:VIN "AC" at (100, 140) #blue [type=voltage-ac]

@@ -1,6 +1,6 @@
 import { render } from 'svelte/server';
 import { describe, expect, test } from 'vitest';
-import { listSimulationEnvironments } from '$lib/server/simulations';
+import { listSimulationEnvironments } from '#lib/server/simulations.ts';
 import SimulationPedagogy from './SimulationPedagogy.svelte';
 
 describe('SimulationPedagogy SSR', () => {

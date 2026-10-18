@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { Pedagogy, SimulationCurriculum } from '$lib/server/simulations';
+	import type { Pedagogy, SimulationCurriculum } from '#lib/server/simulations.ts';
 	import {
 		SIMULATION_EVIDENCE_EVENT,
 		type SimulationEvidenceDetail
-	} from '$lib/simulation-evidence';
+	} from '#lib/simulation-evidence.ts';
 	import {
 		SIMULATION_PROGRESS_EVENT,
 		browserSimulationProgressStorage,
@@ -18,7 +18,7 @@
 		writeSimulationProgress,
 		type ProgressStorage,
 		type SimulationProgress
-	} from '$lib/simulation-progress';
+	} from '#lib/simulation-progress.ts';
 
 	interface LabLink {
 		readonly id: string;

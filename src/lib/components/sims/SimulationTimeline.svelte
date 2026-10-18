@@ -1,8 +1,8 @@
 <script lang="ts">
 	/** Universal, causal playback rail shared by every simulation environment. */
 	import { untrack } from 'svelte';
-	import { clearPropagationFrame, setPropagationFrame } from '$lib/sim-dom';
-	import { travellingFrame, type RenderedSimulationStage } from '$lib/simulation-timelines';
+	import { clearPropagationFrame, setPropagationFrame } from '#lib/sim-dom.ts';
+	import { travellingFrame, type RenderedSimulationStage } from '#lib/simulation-timelines.ts';
 	import type { SimulationTimelineModel } from './simulation-timeline.svelte';
 	import Stepper from './Stepper.svelte';
 	import LiveMath from './LiveMath.svelte';

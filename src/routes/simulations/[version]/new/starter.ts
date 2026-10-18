@@ -1,4 +1,4 @@
-import type { LabManifest } from '$lib/lab-manifest';
+import type { LabManifest } from '#lib/lab-manifest.ts';
 
 /**
  * The manifest the builder opens with.

@@ -6,7 +6,7 @@
  * starts from the server defaults so hydration sees identical markup. Stored
  * preferences are applied explicitly after mount.
  */
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 /** The three blueprint representation states. */
 export const BLUEPRINT_MODES = ['hud', 'cyanotype', 'iso'] as const;

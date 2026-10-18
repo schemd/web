@@ -1,7 +1,7 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getRegistry, resolveReleaseVersion } from '$lib/server/registry';
-import { listSimulationEnvironments } from '$lib/server/simulations';
+import { getRegistry, resolveReleaseVersion } from '#lib/server/registry.ts';
+import { listSimulationEnvironments } from '#lib/server/simulations.ts';
 
 export const load: PageServerLoad = async ({ params, url }) => {
 	const registry = await getRegistry();
