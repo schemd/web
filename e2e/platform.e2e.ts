@@ -386,7 +386,14 @@ test('every public page shell fits the mobile viewport without horizontal scroll
 		'qec',
 		'wien',
 		'lfsr',
-		'grover'
+		'grover',
+		'tdr',
+		'pll',
+		'classd',
+		'pid',
+		'sigmadelta',
+		'uart',
+		'kickback'
 	] as const;
 	const routes = [
 		'/',

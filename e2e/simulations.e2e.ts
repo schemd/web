@@ -12,7 +12,14 @@ const ENVIRONMENTS = [
 	'qec',
 	'wien',
 	'lfsr',
-	'grover'
+	'grover',
+	'tdr',
+	'pll',
+	'classd',
+	'pid',
+	'sigmadelta',
+	'uart',
+	'kickback'
 ] as const;
 
 test.beforeEach(async ({ page }) => {
@@ -50,7 +57,7 @@ test('catalogue and cyclic environment links navigate without JavaScript timers'
 test('the curriculum map links every lab and recommends where to start', async ({ page }) => {
 	await page.goto('/simulations/0.4.0');
 	const links = page.locator('.map-node');
-	await expect(links).toHaveCount(11);
+	await expect(links).toHaveCount(18);
 	await expect(page.locator('.map-node[href="/simulations/0.4.0/rc"]')).toHaveAttribute(
 		'aria-label',
 		/Lab 02: Dynamic RC Low-Pass Filter/
@@ -248,7 +255,7 @@ test('every laboratory resolves server-rendered KaTeX with no client-side parser
 	}
 });
 
-test('all eleven numerical models follow the universal Previous and Next transport', async ({
+test('all eighteen numerical models follow the universal Previous and Next transport', async ({
 	page
 }) => {
 	for (const environment of ENVIRONMENTS) {
@@ -381,7 +388,7 @@ test('guided evidence, diagnosis, completion, and catalogue progress persist loc
 	await expect(walkthrough.getByText(/Lab complete/)).toBeVisible();
 
 	await page.getByRole('link', { name: '← Labs' }).click();
-	await expect(page.getByText('1 of 11 experiments completed on this device')).toBeVisible();
+	await expect(page.getByText('1 of 18 experiments completed on this device')).toBeVisible();
 	await expect(page.locator('.lab-row').first().getByText('✓ completed locally')).toBeVisible();
 });
 

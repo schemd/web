@@ -19,7 +19,21 @@ const consumers = {
 		'timer555MonostableCapacitor',
 		'timer555PresentationFrequency'
 	],
-	WienSim: ['wienFrequency', 'wienDamping', 'wienRegime']
+	WienSim: ['wienFrequency', 'wienDamping', 'wienRegime'],
+	TdrSim: ['tdrResponse', 'tdrLineVoltage', 'reflectionCoefficient'],
+	PllSim: ['pllDerivatives', 'pllLockRange', 'pllCanLock'],
+	ClassDSim: [
+		'classDMetrics',
+		'classDPwm',
+		'lcCutoff',
+		'lcLowPass',
+		'biquadLowPass',
+		'triangleWave'
+	],
+	PidSim: ['pidStep', 'pidStepResponse'],
+	SigmaDeltaSim: ['sigmaDeltaTrace', 'magnitudeSpectrum', 'inBandSnr', 'decimate'],
+	UartSim: ['uartFrame', 'uartReceive'],
+	KickbackSim: ['phaseKickback']
 } as const;
 
 /* Migrated laboratories: the adapter in the registry is now the consumer. */

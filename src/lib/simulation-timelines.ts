@@ -400,7 +400,225 @@ export const SIMULATION_TIMELINES: Readonly<Record<string, readonly SimulationSt
 			['Q4.q']
 		)
 	],
-	grover: groverStages
+	grover: groverStages,
+	tdr: [
+		stage(
+			'Launch the step',
+			'The source sees only the line impedance Z₀, so it launches V₁ = Vs·Z₀/(Rs + Z₀) whatever the load is.',
+			['VS', 'RS', 'NEAR'],
+			['VS.positive', 'RS.out']
+		),
+		stage(
+			'Travel down the line',
+			'The front charges each section of distributed capacitance through its inductance, one delay per line length.',
+			['L1', 'N1', 'C1', 'L2', 'N2', 'C2', 'L3'],
+			['NEAR.node', 'L1.out', 'N1.node', 'L2.out', 'N2.node', 'L3.out']
+		),
+		stage(
+			'Meet the load',
+			'At the far end the load reflects the fraction Γ of the arriving wave; a matched load reflects nothing.',
+			['FAR', 'RL'],
+			['FAR.node', 'RL.out']
+		),
+		stage(
+			'Echo toward the source',
+			'The reflection travels back and reaches the near end at twice the delay, where the source reflects Γ of it again.',
+			['L3', 'N2', 'L2', 'N1', 'L1', 'NEAR'],
+			['L3.out', 'N2.node', 'L2.out', 'N1.node', 'L1.out']
+		),
+		stage(
+			'Settle at the divider',
+			'After enough round trips the echoes die away and the line settles at the DC divider of Rs and the load.',
+			['VS', 'RS', 'RL', 'G0', 'G1', 'G2', 'G3'],
+			['VS.positive', 'RS.out', 'FAR.node', 'RL.out', 'VS.negative', 'C1.out', 'C2.out']
+		)
+	],
+	pll: [
+		stage(
+			'Compare the phases',
+			'The detector multiplies the reference by the fed-back VCO output; its average is proportional to the sine of the phase error.',
+			['REF', 'PD'],
+			['REF.positive', 'FOUT.node']
+		),
+		stage(
+			'Filter the error',
+			'The RC loop filter averages the detector output into a control voltage, removing the double-frequency ripple.',
+			['RF', 'VC', 'CF', 'GND'],
+			['PD.out1', 'RF.out', 'CF.out']
+		),
+		stage(
+			'Retune the VCO',
+			'The control voltage moves the VCO away from its free-running frequency by Kv volts-to-hertz.',
+			['VCO'],
+			['VC.node']
+		),
+		stage(
+			'Feed the output back',
+			'The VCO output returns to the detector, closing the loop: a frequency error becomes a growing phase error.',
+			['FOUT', 'PD'],
+			['VCO.osc', 'FOUT.node']
+		),
+		stage(
+			'Hold a constant phase offset',
+			'In lock the phase error stops changing, and its constant value supplies exactly the control voltage the VCO needs.',
+			['PD', 'VCO', 'OUT'],
+			['REF.positive', 'PD.out1', 'VC.node', 'VCO.osc']
+		)
+	],
+	classd: [
+		stage(
+			'Compare audio with the carrier',
+			'The comparator outputs high while the audio exceeds the triangle carrier, so the duty cycle follows the audio.',
+			['AUD', 'TRI', 'CMP'],
+			['AUD.positive', 'TRI.positive']
+		),
+		stage(
+			'Switch the bridge',
+			'The half-bridge copies the PWM wave at full supply: its transistors are only ever fully on or fully off.',
+			['BRIDGE'],
+			['CMP.out']
+		),
+		stage(
+			'Filter the carrier',
+			'L and C form a second-order low-pass that passes the audio and shunts the carrier to the return.',
+			['LF', 'VO', 'CF', 'RTN'],
+			['BRIDGE.sw', 'LF.out', 'CF.out']
+		),
+		stage(
+			'Drive the speaker',
+			'What reaches the speaker is the audio plus whatever carrier residual the filter let through.',
+			['SPK', 'GND'],
+			['VO.node', 'SPK.out', 'RTN.node']
+		)
+	],
+	pid: [
+		stage(
+			'Form the error',
+			'The summing junction subtracts the measured speed from the setpoint; everything downstream reacts to this error.',
+			['SET', 'ERR'],
+			['SET.out', 'TACH.fb']
+		),
+		stage(
+			'Weigh present, past, and trend',
+			'Kp scales the error now, Ki its accumulated history, and Kd its rate of change, in three parallel paths.',
+			['KP', 'KI', 'KD'],
+			['ERR.e']
+		),
+		stage(
+			'Sum and drive',
+			'The three contributions add into one command, which the driver delivers until it saturates at its supply.',
+			['SUM', 'DRV'],
+			['KP.u', 'KI.u', 'KD.u', 'SUM.u']
+		),
+		stage(
+			'Turn the motor',
+			'Drive voltage accelerates the rotor against its inertia, friction, and any load torque.',
+			['M'],
+			['DRV.v']
+		),
+		stage(
+			'Measure the speed',
+			'The tachometer reports the shaft speed back to the summing junction, closing the loop.',
+			['TACH', 'ERR'],
+			['M.out', 'TACH.fb']
+		)
+	],
+	sigmadelta: [
+		stage(
+			'Subtract the last bit',
+			'The summing node takes the input minus the one-bit DAC output: the error of everything sent so far.',
+			['VIN', 'SUM'],
+			['VIN.positive', 'DAC.v']
+		),
+		stage(
+			'Accumulate the error',
+			'The integrator remembers the running debt between the input and the bits; this memory is what shapes the noise.',
+			['INT'],
+			['SUM.e']
+		),
+		stage(
+			'Decide one bit',
+			'On each clock the quantizer outputs +1 or −1 by the integrator’s sign, and the flip-flop holds it for one period.',
+			['Q', 'FF', 'CLK'],
+			['INT.y', 'Q.out', 'CLK.out', 'GND.in']
+		),
+		stage(
+			'Feed the bit back',
+			'The DAC turns the bit back into ±1 so the next error accounts for it.',
+			['DAC'],
+			['FF.q']
+		),
+		stage(
+			'Average the bitstream',
+			'The decimator low-pass filters the fast bitstream and keeps every OSR-th sample: the shaped noise is filtered away.',
+			['DEC', 'OUT'],
+			['FF.q', 'DEC.y']
+		)
+	],
+	uart: [
+		stage(
+			'Load the byte',
+			'The transmitter adds a start bit, the data bits least significant first, optional parity, and a stop bit.',
+			['BYTE', 'TX'],
+			['BYTE.out']
+		),
+		stage(
+			'Send the start edge',
+			'The idle-high line falls for the start bit; that single edge is the only timing the receiver gets.',
+			['TX', 'TCLK', 'LINE'],
+			['TX.tx', 'TCLK.out']
+		),
+		stage(
+			'Sample mid-bit by the local clock',
+			'The receiver waits half a bit, then samples once per bit time by its own baud clock; any mismatch accumulates.',
+			['RX', 'RCLK'],
+			['LINE.node', 'RCLK.out']
+		),
+		stage(
+			'Check the stop bit and parity',
+			'A low stop bit is a framing error; a parity bit that disagrees with the count of ones is a parity error.',
+			['RX', 'ERR'],
+			['RX.err']
+		),
+		stage(
+			'Deliver the byte',
+			'The reassembled data bits leave the receiver as one byte, correct only if every sample landed in its own bit.',
+			['DATA'],
+			['RX.data']
+		)
+	],
+	kickback: [
+		stage(
+			'Prepare control and target',
+			'The control starts in |0⟩ and the target in the chosen state; an eigenstate of the phase gate is what makes kickback clean.',
+			['C0', 'T0'],
+			['C0.out', 'T0.out']
+		),
+		stage(
+			'Put the control in superposition',
+			'H turns the control into |+⟩, so both branches of the controlled gate are present at once.',
+			['H1'],
+			['H1.out']
+		),
+		stage(
+			'Apply the controlled phase',
+			'CP multiplies only |11⟩ by the phase; with the target in |1⟩ that phase lands on the control’s relative phase.',
+			['CP'],
+			['H1.out', 'T0.out', 'CP.out1', 'CP.out2']
+		),
+		stage(
+			'Interfere the control',
+			'The second H turns the control’s relative phase into a measurable population difference.',
+			['H2'],
+			['CP.out1', 'H2.out']
+		),
+		stage(
+			'Measure the control',
+			'P(1) = sin²(φ/2) for an eigenstate target; anything else entangles the qubits and washes out the fringe.',
+			['M', 'TOUT'],
+			['H2.out', 'CP.out2']
+		)
+	]
 };
 
 export function timelineFor(simulationId: string): readonly SimulationStage[] {
