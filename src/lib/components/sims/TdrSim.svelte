@@ -172,8 +172,9 @@
 			node: 'RL',
 			label: 'Z load',
 			ariaLabel: 'Load impedance, 5 ohms to 5 kilohms',
-			min: Math.log10(5),
-			max: Math.log10(5000),
+			/* Bounds on the step grid, so every slider position is a valid value. */
+			min: 0.7,
+			max: 3.7,
 			step: 0.01,
 			value: logLoad,
 			display: formatSi(10 ** logLoad, 'Ω', 1),
@@ -185,8 +186,8 @@
 			node: 'RS',
 			label: 'R source',
 			ariaLabel: 'Source resistance',
-			min: Math.log10(5),
-			max: Math.log10(500),
+			min: 0.7,
+			max: 2.7,
 			step: 0.01,
 			value: logSource,
 			display: formatSi(source, 'Ω', 1),
@@ -319,11 +320,8 @@
 				data-preset="match-source"
 				onclick={() => (logSource = Math.log10(z0))}>Match the source</button
 			>
-			<button
-				class="btn"
-				type="button"
-				data-preset="short-load"
-				onclick={() => (logLoad = Math.log10(5))}>Near-short the load</button
+			<button class="btn" type="button" data-preset="short-load" onclick={() => (logLoad = 0.7)}
+				>Near-short the load</button
 			>
 		</div>
 	</div>
