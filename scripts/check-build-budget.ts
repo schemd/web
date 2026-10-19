@@ -198,7 +198,10 @@ const MAX_MODERN_MATH_FONTS = 320 * 1024;
 /* Briefly 1,305 while the v2 bench lived beside the components it replaces;
    back to 1,290 (measured 1,289.9 KiB) once all eleven labs moved onto it and
    LabShell, SimulationWorkbench, Oscilloscope and ProbeHud came out. */
-const MAX_CLIENT_OUTPUT = 1_290 * 1024;
+/* Raised to 1,292 for the curriculum map on the catalogue, measured 1,290.2 KiB:
+   its link layer and objective cards, net of the boot log and the per-lab mini
+   icons it replaced. */
+const MAX_CLIENT_OUTPUT = 1_292 * 1024;
 /*
  * Eleven laboratories, each downloaded only when it is opened. Two of them are
  * manifests rather than components, so the shell's lazy registry spans both
