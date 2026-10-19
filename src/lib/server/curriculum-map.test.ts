@@ -20,15 +20,27 @@ describe('curriculum map', () => {
 			const root = map!.tracks[environment.id]!;
 			const rootLab = environments.find((candidate) => candidate.id === root)!;
 			expect(rootLab.curriculum.prerequisites).toEqual([]);
-			if (environment.curriculum.prerequisites.length) {
-				expect(environment.curriculum.prerequisites[0]).toBe(root);
+			/* Walk the first-prerequisite chain: it must end at this track's root. */
+			let walker = environment;
+			while (walker.curriculum.prerequisites.length) {
+				walker = environments.find(
+					(candidate) => candidate.id === walker.curriculum.prerequisites[0]
+				)!;
 			}
+			expect(walker.id).toBe(root);
 		}
 	});
 
 	it('leaves no part focusable, because the drawing is hidden behind real links', () => {
 		expect(map!.svg).not.toContain('tabindex="0"');
 		expect(map!.svg).not.toContain('role="button"');
+	});
+
+	it('draws a lab two steps from its root as a branch of its own prerequisite', () => {
+		expect(map!.svg).toContain(`data-node-id="${map!.nodes.uart}"`);
+		expect(map!.tracks.uart).toBe('adder');
+		expect(map!.tracks.grover).toBe('bell');
+		expect(map!.tracks.sigmadelta).toBe('rc');
 	});
 
 	it('compiles once per process', () => {

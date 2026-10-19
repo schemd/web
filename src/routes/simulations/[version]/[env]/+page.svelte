@@ -35,7 +35,14 @@
 		statechart: () => import('#lib/components/sims/StatechartSim.svelte'),
 		qec: () => import('#lib/components/sims/QecSim.svelte'),
 		wien: () => import('#lib/components/sims/WienSim.svelte'),
-		grover: () => import('#lib/components/sims/GroverSim.svelte')
+		grover: () => import('#lib/components/sims/GroverSim.svelte'),
+		tdr: () => import('#lib/components/sims/TdrSim.svelte'),
+		pll: () => import('#lib/components/sims/PllSim.svelte'),
+		classd: () => import('#lib/components/sims/ClassDSim.svelte'),
+		pid: () => import('#lib/components/sims/PidSim.svelte'),
+		sigmadelta: () => import('#lib/components/sims/SigmaDeltaSim.svelte'),
+		uart: () => import('#lib/components/sims/UartSim.svelte'),
+		kickback: () => import('#lib/components/sims/KickbackSim.svelte')
 	};
 	const loadedComponents = Object.create(null) as Record<
 		string,

@@ -173,6 +173,57 @@ const templates = {
 		'grover.probe.measure': String.raw`q_{${slot('qubit', '0')}}\quad P(\mathrm{target})=${slot('probability', '00.0')}\%`,
 		'grover.probe.h': String.raw`H_{q_{${slot('qubit', '0')}}}\quad\text{build uniform superposition}`,
 		'grover.readout.peak': String.raw`P=${slot('value', '00.0')}\%`
+	},
+	tdr: {
+		'tdr.readout.gamma': String.raw`\Gamma_L=${slot('value', '+0.00')}`,
+		'tdr.readout.source': String.raw`\Gamma_S=${slot('value', '+0.00')}`,
+		'tdr.readout.launch': String.raw`V_1=${slot('value', '0.000')}\,\mathrm V`,
+		'tdr.readout.settle': String.raw`V_\infty=${slot('value', '0.000')}\,\mathrm V`,
+		'tdr.readout.time': String.raw`t=${slot('value', '00.0')}\,t_d`,
+		'tdr.probe.net': String.raw`V\!\left(${textSlot('place', 'near end')},\;${slot('time', '00.0')}\,t_d\right)=${slot('voltage', '0.000')}\,\mathrm V`
+	},
+	pll: {
+		'pll.readout.vco': String.raw`f_{\mathrm{vco}}=${textSlot('value', '10.00 kHz')}`,
+		'pll.readout.error': String.raw`\theta_e=${slot('value', '-000')}^{\circ}`,
+		'pll.readout.vc': String.raw`v_c=${slot('value', '+0.00')}\,\mathrm V`,
+		'pll.readout.detune': String.raw`\lvert\Delta f\rvert=${textSlot('detune', '400.00 Hz')}\quad K_vK_d=${textSlot('range', '1.20 kHz')}`,
+		'pll.probe.net': String.raw`${textSlot('name', 'reference')}:\;${textSlot('value', '10.00 kHz')}`,
+		'pll.axis.x': String.raw`K_d\sin\theta_e`,
+		'pll.axis.y': String.raw`v_c`
+	},
+	classd: {
+		'classd.readout.fc': String.raw`f_c=${textSlot('value', '3.39 kHz')}`,
+		'classd.readout.audio': String.raw`\lvert H(f_a)\rvert=${slot('value', '0.000')}`,
+		'classd.readout.residual': String.raw`\lvert H(f_{\mathrm{carrier}})\rvert=${slot('value', '-00.0')}\,\mathrm{dB}`,
+		'classd.readout.clean': String.raw`\dfrac{\text{audio}}{\text{carrier}}=${slot('value', '00.0')}\,\mathrm{dB}`,
+		'classd.probe.net': String.raw`${textSlot('name', 'speaker')}:\;${textSlot('value', 'carrier residual −20 dB')}`
+	},
+	pid: {
+		'pid.readout.overshoot': String.raw`M_p=${slot('value', '00.0')}\%`,
+		'pid.readout.settle': String.raw`t_s=${textSlot('value', '0.00 s')}`,
+		'pid.readout.error': String.raw`e_{ss}=${slot('value', '+0.00')}\,\mathrm{rad/s}`,
+		'pid.readout.drive': String.raw`u_\infty=${slot('value', '+0.00')}\,\mathrm V`,
+		'pid.probe.net': String.raw`${textSlot('name', 'speed')}:\;${textSlot('value', '+30.00 rad/s')}`
+	},
+	sigmadelta: {
+		'sd.readout.snr': String.raw`\mathrm{SNR}=${slot('value', '00.0')}\,\mathrm{dB}`,
+		'sd.readout.enob': String.raw`\mathrm{ENOB}=${slot('value', '0.0')}\;\text{bits}`,
+		'sd.readout.band': String.raw`f_B=f_s/${slot('value', '000')}`,
+		'sd.readout.density': String.raw`\overline{y}\;\text{ones}=${slot('value', '00')}\%`,
+		'sd.probe.net': String.raw`${textSlot('name', 'bitstream')}:\;${textSlot('value', '50 % ones')}`
+	},
+	uart: {
+		'uart.readout.tx': String.raw`\mathrm{TX}=${slot('bits', '00000000')}_2=\mathtt{0x}${slot('hex', '00')}`,
+		'uart.readout.rx': String.raw`\mathrm{RX}=${slot('bits', '00000000')}_2=\mathtt{0x}${slot('hex', '00')}`,
+		'uart.readout.drift': String.raw`\Delta t_{\mathrm{stop}}=${slot('value', '+0.00')}\,T_{bit}`,
+		'uart.readout.flags': String.raw`\text{framing }${textSlot('framing', 'ok')}\quad\text{parity }${textSlot('parity', 'off')}`
+	},
+	kickback: {
+		'kick.readout.p1': String.raw`P(1)=${slot('value', '0.000')}`,
+		'kick.readout.purity': String.raw`\lvert\vec r\rvert=${slot('value', '0.000')}`,
+		'kick.readout.ideal': String.raw`\sin^2\tfrac{\varphi}{2}=${slot('value', '0.000')}`,
+		'kick.readout.shots': String.raw`n_1/N=${slot('ones', '000')}/${slot('total', '000')}`,
+		'kick.probe.part': String.raw`${textSlot('name', 'CP')}:\;${textSlot('value', 'reading')}`
 	}
 } as const satisfies Readonly<Record<string, Readonly<Record<string, string>>>>;
 

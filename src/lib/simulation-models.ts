@@ -467,3 +467,17 @@ export function wienRegime(mu: number, openGainResistor = false): string {
 	if (Math.abs(mu) <= 0.02) return 'MARGINAL (Barkhausen)';
 	return 'OSCILLATING (limit cycle)';
 }
+
+/*
+ * The laboratories added with the curriculum's second level keep their models
+ * in one module each. Re-exported here, they stay importable from one place,
+ * while the bundler follows each re-export to its own module, so a visitor
+ * opening one lab downloads that lab's physics and no other's.
+ */
+export * from './models/tdr';
+export * from './models/pll';
+export * from './models/classd';
+export * from './models/pid';
+export * from './models/sigmadelta';
+export * from './models/uart';
+export * from './models/kickback';

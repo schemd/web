@@ -135,8 +135,16 @@ const MAX_COMPILER_JS_GZIP = 48 * 1024;
  * Lowered to 180 with every lab on the bench and those four components
  * removed, measured 179.6 KiB: the bench is shared by eleven labs now, so it
  * costs its 4.9 KiB once.
+ *
+ * Raised to 210 for seven new laboratories (transmission line, PLL, class-D,
+ * PID, sigma-delta, UART, phase kickback), measured 208.4 KiB. This ceiling
+ * sums every emitted chunk, and 21.3 KiB of the rise is the seven lab chunks
+ * themselves (2.7–3.4 KiB each), each loaded only when its lab opens; most of
+ * the rest is their models and the shared dock plot. The models live in one
+ * module per lab, re-exported from `simulation-models.ts`, so opening an
+ * existing lab downloads none of the new physics.
  */
-const MAX_DOCUMENT_JS_GZIP = 180 * 1024;
+const MAX_DOCUMENT_JS_GZIP = 210 * 1024;
 /* Exactly the sum of the two ceilings above, as the compiler note says. */
 const MAX_ALL_JS_GZIP = MAX_DOCUMENT_JS_GZIP + MAX_COMPILER_JS_GZIP;
 /*
@@ -201,7 +209,10 @@ const MAX_MODERN_MATH_FONTS = 320 * 1024;
 /* Raised to 1,292 for the curriculum map on the catalogue, measured 1,290.2 KiB:
    its link layer and objective cards, net of the boot log and the per-lab mini
    icons it replaced. */
-const MAX_CLIENT_OUTPUT = 1_292 * 1024;
+/* Raised to 1,380 for the seven new laboratories, measured 1,377.2 KiB: their
+   chunks raw (about 10 KiB each before gzip) and their scoped stylesheets, all
+   loaded only with their own lab. */
+const MAX_CLIENT_OUTPUT = 1_380 * 1024;
 /*
  * Eleven laboratories, each downloaded only when it is opened. Two of them are
  * manifests rather than components, so the shell's lazy registry spans both
@@ -219,7 +230,9 @@ const MAX_CLIENT_OUTPUT = 1_292 * 1024;
  * two manifest chunks are emitted and never loaded. Unregistering them from
  * `labs/index.ts` would take this back to eleven.
  */
-const EXPECTED_SIMULATIONS = 13;
+/* Twenty for eighteen laboratories since the curriculum's second level added
+   seven bespoke components; the doubly registered pair is unchanged. */
+const EXPECTED_SIMULATIONS = 20;
 const LAZY_LAB_PREFIXES = ['src/lib/components/sims/', 'src/lib/labs/'] as const;
 
 function lazyLabImports(entry: ManifestEntry): readonly string[] {

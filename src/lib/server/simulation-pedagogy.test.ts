@@ -2,14 +2,14 @@ import { describe, expect, test } from 'vitest';
 import { listSimulationEnvironments } from './simulations';
 
 describe('simulation learning design', () => {
-	test('defines a complete, acyclic prerequisite sequence for all thirteen labs', () => {
+	test('defines a complete, acyclic prerequisite sequence for all eighteen labs', () => {
 		const environments = listSimulationEnvironments();
 		const byId = new Map(environments.map((environment) => [environment.id, environment]));
 		const orders = environments.map((environment) => environment.curriculum.order);
 
-		expect(environments).toHaveLength(11);
+		expect(environments).toHaveLength(18);
 		expect([...orders].sort((a, b) => a - b)).toEqual(
-			Array.from({ length: 11 }, (_, index) => index + 1)
+			Array.from({ length: 18 }, (_, index) => index + 1)
 		);
 
 		for (const environment of environments) {

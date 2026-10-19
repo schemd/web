@@ -17,7 +17,14 @@ const ENVIRONMENT_IDS = [
 	'qec',
 	'wien',
 	'lfsr',
-	'grover'
+	'grover',
+	'tdr',
+	'pll',
+	'classd',
+	'pid',
+	'sigmadelta',
+	'uart',
+	'kickback'
 ] as const;
 
 describe('simulation teaching timelines', () => {

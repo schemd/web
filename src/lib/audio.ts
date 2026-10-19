@@ -61,3 +61,50 @@ export function playTick(frequency = 660): void {
 export function playPulse(frequency: number): void {
 	tone(Math.min(880, Math.max(80, frequency)), 0, 0.09, 0.6);
 }
+
+/** The rate a lab should render a buffer at, so it plays without resampling. */
+export function audioSampleRate(): number {
+	return graph()?.context.sampleRate ?? 48_000;
+}
+
+/**
+ * Play a rendered signal once, optionally through a second-order low-pass
+ * (the same response as an LC filter). Returns a function that stops it.
+ * Called only from an explicit Listen gesture, which is the reader's consent.
+ */
+export function playSignal(
+	samples: Float32Array,
+	sampleRate: number,
+	lowPass?: { readonly cutoff: number; readonly q: number },
+	onEnded?: () => void
+): () => void {
+	const nodes = graph();
+	if (!nodes) return () => undefined;
+	const { context: ctx, master: out } = nodes;
+	const buffer = ctx.createBuffer(1, samples.length, sampleRate);
+	buffer.copyToChannel(samples as Float32Array<ArrayBuffer>, 0);
+	const source = ctx.createBufferSource();
+	source.buffer = buffer;
+	const level = ctx.createGain();
+	level.gain.value = 0.6;
+	let chain: AudioNode = source;
+	if (lowPass) {
+		const filter = ctx.createBiquadFilter();
+		filter.type = 'lowpass';
+		filter.frequency.value = Math.min(lowPass.cutoff, sampleRate * 0.45);
+		/* A lowpass BiquadFilterNode reads Q in decibels: Butterworth (Q = 1/√2) is −3.01 dB. */
+		filter.Q.value = 20 * Math.log10(lowPass.q);
+		chain.connect(filter);
+		chain = filter;
+	}
+	chain.connect(level).connect(out);
+	source.onended = () => onEnded?.();
+	source.start();
+	return () => {
+		try {
+			source.stop();
+		} catch {
+			/* already stopped */
+		}
+	};
+}

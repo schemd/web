@@ -461,6 +461,169 @@ DIFF.o0 -> M0.in #amber [ortho]
 DIFF.o1 -> M1.in #amber [line]
 DIFF.o2 -> M2.in #amber [ortho]`;
 
+const TDR_SOURCE = `// Transmission line — a step launched into a lossless line, drawn as its distributed L–C ladder
+source:VS "V_s" at (80, 250) #amber [type=voltage-pulse]
+resistor:RS "R_s" at (200, 110) #amber
+junction:NEAR "near end" at (320, 110) #amber
+inductor:L1 "L·dx" at (420, 110) #cyan
+junction:N1 "x_1" at (520, 110) #cyan
+capacitor:C1 "C·dx" at (520, 250) #cyan [orientation=down]
+inductor:L2 "L·dx" at (620, 110) #cyan
+junction:N2 "x_2" at (720, 110) #cyan
+capacitor:C2 "C·dx" at (720, 250) #cyan [orientation=down]
+inductor:L3 "L·dx" at (820, 110) #cyan
+junction:FAR "far end" at (920, 110) #emerald
+resistor:RL "Z_L" at (1020, 250) #emerald [type=variable orientation=down]
+ground:G0 "0 V" at (80, 390) #slate
+ground:G1 "0 V" at (520, 390) #slate
+ground:G2 "0 V" at (720, 390) #slate
+ground:G3 "0 V" at (1020, 390) #slate
+
+VS.positive -> RS.in #amber [ortho]
+RS.out -> NEAR.node #amber [line]
+NEAR.node -> L1.in #cyan [line]
+L1.out -> N1.node #cyan [line]
+N1.node -> C1.in #cyan [ortho]
+N1.node -> L2.in #cyan [line]
+L2.out -> N2.node #cyan [line]
+N2.node -> C2.in #cyan [ortho]
+N2.node -> L3.in #cyan [line]
+L3.out -> FAR.node #emerald [line]
+FAR.node -> RL.in #emerald [ortho]
+C1.out -> G1.in #slate [line]
+C2.out -> G2.in #slate [line]
+RL.out -> G3.in #slate [line]
+VS.negative -> G0.in #slate [ortho]`;
+
+const PLL_SOURCE = `// Phase-locked loop — phase detector, RC loop filter, voltage-controlled oscillator
+source:REF "f_{ref}" at (90, 200) #amber [type=voltage-ac]
+xor:PD "PD" at (280, 160) #purple [inputs=2]
+resistor:RF "R" at (440, 160) #cyan
+junction:VC "v_c" at (570, 160) #cyan
+capacitor:CF "C" at (570, 300) #cyan [orientation=down]
+ic:VCO "VCO" at (740, 160) #emerald [left="vc" right="osc"]
+junction:FOUT "f_{out}" at (900, 160) #emerald
+port:OUT "f_{out}" at (1010, 160) #emerald
+ground:GND "0 V" at (570, 420) #slate
+
+REF.positive -> PD.in1 #amber [ortho]
+PD.out -> RF.in #purple [ortho]
+RF.out -> VC.node #cyan [line]
+VC.node -> VCO.vc #cyan [ortho]
+VC.node -> CF.in #cyan [ortho]
+CF.out -> GND.in #slate [ortho]
+REF.negative -> GND.in #slate [ortho]
+VCO.osc -> FOUT.node #emerald [line]
+FOUT.node -> OUT.in #emerald [ortho]
+FOUT.node -> PD.in2 #emerald [ortho label="feedback"]`;
+
+const CLASSD_SOURCE = `// Class-D amplifier — comparator PWM, half-bridge switch, LC output filter, speaker
+source:AUD "audio" at (70, 150) #cyan [type=voltage-ac]
+source:TRI "carrier" at (180, 340) #amber [type=voltage-pulse]
+amplifier:CMP "PWM" at (280, 230) #purple [type=comparator]
+ic:BRIDGE "bridge" at (460, 230) #purple [left="g" right="sw"]
+inductor:LF "L" at (630, 230) #cyan
+junction:VO "v_o" at (770, 230) #emerald
+capacitor:CF "C" at (770, 360) #cyan [orientation=down]
+load:SPK "speaker" at (920, 340) #emerald [type=speaker orientation=down]
+ground:GNDS "0 V" at (180, 480) #slate
+junction:RTN "return" at (770, 450) #slate
+ground:GND "0 V" at (770, 510) #slate
+
+AUD.positive -> CMP.positive #cyan [ortho]
+TRI.positive -> CMP.negative #amber [ortho]
+CMP.out -> BRIDGE.g #purple [ortho]
+BRIDGE.sw -> LF.in #purple [ortho]
+LF.out -> VO.node #cyan [line]
+VO.node -> CF.in #cyan [ortho]
+VO.node -> SPK.in #emerald [ortho]
+CF.out -> RTN.node #slate [ortho]
+SPK.out -> RTN.node #slate [ortho]
+RTN.node -> GND.in #slate [line]
+AUD.negative -> GNDS.in #slate [ortho]
+TRI.negative -> GNDS.in #slate [ortho]`;
+
+const PID_SOURCE = `// DC motor speed loop — error, parallel P, I and D paths, driver, motor, tachometer feedback
+port:SET "ω_{set}" at (70, 240) #amber
+ic:ERR "Σ" at (210, 240) #purple [left="sp,fb" right="e"]
+ic:KP "K_p" at (400, 70) #purple [left="e" right="u"]
+ic:KI "K_i/s" at (400, 240) #purple [left="e" right="u"]
+ic:KD "K_d·s" at (400, 410) #purple [left="e" right="u"]
+ic:SUM "Σ" at (580, 240) #purple [left="p,i,d" right="u"]
+ic:DRV "driver" at (730, 240) #amber [left="u" right="v"]
+load:M "motor" at (900, 240) #amber [type=motor]
+ic:TACH "tacho" at (900, 500) #emerald [left="fb" right="shaft"]
+
+SET.out -> ERR.sp #amber [ortho]
+ERR.e -> KP.e #purple [ortho]
+ERR.e -> KI.e #purple [ortho]
+ERR.e -> KD.e #purple [ortho]
+KP.u -> SUM.p #purple [ortho]
+KI.u -> SUM.i #purple [ortho]
+KD.u -> SUM.d #purple [ortho]
+SUM.u -> DRV.u #purple [line]
+DRV.v -> M.in #amber [ortho]
+M.out -> TACH.shaft #emerald [ortho label="shaft ω"]
+TACH.fb -> ERR.fb #emerald [ortho label="feedback"]`;
+
+const SIGMADELTA_SOURCE = `// Sigma-delta modulator — integrate the error, decide one bit, feed the bit back
+source:VIN "x" at (80, 170) #cyan [type=voltage-ac]
+ic:SUM "Σ" at (240, 150) #cyan [left="x,fb" right="e"]
+ic:INT "∫" at (400, 150) #purple [left="e" right="y"]
+amplifier:Q "1-bit" at (570, 170) #purple [type=comparator]
+flipflop:FF "D" at (740, 170) #amber [type=d]
+clock:CLK "f_s" at (600, 330) #amber
+ic:DAC "DAC" at (740, 360) #amber [left="v" right="d"]
+ic:DEC "decimate" at (950, 170) #emerald [left="bits" right="y"]
+port:OUT "y" at (1130, 170) #emerald
+ground:GND "0 V" at (470, 300) #slate
+
+VIN.positive -> SUM.x #cyan [ortho]
+SUM.e -> INT.e #cyan [line]
+INT.y -> Q.positive #purple [ortho]
+GND.in -> Q.negative #slate [ortho]
+VIN.negative -> GND.in #slate [ortho]
+Q.out -> FF.d #purple [ortho]
+CLK.out -> FF.clock #amber [ortho]
+FF.q -> DEC.bits #amber [ortho]
+FF.q -> DAC.d #amber [ortho]
+DAC.v -> SUM.fb #amber [ortho label="feedback"]
+DEC.y -> OUT.in #emerald [line]`;
+
+const UART_SOURCE = `// UART link — transmitter frames a byte, one wire carries it, receiver samples mid-bit
+port:BYTE "byte" at (70, 150) #blue
+clock:TCLK "baud_{tx}" at (70, 290) #amber
+ic:TX "UART TX" at (260, 190) #purple [left="data,clk" right="tx"]
+testpoint:LINE "line" at (470, 190) #cyan
+ic:RX "UART RX" at (700, 190) #purple [left="rx,clk" right="data,err"]
+clock:RCLK "baud_{rx}" at (520, 320) #amber
+port:DATA "byte" at (930, 160) #emerald
+port:ERR "error" at (930, 240) #f2555a
+
+BYTE.out -> TX.data #blue [ortho]
+TCLK.out -> TX.clk #amber [ortho]
+TX.tx -> LINE.node #cyan [ortho]
+LINE.node -> RX.rx #cyan [ortho]
+RCLK.out -> RX.clk #amber [ortho]
+RX.data -> DATA.in #emerald [ortho]
+RX.err -> ERR.in #f2555a [ortho]`;
+
+const KICKBACK_SOURCE = `// Phase kickback — H, a controlled phase onto an eigenstate, H, measure the control
+prepare:C0 "|0⟩" at (80, 140) #purple
+prepare:T0 "|1⟩" at (80, 230) #cyan
+hadamard:H1 "H" at (240, 140) #purple
+cphase:CP "P(φ)" at (440, 185) #amber
+hadamard:H2 "H" at (640, 140) #purple
+measure:M "M" at (820, 140) #emerald
+port:TOUT "target" at (820, 230) #cyan
+
+C0.out -> H1.in #purple [line]
+H1.out -> CP.in1 #purple [ortho]
+T0.out -> CP.in2 #cyan [ortho]
+CP.out1 -> H2.in #purple [ortho]
+H2.out -> M.in #emerald [line]
+CP.out2 -> TOUT.in #cyan [ortho]`;
+
 /** Bounds + generated DSL keyed by environment id. */
 const SOURCES: Record<string, { source: string; width: number; height: number }> = {
 	adder: adderSource(),
@@ -473,7 +636,14 @@ const SOURCES: Record<string, { source: string; width: number; height: number }>
 	qec: { source: QEC_SOURCE, width: 1400, height: 480 },
 	wien: { source: WIEN_SOURCE, width: 1080, height: 560 },
 	lfsr: { source: LFSR_SOURCE, width: 1180, height: 460 },
-	grover: { source: GROVER_SOURCE, width: 1240, height: 460 }
+	grover: { source: GROVER_SOURCE, width: 1240, height: 460 },
+	tdr: { source: TDR_SOURCE, width: 1100, height: 470 },
+	pll: { source: PLL_SOURCE, width: 1080, height: 500 },
+	classd: { source: CLASSD_SOURCE, width: 1040, height: 580 },
+	pid: { source: PID_SOURCE, width: 1040, height: 580 },
+	sigmadelta: { source: SIGMADELTA_SOURCE, width: 1240, height: 480 },
+	uart: { source: UART_SOURCE, width: 1040, height: 420 },
+	kickback: { source: KICKBACK_SOURCE, width: 940, height: 360 }
 };
 
 /**
@@ -956,6 +1126,310 @@ const SIM_ENVIRONMENTS_RAW: readonly (Omit<
 					label: 'Diagnose why the requested target is not amplified.',
 					detail:
 						'Separate two hypotheses with evidence: a third round rotates past the correct target, while a disturbed oracle makes a different bar grow after the optimal two rounds.'
+				}
+			]
+		}
+	},
+	{
+		id: 'tdr',
+		index: '12',
+		title: 'Transmission-Line Reflections',
+		domain: 'Signal integrity',
+		tier: 'Advanced',
+		model: 'lattice (bounce) diagram of a lossless line',
+		tagline: 'Launch a step down a cable and watch the far end answer back.',
+		summary:
+			'A step behind a source resistance enters a lossless line, drawn as its distributed L–C ladder. Each end reflects a fraction Γ of every arriving wave; the lattice sum gives the voltage at every point and instant, so the probes read a real time-domain reflectometer.',
+		formula: '\\Gamma = \\dfrac{Z - Z_0}{Z + Z_0} \\;\\cdot\\; V_1 = V_s\\,\\dfrac{Z_0}{R_s + Z_0}',
+		inventory: [
+			'step source + R_s',
+			'3-section L–C ladder (Z₀, t_d)',
+			'load Z_L',
+			'near/far probes'
+		],
+		boundaries: ['Z_L 5 Ω – 5 kΩ', 'Z₀ 25 – 150 Ω', 'time 0 – 10 t_d'],
+		fault: 'load connector open',
+		pedagogy: {
+			aha: 'A wire is not instant. For one trip of the line the source cannot know what is at the far end — and the reflection is the far end’s answer.',
+			principle:
+				'Long enough wires stop behaving like a single node. A step enters the line seeing only its characteristic impedance $Z_0 = \\sqrt{L/C}$, so it launches $V_1 = V_s\\,\\frac{Z_0}{R_s+Z_0}$ whatever the load is. One delay $t_d$ later the wave reaches the load, which reflects the fraction $\\Gamma_L = \\frac{Z_L - Z_0}{Z_L + Z_0}$ back toward the source; there $\\Gamma_S$ reflects it again. An open end ($\\Gamma = +1$) doubles the voltage, a short ($\\Gamma = -1$) cancels it, and a **matched** load ($Z_L = Z_0$, $\\Gamma = 0$) swallows the wave so the line behaves as if it went on forever. The near-end trace is a map of the line: each step is an echo, and its time tells you how far away the mismatch is.',
+			steps: [
+				{
+					label: 'Sweep the load and read the echo.',
+					detail:
+						'Drag $Z_L$ above and below $Z_0$. The near-end probe shows a second step at $2t_d$ whose sign follows $\\Gamma_L$: up for a high load, down for a low one.'
+				},
+				{
+					label: 'Match the load to the line.',
+					detail:
+						'With $Z_L = Z_0$ the far end absorbs the wave on arrival: no echo, and the near end settles at $V_1$ in a single step. This is why fast buses are terminated.'
+				},
+				{
+					label: 'Diagnose a far end that answers wrongly.',
+					detail:
+						'Inject the disturbance and read the echo’s sign and size. Work out $\\Gamma_L$ from the near-end step, then infer what the load must now look like.'
+				}
+			]
+		}
+	},
+	{
+		id: 'pll',
+		index: '13',
+		title: 'Phase-Locked Loop',
+		domain: 'Active analog',
+		tier: 'Advanced',
+		model: 'nonlinear phase-error dynamics',
+		tagline: 'An oscillator that listens: it tunes itself until its phase stops slipping.',
+		summary:
+			'A sinusoidal phase detector compares the reference with the VCO, a first-order RC loop filter smooths the error into a control voltage, and the VCO retunes. The phase error and control voltage are integrated live, so acquisition, lock, and cycle slipping all appear on the scope and in the phase portrait.',
+		formula:
+			'\\dot\\theta_e = \\omega_{ref} - (\\omega_0 + K_v v_c) \\;\\cdot\\; \\tau\\,\\dot v_c = K_d \\sin\\theta_e - v_c',
+		inventory: [
+			'reference oscillator',
+			'XOR phase detector',
+			'RC loop filter',
+			'VCO with feedback'
+		],
+		boundaries: ['f_ref, f₀ 8 – 12 kHz', 'hold range ±K_vK_d = ±1.2 kHz', 'τ = RC 0.05 – 2 ms'],
+		fault: 'loop filter shorted to ground',
+		pedagogy: {
+			aha: 'Lock is not equal frequencies by luck — it is the loop holding a constant phase error, because a constant error is exactly the voltage the VCO needs.',
+			principle:
+				'The detector outputs $K_d\\sin\\theta_e$, the filter averages it into $v_c$, and the VCO runs at $\\omega_0 + K_v v_c$. If the reference sits above the free-running frequency, the VCO needs a positive control voltage to keep up, and the only way to make one is a **steady phase lead**: $\\sin\\theta_e = \\frac{\\omega_{ref}-\\omega_0}{K_vK_d}$. That is why a locked loop shows a fixed offset between the two waves, not zero. Push the detuning past the hold range $|\\omega_{ref}-\\omega_0| < K_vK_d$ and no phase can produce enough voltage: the error grows without bound and the loop **slips cycles**, which the phase portrait shows as an orbit instead of a point.',
+			steps: [
+				{
+					label: 'Retune the reference and watch the loop follow.',
+					detail:
+						'Move $f_{ref}$ inside the hold range. The VCO frequency chases it, rings once or twice through the loop filter, and settles with a new, constant phase offset.'
+				},
+				{
+					label: 'Push the reference beyond the hold range.',
+					detail:
+						'Detune past $K_vK_d$. The phase error now runs away, $v_c$ beats instead of settling, and the portrait traces a closed orbit: cycle slipping.'
+				},
+				{
+					label: 'Diagnose a loop that never pulls in.',
+					detail:
+						'Inject the disturbance and compare the control voltage with the detector output. Ask which block stopped turning phase error into a tuning voltage.'
+				}
+			]
+		}
+	},
+	{
+		id: 'classd',
+		index: '14',
+		title: 'Class-D Amplifier You Can Hear',
+		domain: 'Power electronics',
+		tier: 'Advanced',
+		model: 'natural-sampling PWM + 2nd-order LC filter',
+		tagline: 'Chop audio into a square wave, then filter the music back out — and listen to both.',
+		summary:
+			'A comparator turns the audio and a triangle carrier into a two-level PWM wave, a half-bridge switches it at full power, and a Butterworth LC filter recovers the audio. The filter’s gain at the audio and carrier frequencies is computed live, and the Listen button plays the actual signal so the carrier whine is audible when the filter fails to remove it.',
+		formula:
+			'|H(f)| = \\dfrac{1}{\\sqrt{(1 - r^2)^2 + 2r^2}},\\; r = \\dfrac{f}{f_c} \\;\\cdot\\; f_c = \\dfrac{1}{2\\pi\\sqrt{LC}}',
+		inventory: [
+			'audio + triangle carrier',
+			'PWM comparator',
+			'half-bridge switch',
+			'LC filter + speaker'
+		],
+		boundaries: [
+			'audio 100 Hz – 2 kHz',
+			'carrier 4 – 20 kHz (slowed into earshot)',
+			'f_c 0.5 – 50 kHz'
+		],
+		fault: 'output filter capacitor open',
+		pedagogy: {
+			aha: 'The transistors only ever know two states — fully on or fully off — and the music lives in how long each one lasts.',
+			principle:
+				'A linear amplifier wastes power by holding its transistors half-on. A class-D stage never does: the comparator outputs $+1$ while the audio exceeds a triangle carrier and $-1$ otherwise, so the **duty cycle** follows the audio. The switched wave carries the audio at low frequency plus the carrier and its harmonics high above it. A second-order $LC$ low-pass with $f_c = \\frac{1}{2\\pi\\sqrt{LC}}$ passes the first and attenuates the second by about $40\\,\\mathrm{dB}$ per decade. Put $f_c$ well above the audio and well below the carrier and the speaker hears music; let the carrier through and it hears a whine. Real amplifiers switch at hundreds of kilohertz; this one is slowed into earshot so you can hear exactly what the filter removes.',
+			steps: [
+				{
+					label: 'Lower the filter cutoff below the carrier.',
+					detail:
+						'Increase $C$ until $f_c$ sits between the audio and the carrier. The carrier residual falls by $40\\,\\mathrm{dB}$ per decade of separation; press Listen to hear the whine fade.'
+				},
+				{
+					label: 'Move the carrier closer to the audio.',
+					detail:
+						'Slow the carrier down. With less room between the two, no single cutoff can pass the audio and block the carrier: the cleanliness readout drops.'
+				},
+				{
+					label: 'Diagnose an amplifier that whines.',
+					detail:
+						'Inject the disturbance and compare the PWM and output probes. The output now looks like the switched wave: which part of the filter stopped shunting the carrier?'
+				}
+			]
+		}
+	},
+	{
+		id: 'pid',
+		index: '15',
+		title: 'PID Motor Speed Control',
+		domain: 'Control systems',
+		tier: 'Advanced',
+		model: 'discrete PID + first-order DC motor with saturation',
+		tagline: 'Tune three gains until the motor arrives fast, without overshoot, and stays there.',
+		summary:
+			'A speed loop around a DC motor with inertia, friction, and a saturating driver. The controller sums proportional, integral, and derivative paths with conditional-integration anti-windup; each change re-simulates the full step response, including a load step halfway through, and reports overshoot, settling time, and steady-state error.',
+		formula:
+			'u = K_p e + K_i\\!\\int e\\,dt + K_d\\,\\dfrac{de}{dt} \\;\\cdot\\; J\\dot\\omega = K u - b\\,\\omega - \\tau_L',
+		inventory: [
+			'setpoint ω_set',
+			'parallel K_p, K_i/s, K_d·s paths',
+			'saturating driver',
+			'motor + tachometer'
+		],
+		boundaries: ['K_p 0 – 10', 'K_i 0 – 20', 'K_d 0 – 0.5', 'driver limit ±12 V'],
+		fault: 'tachometer feedback inverted',
+		pedagogy: {
+			aha: 'Each gain answers a different question: P asks how far off you are, I asks how long you have been off, and D asks how fast you are closing in.',
+			principle:
+				'The error $e = \\omega_{set} - \\omega$ drives three paths. **Proportional** $K_pe$ pushes harder the further off you are, but a motor fighting friction needs a steady push, and a P-only loop can only make one by keeping some error: a steady-state offset. **Integral** $K_i\\int e\\,dt$ keeps adding while any error remains, so it removes that offset, at the price of overshoot if it accumulates too eagerly. **Derivative** $K_d\\,\\dot e$ reacts to how fast the error is shrinking and brakes the approach. The driver saturates at its supply, so an integrator that keeps adding while the output is pinned **winds up**; this controller stops integrating then, which is the anti-windup the lab shows.',
+			steps: [
+				{
+					label: 'Raise the proportional gain and read the offset.',
+					detail:
+						'With $K_i = 0$, more $K_p$ makes the rise faster and the offset smaller, but never zero: friction needs a push, and P only pushes while there is error.'
+				},
+				{
+					label: 'Add integral action to remove the offset.',
+					detail:
+						'Raise $K_i$. The steady-state error goes to zero, even after the load step, but too much integral overshoots and rings. Then add $K_d$ to damp it.'
+				},
+				{
+					label: 'Diagnose a loop that runs away.',
+					detail:
+						'Inject the disturbance and watch the actuator trace. If more gain makes things worse rather than better, ask which way the controller now believes the error points.'
+				}
+			]
+		}
+	},
+	{
+		id: 'sigmadelta',
+		index: '16',
+		title: 'Sigma-Delta Converter',
+		domain: 'Mixed-signal',
+		tier: 'Frontier',
+		model: '1st/2nd-order ΔΣ modulator + FFT',
+		tagline: 'One bit, sampled fast, can carry sixteen — if you push the noise somewhere else.',
+		summary:
+			'A sine passes through one or two integrators, a one-bit quantizer, and a one-bit DAC in feedback. A 4096-sample FFT of the bitstream shows the quantization noise shaped up and out of the signal band, and the in-band SNR and effective number of bits follow the order and oversampling ratio.',
+		formula:
+			'Y(z) = X(z) + (1 - z^{-1})^L E(z) \\;\\cdot\\; \\mathrm{ENOB} = \\dfrac{\\mathrm{SNR} - 1.76}{6.02}',
+		inventory: [
+			'input sine',
+			'summing node + integrator',
+			'1-bit quantizer, clocked',
+			'feedback DAC + decimator'
+		],
+		boundaries: ['amplitude 0.05 – 0.7', 'OSR 8 – 128', 'order 1 or 2'],
+		fault: 'integrator leaks charge',
+		pedagogy: {
+			aha: 'A one-bit converter is terribly wrong at every instant — but it is wrong in a way that averages out, and the error is pushed to frequencies you are about to throw away.',
+			principle:
+				'A one-bit quantizer can only say $+1$ or $-1$, an error as large as the signal. The loop fixes it in time rather than in amplitude: the integrator accumulates the difference between the input and every bit already sent, and the next bit is chosen to pay that debt back. Over many samples the **density of ones** tracks the input. In frequency terms the error is multiplied by $(1 - z^{-1})^L$, which is near zero at low frequency and large near $f_s/2$: **noise shaping**. Oversample by $\\mathrm{OSR}$, filter away everything above the signal band, and each doubling of OSR buys about $3(2L+1)\\,\\mathrm{dB}$; a second integrator ($L = 2$) makes that slope much steeper.',
+			steps: [
+				{
+					label: 'Switch to a second-order loop.',
+					detail:
+						'Compare the spectra: the noise floor near the signal band drops and rises more steeply toward $f_s/2$. The in-band SNR and ENOB climb.'
+				},
+				{
+					label: 'Raise the oversampling ratio.',
+					detail:
+						'A higher OSR narrows the shaded signal band into the quiet region of the shaped noise. Watch the gain per doubling: about $9\\,\\mathrm{dB}$ for $L=1$ and $15\\,\\mathrm{dB}$ for $L=2$.'
+				},
+				{
+					label: 'Diagnose a converter that lost its resolution.',
+					detail:
+						'Inject the disturbance and read the low-frequency end of the spectrum. Shaped noise should fall toward DC; ask which block stopped remembering the debt.'
+				}
+			]
+		}
+	},
+	{
+		id: 'uart',
+		index: '17',
+		title: 'UART Logic Analyzer',
+		domain: 'Sequential digital',
+		tier: 'Core',
+		model: 'asynchronous framing + mid-bit sampling',
+		tagline: 'No shared clock: the receiver times every bit from one falling edge.',
+		summary:
+			'A transmitter frames a byte with a start bit, eight data bits LSB first, optional parity, and a stop bit. The receiver has its own baud clock: it syncs on the start edge and samples the middle of each bit by its own count, so clock mismatch accumulates across the frame and corrupts the last bits first. A logic analyzer shows the line and every sampling instant.',
+		formula:
+			't_k = \\left(k + \\tfrac12\\right) T_{bit}(1 + \\varepsilon) \\;\\cdot\\; |\\varepsilon| \\lesssim \\dfrac{1}{2N_{bits}}',
+		inventory: [
+			'byte + TX shift register',
+			'single serial line',
+			'RX with independent baud clock',
+			'data + error outputs'
+		],
+		boundaries: ['8 data bits, LSB first', 'parity none/even/odd', 'clock error ±10 %'],
+		fault: 'TX line polarity inverted',
+		pedagogy: {
+			aha: 'The receiver only hears the start edge. After that it is counting in the dark, and a few percent of clock error is enough to land in the wrong bit.',
+			principle:
+				'A UART line idles high. A **start bit** pulls it low; that falling edge is the receiver’s only timing reference. It then waits half a bit and samples, and again every $T_{bit}$ by its own clock, through eight data bits (least significant first), an optional **parity** bit, and a **stop bit** that must read high. If the receiver’s clock is off by $\\varepsilon$, its $k$-th sample lands at $(k + \\frac12)T_{bit}(1+\\varepsilon)$: the error grows with every bit, and once it exceeds half a bit the sample reads a neighbour. With ten bits per frame that allows roughly $|\\varepsilon| < 5\\%$; real links budget about $2\\%$ to share between both ends.',
+			steps: [
+				{
+					label: 'Detune the receiver clock until bits slip.',
+					detail:
+						'Drag the clock error. The sample ticks drift across the frame, the last bits go first, and eventually the stop bit is read low: a framing error.'
+				},
+				{
+					label: 'Turn on even parity.',
+					detail:
+						'Parity adds one bit that makes the count of ones even. A single slipped bit now raises a parity error, even when the stop bit still happens to read high.'
+				},
+				{
+					label: 'Diagnose a link that never frames.',
+					detail:
+						'Inject the disturbance with zero clock error. Read the idle level and the start bit on the analyzer: what would the receiver have to assume to decode this line?'
+				}
+			]
+		}
+	},
+	{
+		id: 'kickback',
+		index: '18',
+		title: 'Phase Kickback',
+		domain: 'Quantum',
+		tier: 'Advanced',
+		model: 'two-qubit state vector + reduced Bloch vector',
+		tagline: 'The gate acts on the target, yet the control is the one that changes.',
+		summary:
+			'The control qubit is put in superposition, a controlled-phase gate acts on the target, and a final Hadamard reads the control. When the target is an eigenstate of the phase gate, its eigenphase moves onto the control intact; any other target entangles with the control and shortens its Bloch vector. Exact 4-amplitude linear algebra drives the Bloch view and the measurement histogram.',
+		formula:
+			'\\tfrac{1}{\\sqrt2}(|0\\rangle + |1\\rangle)|1\\rangle \\xrightarrow{CP(\\varphi)} \\tfrac{1}{\\sqrt2}(|0\\rangle + e^{i\\varphi}|1\\rangle)|1\\rangle \\;\\cdot\\; P(1) = \\sin^2\\tfrac{\\varphi}{2}',
+		inventory: [
+			'control + target qubits',
+			'2× Hadamard on the control',
+			'controlled-phase CP(φ)',
+			'control measurement'
+		],
+		boundaries: ['φ ∈ [0, 2π]', 'targets |0⟩, |1⟩, |+⟩, |−⟩', 'purity |r| ∈ [0, 1]'],
+		fault: 'target prepared off its eigenstate',
+		pedagogy: {
+			aha: 'A controlled gate is symmetric about which qubit “owns” the phase: if the target is an eigenstate, the phase lands on the control instead.',
+			principle:
+				'A controlled-phase gate multiplies only $|11\\rangle$ by $e^{i\\varphi}$. Put the control in $|+\\rangle$ and the target in $|1\\rangle$, an **eigenstate** of the phase gate, and the state factorises: $\\tfrac{1}{\\sqrt2}(|0\\rangle + e^{i\\varphi}|1\\rangle)\\otimes|1\\rangle$. The target is untouched, and the phase has been **kicked back** onto the control’s relative phase, where the final Hadamard turns it into a measurable probability $P(1) = \\sin^2\\frac{\\varphi}{2}$. This is the engine of phase estimation and of Grover’s oracle. If the target is not an eigenstate, the two qubits entangle instead: the control’s Bloch vector shrinks toward the centre and the clean interference fringe washes out.',
+			steps: [
+				{
+					label: 'Sweep the phase angle and read the control.',
+					detail:
+						'With the target in $|1\\rangle$, the control’s Bloch vector turns around the equator by exactly $\\varphi$, and $P(1)$ follows $\\sin^2\\frac{\\varphi}{2}$ from $0$ to $1$.'
+				},
+				{
+					label: 'Prepare the target in |+⟩ instead.',
+					detail:
+						'Now the target is not an eigenstate. The Bloch vector shortens: purity falls below $1$, and the control has become entangled with the target instead of simply rotating.'
+				},
+				{
+					label: 'Diagnose a fringe that has lost contrast.',
+					detail:
+						'Inject the disturbance with the target set to $|1\\rangle$. Compare the Bloch vector’s length with the ideal case, and infer what the target must really be.'
 				}
 			]
 		}
@@ -1477,8 +1951,8 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 	},
 	grover: {
 		curriculum: {
-			order: 11,
-			prerequisites: ['bell'],
+			order: 12,
+			prerequisites: ['kickback'],
 			objective: 'Explain Grover search as amplitude rotation and identify over-rotation.'
 		},
 		actions: [
@@ -1518,6 +1992,336 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 		},
 		diagnosisPrompt:
 			'Disturb the oracle, run two rounds, and compare the requested target with the amplified bar. Which state did the phase flip actually mark?'
+	},
+	tdr: {
+		curriculum: {
+			order: 13,
+			prerequisites: ['rc'],
+			objective: 'Read a reflection coefficient from a near-end echo and terminate a line.'
+		},
+		actions: [
+			action(
+				'input[aria-label^="Load impedance"]',
+				'change',
+				'sweep the load impedance and compare the near-end echo'
+			),
+			action('button[data-preset="match-load"]', 'click', 'match the load to the line impedance'),
+			action(
+				'.fault-switch [role="switch"]',
+				'change',
+				'inject the hidden line disturbance and inspect the changed echo',
+				1,
+				'fault'
+			)
+		],
+		prediction: {
+			prompt:
+				'A $50\\ \\Omega$ line ends in an open circuit. When the step first reaches the far end, what does the far-end voltage do?',
+			choices: [
+				{
+					id: 'far-end-doubles',
+					label: 'It jumps to twice the launched step, $2V_1$.',
+					correct: true,
+					feedback:
+						'Right. An open end has $\\Gamma_L = +1$: the reflected wave equals the incident one and the two add at the end.'
+				},
+				{
+					id: 'far-end-launched',
+					label: 'It rises to the launched step $V_1$ and stays there.',
+					correct: false,
+					feedback:
+						'That is the matched case, $\\Gamma_L = 0$. An open end reflects everything, so the far end sees incident plus reflected wave.'
+				},
+				{
+					id: 'far-end-instant',
+					label: 'Nothing happens until the source has charged the whole line.',
+					correct: false,
+					feedback:
+						'The front travels at a finite speed and reaches the far end after one delay $t_d$; the far end reacts the moment it arrives.'
+				}
+			]
+		},
+		diagnosisPrompt:
+			'Inject the disturbance, then measure the near-end echo at $2t_d$. From its size, compute $\\Gamma_L$ and say what impedance the far end now presents.'
+	},
+	pll: {
+		curriculum: {
+			order: 15,
+			prerequisites: ['wien'],
+			objective: 'Explain lock as a steady phase error and find the hold range of a PLL.'
+		},
+		actions: [
+			action(
+				'input[aria-label^="Reference frequency"]',
+				'change',
+				'retune the reference frequency and watch the loop reacquire'
+			),
+			action('button[data-preset="detune"]', 'click', 'detune the reference beyond the hold range'),
+			action(
+				'.fault-switch [role="switch"]',
+				'change',
+				'inject the hidden loop disturbance and inspect the changed evidence',
+				1,
+				'fault'
+			)
+		],
+		prediction: {
+			prompt:
+				'The loop is locked to a reference $500\\ \\mathrm{Hz}$ above the VCO’s free-running frequency. What is the steady phase error $\\theta_e$?',
+			choices: [
+				{
+					id: 'nonzero-offset',
+					label: 'A constant, non-zero offset that supplies the control voltage.',
+					correct: true,
+					feedback:
+						'Yes. The VCO needs $v_c = \\Delta\\omega / K_v$, and the detector can only produce it with $\\sin\\theta_e = \\Delta\\omega/(K_vK_d)$.'
+				},
+				{
+					id: 'zero-error',
+					label: 'Exactly zero; lock means the waves line up.',
+					correct: false,
+					feedback:
+						'With $\\theta_e = 0$ the detector outputs zero, so $v_c$ would decay and the VCO would fall back to $\\omega_0$. Lock with detuning needs a phase offset.'
+				}
+			]
+		},
+		diagnosisPrompt:
+			'Inject the disturbance and compare the detector output with the control voltage. Does the phase error still reach the VCO, and where is the signal lost?'
+	},
+	classd: {
+		curriculum: {
+			order: 17,
+			prerequisites: ['buck'],
+			objective: 'Place an LC cutoff between the audio band and the PWM carrier.'
+		},
+		actions: [
+			action(
+				'input[aria-label^="Filter capacitance"]',
+				'change',
+				'change the filter capacitance and compare the carrier residual'
+			),
+			action(
+				'input[aria-label^="Carrier frequency"]',
+				'change',
+				'move the carrier frequency and compare the cleanliness'
+			),
+			action(
+				'.fault-switch [role="switch"]',
+				'change',
+				'inject the hidden output disturbance and inspect the changed evidence',
+				1,
+				'fault'
+			)
+		],
+		prediction: {
+			prompt:
+				'You double the filter capacitance $C$. What happens to the carrier residual at the speaker?',
+			choices: [
+				{
+					id: 'residual-falls',
+					label:
+						'It falls, because $f_c$ drops by $\\sqrt2$ and the carrier sits further into the stopband.',
+					correct: true,
+					feedback:
+						'Correct. $f_c \\propto 1/\\sqrt{LC}$, and a second-order filter attenuates about $40\\,\\mathrm{dB}$ per decade above $f_c$.'
+				},
+				{
+					id: 'residual-rises',
+					label: 'It rises, because a bigger capacitor stores more ripple.',
+					correct: false,
+					feedback:
+						'A larger shunt capacitor has lower impedance at the carrier frequency, so it shunts more of the carrier to ground, not less.'
+				}
+			]
+		},
+		diagnosisPrompt:
+			'Inject the disturbance, then compare the PWM probe with the output probe and listen. Which element must have stopped attenuating the carrier?'
+	},
+	pid: {
+		curriculum: {
+			order: 16,
+			prerequisites: ['buck'],
+			objective: 'Tune P, I, and D for a fast, offset-free step response without windup.'
+		},
+		actions: [
+			action(
+				'input[aria-label^="Proportional gain"]',
+				'change',
+				'raise the proportional gain and read the steady-state offset'
+			),
+			action(
+				'input[aria-label^="Integral gain"]',
+				'change',
+				'add integral gain and confirm the offset disappears'
+			),
+			action(
+				'.fault-switch [role="switch"]',
+				'change',
+				'inject the hidden loop disturbance and inspect the changed evidence',
+				1,
+				'fault'
+			)
+		],
+		prediction: {
+			prompt:
+				'With only proportional control ($K_i = K_d = 0$), the motor must overcome friction. Where does its speed settle?',
+			choices: [
+				{
+					id: 'below-setpoint',
+					label: 'Below the setpoint: a P loop needs some error to keep pushing.',
+					correct: true,
+					feedback:
+						'Yes. The steady drive is $K_pe$, so a non-zero drive needs a non-zero error. Integral action removes it.'
+				},
+				{
+					id: 'at-setpoint',
+					label: 'Exactly at the setpoint, once it has stopped oscillating.',
+					correct: false,
+					feedback:
+						'At the setpoint $e = 0$, so $K_pe = 0$ and nothing opposes friction. The motor slows until the error is large enough to hold it.'
+				}
+			]
+		},
+		diagnosisPrompt:
+			'Inject the disturbance, then watch the actuator trace after the step. Does more drive move the measured speed toward or away from the setpoint, and what does that say about the feedback path?'
+	},
+	sigmadelta: {
+		curriculum: {
+			order: 18,
+			prerequisites: ['timer'],
+			objective: 'Relate modulator order and oversampling to noise shaping and ENOB.'
+		},
+		actions: [
+			action('button[data-order="2"]', 'click', 'switch the modulator to a second-order loop'),
+			action(
+				'input[aria-label^="Oversampling ratio"]',
+				'change',
+				'raise the oversampling ratio and compare the in-band SNR'
+			),
+			action(
+				'.fault-switch [role="switch"]',
+				'change',
+				'inject the hidden modulator disturbance and inspect the changed spectrum',
+				1,
+				'fault'
+			)
+		],
+		prediction: {
+			prompt:
+				'A one-bit modulator’s quantization error is as large as the signal. Where does a sigma-delta loop put most of that error?',
+			choices: [
+				{
+					id: 'pushed-high',
+					label: 'At high frequencies, far above the signal band.',
+					correct: true,
+					feedback:
+						'Right. The loop filters the error by $(1-z^{-1})^L$, a high-pass shape, so a low-pass decimator removes most of it.'
+				},
+				{
+					id: 'spread-flat',
+					label: 'Spread evenly across all frequencies, like plain quantization.',
+					correct: false,
+					feedback:
+						'That is an open-loop quantizer. Feedback through the integrator shapes the error spectrum instead of leaving it white.'
+				}
+			]
+		},
+		diagnosisPrompt:
+			'Inject the disturbance and inspect the spectrum near DC. Shaped noise should fall toward zero frequency: which part of the loop no longer accumulates the error?'
+	},
+	uart: {
+		curriculum: {
+			order: 14,
+			prerequisites: ['lfsr'],
+			objective: 'Explain asynchronous framing and the clock tolerance of mid-bit sampling.'
+		},
+		actions: [
+			action(
+				'input[aria-label^="Receiver clock error"]',
+				'change',
+				'detune the receiver clock until the samples slip'
+			),
+			action('button[data-parity="even"]', 'click', 'turn on even parity'),
+			action(
+				'.fault-switch [role="switch"]',
+				'change',
+				'inject the hidden line disturbance and inspect the analyzer',
+				1,
+				'fault'
+			)
+		],
+		prediction: {
+			prompt: 'The receiver’s clock runs $4\\%$ fast. Which bits of the frame are most at risk?',
+			choices: [
+				{
+					id: 'last-bits',
+					label: 'The last ones — the error accumulates from the start edge.',
+					correct: true,
+					feedback:
+						'Yes. The sample for bit $k$ is off by about $(k+\\tfrac12)\\varepsilon$ bit times, so the stop bit sees the largest drift.'
+				},
+				{
+					id: 'first-bits',
+					label: 'The first ones — the receiver has not locked on yet.',
+					correct: false,
+					feedback:
+						'The start edge resynchronises the receiver exactly, so the first samples are the most accurate. Drift grows from there.'
+				}
+			]
+		},
+		diagnosisPrompt:
+			'Inject the disturbance with zero clock error, then read the idle level and the start bit on the analyzer. What has changed about the line itself?'
+	},
+	kickback: {
+		curriculum: {
+			order: 11,
+			prerequisites: ['bell'],
+			objective: 'Show that an eigenstate target moves a controlled phase onto the control.'
+		},
+		actions: [
+			action(
+				'input[aria-label^="Controlled phase angle"]',
+				'change',
+				'sweep the controlled phase angle and read the control'
+			),
+			action('button[data-target="plus"]', 'click', 'prepare the target in the plus state'),
+			action(
+				'.fault-switch [role="switch"]',
+				'change',
+				'inject the hidden preparation disturbance and inspect the Bloch vector',
+				1,
+				'fault'
+			)
+		],
+		prediction: {
+			prompt:
+				'The target is $|1\\rangle$ and $\\varphi = \\pi$. After the final Hadamard, what does measuring the control give?',
+			choices: [
+				{
+					id: 'always-one',
+					label: 'Always $1$: the phase flipped the control from $|+\\rangle$ to $|-\\rangle$.',
+					correct: true,
+					feedback:
+						'Correct. $e^{i\\pi} = -1$ kicks back as a sign on $|1\\rangle$, turning $|+\\rangle$ into $|-\\rangle$, which $H$ maps to $|1\\rangle$.'
+				},
+				{
+					id: 'always-zero',
+					label: 'Always $0$: the gate only acted on the target.',
+					correct: false,
+					feedback:
+						'The target is an eigenstate, so it is unchanged, but the eigenphase lands on the control. That is the kickback.'
+				},
+				{
+					id: 'fifty-fifty',
+					label: 'Fifty-fifty, because the control was in superposition.',
+					correct: false,
+					feedback:
+						'The final Hadamard interferes the two branches. With a relative phase of $\\pi$ they interfere completely, giving a certain outcome.'
+				}
+			]
+		},
+		diagnosisPrompt:
+			'Inject the disturbance with the target set to $|1\\rangle$. Compare the Bloch vector’s length and the fringe contrast with the ideal case: what must the target really be?'
 	}
 };
 
@@ -1673,6 +2477,104 @@ const DETAIL_MATH_COPY: Readonly<Record<string, DetailMathCopy>> = {
 			'$N=8$ search space',
 			'optimal $k=2$ rounds',
 			'peak $P(\\mathrm{target})\\approx0.945$'
+		]
+	},
+	tdr: {
+		summary:
+			'A step behind a source resistance $R_s$ enters a lossless line of impedance $Z_0=\\sqrt{L/C}$, drawn as its distributed $L$–$C$ ladder. Each end reflects a fraction $\\Gamma$ of every arriving wave; the lattice sum gives $V(x,t)$ at every point and instant, so the probes read a real time-domain reflectometer.',
+		inventory: [
+			'step source $V_s$ + $R_s$',
+			'$3$-section $L$–$C$ ladder $(Z_0,\\ t_d)$',
+			'load $Z_L$',
+			'near / far probes'
+		],
+		boundaries: [
+			'$Z_L: 5\\ \\Omega$–$5\\ \\mathrm{k\\Omega}$',
+			'$Z_0: 25$–$150\\ \\Omega$',
+			'$t: 0$–$10\\,t_d$'
+		]
+	},
+	pll: {
+		summary:
+			'A sinusoidal phase detector compares the reference with the VCO, a first-order $RC$ loop filter smooths the error into $v_c$, and the VCO retunes to $\\omega_0+K_vv_c$. The state $(\\theta_e, v_c)$ is integrated live, so acquisition, lock, and cycle slipping all appear on the scope and in the phase portrait.',
+		inventory: [
+			'reference oscillator $f_{ref}$',
+			'XOR phase detector $K_d\\sin\\theta_e$',
+			'$RC$ loop filter',
+			'VCO $\\omega_0+K_vv_c$'
+		],
+		boundaries: [
+			'$f_{ref},\\ f_0: 8$–$12\\ \\mathrm{kHz}$',
+			'hold range $\\pm K_vK_d=\\pm1.2\\ \\mathrm{kHz}$',
+			'$\\tau=RC: 0.05$–$2\\ \\mathrm{ms}$'
+		]
+	},
+	classd: {
+		summary:
+			'A comparator turns the audio and a triangle carrier into a two-level PWM wave, a half-bridge switches it, and a Butterworth $LC$ filter with $f_c=1/(2\\pi\\sqrt{LC})$ recovers the audio. The filter gain at the audio and carrier frequencies is computed live, and Listen plays the actual signal, so the carrier whine is audible when the filter fails to remove it.',
+		inventory: [
+			'audio + triangle carrier',
+			'PWM comparator',
+			'half-bridge switch',
+			'$LC$ filter + speaker'
+		],
+		boundaries: [
+			'audio $100\\ \\mathrm{Hz}$–$2\\ \\mathrm{kHz}$',
+			'carrier $4$–$20\\ \\mathrm{kHz}$ (slowed into earshot)',
+			'$f_c: 0.5$–$50\\ \\mathrm{kHz}$'
+		]
+	},
+	pid: {
+		summary:
+			'A speed loop around a DC motor with inertia $J$, friction $b$, and a driver that saturates at $\\pm12\\ \\mathrm V$. The controller sums $K_pe$, $K_i\\int e\\,dt$, and $K_d\\dot e$ with conditional-integration anti-windup; each change re-simulates the full step response, including a load step halfway through.',
+		inventory: [
+			'setpoint $\\omega_{set}$',
+			'parallel $K_p,\\ K_i/s,\\ K_d s$ paths',
+			'saturating driver',
+			'motor + tachometer'
+		],
+		boundaries: [
+			'$K_p: 0$–$10$',
+			'$K_i: 0$–$20$',
+			'$K_d: 0$–$0.5$',
+			'driver limit $\\pm12\\ \\mathrm V$'
+		]
+	},
+	sigmadelta: {
+		summary:
+			'A sine passes through one or two integrators, a one-bit quantizer, and a one-bit DAC in feedback. A $4096$-sample FFT of the bitstream shows the quantization noise shaped by $(1-z^{-1})^L$ out of the signal band, and the in-band SNR and ENOB follow the order $L$ and oversampling ratio.',
+		inventory: [
+			'input sine $x$',
+			'summing node + integrator',
+			'$1$-bit quantizer, clocked at $f_s$',
+			'feedback DAC + decimator'
+		],
+		boundaries: ['amplitude $0.05$–$0.7$', '$\\mathrm{OSR}: 8$–$128$', 'order $L\\in\\{1,2\\}$']
+	},
+	uart: {
+		summary:
+			'A transmitter frames a byte with a start bit, eight data bits LSB first, optional parity, and a stop bit. The receiver syncs on the start edge and samples at $(k+\\tfrac12)T_{bit}(1+\\varepsilon)$ by its own clock, so a clock error $\\varepsilon$ accumulates across the frame and corrupts the last bits first.',
+		inventory: [
+			'byte + TX shift register',
+			'single serial line',
+			'RX with independent baud clock',
+			'data + error outputs'
+		],
+		boundaries: ['$8$ data bits, LSB first', 'parity none / even / odd', 'clock error $\\pm10\\%$']
+	},
+	kickback: {
+		summary:
+			'$H$ puts the control in $|+\\rangle$, $CP(\\varphi)$ acts on the target, and a second $H$ reads the control. For an eigenstate target the eigenphase moves onto the control and $P(1)=\\sin^2(\\varphi/2)$; any other target entangles with the control and shortens its Bloch vector. Exact $4$-amplitude linear algebra drives the Bloch view and the histogram.',
+		inventory: [
+			'control + target qubits',
+			'$2\\times$ Hadamard on the control',
+			'controlled phase $CP(\\varphi)$',
+			'control measurement'
+		],
+		boundaries: [
+			'$\\varphi\\in[0,2\\pi]$',
+			'targets $|0\\rangle,|1\\rangle,|+\\rangle,|-\\rangle$',
+			'purity $|\\vec r|\\in[0,1]$'
 		]
 	}
 };

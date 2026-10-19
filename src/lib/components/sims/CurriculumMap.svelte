@@ -236,6 +236,11 @@
 		display: none;
 	}
 
+	/* Each label already carries its lab number; the L-designator would repeat it. */
+	.map-drawing :global(.schematic-designator) {
+		display: none;
+	}
+
 	.map-drawing :global([data-node-id]) {
 		transition:
 			filter var(--dur-med) var(--ease-precise),
