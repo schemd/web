@@ -47,6 +47,20 @@ test('catalogue and cyclic environment links navigate without JavaScript timers'
 	await expect(page).toHaveURL(/\/simulations\/0\.4\.0\/adder$/);
 });
 
+test('the curriculum map links every lab and recommends where to start', async ({ page }) => {
+	await page.goto('/simulations/0.4.0');
+	const links = page.locator('.map-node');
+	await expect(links).toHaveCount(11);
+	await expect(page.locator('.map-node[href="/simulations/0.4.0/rc"]')).toHaveAttribute(
+		'aria-label',
+		/Lab 02: Dynamic RC Low-Pass Filter/
+	);
+	/* Nothing completed yet: the first root of the curriculum is next. */
+	await expect(page.locator('.map-drawing [data-node-id="L01"]').first()).toHaveClass(/is-next/);
+	await page.locator('.map-node[href="/simulations/0.4.0/buck"]').click();
+	await expect(page).toHaveURL(/\/simulations\/0\.4\.0\/buck$/);
+});
+
 test('adder delegates input-port clicks and propagates the binary network instantly', async ({
 	page
 }) => {
