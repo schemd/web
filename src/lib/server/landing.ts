@@ -80,7 +80,7 @@ INV.out -> Q.in #emerald [digital ortho]`
 			source: `prepare:Q0 "|0\\rangle" at (70, 90) #blue
 prepare:Q1 "|0\\rangle" at (70, 210) #blue
 hadamard:H "H" at (220, 90) #cyan
-cnot:CX "CX" at (380, 150) #purple
+cnot:CX "CX" at (380, 150) #purple [fit=wires]
 measure:M0 "M" at (560, 90) #emerald
 measure:M1 "M" at (560, 210) #emerald
 Q0.out -> H.in #blue [quantum]
