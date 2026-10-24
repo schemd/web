@@ -63,8 +63,13 @@ const COMPILER_WORKER = /\/workers\/compile-browser\.worker-[^/]+\.js$/;
  * entry, on top of the 0.8 figures): routing by net with negotiated
  * congestion, exact integer geometry, measured text, and the diagnostics
  * model behind `diagnoseSchematic`. Headroom stays near what 0.8 left.
+ *
+ * Raised again from 48 KiB to 50 for `@schemd/core` 1.1, which measured
+ * 48.6 KiB here — the 1.8 KiB the compiler's own budgets recorded for
+ * `fit=wires`, terminal alignment and their diagnostics (42.7 → 44.6 KiB
+ * gzip tree-shaken). It stays in the lazy worker, off every document's path.
  */
-const MAX_COMPILER_JS_GZIP = 48 * 1024;
+const MAX_COMPILER_JS_GZIP = 50 * 1024;
 /*
  * Raised from 146/182 KiB in 0.4. The laboratory grew from five environments
  * to thirteen, and each one ships its own lazily loaded chunk plus its share
@@ -212,7 +217,9 @@ const MAX_MODERN_MATH_FONTS = 320 * 1024;
 /* Raised to 1,380 for the seven new laboratories, measured 1,377.2 KiB: their
    chunks raw (about 10 KiB each before gzip) and their scoped stylesheets, all
    loaded only with their own lab. */
-const MAX_CLIENT_OUTPUT = 1_380 * 1024;
+/* Raised to 1,386 for `@schemd/core` 1.1, measured 1,382.3 KiB: the worker's
+   compiler grew about 5 KiB unminified for fitting and terminal alignment. */
+const MAX_CLIENT_OUTPUT = 1_386 * 1024;
 /*
  * Eleven laboratories, each downloaded only when it is opened. Two of them are
  * manifests rather than components, so the shell's lazy registry spans both
