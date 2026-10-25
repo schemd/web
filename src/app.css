@@ -125,6 +125,11 @@
 	--tok-number: #8a4b00;
 	--tok-color: #6a3fb5;
 	--tok-option: #0d6f7a;
+	/* Live readouts in the labs: a high signal, and a qubit's state. */
+	--live: #0d6f7a;
+	--live-text: #0a5560;
+	--qubit: #6a3fb5;
+	--qubit-text: #4b2a8a;
 }
 
 /* ---------- Negative: white ink on black ---------- */
@@ -156,6 +161,10 @@
 	--schematic-color-slate: #b4bac2;
 	--schematic-color-emerald: #78d08c;
 	--shiki: var(--shiki-negative);
+	--live: #62f6cf;
+	--live-text: #bfffee;
+	--qubit: #a997ff;
+	--qubit-text: #c5baff;
 	--tok-kind: #ffffff;
 	--tok-id: #6fb3f2;
 	--tok-string: #78d08c;
@@ -235,6 +244,10 @@ a {
 		text-decoration-thickness: 1px;
 		text-underline-offset: 0.2em;
 	}
+}
+
+dd {
+	margin-inline-start: 0;
 }
 
 code,
@@ -361,7 +374,7 @@ table.spec {
 
 section.sheet header.sheet-head {
 	margin: 0;
-	padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 3vw, 2rem);
+	padding: 0 0 var(--space-6);
 	border: 0;
 	background: none;
 	box-shadow: none;

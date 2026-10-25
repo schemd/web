@@ -130,7 +130,9 @@
 		}
 
 		& figcaption {
-			font: var(--text-xs) / 1.4 var(--font-mono);
+			font: var(--text-xs) / 1.4 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 	}
@@ -185,7 +187,9 @@
 
 	text {
 		fill: var(--ink-faint);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 7px;
 
 		&.end,

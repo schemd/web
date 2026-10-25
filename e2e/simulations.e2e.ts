@@ -42,7 +42,7 @@ test('catalogue and cyclic environment links navigate without JavaScript timers'
 	page
 }) => {
 	await page.goto('/simulations/0.4.0');
-	const adderLink = page.getByRole('link', { name: 'Initialize module →' }).first();
+	const adderLink = page.getByRole('link', { name: 'Open the lab' }).first();
 	await expect(adderLink).toHaveAttribute('href', '/simulations/0.4.0/adder');
 	await adderLink.click();
 	await expect(page).toHaveURL(/\/simulations\/0\.4\.0\/adder$/);
@@ -351,7 +351,7 @@ test('guided evidence, diagnosis, completion, and catalogue progress persist loc
 	await carryIn.click();
 	await expect(walkthrough.locator('.guided-step.is-complete')).toHaveCount(0);
 	const feedback = walkthrough.locator('.action-feedback');
-	await expect(feedback).toContainText('carry in');
+	await expect(feedback).toContainText('Carry in');
 	await expect(feedback).toContainText('This step asks you to enter an A value, then a B value');
 
 	await page.locator('[data-lab-input="a"]').fill('255');
@@ -364,7 +364,7 @@ test('guided evidence, diagnosis, completion, and catalogue progress persist loc
 	await expect(walkthrough.locator('.guided-step.is-complete')).toHaveCount(2);
 
 	await page.waitForTimeout(350);
-	await page.getByRole('switch', { name: 'inject hidden fault' }).click();
+	await page.getByRole('switch', { name: 'Inject hidden fault' }).click();
 	await expect(walkthrough.locator('.guided-step.is-complete')).toHaveCount(3);
 	const diagnosis = walkthrough.locator('.diagnosis');
 	await expect(diagnosis).not.toHaveClass(/is-complete/);
@@ -387,9 +387,11 @@ test('guided evidence, diagnosis, completion, and catalogue progress persist loc
 	await page.reload();
 	await expect(walkthrough.getByText(/Lab complete/)).toBeVisible();
 
-	await page.getByRole('link', { name: '← Labs' }).click();
+	await page.getByRole('link', { name: 'All labs' }).click();
 	await expect(page.getByText('1 of 18 experiments completed on this device')).toBeVisible();
-	await expect(page.locator('.lab-row').first().getByText('✓ completed locally')).toBeVisible();
+	await expect(
+		page.locator('.lab-row').first().getByText('Completed on this device')
+	).toBeVisible();
 });
 
 test('Grover guided contracts observe timeline controls outside the SVG host', async ({ page }) => {
@@ -422,7 +424,7 @@ test('Grover guided contracts observe timeline controls outside the SVG host', a
 	/* Grover's authored third step is over-rotation, not fault injection. The
 	 * diagnosis must remain sealed until the learner has also observed the
 	 * deliberately unnamed fault. */
-	await page.getByRole('switch', { name: 'inject hidden fault' }).click();
+	await page.getByRole('switch', { name: 'Inject hidden fault' }).click();
 	await expect(walkthrough.getByRole('textbox', { name: 'Your fault hypothesis' })).toBeVisible();
 });
 

@@ -90,7 +90,10 @@ test('diagnostics navigate to source and the local command palette executes IDE 
 	await expect(palette).toBeVisible();
 	await palette.getByRole('combobox').fill('rendered preview');
 	await palette.getByRole('option', { name: /Show rendered preview/ }).click();
-	await expect(page.getByRole('radio', { name: 'render' })).toHaveAttribute('aria-checked', 'true');
+	await expect(page.getByRole('radio', { name: 'Drawing' })).toHaveAttribute(
+		'aria-checked',
+		'true'
+	);
 });
 
 test('draft recovery survives a clean URL and the workspace remains usable on mobile', async ({
@@ -147,13 +150,13 @@ test('oversized local documents never become brittle mega share or embed URLs', 
 
 	await expect(page).not.toHaveURL(/[?&]code=/);
 	expect(page.url().length).toBeLessThan(16_000);
-	await expect(page.getByRole('button', { name: '⧉ share' })).toBeDisabled();
-	await expect(page.getByRole('button', { name: '⧉ embed' })).toBeDisabled();
+	await expect(page.getByRole('button', { name: 'Copy link' })).toBeDisabled();
+	await expect(page.getByRole('button', { name: 'Copy embed code' })).toBeDisabled();
 
 	await editor.fill('port:A "A" at (80, 80) #blue');
 	await expect(page).toHaveURL(/[?&]code=/);
-	await expect(page.getByRole('button', { name: '⧉ share' })).toBeEnabled();
-	await expect(page.getByRole('button', { name: '⧉ embed' })).toBeEnabled();
+	await expect(page.getByRole('button', { name: 'Copy link' })).toBeEnabled();
+	await expect(page.getByRole('button', { name: 'Copy embed code' })).toBeEnabled();
 });
 
 test('opening a shared workspace does not overwrite an unrelated recovery draft', async ({
@@ -189,7 +192,7 @@ test('opening a shared workspace does not overwrite an unrelated recovery draft'
 
 	await page.goto(sharedUrl);
 	await expect(editor).toHaveValue(shared);
-	await expect(page.getByText('shared · save manually')).toBeVisible();
+	await expect(page.getByText('Shared document; save it yourself')).toBeVisible();
 	await page.waitForTimeout(700);
 	expect(await page.evaluate((key) => localStorage.getItem(key), slot!)).toBe(stored);
 });

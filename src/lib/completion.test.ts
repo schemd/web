@@ -9,6 +9,23 @@ const vocabulary: CompletionVocabulary = {
 
 const at = (source: string) => completionAt(source, source.length, vocabulary);
 
+/* The shape the playground builds from `@schemd/core/schema` and the last compile. */
+const schema: CompletionVocabulary = {
+	...vocabulary,
+	options: {
+		resistor: [
+			{ name: 'type', values: ['fixed', 'variable', 'thermistor'] },
+			{ name: 'orientation', values: ['right', 'down', 'left', 'up'] }
+		],
+		mux: [
+			{ name: 'type', values: ['mux', 'demux'] },
+			{ name: 'inputs', values: [] }
+		]
+	},
+	ports: { R1: ['in', 'out'], U1: ['in1', 'in2', 'out1', 'select', 'enable'] }
+};
+const atSchema = (source: string) => completionAt(source, source.length, schema);
+
 describe('completionAt', () => {
 	it('completes a component kind at the head of a line', () => {
 		expect(at('res')?.items).toEqual(['resistor']);
@@ -66,5 +83,39 @@ describe('completionInsertion', () => {
 		expect(completionInsertion('resistor', 'kind')).toBe('resistor:');
 		expect(completionInsertion('amber', 'color')).toBe('amber');
 		expect(completionInsertion('down', 'orientation')).toBe('down');
+	});
+});
+
+describe('completion from the component schema', () => {
+	it('offers only the options the declared kind accepts', () => {
+		expect(atSchema('resistor:R1 "R" at (10,10) [')?.items).toEqual(['type', 'orientation']);
+		expect(atSchema('mux:U1 at (10,10) [i')?.items).toEqual(['inputs']);
+		expect(atSchema('mux:U1 at (10,10) [i')?.kind).toBe('option');
+	});
+
+	it('leaves out an option already written', () => {
+		expect(atSchema('resistor:R1 "R" at (10,10) [type=fixed ')?.items).toEqual(['orientation']);
+	});
+
+	it('offers an enum option its values', () => {
+		expect(atSchema('resistor:R1 "R" at (10,10) [type=')?.items).toEqual([
+			'fixed',
+			'variable',
+			'thermistor'
+		]);
+		expect(atSchema('resistor:R1 "R" at (10,10) [type=th')?.items).toEqual(['thermistor']);
+		expect(atSchema('mux:U1 at (10,10) [type=de')?.kind).toBe('value');
+	});
+
+	it('offers the real ports of a declared part', () => {
+		expect(atSchema('R1.')?.items).toEqual(['in', 'out']);
+		expect(atSchema('R1.out -> U1.s')?.items).toEqual(['select']);
+		expect(atSchema('R1.out -> U1.s')?.kind).toBe('port');
+		expect(atSchema('ZZ.')).toBeUndefined();
+	});
+
+	it('inserts an option with its equals sign', () => {
+		expect(completionInsertion('type', 'option')).toBe('type=');
+		expect(completionInsertion('select', 'port')).toBe('select');
 	});
 });

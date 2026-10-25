@@ -267,7 +267,7 @@
 <Bench
 	title="Quantum teleportation"
 	tone="quantum"
-	status={`step ${step + 1} of ${STEPS.length} · ${STEPS[step]?.label ?? ''}${corrupted ? ' · state degraded' : ''}`}
+	status={`step ${step + 1} of ${STEPS.length}, ${STEPS[step]?.label ?? ''}${corrupted ? ', state degraded' : ''}`}
 	hint="Drag θ and φ on the input state. Hover a gate for its action; click one to read it."
 	stage={canvas}
 	dock={instruments}
@@ -286,7 +286,7 @@
 	</div>
 
 	<div class="playback">
-		<p class="microlabel">protocol playback</p>
+		<p class="microlabel">Protocol playback</p>
 		<div class="transport">
 			<button type="button" class="btn" onclick={advance} disabled={playing} title="Step forward">
 				step ⏭
@@ -322,8 +322,8 @@
 
 	<SimulationMotionControl {motion} label="quantum-state phasor animation" />
 	<div class="switchboard">
-		<p class="microlabel">switchboard · fault injection</p>
-		<FaultSwitch label="classical correction link cut" bind:active={faults.lostClassicalBit} />
+		<p class="microlabel">Fault injection</p>
+		<FaultSwitch label="Classical correction link cut" bind:active={faults.lostClassicalBit} />
 	</div>
 {/snippet}
 
@@ -367,7 +367,7 @@
 		aria-atomic="true"
 	>
 		<span class="microlabel"
-			>teleportation fidelity · <LiveMath
+			>Teleportation fidelity, <LiveMath
 				id="teleport.fidelity.label"
 				label="fidelity is the squared overlap of input and output states"
 			/></span
@@ -442,7 +442,9 @@
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-faint);
 
@@ -515,7 +517,9 @@
 		justify-content: space-between;
 		align-items: baseline;
 		gap: var(--space-2);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-mute);
 
@@ -541,7 +545,9 @@
 		padding: 0.35rem 0.65rem;
 		background: var(--bg-panel);
 		border: 1px solid var(--accent-2);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--accent-2);
 		white-space: nowrap;

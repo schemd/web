@@ -210,7 +210,7 @@
 
 		<section class="probability-panel" aria-label="Live basis-state probability distribution">
 			<div class="probability-heading">
-				<span>state vector · Z basis</span>
+				<span>state vector, Z basis</span>
 				<strong
 					>{brokenEntangler
 						? 'separable'
@@ -228,8 +228,8 @@
 			>
 				<defs>
 					<linearGradient id="bell-probability-fill" x1="0" y1="1" x2="0" y2="0">
-						<stop offset="0" stop-color="#7164d9" />
-						<stop offset="1" stop-color="#c5baff" />
+						<stop offset="0" style="stop-color: var(--qubit)" />
+						<stop offset="1" style="stop-color: var(--qubit-text)" />
 					</linearGradient>
 				</defs>
 				{#each ['00', '01', '10', '11'] as basis, index (basis)}
@@ -266,7 +266,7 @@
 {#snippet controls()}
 	<div class="execution-deck">
 		<div class="stage-track" aria-label="Execution progress">
-			{#each ['INIT', 'H', 'CNOT', 'MEASURE'] as label, index (label)}
+			{#each ['Init', 'H', 'CNOT', 'Measure'] as label, index (label)}
 				<span class:active={index <= stage} class:current={index === stage}>
 					<i>{String(index + 1).padStart(2, '0')}</i>{label}
 				</span>
@@ -274,20 +274,17 @@
 		</div>
 		<div class="quantum-actions">
 			<button type="button" class="btn-ghost" onclick={stepThrough}>
-				<span>{stage >= 2 ? '↺' : '→'}</span>
 				{stage >= 2 ? 'Reset execution' : 'Step through execution'}
 			</button>
-			<button type="button" class="btn-solid" onclick={sampleMeasurement}>
-				<span>⌁</span> Measure state
-			</button>
+			<button type="button" class="btn-solid" onclick={sampleMeasurement}> Measure state </button>
 		</div>
 	</div>
 	<div class="fault-row">
-		<FaultSwitch label="detune the two-qubit gate" bind:active={brokenEntangler} />
+		<FaultSwitch label="Detune the two-qubit gate" bind:active={brokenEntangler} />
 		<p>
 			{brokenEntangler
-				? 'CNOT coupling offline · cross states permitted'
-				: 'coherent coupling · nominal'}
+				? 'CNOT coupling offline, cross states permitted'
+				: 'coherent coupling, nominal'}
 		</p>
 	</div>
 {/snippet}
@@ -300,14 +297,14 @@
 			<small>{chsh > 2 ? 'non-classical' : 'classical bound'}</small>
 		</div>
 		<div>
-			<span>correlation</span>
+			<span>Correlation</span>
 			<strong>{(correlation * 100).toFixed(1)}%</strong>
-			<small>same-bit outcomes</small>
+			<small>Same-bit outcomes</small>
 		</div>
 		<div>
-			<span>measurements</span>
+			<span>Measurements</span>
 			<strong>{totalShots}</strong>
-			<small>{lastMeasurement ? `last · |${lastMeasurement}⟩` : 'awaiting sample'}</small>
+			<small>{lastMeasurement ? `last, |${lastMeasurement}⟩` : 'awaiting sample'}</small>
 		</div>
 	</div>
 	<p class="measurement-note" aria-live="polite">
@@ -356,18 +353,18 @@
 
 	.quantum-stage :global([data-wire-source].is-active) {
 		opacity: 1;
-		filter: drop-shadow(0 0 6px rgb(169 151 255 / 0.62));
+		filter: drop-shadow(0 0 6px color-mix(in srgb, var(--qubit) 62%, transparent));
 	}
 
 	.quantum-stage :global([data-wire-source].is-active path) {
-		stroke: #b8a9ff;
+		stroke: var(--qubit);
 		stroke-width: 2.4;
 	}
 
 	.quantum-stage :global([data-node-id]:focus-within),
 	.quantum-stage :global([data-node-id]:hover) {
 		opacity: 1;
-		filter: drop-shadow(0 0 8px rgb(197 186 255 / 0.86));
+		filter: drop-shadow(0 0 8px color-mix(in srgb, var(--qubit-text) 86%, transparent));
 	}
 
 	.operator-hud,
@@ -382,11 +379,9 @@
 		display: grid;
 		gap: 5px;
 		padding: var(--space-3);
-		border: 1px solid rgb(169 151 255 / 0.35);
+		border: 1px solid color-mix(in srgb, var(--qubit) 35%, transparent);
 		border-radius: 7px;
-		background: rgb(10 9 18 / 0.9);
-		box-shadow: 0 16px 48px -24px rgb(169 151 255 / 0.5);
-		backdrop-filter: blur(12px);
+		background: var(--bg);
 		animation: hud-in 160ms var(--ease-kinetic) both;
 	}
 
@@ -396,16 +391,16 @@
 	.probability-footer,
 	.quantum-metrics span,
 	.quantum-metrics small {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 0.625rem;
-		letter-spacing: 0.11em;
-		text-transform: uppercase;
 		color: var(--ink-faint);
 	}
 
 	.operator-hud strong {
 		font-size: var(--text-sm);
-		color: #ddd7ff;
+		color: var(--qubit-text);
 	}
 
 	.transformation {
@@ -413,7 +408,7 @@
 		align-items: center;
 		gap: var(--space-2);
 		padding-block: var(--space-2);
-		color: #c5baff;
+		color: var(--qubit-text);
 	}
 
 	.transformation code {
@@ -422,15 +417,17 @@
 	}
 
 	.transformation i {
-		color: #8d7cff;
+		color: var(--qubit);
 		font-style: normal;
 	}
 
 	.operator-hud p {
 		margin: 0;
 		padding-block-start: var(--space-2);
-		border-block-start: 1px solid rgb(169 151 255 / 0.18);
-		font-family: var(--font-mono);
+		border-block-start: 1px solid color-mix(in srgb, var(--qubit) 18%, transparent);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--ink-mute);
 	}
@@ -440,15 +437,15 @@
 		padding: 0.45rem 0.65rem;
 		border: 1px solid var(--line);
 		border-radius: 999px;
-		background: rgb(7 10 12 / 0.78);
+		background: var(--bg);
 	}
 
 	.probability-panel {
 		display: grid;
 		grid-template-rows: auto 1fr auto;
 		padding: var(--space-4);
-		border-inline-start: 1px solid rgb(169 151 255 / 0.18);
-		background: rgb(10 9 18 / 0.68);
+		border-inline-start: 1px solid color-mix(in srgb, var(--qubit) 18%, transparent);
+		background: var(--bg);
 	}
 
 	.probability-heading,
@@ -460,8 +457,10 @@
 	}
 
 	.probability-heading strong {
-		font-family: var(--font-mono);
-		color: #c5baff;
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
+		color: var(--qubit-text);
 	}
 
 	.probability-panel svg {
@@ -471,18 +470,18 @@
 	}
 
 	.guide {
-		stroke: rgb(169 151 255 / 0.12);
+		stroke: color-mix(in srgb, var(--qubit) 12%, transparent);
 		stroke-dasharray: 2 5;
 	}
 
 	.bar-well {
-		fill: rgb(169 151 255 / 0.055);
-		stroke: rgb(169 151 255 / 0.13);
+		fill: color-mix(in srgb, var(--qubit) 6%, transparent);
+		stroke: color-mix(in srgb, var(--qubit) 13%, transparent);
 	}
 
 	.probability-bar {
 		fill: url(#bell-probability-fill);
-		filter: drop-shadow(0 0 7px rgb(169 151 255 / 0.5));
+		filter: drop-shadow(0 0 7px color-mix(in srgb, var(--qubit) 50%, transparent));
 		transition:
 			y 280ms var(--ease-kinetic),
 			height 280ms var(--ease-kinetic);
@@ -490,8 +489,10 @@
 
 	.value,
 	.basis {
-		fill: #c5baff;
-		font-family: var(--font-mono);
+		fill: var(--qubit-text);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 9px;
 		text-anchor: middle;
 	}
@@ -503,8 +504,7 @@
 
 	.probability-footer {
 		padding-block-start: var(--space-3);
-		border-block-start: 1px solid rgb(169 151 255 / 0.13);
-		letter-spacing: 0.06em;
+		border-block-start: 1px solid color-mix(in srgb, var(--qubit) 13%, transparent);
 	}
 
 	.probability-footer span:first-child {
@@ -517,8 +517,8 @@
 		inline-size: 6px;
 		block-size: 6px;
 		border-radius: 50%;
-		background: #a997ff;
-		box-shadow: 0 0 7px #a997ff;
+		background: var(--qubit);
+		box-shadow: 0 0 7px var(--qubit);
 	}
 
 	.execution-deck {
@@ -540,9 +540,10 @@
 		gap: 2px;
 		padding: 0.55rem 0.65rem;
 		background: var(--bg-inset);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 0.625rem;
-		letter-spacing: 0.08em;
 		color: var(--ink-faint);
 	}
 
@@ -552,12 +553,12 @@
 	}
 
 	.stage-track > span.active {
-		color: #c5baff;
-		background: rgb(169 151 255 / 0.07);
+		color: var(--qubit-text);
+		background: color-mix(in srgb, var(--qubit) 7%, transparent);
 	}
 
 	.stage-track > span.active i {
-		color: #b9adff;
+		color: var(--qubit-text);
 	}
 
 	.stage-track > span.current::after {
@@ -565,8 +566,8 @@
 		position: absolute;
 		inset: auto 0 0;
 		block-size: 2px;
-		background: #a997ff;
-		box-shadow: 0 0 8px #a997ff;
+		background: var(--qubit);
+		box-shadow: 0 0 8px var(--qubit);
 	}
 
 	.quantum-actions {
@@ -581,27 +582,27 @@
 		gap: var(--space-2);
 		min-block-size: 42px;
 		padding: 0.65rem 1rem;
-		border: 1px solid rgb(169 151 255 / 0.28);
+		border: 1px solid color-mix(in srgb, var(--qubit) 28%, transparent);
 		border-radius: 5px;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
-		letter-spacing: 0.04em;
 	}
 
 	.btn-ghost {
 		background: transparent;
-		color: #c5baff;
+		color: var(--qubit-text);
 	}
 
 	.btn-solid {
-		background: #a997ff;
-		color: #100d20;
+		background: var(--qubit);
+		color: var(--bg);
 		font-weight: 650;
 	}
 
 	.quantum-actions button:hover {
 		transform: translateY(-1px);
-		box-shadow: 0 8px 24px -14px rgb(169 151 255 / 0.8);
 	}
 
 	.fault-row {
@@ -617,7 +618,9 @@
 	.fault-row p,
 	.measurement-note {
 		margin: 0;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 0.625rem;
 		color: var(--ink-faint);
 	}
@@ -634,14 +637,15 @@
 	}
 
 	.quantum-metrics strong {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 1.35rem;
-		color: #d8d1ff;
+		color: var(--qubit-text);
 		font-variant-numeric: tabular-nums;
 	}
 
 	.quantum-metrics small {
-		letter-spacing: 0;
 		text-transform: none;
 	}
 
@@ -667,7 +671,7 @@
 
 		.probability-panel {
 			border-inline-start: 0;
-			border-block-start: 1px solid rgb(169 151 255 / 0.18);
+			border-block-start: 1px solid color-mix(in srgb, var(--qubit) 18%, transparent);
 		}
 
 		.probability-panel svg {

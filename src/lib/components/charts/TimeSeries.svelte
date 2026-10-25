@@ -166,7 +166,7 @@
 		<p class="readout" aria-live="polite">
 			{#if current}
 				<strong>{format(current.value)}</strong>
-				<span>{unit} · {current.label}</span>
+				<span>{unit}, {current.label}</span>
 			{:else}
 				<span class="hint">Hover or focus the chart, then use ← → to step through days.</span>
 			{/if}
@@ -213,13 +213,13 @@
 	}
 
 	.area {
-		fill: var(--accent);
+		fill: var(--ink);
 		opacity: 0.1;
 	}
 
 	.series {
 		fill: none;
-		stroke: var(--accent);
+		stroke: var(--ink);
 		stroke-width: 2;
 		stroke-linejoin: round;
 		stroke-linecap: round;
@@ -231,22 +231,26 @@
 	}
 
 	.marker {
-		fill: var(--accent);
+		fill: var(--ink);
 		/* The surface ring keeps the marker legible where it sits on the line. */
 		stroke: var(--bg-panel);
 		stroke-width: 2;
 	}
 
-	/* Text wears text tokens; the accent belongs to the marks. */
+	/* Axis text is muted so the marks carry the full ink. */
 	.axis {
 		fill: var(--ink-faint);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 11px;
 	}
 
 	.endpoint {
 		fill: var(--ink);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 12px;
 	}
 
@@ -260,7 +264,9 @@
 		color: var(--ink-mute);
 
 		& strong {
-			font-family: var(--font-mono);
+			font-family: var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			font-size: var(--text-base);
 			color: var(--ink);
 		}
@@ -301,7 +307,9 @@
 	}
 
 	td {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		color: var(--ink);
 	}
 

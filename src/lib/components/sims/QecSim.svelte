@@ -124,7 +124,7 @@
 <Bench
 	title="Quantum error correction"
 	tone="quantum"
-	status={`syndrome ${syndromeLabel} · fidelity ${fidelity}`}
+	status={`syndrome ${syndromeLabel}, fidelity ${fidelity}`}
 	hint="Inject a bit flip, then step the timeline through syndrome, decode, and correct. Click a qubit or gate to read it."
 	stage={canvas}
 	dock={instruments}
@@ -134,7 +134,7 @@
 {#snippet controls()}
 	<div class="stack">
 		<p class="control-note">
-			Inject a bit-flip on any physical qubit. The two <strong>parity</strong> checks name the
+			Inject a bit-flip on any physical qubit. The two <strong>Parity</strong> checks name the
 			culprit without ever reading
 			<strong><LiveMath id="qec.amplitudes" label="alpha or beta" /></strong>. Then correct and read
 			the fidelity.
@@ -158,8 +158,8 @@
 		</div>
 	</div>
 	<div class="switchboard">
-		<p class="microlabel">switchboard · fault injection</p>
-		<FaultSwitch label="syndrome decoder miswired" bind:active={faults.miswiredDecoder} />
+		<p class="microlabel">Fault injection</p>
+		<FaultSwitch label="Syndrome decoder miswired" bind:active={faults.miswiredDecoder} />
 	</div>
 {/snippet}
 
@@ -195,7 +195,7 @@
 		{/each}
 	</div>
 	<div class="syndrome">
-		<span class="microlabel">syndrome</span>
+		<span class="microlabel">Syndrome</span>
 		<div class="syn-bits">
 			<span class="syn" class:hot={syndrome[0] === 1}
 				><LiveMath
@@ -228,7 +228,7 @@
 		class:ok={corrected && fidelity === 1}
 		class:bad={corrected && fidelity === 0}
 	>
-		<span class="microlabel">logical fidelity</span>
+		<span class="microlabel">Logical fidelity</span>
 		<div class="fid-bar"><span style={`width: ${fidelity * 100}%`}></span></div>
 		<strong
 			><LiveMath
@@ -314,7 +314,9 @@
 	}
 
 	.syn {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-sm);
 		color: var(--ink-faint);
 	}
@@ -324,7 +326,9 @@
 	}
 
 	.decode {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--accent-2);
 	}
@@ -363,7 +367,9 @@
 	}
 
 	.fidelity strong {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		color: var(--ink);
 	}
 

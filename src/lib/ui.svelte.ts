@@ -18,8 +18,8 @@ export type BlueprintMode = (typeof BLUEPRINT_MODES)[number];
 
 /** The one-word name a mode shows in the header. */
 export const BLUEPRINT_SHORT: Record<BlueprintMode, string> = {
-	paper: 'paper',
-	negative: 'negative'
+	paper: 'Paper',
+	negative: 'Negative'
 };
 
 export const BLUEPRINT_LABELS: Record<BlueprintMode, string> = {

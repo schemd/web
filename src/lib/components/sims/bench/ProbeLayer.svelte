@@ -121,7 +121,7 @@
 				<span class="jaw" aria-hidden="true">{letter}</span>
 				{#if open === net.id}
 					<div class="probe-tip" role="note" aria-label={`Probe ${letter} on ${net.label}`}>
-						<span class="microlabel">{letter} · {net.label}</span>
+						<span class="microlabel">{letter}, {net.label}</span>
 						{#if reading}
 							<LiveMath id={reading.id} label={reading.label} values={reading.values} />
 						{:else}
@@ -156,7 +156,9 @@
 		border: 2px solid var(--clip);
 		background: var(--bg-panel);
 		color: var(--clip);
-		font: 600 0.625rem / 1 var(--font-mono);
+		font: 600 0.625rem / 1 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		box-shadow: 0 0 0 4px color-mix(in srgb, var(--clip) 22%, transparent);
 	}
 

@@ -175,7 +175,7 @@
 						<span class="tag">{change.kind.replace(/-/g, ' ')}</span>
 						<span class="what">{change.summary}</span>
 						{#if change.details.length}
-							<span class="detail">{change.details.join(' · ')}</span>
+							<span class="detail">{change.details.join('; ')}</span>
 						{/if}
 					</li>
 				{/each}
@@ -186,18 +186,18 @@
 
 <style>
 	.review {
+		inline-size: min(100% - 2 * var(--space-4), var(--page-max));
+		margin-inline: auto;
+		padding-block: var(--space-8) var(--space-16);
 		display: grid;
 		gap: var(--space-6);
-		max-inline-size: 76rem;
-		margin-inline: auto;
-		padding: var(--space-6) var(--space-4) var(--space-8);
 	}
 	.kicker {
 		margin: 0 0 var(--space-1);
-		color: var(--accent);
-		font: 600 0.7rem/1 var(--font-mono);
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
+		color: var(--ink);
+		font: 600 0.7rem/1 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 	}
 	h1 {
 		margin: 0 0 var(--space-2);
@@ -214,9 +214,9 @@
 	}
 	.pane h2 {
 		margin: 0 0 var(--space-2);
-		font: 600 0.72rem/1 var(--font-mono);
-		letter-spacing: 0.1em;
-		text-transform: uppercase;
+		font: 600 0.72rem/1 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 	}
 	.editor {
@@ -227,7 +227,9 @@
 	.failure {
 		margin: var(--space-2) 0 0;
 		color: var(--danger);
-		font: 500 0.8rem/1.4 var(--font-mono);
+		font: 500 0.8rem/1.4 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 	}
 	.frames {
 		display: grid;
@@ -243,9 +245,9 @@
 	.frames figcaption {
 		margin-block-end: var(--space-2);
 		color: var(--ink-mute);
-		font: 500 0.68rem/1 var(--font-mono);
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
+		font: 500 0.68rem/1 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 	}
 	.delta ul {
 		display: grid;
@@ -263,19 +265,19 @@
 		background: var(--bg-raised);
 	}
 	.change.component {
-		border-inline-start-color: var(--accent);
+		border-inline-start-color: var(--ink);
 	}
 	.change.net {
-		border-inline-start-color: var(--accent-2, var(--accent));
+		border-inline-start-color: var(--ink);
 	}
 	.change.connection {
 		border-inline-start-color: var(--ink-faint);
 	}
 	.tag {
 		color: var(--ink-faint);
-		font: 500 0.66rem/1.5 var(--font-mono);
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
+		font: 500 0.66rem/1.5 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 	}
 	.what {
 		font-weight: 500;
@@ -283,18 +285,20 @@
 	.detail {
 		grid-column: 2;
 		color: var(--ink-mute);
-		font: 400 0.82rem/1.5 var(--font-mono);
+		font: 400 0.82rem/1.5 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 	}
 	.summary {
 		margin: 0;
 		color: var(--ink-mute);
-		font: 500 0.72rem/1 var(--font-mono);
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
+		font: 500 0.72rem/1 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 	}
 	.clean {
 		margin: 0;
-		color: var(--accent);
+		color: var(--ink);
 	}
 	.muted {
 		margin: 0;

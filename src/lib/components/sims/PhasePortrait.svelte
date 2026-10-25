@@ -120,7 +120,9 @@
 		display: flex;
 		gap: var(--space-3);
 		color: var(--ink-faint);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 	}
 </style>

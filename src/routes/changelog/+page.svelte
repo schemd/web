@@ -142,7 +142,7 @@
 	<section class="metrics plate" aria-label="Compiler metrics">
 		<div class="metrics-grid">
 			<figure class="metric">
-				<figcaption class="microlabel">unpacked install footprint by release</figcaption>
+				<figcaption class="microlabel">Unpacked install footprint by release</figcaption>
 				{#if sizePoints.length > 0}
 					<svg
 						viewBox={`0 0 ${CHART_W} ${CHART_H}`}
@@ -179,13 +179,13 @@
 						>
 					</svg>
 				{:else}
-					<p class="microlabel empty">npm dist metadata unavailable in this snapshot.</p>
+					<p class="microlabel empty">Npm dist metadata unavailable in this snapshot.</p>
 				{/if}
 			</figure>
 
 			<dl class="bench">
 				<div>
-					<dt class="microlabel">engine processing speed</dt>
+					<dt class="microlabel">Engine processing speed</dt>
 					<dd class="readout big">{data.benchmark.medianMs} ms</dd>
 					<dd class="bench-note">
 						median of 9 passes over an 11-declaration workload, measured live on this server against
@@ -193,7 +193,7 @@
 					</dd>
 				</div>
 				<div>
-					<dt class="microlabel">workload output weight</dt>
+					<dt class="microlabel">Workload output weight</dt>
 					<dd class="readout big">{data.benchmark.svgBytes.toLocaleString('en-US')} B</dd>
 					<dd class="bench-note">exact UTF-8 bytes reported by the compiler's own metrics</dd>
 				</div>
@@ -213,27 +213,27 @@
 								<span class="latest-tag">{data.live ? 'npm latest' : 'seed default'}</span>
 							{/if}
 							{#if !release.released}
-								<span class="latest-tag">publication unconfirmed</span>
+								<span class="latest-tag">Publication unconfirmed</span>
 							{/if}
 						</h2>
 						<span class="microlabel">
 							{release.publishedAt.startsWith('1970')
 								? release.released
-									? 'publish metadata unavailable in seed'
-									: 'publication not confirmed'
+									? 'Publish date not in the seed'
+									: 'Publication not confirmed'
 								: dateFormat.format(new Date(release.publishedAt))}
 							{#if release.gitHead}
-								· <code>{release.gitHead}</code>
+								, commit <code>{release.gitHead}</code>
 							{/if}
 						</span>
 					</header>
 					<dl class="milestone-metrics">
 						<div>
-							<dt class="microlabel">install</dt>
+							<dt class="microlabel">Install</dt>
 							<dd class="readout">{formatBytes(release.unpackedSize)}</dd>
 						</div>
 						<div>
-							<dt class="microlabel">files</dt>
+							<dt class="microlabel">Files</dt>
 							<dd class="readout">{release.fileCount ?? '—'}</dd>
 						</div>
 					</dl>
@@ -241,9 +241,9 @@
 						<p class="notes">{release.notes.slice(0, 400)}</p>
 					{/if}
 					<nav class="milestone-links" aria-label={`Version ${release.version} destinations`}>
-						<a href={`/docs/${release.version}/overview`}>docs →</a>
-						<a href={`/playground/${release.version}`}>playground →</a>
-						<a href={`/simulations/${release.version}`}>lab →</a>
+						<a href={`/docs/${release.version}/overview`}>Docs</a>
+						<a href={`/playground/${release.version}`}>Playground</a>
+						<a href={`/simulations/${release.version}`}>Labs</a>
 					</nav>
 				</div>
 			</li>
@@ -253,9 +253,9 @@
 
 <style>
 	.changelog {
-		max-inline-size: 940px;
+		inline-size: min(100% - 2 * var(--space-4), var(--page-max));
 		margin-inline: auto;
-		padding: clamp(1rem, 4vw, 3rem);
+		padding-block: var(--space-8) var(--space-16);
 	}
 
 	.changelog-head h1 {
@@ -365,38 +365,42 @@
 	}
 
 	.fill-top {
-		stop-color: var(--accent);
+		stop-color: var(--ink);
 		stop-opacity: 0.28;
 	}
 
 	.fill-bottom {
-		stop-color: var(--accent);
+		stop-color: var(--ink);
 		stop-opacity: 0;
 	}
 
 	.series {
 		fill: none;
-		stroke: var(--accent);
+		stroke: var(--ink);
 		stroke-width: 1.75;
 		filter: drop-shadow(0 0 3px var(--glow));
 	}
 
 	.dot {
-		fill: var(--accent);
+		fill: var(--ink);
 		stroke: var(--bg-inset);
 		stroke-width: 1.5;
 	}
 
 	.tick {
 		fill: var(--ink-faint);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 9px;
 		text-anchor: middle;
 	}
 
 	.peak {
 		fill: var(--ink-mute);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 10px;
 	}
 
@@ -415,7 +419,6 @@
 
 		& .big {
 			font-size: var(--text-xl);
-			letter-spacing: -0.02em;
 		}
 	}
 
@@ -453,11 +456,11 @@
 		inline-size: 15px;
 		block-size: 15px;
 		margin-block-start: var(--space-4);
-		border: 1px solid var(--accent);
+		border: 1px solid var(--ink);
 		background: var(--bg);
 		box-shadow:
 			inset 0 0 0 3px var(--bg),
-			inset 0 0 0 15px var(--accent);
+			inset 0 0 0 15px var(--ink);
 	}
 
 	.milestone-body {
@@ -472,18 +475,20 @@
 		flex-wrap: wrap;
 
 		& h2 {
-			font-family: var(--font-mono);
+			font-family: var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			font-size: var(--text-md);
 		}
 	}
 
 	.latest-tag {
 		font-size: var(--text-2xs);
-		font-family: var(--font-mono);
-		letter-spacing: 0.1em;
-		text-transform: uppercase;
-		color: var(--accent-ink);
-		background: var(--accent);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
+		color: var(--bg);
+		background: var(--ink);
 		padding: 0.05rem 0.45rem;
 		vertical-align: middle;
 	}
@@ -507,7 +512,9 @@
 	.milestone-links {
 		display: flex;
 		gap: var(--space-4);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		border-block-start: 1px solid var(--line);
 		padding-block-start: var(--space-2);

@@ -56,7 +56,7 @@
 					? 'Superposition'
 					: kind === 'measure'
 						? 'Measurement'
-						: `Round ${round} · ${kind === 'oracle' ? 'Oracle U_f' : kind === 'mean' ? 'Mean ⟨a⟩' : 'Diffuser'}`;
+						: `Round ${round}, ${kind === 'oracle' ? 'Oracle U_f' : kind === 'mean' ? 'Mean ⟨a⟩' : 'Diffuser'}`;
 			return { kind, round, label };
 		});
 	})();
@@ -199,7 +199,7 @@
 <Bench
 	title="Grover search"
 	tone="quantum"
-	status={`${currentPhase.label} · P(target) = ${(pTarget * 100).toFixed(0)} %`}
+	status={`${currentPhase.label}, P(target) = ${(pTarget * 100).toFixed(0)} %`}
 	hint="Toggle the qubits to choose the marked item; step the timeline to watch amplitudes rotate. Click a gate to read it."
 	stage={canvas}
 	dock={instruments}
@@ -245,8 +245,8 @@
 		</div>
 	</div>
 	<div class="switchboard">
-		<p class="microlabel">switchboard · fault injection</p>
-		<FaultSwitch label="oracle marks the wrong state" bind:active={faults.wrongOracle} />
+		<p class="microlabel">Fault injection</p>
+		<FaultSwitch label="Oracle marks the wrong state" bind:active={faults.wrongOracle} />
 	</div>
 {/snippet}
 
@@ -300,12 +300,12 @@
 		<!-- mean reflection axis (shown at the mean step) -->
 		{#if meanValue !== undefined}
 			<line class="mean-line" x1="4" x2={CHART_W - 4} y1={meanY} y2={meanY} />
-			<text class="mean-label" x={CHART_W - 6} y={meanY - 3}>mean</text>
+			<text class="mean-label" x={CHART_W - 6} y={meanY - 3}>Mean</text>
 		{/if}
 	</svg>
 	<div class="legend microlabel">
-		<span><i class="sw target"></i> target</span>
-		<span><i class="sw"></i> others</span>
+		<span><i class="sw target"></i> Target</span>
+		<span><i class="sw"></i> Others</span>
 		<span class="peak" class:hit={pTarget > 0.9}
 			><LiveMath
 				id="grover.readout.peak"
@@ -349,7 +349,9 @@
 	.qubit {
 		inline-size: 2.2rem;
 		block-size: 2.2rem;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-md);
 		border: 1px solid var(--line-strong);
 		background: var(--bg-inset);
@@ -383,7 +385,9 @@
 
 	.hud-math {
 		margin: 0;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		line-height: 1.5;
 		color: var(--ink);
@@ -417,7 +421,9 @@
 
 	.mean-label {
 		fill: var(--warn, var(--accent-2));
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 8px;
 		text-anchor: end;
 	}
@@ -448,7 +454,9 @@
 
 	.bar-label {
 		fill: var(--ink-faint);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 7px;
 		text-anchor: middle;
 	}
@@ -473,7 +481,9 @@
 
 		& .peak {
 			margin-inline-start: auto;
-			font-family: var(--font-mono);
+			font-family: var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 

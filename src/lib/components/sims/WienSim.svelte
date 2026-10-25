@@ -253,7 +253,7 @@
 			unit: 'V',
 			/* At the bridge's one frequency, it returns a third of the output, in phase. */
 			sample: fromHistory(1 / 3),
-			summary: () => `${(amplitude / 3).toFixed(2)} pk · ⅓ of v_o at ${formatSi(frequency, 'Hz')}`,
+			summary: () => `${(amplitude / 3).toFixed(2)} pk, ⅓ of v_o at ${formatSi(frequency, 'Hz')}`,
 			reading: () =>
 				reading('wien.probe.feedback', `positive feedback at ${formatSi(frequency, 'Hz')}`, {
 					value: formatSi(frequency, 'Hz')
@@ -277,7 +277,7 @@
 <Bench
 	title="Wien-bridge oscillator"
 	tone="analog"
-	status={`${regime} · ${formatSi(frequency, 'Hz')}`}
+	status={`${regime}, ${formatSi(frequency, 'Hz')}`}
 	{stage}
 	{dock}
 	{deck}
@@ -318,7 +318,7 @@
 		>
 	</div>
 	<section class="bench-block" aria-label="Oscilloscope">
-		<p class="microlabel">Oscilloscope · rolling</p>
+		<p class="microlabel">Oscilloscope, rolling trace</p>
 		<Scope
 			{channels}
 			running={!(motion.paused || motion.animationBlocked)}
@@ -379,10 +379,10 @@
 		<span class="microlabel">Try</span>
 		<div class="bench-row">
 			<button type="button" class="btn" data-timeline-input onclick={reset}
-				>reset (seed noise)</button
+				>Reset (seed noise)</button
 			>
 			<button type="button" class="btn" data-timeline-input onclick={() => (gain = 3)}
-				>set gain to 3</button
+				>Set gain to 3</button
 			>
 		</div>
 	</div>
@@ -390,7 +390,7 @@
 		<SimulationMotionControl {motion} label="Wien oscillator and waveform animation" />
 	</div>
 	<div class="bench-group">
-		<FaultSwitch label="gain-set resistor open (latch-up)" bind:active={faults.openGainResistor} />
+		<FaultSwitch label="Gain-set resistor open (latch-up)" bind:active={faults.openGainResistor} />
 	</div>
 {/snippet}
 
@@ -433,7 +433,9 @@
 		background: var(--bg-inset);
 
 		& strong {
-			font-family: var(--font-mono);
+			font-family: var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			font-size: var(--text-md);
 			color: var(--accent-2);
 		}

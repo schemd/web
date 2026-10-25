@@ -126,16 +126,14 @@
 		<button type="button" class="btn primary" onclick={toggle} aria-pressed={playing}>
 			{playing ? 'Pause' : 'Play tour'}
 		</button>
-		<button type="button" class="btn" onclick={() => step(-1)} disabled={index < 0}>
-			← Back
-		</button>
+		<button type="button" class="btn" onclick={() => step(-1)} disabled={index < 0}> Back </button>
 		<button
 			type="button"
 			class="btn"
 			onclick={() => step(1)}
 			disabled={index >= tour.stops.length - 1}
 		>
-			Next →
+			Next
 		</button>
 		<button type="button" class="btn" onclick={restart} disabled={index < 0}>Restart</button>
 		<label class="rate">
@@ -199,10 +197,10 @@
 		display: inline-flex;
 		align-items: center;
 		gap: var(--space-2);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
-		letter-spacing: var(--tracking-wide);
-		text-transform: uppercase;
 		color: var(--ink-faint);
 	}
 	.rate select {
@@ -211,15 +209,17 @@
 		border: 1px solid var(--line);
 		border-radius: var(--radius-sm);
 		padding: 0.15rem 0.3rem;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 	}
 	.progress {
 		margin-inline-start: auto;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
-		letter-spacing: var(--tracking-wide);
-		text-transform: uppercase;
 		color: var(--ink-faint);
 	}
 	.note {
@@ -263,10 +263,10 @@
 		display: contents;
 	}
 	.marker {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
-		letter-spacing: var(--tracking-wide);
-		text-transform: uppercase;
 		color: var(--ink-faint);
 	}
 	.is-current .marker {

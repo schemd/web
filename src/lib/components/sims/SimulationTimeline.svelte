@@ -99,7 +99,7 @@
 	<section class="timeline plate" aria-label="Signal propagation timeline">
 		<div class="timeline-copy">
 			<div class="timeline-heading">
-				<span class="microlabel">causal signal trace</span>
+				<span class="microlabel">Causal signal trace</span>
 				<span class="status" class:running={model.playing}>
 					{model.playing ? 'propagating' : model.step === stages.length - 1 ? 'settled' : 'paused'}
 				</span>
@@ -161,10 +161,10 @@
 	}
 
 	.status {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
-		letter-spacing: var(--tracking-wide);
-		text-transform: uppercase;
 		color: var(--ink-faint);
 
 		&.running {

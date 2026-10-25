@@ -64,7 +64,7 @@
 <div class="inspector">
 	<SheetFrame label="Compiler inspector">
 		<header class="masthead sheet-head">
-			<p class="eyebrow">Compiler inspector · engine {data.engineVersion}</p>
+			<p class="microlabel">Compiler release {data.engineVersion}</p>
 			<h1>Watch it compile</h1>
 			<p class="lede">
 				Every stage below is the real thing: one <code>compileSchematic</code> call on the server, taken
@@ -294,7 +294,7 @@
 						{#each data.netlist.nets as net (net.id)}
 							<li>
 								<span class="mono">{net.name ?? net.id}</span>
-								<span class="net-terminals">{net.terminals.join(' · ')}</span>
+								<span class="net-terminals">{net.terminals.join(', ')}</span>
 							</li>
 						{/each}
 					</ul>
@@ -355,9 +355,9 @@
 
 <style>
 	.inspector {
-		max-width: 1440px;
-		margin: 0 auto;
-		padding: var(--space-8) var(--space-5) var(--space-16);
+		inline-size: min(100% - 2 * var(--space-4), var(--page-max));
+		margin-inline: auto;
+		padding-block: var(--space-8) var(--space-16);
 	}
 	.inspector > :global(.sheet) {
 		margin-bottom: var(--space-6);
@@ -401,22 +401,18 @@
 		margin: 0;
 		font-size: 0.625rem;
 		font-family: var(--font-label);
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
 		color: var(--ink-faint);
 		font-weight: 500;
 	}
 	.run {
 		font-family: var(--font-label);
 		font-size: 0.625rem;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
 		min-block-size: 36px;
 		padding: 0 var(--space-4);
 		border-radius: var(--radius-md);
-		border: 1px solid var(--accent);
-		background: var(--accent);
-		color: var(--accent-ink);
+		border: 1px solid var(--ink);
+		background: var(--ink);
+		color: var(--bg);
 		cursor: pointer;
 	}
 	.run:disabled {
@@ -452,8 +448,6 @@
 		white-space: nowrap;
 		font-family: var(--font-label);
 		font-size: 0.6875rem;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
 		min-block-size: 48px;
 	}
 	.stage-tab:hover {
@@ -492,8 +486,6 @@
 	h3 {
 		font-family: var(--font-label);
 		font-size: 0.625rem;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
 		color: var(--ink-faint);
 		margin: var(--space-6) 0 var(--space-3);
 		font-weight: 500;
@@ -542,7 +534,7 @@
 	.lex li.is-selected button,
 	.ast li.is-selected button,
 	tr.is-selected {
-		background: color-mix(in oklab, var(--accent) 14%, transparent);
+		background: var(--wash);
 	}
 	.gutter {
 		color: var(--ink-faint);
@@ -556,17 +548,18 @@
 	}
 	.tok-kind,
 	.tok-keyword {
-		color: var(--accent);
+		color: var(--tok-kind);
+		font-weight: 700;
 	}
 	.tok-id {
-		color: var(--accent-2);
+		color: var(--tok-id);
 	}
 	.tok-label,
 	.tok-string {
-		color: var(--warn);
+		color: var(--tok-string);
 	}
 	.tok-number {
-		color: var(--ok);
+		color: var(--tok-number);
 	}
 	.tok-comment {
 		color: var(--ink-faint);
@@ -576,8 +569,6 @@
 		margin-left: auto;
 		color: var(--ink-faint);
 		font-size: var(--text-2xs);
-		letter-spacing: var(--tracking-wide);
-		text-transform: uppercase;
 	}
 	.ast li {
 		border-bottom: 1px solid var(--line);
@@ -585,7 +576,7 @@
 		margin-bottom: var(--space-2);
 	}
 	.ast-id {
-		color: var(--accent-2);
+		color: var(--tok-id);
 	}
 	.ast-kind {
 		color: var(--ink-faint);
@@ -595,7 +586,9 @@
 		flex-wrap: wrap;
 		gap: var(--space-1) var(--space-4);
 		margin: var(--space-1) 0 0 3.5ch;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 	}
 	.fields div {
@@ -627,16 +620,18 @@
 		padding: var(--space-3) var(--space-4);
 	}
 	.tiles dt {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
-		letter-spacing: var(--tracking-wide);
-		text-transform: uppercase;
 		color: var(--ink-faint);
 		margin-bottom: var(--space-1);
 	}
 	.tiles dd {
 		margin: 0;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-lg);
 		font-variant-numeric: tabular-nums;
 	}
@@ -647,10 +642,10 @@
 	}
 	.grid th {
 		text-align: left;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
-		letter-spacing: var(--tracking-wide);
-		text-transform: uppercase;
 		color: var(--ink-faint);
 		font-weight: 500;
 		padding: var(--space-2);
@@ -668,13 +663,15 @@
 	}
 	.relation {
 		display: inline-block;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		border: 1px solid var(--line-strong);
 		border-radius: var(--radius-sm);
 		padding: 0.05rem 0.35rem;
 		margin: 0 var(--space-1) var(--space-1) 0;
-		color: var(--accent);
+		color: var(--ink-mute);
 	}
 	.heatmap {
 		width: 100%;
@@ -687,7 +684,7 @@
 		fill: var(--bg-inset);
 	}
 	.heat-cell {
-		fill: var(--accent);
+		fill: var(--ink);
 	}
 	.traces li {
 		display: flex;
@@ -712,10 +709,10 @@
 		font-size: var(--text-sm);
 	}
 	.rule-state {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
-		letter-spacing: var(--tracking-wide);
-		text-transform: uppercase;
 		color: var(--ok);
 		min-width: 5ch;
 	}

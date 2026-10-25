@@ -32,7 +32,7 @@
 		<input type="checkbox" role="switch" checked={active} onchange={toggle} />
 		<span class="fault-lever" aria-hidden="true"></span>
 		<span class="fault-label"
-			>{active ? 'hidden fault active · restore circuit' : 'inject hidden fault'}</span
+			>{active ? 'Hidden fault active; restore the circuit' : 'Inject hidden fault'}</span
 		>
 	</label>
 </div>
@@ -49,7 +49,9 @@
 		align-items: center;
 		gap: var(--space-2);
 		cursor: pointer;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-mute);
 

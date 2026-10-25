@@ -247,7 +247,7 @@
 
 <section class="learning-loop" aria-labelledby={`prediction-${id}`}>
 	<div class="curriculum-line">
-		<span class="microlabel">recommended lab {curriculum.order} of {total}</span>
+		<span class="microlabel">Recommended lab {curriculum.order} of {total}</span>
 		<p>{curriculum.objective}</p>
 		{#if prerequisites.length > 0}
 			<p class="prerequisites">
@@ -265,7 +265,7 @@
 	</div>
 
 	<div class="prediction" class:committed={committedChoice !== undefined}>
-		<span class="microlabel prediction-kicker">predict · then test</span>
+		<span class="microlabel prediction-kicker">Predict, then test</span>
 		<h2 id={`prediction-${id}`}>{@html pedagogy.prediction.promptHtml}</h2>
 
 		{#if committedChoice}
@@ -282,7 +282,7 @@
 						? 'The model supports your prediction. Now make it earn that claim.'
 						: 'A useful miss: keep the prediction visible and use the trace to find the broken assumption.'}
 				</p>
-				<a class="run-link" href="#live-laboratory">Run the experiment ↓</a>
+				<a class="run-link" href="#live-laboratory">Run the experiment</a>
 			</div>
 		{:else}
 			<p class="prediction-rule">
@@ -300,19 +300,19 @@
 
 	{#if committedChoice}
 		<blockquote class="aha">
-			<span class="aha-mark microlabel">the result to explain</span>
+			<span class="aha-mark microlabel">The result to explain</span>
 			<p>{@html pedagogy.ahaHtml}</p>
 		</blockquote>
 
 		<div class="principle">
-			<span class="microlabel">why the evidence behaves this way</span>
+			<span class="microlabel">Why the evidence behaves this way</span>
 			<div class="prose">{@html pedagogy.principleHtml}</div>
 		</div>
 
 		<div class="walkthrough">
 			<div class="walkthrough-head">
 				<div>
-					<span class="microlabel">evidence loop</span>
+					<span class="microlabel">Evidence loop</span>
 					<h2>Make the model answer you.</h2>
 				</div>
 				<span class="step-count" aria-hidden="true">{finishedSteps}/{requiredActions}</span>
@@ -380,7 +380,7 @@
 			</ol>
 
 			<aside class="diagnosis" class:is-complete={lab.diagnosisAttempted}>
-				<span class="microlabel">transfer challenge · fault unknown</span>
+				<span class="microlabel">Transfer challenge: the fault is unknown</span>
 				<p>{@html pedagogy.diagnosisPromptHtml}</p>
 				{#if lab.diagnosisAttempted}
 					<div class="diagnosis-reveal" role="status">
@@ -444,15 +444,15 @@
 			{#if complete}
 				<div class="completion">
 					<div>
-						<span class="microlabel">experiment complete</span>
+						<span class="microlabel">Experiment complete</span>
 						<strong>{title}</strong>
 					</div>
 					{#if next}
 						<a href={`/simulations/${version}/${next.id}`}>
-							Continue to {next.title} →
+							Continue to {next.title}
 						</a>
 					{:else}
-						<a href={`/simulations/${version}`}>Review the completed curriculum →</a>
+						<a href={`/simulations/${version}`}>Review the completed curriculum</a>
 					{/if}
 				</div>
 			{/if}
@@ -493,11 +493,9 @@
 		display: grid;
 		gap: var(--space-3);
 		padding: clamp(var(--space-4), 3vw, var(--space-6));
-		border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--line));
-		border-inline-start: 4px solid var(--accent);
-		background:
-			linear-gradient(135deg, color-mix(in srgb, var(--accent) 9%, transparent), transparent 58%),
-			var(--bg-inset);
+		border: 1px solid var(--line);
+		border-inline-start: 4px solid var(--ink);
+		background: var(--wash);
 
 		& h2 {
 			max-inline-size: 45ch;
@@ -508,7 +506,7 @@
 	}
 
 	.prediction-kicker {
-		color: var(--accent);
+		color: var(--ink);
 	}
 
 	.prediction-rule,
@@ -534,8 +532,8 @@
 			line-height: 1.45;
 
 			&:hover {
-				border-color: var(--accent);
-				background: color-mix(in srgb, var(--accent) 8%, var(--bg-raised));
+				border-color: var(--ink);
+				background: var(--wash);
 			}
 		}
 	}
@@ -551,7 +549,7 @@
 		font-weight: 600;
 
 		& > span {
-			color: var(--accent);
+			color: var(--ink);
 			margin-inline-end: var(--space-1);
 		}
 	}
@@ -565,8 +563,8 @@
 	.aha {
 		margin: 0;
 		padding: var(--space-4) var(--space-5);
-		background: color-mix(in srgb, var(--accent) 8%, var(--bg-inset));
-		border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+		background: var(--wash);
+		border: 1px solid var(--line);
 		display: grid;
 		gap: var(--space-2);
 
@@ -574,14 +572,13 @@
 			margin: 0;
 			font-size: var(--text-lg);
 			line-height: 1.4;
-			letter-spacing: -0.01em;
 			color: var(--ink);
 			text-wrap: balance;
 		}
 	}
 
 	.aha-mark {
-		color: var(--accent);
+		color: var(--ink);
 	}
 
 	.principle {
@@ -632,9 +629,11 @@
 	}
 
 	.step-count {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-lg);
-		color: var(--accent);
+		color: var(--ink);
 	}
 
 	.action-feedback {
@@ -642,7 +641,9 @@
 		padding: var(--space-3);
 		border: 1px solid var(--line);
 		background: var(--bg-inset);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--ink-mute);
 
@@ -679,8 +680,8 @@
 		background: var(--bg-panel);
 
 		&[aria-current='step'] {
-			background: color-mix(in srgb, var(--accent) 6%, var(--bg-panel));
-			box-shadow: inset 3px 0 0 var(--accent);
+			background: var(--wash);
+			box-shadow: inset 3px 0 0 var(--ink);
 		}
 
 		&.is-complete {
@@ -693,10 +694,12 @@
 		place-items: center;
 		inline-size: 1.6rem;
 		block-size: 1.6rem;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
-		color: var(--accent-ink);
-		background: var(--accent);
+		color: var(--bg);
+		background: var(--ink);
 		border-radius: 999px;
 	}
 
@@ -726,7 +729,9 @@
 
 	.step-state,
 	.diagnosis-state {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-faint);
 	}
@@ -783,7 +788,7 @@
 			line-height: 1.5;
 
 			&:focus-visible {
-				outline: 2px solid var(--accent);
+				outline: 2px solid var(--ink);
 				outline-offset: 2px;
 			}
 		}
@@ -791,9 +796,9 @@
 		& button {
 			justify-self: start;
 			padding: var(--space-2) var(--space-3);
-			border: 1px solid var(--accent);
-			background: var(--accent);
-			color: var(--accent-ink);
+			border: 1px solid var(--ink);
+			background: var(--ink);
+			color: var(--bg);
 			font-weight: 600;
 		}
 	}

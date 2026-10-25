@@ -53,12 +53,12 @@
 	const gammaSource = $derived(reflectionCoefficient(source, z0));
 	const status = $derived(
 		Math.abs(gammaLoad) < 0.02
-			? 'matched load · no echo'
+			? 'matched load, no echo'
 			: Math.abs(gammaSource) < 0.02
-				? 'matched source · one echo, then quiet'
+				? 'matched source, one echo, then quiet'
 				: gammaLoad > 0
-					? 'high load · positive echo'
-					: 'low load · negative echo'
+					? 'high load, positive echo'
+					: 'low load, negative echo'
 	);
 
 	/* The playhead loops while running and holds the settled end while paused. */
@@ -241,7 +241,7 @@
 {#snippet dock()}
 	<section class="dock-block" aria-label="Reflectometer">
 		<p class="microlabel">Reflectometer</p>
-		<Scope {channels} running={false} timebase="1 t_d/div · 0 – 10 one-way delays" {revision} />
+		<Scope {channels} running={false} timebase="1 t_d/div, 0 – 10 one-way delays" {revision} />
 	</section>
 	<section class="dock-block" aria-label="Readouts">
 		<p class="microlabel">Readouts</p>
@@ -257,7 +257,7 @@
 				>
 			</div>
 			<div>
-				<span>source</span>
+				<span>Source</span>
 				<strong
 					><LiveMath
 						id="tdr.readout.source"
@@ -267,7 +267,7 @@
 				>
 			</div>
 			<div>
-				<span>launched</span>
+				<span>Launched</span>
 				<strong
 					><LiveMath
 						id="tdr.readout.launch"
@@ -277,7 +277,7 @@
 				>
 			</div>
 			<div>
-				<span>settles</span>
+				<span>Settles</span>
 				<strong
 					><LiveMath
 						id="tdr.readout.settle"
@@ -346,7 +346,7 @@
 		<SimulationMotionControl {motion} label="Transmission-line step animation" />
 	</div>
 	<div class="deck-group">
-		<FaultSwitch label="load connector open" bind:active={openLoad} />
+		<FaultSwitch label="Load connector open" bind:active={openLoad} />
 	</div>
 {/snippet}
 
@@ -385,7 +385,9 @@
 		}
 
 		& span {
-			font: var(--text-xs) / 1.4 var(--font-mono);
+			font: var(--text-xs) / 1.4 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 

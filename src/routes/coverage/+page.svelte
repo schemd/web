@@ -42,7 +42,7 @@
 <article class="coverage grid-backdrop">
 	<SheetFrame label="Language coverage">
 		<header class="coverage-head sheet-head">
-			<p class="microlabel">compiler vocabulary · v{data.latest}</p>
+			<p class="microlabel">Compiler vocabulary, revision {data.latest}</p>
 			<h1>Language coverage</h1>
 			<p class="lede">
 				This page is generated from the compiler's own <code>COMPONENT_KINDS</code> registry. Every
@@ -54,7 +54,7 @@
 				<div class="summary-figures">
 					<span class="readout big">{data.coverage.covered} / {data.coverage.total}</span>
 					<span class="microlabel"
-						>primitives exercised across {data.coverage.examples} examples</span
+						>Primitives exercised across {data.coverage.examples} examples</span
 					>
 				</div>
 				<div class="meter" role="img" aria-label={`${percent}% of primitives covered`}>
@@ -66,7 +66,7 @@
 	</SheetFrame>
 
 	<section class="usage plate" aria-label="Corpus usage by family">
-		<p class="microlabel group-label">where the corpus spends its examples</p>
+		<p class="microlabel group-label">Where the corpus spends its examples</p>
 		<BarSeries
 			items={familyUsage}
 			summary="Documented usages of each component family, across the docs corpus and the canonical catalog."
@@ -100,16 +100,16 @@
 	</div>
 
 	<aside class="coverage-foot hairline-x">
-		<span class="microlabel">generated · registry-synced · zero manual list</span>
-		<a href="/playground/{data.latest}">Exercise a primitive in the playground →</a>
+		<span class="microlabel">Generated from the compiler; nothing here is listed by hand.</span>
+		<a href="/playground/{data.latest}">Try a part in the playground</a>
 	</aside>
 </article>
 
 <style>
 	.coverage {
-		max-inline-size: 1000px;
+		inline-size: min(100% - 2 * var(--space-4), var(--page-max));
 		margin-inline: auto;
-		padding: clamp(1rem, 4vw, 3rem);
+		padding-block: var(--space-8) var(--space-16);
 		display: grid;
 		gap: var(--space-6);
 	}
@@ -139,7 +139,6 @@
 
 		& .big {
 			font-size: var(--text-xl);
-			letter-spacing: -0.02em;
 		}
 	}
 
@@ -151,7 +150,7 @@
 		& .meter-fill {
 			display: block;
 			block-size: 100%;
-			background: var(--accent);
+			background: var(--ink);
 			transform-origin: left;
 			box-shadow: 0 0 8px var(--glow);
 			transition: transform var(--dur-kinetic) var(--ease-kinetic);
@@ -176,7 +175,7 @@
 	}
 
 	.group-label {
-		color: var(--accent);
+		color: var(--ink);
 	}
 
 	.kinds {
@@ -221,18 +220,18 @@
 
 		&.covered {
 			opacity: 1;
-			border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+			border-color: var(--line-strong);
 
 			& .kind-name {
 				color: var(--ink);
 			}
 
 			& .kind-count {
-				color: var(--accent);
+				color: var(--ink);
 			}
 
 			&:hover {
-				border-color: var(--accent);
+				border-color: var(--ink);
 			}
 		}
 	}

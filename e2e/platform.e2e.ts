@@ -144,7 +144,7 @@ test('command palette traps focus and keyboard-navigates the versioned search in
 }) => {
 	await page.goto('/docs/0.4.0/overview');
 	await expect(
-		page.getByRole('button', { name: /^search .*opens the command palette$/ })
+		page.getByRole('button', { name: /^Search .*opens the command palette$/ })
 	).toBeEnabled();
 	await page.keyboard.press('Control+K');
 	const dialog = page.getByRole('dialog');
@@ -175,10 +175,10 @@ test('playground opens valid, maps source to vector, preserves URI state, and ex
 
 	await capacitor.locator('[data-port-id="in"]').hover();
 	await expect(page.locator('.gutter-line').nth(4)).toHaveClass(/mapped/);
-	await page.getByRole('radio', { name: 'raw svg' }).click();
+	await page.getByRole('radio', { name: 'SVG source' }).click();
 	await expect(page.locator('.raw-view')).toContainText('<svg');
 	await expect(page.locator('.raw-view')).toContainText('data-orientation="down"');
-	await page.getByRole('radio', { name: 'render' }).click();
+	await page.getByRole('radio', { name: 'Drawing' }).click();
 	await expect.poll(() => new URL(page.url()).searchParams.get('m')).toBe('full');
 	const workspaceUrl = new URL(page.url());
 	const sharedCode = workspaceUrl.searchParams.get('code');

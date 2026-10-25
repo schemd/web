@@ -35,11 +35,11 @@
 	const stats = $derived(
 		snapshot
 			? [
-					{ label: 'last 24 hours', value: count(snapshot.lastDay) },
-					{ label: 'last 7 days', value: count(snapshot.lastWeek) },
-					{ label: 'last 30 days', value: count(snapshot.lastMonth) },
+					{ label: 'Last 24 hours', value: count(snapshot.lastDay) },
+					{ label: 'Last 7 days', value: count(snapshot.lastWeek) },
+					{ label: 'Last 30 days', value: count(snapshot.lastMonth) },
 					{
-						label: 'daily mean · 30d',
+						label: 'Daily mean over 30 days',
 						value: count(Math.round(snapshot.lastMonth / 30))
 					}
 				]
@@ -80,9 +80,9 @@
 				{#if !stream.ready}
 					opening the stream…
 				{:else if snapshot?.live}
-					streaming · checked {clock.format(new Date(snapshot.checkedAt))}
+					Live, checked {clock.format(new Date(snapshot.checkedAt))}
 				{:else}
-					registry unreachable · showing the last good reading
+					The registry did not answer; this is the last good reading
 				{/if}
 			</p>
 			<h1>Install telemetry</h1>
@@ -113,8 +113,8 @@
 
 		<section class="trend plate" aria-label="Daily downloads">
 			<header class="panel-head">
-				<p class="eyebrow">daily installs · last {snapshot.history.length} days</p>
-				<span class="microlabel peak-note">peak {count(peak)} / day</span>
+				<p class="table-caption">Daily installs over the last {snapshot.history.length} days</p>
+				<span class="microlabel peak-note">Peak {count(peak)} / day</span>
 			</header>
 			<TimeSeries
 				points={seriesPoints}
@@ -126,7 +126,7 @@
 
 		<section class="versions plate" aria-label="Downloads by release">
 			<header class="panel-head">
-				<p class="eyebrow">where last week's installs landed</p>
+				<p class="table-caption">Installs last week, by release</p>
 				<span class="microlabel peak-note">{versionBars.length} releases with traffic</span>
 			</header>
 			{#if versionBars.length > 0}
@@ -145,9 +145,9 @@
 
 <style>
 	.downloads {
-		max-inline-size: 62rem;
+		inline-size: min(100% - 2 * var(--space-4), var(--page-max));
 		margin-inline: auto;
-		padding: clamp(1.5rem, 4vw, var(--space-12)) clamp(1rem, 4vw, var(--space-8)) var(--space-16);
+		padding-block: var(--space-8) var(--space-16);
 	}
 
 	.downloads-head {
@@ -156,7 +156,6 @@
 		& h1 {
 			font-size: var(--text-xl);
 			margin-block: var(--space-2) var(--space-3);
-			letter-spacing: -0.025em;
 		}
 	}
 
@@ -181,9 +180,9 @@
 		}
 
 		&.live .stream-dot {
-			background: var(--accent);
-			border-color: var(--accent);
-			box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+			background: var(--ink);
+			border-color: var(--ink);
+			box-shadow: none;
 			animation: stream-pulse 2.4s var(--ease-precise) infinite;
 		}
 	}
@@ -246,7 +245,7 @@
 		gap: var(--space-4);
 		flex-wrap: wrap;
 
-		& .eyebrow {
+		& .table-caption {
 			margin-block-end: var(--space-4);
 			flex: 1 1 20ch;
 		}

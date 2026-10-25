@@ -36,7 +36,7 @@
 	<div class="bench-grid">
 		<section class="stage" aria-label={`${title}, live circuit`}>
 			<header class="stage-bar">
-				<span class="microlabel">live circuit · mode=full</span>
+				<span class="microlabel">Live circuit</span>
 				<span class="state" role="status"><i aria-hidden="true"></i>{status}</span>
 			</header>
 			<!-- svelte-ignore a11y_no_noninteractive_tabindex (on a phone the drawing scrolls sideways, so the keyboard must reach it) -->
@@ -95,7 +95,9 @@
 		display: inline-flex;
 		align-items: center;
 		gap: var(--space-2);
-		font: var(--text-sm) / 1.3 var(--font-mono);
+		font: var(--text-sm) / 1.3 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		color: var(--ink);
 
 		& i {
@@ -118,7 +120,9 @@
 	.stage-hint {
 		margin: 0;
 		padding: var(--space-2) var(--space-4) var(--space-3);
-		font: var(--text-xs) / 1.5 var(--font-mono);
+		font: var(--text-xs) / 1.5 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 	}
 
@@ -186,7 +190,7 @@
 	/* Current on the wires (see bench/flow.ts). */
 	.bench :global(.flow-dots) {
 		fill: none;
-		stroke: var(--flow-color, var(--accent));
+		stroke: var(--flow-color, var(--live));
 		stroke-width: 3.2;
 		stroke-linecap: round;
 		stroke-dasharray: 0.01 12;

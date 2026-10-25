@@ -159,7 +159,7 @@
 <Bench
 	title="Executable state machine"
 	tone="digital"
-	status={`state ${current}${deadlocked ? ' · deadlocked' : ''}`}
+	status={`state ${current}${deadlocked ? ', deadlocked' : ''}`}
 	hint="Run the machine or fire events by hand. Click a state or transition to read it."
 	stage={canvas}
 	dock={instruments}
@@ -169,7 +169,7 @@
 {#snippet controls()}
 	<div class="stack">
 		<p class="control-note">
-			The token sits on the <strong>active state</strong>. Let the guarded timers run, or fire the
+			The token sits on the <strong>Active state</strong>. Let the guarded timers run, or fire the
 			next event by hand — the diagram <em>is</em> the machine.
 		</p>
 		<div class="button-row">
@@ -185,7 +185,7 @@
 				{autoRunning ? 'pause auto-run' : 'run state machine'}
 			</button>
 			<button type="button" class="btn btn-solid" onclick={fire} disabled={deadlocked}>
-				fire event
+				Fire event
 			</button>
 			<button type="button" class="btn" onclick={reset}>reset</button>
 		</div>
@@ -199,7 +199,7 @@
 			Auto-run uses the causal stage delay configured in the timeline above.
 		</p>
 		<div class="next-event">
-			<span class="microlabel">enabled transition</span>
+			<span class="microlabel">Enabled transition</span>
 			{#if deadlocked}
 				<span class="deadlock">⛔ deadlocked in YELLOW — no guard enabled</span>
 			{:else}
@@ -214,7 +214,7 @@
 		</div>
 	</div>
 	<div class="switchboard">
-		<p class="microlabel">switchboard · fault injection</p>
+		<p class="microlabel">Fault injection</p>
 		<FaultSwitch label="YELLOW exit guard inverted (deadlock)" bind:active={faults.invertedGuard} />
 	</div>
 {/snippet}
@@ -233,7 +233,7 @@
 
 {#snippet instruments()}
 	<div class="current" class:deadlocked aria-live="polite" aria-atomic="true">
-		<span class="microlabel">active state</span>
+		<span class="microlabel">Active state</span>
 		<strong>{current}</strong>
 		<span class="visually-hidden"
 			>{deadlocked ? 'No exit guard is enabled; state machine deadlocked.' : ''}
@@ -241,7 +241,7 @@
 		>
 	</div>
 	<div class="residency">
-		<span class="microlabel">state residency</span>
+		<span class="microlabel">State residency</span>
 		{#each ['RED', 'GREEN', 'YELLOW'] as const as state (state)}
 			<div class="res-row">
 				<span class="res-name">{state}</span>
@@ -253,7 +253,7 @@
 		{/each}
 	</div>
 	<div class="trace" aria-label="Event trace log">
-		<span class="microlabel">event trace</span>
+		<span class="microlabel">Event trace</span>
 		<ol>
 			{#each trace as entry, index (index)}
 				<li>{entry}</li>
@@ -301,13 +301,17 @@
 	}
 
 	.guard {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--accent-2);
 	}
 
 	.deadlock {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--danger);
 	}
@@ -332,7 +336,9 @@
 		background: var(--bg-inset);
 
 		& strong {
-			font-family: var(--font-mono);
+			font-family: var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			font-size: var(--text-lg);
 			color: var(--accent-2);
 		}
@@ -356,7 +362,9 @@
 		grid-template-columns: 3.4rem minmax(0, 1fr) 1.4rem;
 		align-items: center;
 		gap: var(--space-2);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-mute);
 	}
@@ -388,7 +396,9 @@
 			overflow-y: auto;
 			background: var(--bg-inset);
 			border: 1px solid var(--line);
-			font-family: var(--font-mono);
+			font-family: var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			font-size: var(--text-2xs);
 			color: var(--ink-mute);
 		}

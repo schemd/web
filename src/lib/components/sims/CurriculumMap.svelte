@@ -96,8 +96,8 @@
 			{#each tracks as [key, name] (key)}
 				<li><i class="swatch {key}" aria-hidden="true"></i>{name} track</li>
 			{/each}
-			<li><i class="swatch done" aria-hidden="true"></i>completed here</li>
-			{#if next}<li><i class="swatch next" aria-hidden="true"></i>recommended next</li>{/if}
+			<li><i class="swatch done" aria-hidden="true"></i>Completed here</li>
+			{#if next}<li><i class="swatch next" aria-hidden="true"></i>Recommended next</li>{/if}
 		</ul>
 	</figcaption>
 	<div class="map-stage sheet-grid">
@@ -134,14 +134,13 @@
 					style={`left:${centre}px;top:${below ? box.y + box.h + 6 : box.y - 6}px`}
 					role="presentation"
 				>
-					<span class="microlabel"
-						>Lab {activeLab.index} · {activeLab.domain} · {activeLab.tier}</span
+					<span class="microlabel">Lab {activeLab.index}, {activeLab.domain}, {activeLab.tier}</span
 					>
 					<strong>{activeLab.title}</strong>
 					<span>{activeLab.tagline}</span>
 					<span class="objective">{activeLab.objective}</span>
-					{#if activeLab.done}<span class="state done">✓ completed on this device</span
-						>{:else if activeLab.id === next}<span class="state next">recommended next</span>{/if}
+					{#if activeLab.done}<span class="state done">Completed on this device</span
+						>{:else if activeLab.id === next}<span class="state next">Recommended next</span>{/if}
 				</div>
 			{/if}
 		</div>
@@ -169,7 +168,9 @@
 			margin: 0;
 			padding: 0;
 			list-style: none;
-			font: var(--text-xs) / 1.4 var(--font-mono);
+			font: var(--text-xs) / 1.4 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 
@@ -311,7 +312,9 @@
 		}
 
 		& .state {
-			font: var(--text-xs) / 1.4 var(--font-mono);
+			font: var(--text-xs) / 1.4 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--accent);
 		}
 	}

@@ -84,7 +84,7 @@
 
 <article class="builder grid-backdrop">
 	<header class="builder-head">
-		<p class="microlabel">laboratory builder · v{data.version}</p>
+		<p class="microlabel">Lab builder, revision {data.version}</p>
 		<h1>Describe a laboratory</h1>
 		<p class="lede">
 			A laboratory is a compiled diagram, a model, and a set of bindings from the model's signals
@@ -97,8 +97,8 @@
 	<div class="builder-grid">
 		<section class="editor plate" aria-label="Manifest editor">
 			<header class="panel-head">
-				<p class="eyebrow">manifest</p>
-				<span class="microlabel">{data.models.join(' · ')}</span>
+				<p class="microlabel">Manifest</p>
+				<span class="microlabel">Models: {data.models.join(', ')}</span>
 			</header>
 
 			<textarea
@@ -112,7 +112,7 @@
 					{dirty ? 'Apply changes' : 'Applied'}
 				</button>
 				<button type="button" class="btn" onclick={copyLink} disabled={!shareUrl}>
-					{copied ? '✓ copied' : 'Copy shareable link'}
+					{copied ? 'Copied' : 'Copy shareable link'}
 				</button>
 				{#if !shareUrl}
 					<span class="microlabel too-long">Too long to share as a link.</span>
@@ -160,7 +160,9 @@
 
 <style>
 	.builder {
-		padding: clamp(1rem, 3vw, 2.5rem);
+		inline-size: min(100% - 2 * var(--space-4), var(--page-max));
+		margin-inline: auto;
+		padding-block: var(--space-8) var(--space-16);
 		display: grid;
 		gap: var(--space-6);
 	}

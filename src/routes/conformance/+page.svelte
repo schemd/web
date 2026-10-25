@@ -178,18 +178,18 @@
 
 <style>
 	.conformance {
+		inline-size: min(100% - 2 * var(--space-4), var(--page-max));
+		margin-inline: auto;
+		padding-block: var(--space-8) var(--space-16);
 		display: grid;
 		gap: var(--space-6);
-		max-inline-size: 68rem;
-		margin-inline: auto;
-		padding: var(--space-6) var(--space-4) var(--space-8);
 	}
 	.kicker {
 		margin: 0 0 var(--space-1);
-		color: var(--accent);
-		font: 600 0.7rem/1 var(--font-mono);
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
+		color: var(--ink);
+		font: 600 0.7rem/1 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 	}
 	h1 {
 		margin: 0 0 var(--space-2);
@@ -216,16 +216,18 @@
 	}
 	.tally dt {
 		color: var(--ink-mute);
-		font: 500 0.66rem/1 var(--font-mono);
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
+		font: 500 0.66rem/1 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 	}
 	.tally dd {
 		margin: var(--space-2) 0 0;
-		font: 600 1.6rem/1 var(--font-mono);
+		font: 600 1.6rem/1 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 	}
 	.tally .ok {
-		color: var(--accent);
+		color: var(--ink);
 	}
 	.tally .bad {
 		color: var(--danger);
@@ -262,22 +264,24 @@
 		}
 	}
 	.count {
-		font: 600 1rem/1 var(--font-mono);
+		font: 600 1rem/1 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 	}
 	.code {
 		font: 500 0.78rem/1.4 var(--font-mono);
 		color: var(--ink-mute);
 	}
 	.severity {
-		font: 500 0.66rem/1.4 var(--font-mono);
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
+		font: 500 0.66rem/1.4 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 	}
 	.severity.error {
 		color: var(--danger);
 	}
 	.severity.warning {
-		color: var(--accent-2, var(--accent));
+		color: var(--ink);
 	}
 	.severity.info {
 		color: var(--ink-faint);
@@ -292,7 +296,7 @@
 		border-inline-start-color: var(--danger);
 	}
 	.flagged > li.warning {
-		border-inline-start-color: var(--accent-2, var(--accent));
+		border-inline-start-color: var(--ink);
 	}
 	.flagged h3 {
 		display: flex;
@@ -304,9 +308,9 @@
 	}
 	.flagged h3 a {
 		color: var(--ink-mute);
-		font: 500 0.7rem/1 var(--font-mono);
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
+		font: 500 0.7rem/1 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 	}
 	.flagged ul {
 		display: grid;
@@ -324,16 +328,18 @@
 	}
 	.line {
 		color: var(--ink-faint);
-		font: 500 0.72rem/1.4 var(--font-mono);
+		font: 500 0.72rem/1.4 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 	}
 	.open {
-		font: 500 0.7rem/1 var(--font-mono);
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
+		font: 500 0.7rem/1 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 	}
 	.clean {
 		margin: 0;
-		color: var(--accent);
+		color: var(--ink);
 	}
 	.usage {
 		overflow-x: auto;

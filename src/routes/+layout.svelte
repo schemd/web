@@ -211,7 +211,6 @@
 		font-weight: 800;
 		font-size: 1.875rem;
 		line-height: 1;
-		letter-spacing: -0.01em;
 		color: var(--ink);
 
 		&:hover {
@@ -322,10 +321,6 @@
 			opacity: 0.5;
 			cursor: default;
 		}
-	}
-
-	.tool-text::first-letter {
-		text-transform: uppercase;
 	}
 
 	/* The current print mode, shown as the paper it prints on. */

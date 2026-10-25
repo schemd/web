@@ -9,6 +9,7 @@ import { RC_FILTER_SOURCE } from '#lib/diagrams.ts';
  * exactly as current as `@schemd/core` and always agrees with `/coverage`.
  */
 import { serializableKindGroups } from '#lib/server/kinds.ts';
+import { componentReference, FAMILY_LABEL, FAMILY_ORDER } from '#lib/server/components.ts';
 
 /** Default workspace program shown before the visitor types or shares. */
 export const _PLAYGROUND_SAMPLE = RC_FILTER_SOURCE;
@@ -38,6 +39,9 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		kindGroups: serializableKindGroups(),
 		kindCount: COMPONENT_KINDS.length,
 		colors: [...SEMANTIC_COLORS],
-		orientations: [...SCHEMATIC_ORIENTATIONS]
+		orientations: [...SCHEMATIC_ORIENTATIONS],
+		/* The parts panel and the editor's completion read the compiler's schema. */
+		reference: componentReference(),
+		families: FAMILY_ORDER.map((family) => ({ family, label: FAMILY_LABEL[family] }))
 	};
 };

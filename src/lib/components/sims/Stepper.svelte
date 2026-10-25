@@ -147,7 +147,7 @@
 	</div>
 
 	<p class="caption">
-		<span class="microlabel">step {step + 1} / {count}</span>
+		<span class="microlabel">Step {step + 1} / {count}</span>
 		<span class="label">{currentLabel}</span>
 	</p>
 </div>
@@ -189,13 +189,13 @@
 		}
 
 		&.play {
-			color: var(--accent-ink);
-			background: var(--accent);
+			color: var(--bg);
+			background: var(--ink);
 			flex: 1.4;
 		}
 
 		&.play[aria-pressed='true'] {
-			color: var(--accent);
+			color: var(--ink);
 			background: var(--bg-raised);
 		}
 	}
@@ -226,11 +226,11 @@
 		}
 
 		&.done::before {
-			background: color-mix(in srgb, var(--accent) 55%, var(--line));
+			background: var(--line-strong);
 		}
 
 		&.current::before {
-			background: var(--accent);
+			background: var(--ink);
 			box-shadow: 0 0 6px var(--glow);
 		}
 	}
@@ -244,9 +244,11 @@
 	}
 
 	.label {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
-		color: var(--accent-2);
+		color: var(--ink-mute);
 		text-align: end;
 	}
 </style>

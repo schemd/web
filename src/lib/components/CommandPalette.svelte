@@ -122,7 +122,7 @@
 			onkeydown={trapFocus}
 		>
 			<div class="palette-head">
-				<span id="palette-title" class="microlabel">⌘K · command palette</span>
+				<span id="palette-title" class="microlabel">Command palette</span>
 				<input
 					bind:this={input}
 					bind:value={query}
@@ -253,7 +253,9 @@
 	}
 
 	.entry-hint {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-faint);
 		white-space: nowrap;

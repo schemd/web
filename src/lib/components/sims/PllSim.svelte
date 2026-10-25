@@ -79,10 +79,10 @@
 	const locked = $derived(canLock && Math.abs(rate) < 0.06);
 	const status = $derived(
 		locked
-			? `locked · phase offset ${((wrapped * 180) / Math.PI).toFixed(0)}°`
+			? `locked, phase offset ${((wrapped * 180) / Math.PI).toFixed(0)}°`
 			: canLock
 				? 'acquiring lock'
-				: 'cycle slipping · outside the hold range'
+				: 'cycle slipping, outside the hold range'
 	);
 
 	function step(p: PllParams): void {
@@ -284,7 +284,7 @@
 		<Scope
 			{channels}
 			running={!(motion.paused || motion.animationBlocked)}
-			timebase="waves drawn against the reference · rolling traces ≈ 0.25 ms/div"
+			timebase="waves drawn against the reference, rolling traces ≈ 0.25 ms/div"
 			{revision}
 		/>
 	</section>
@@ -302,7 +302,7 @@
 				>
 			</div>
 			<div>
-				<span>phase error</span>
+				<span>Phase error</span>
 				<strong
 					><LiveMath
 						id="pll.readout.error"
@@ -312,7 +312,7 @@
 				>
 			</div>
 			<div>
-				<span>control</span>
+				<span>Control</span>
 				<strong
 					><LiveMath
 						id="pll.readout.vc"
@@ -322,7 +322,7 @@
 				>
 			</div>
 			<div>
-				<span>hold range</span>
+				<span>Hold range</span>
 				<strong
 					><LiveMath
 						id="pll.readout.detune"
@@ -373,7 +373,7 @@
 		<SimulationMotionControl {motion} label="Phase-locked loop animation" />
 	</div>
 	<div class="deck-group">
-		<FaultSwitch label="loop filter shorted to ground" bind:active={shorted} />
+		<FaultSwitch label="Loop filter shorted to ground" bind:active={shorted} />
 	</div>
 {/snippet}
 
@@ -406,7 +406,9 @@
 		}
 
 		& span {
-			font: var(--text-xs) / 1.4 var(--font-mono);
+			font: var(--text-xs) / 1.4 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 

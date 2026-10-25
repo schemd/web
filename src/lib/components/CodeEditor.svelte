@@ -646,7 +646,7 @@
 	{/if}
 
 	<div class="position" aria-hidden="true">
-		Ln {caretLine + 1}, Col {caretColumn + 1}{highlightingEnabled ? '' : ' · plain large-file mode'}
+		Ln {caretLine + 1}, Col {caretColumn + 1}{highlightingEnabled ? '' : ', plain large-file mode'}
 	</div>
 	{#if !highlightingEnabled}
 		<p class="sr-only" role="status">
@@ -748,7 +748,6 @@
 		border-radius: 0;
 		font: inherit;
 		line-height: inherit;
-		letter-spacing: inherit;
 		tab-size: 2;
 		white-space: pre;
 	}

@@ -114,20 +114,20 @@
 	     studies about it sits in the notebook under the bench. -->
 	<header class="lab-bar">
 		<div class="lab-name">
-			<a href={`/simulations/${data.version}`} class="back">← Labs</a>
+			<a href={`/simulations/${data.version}`} class="back">All labs</a>
 			<span class="zone is-current">{sim.index}</span>
 			<h1>{sim.title}</h1>
 			<span class="domain-badge">{sim.domain}</span>
 		</div>
 		<nav class="lab-steps" aria-label="Neighbouring labs">
 			<a href={`/simulations/${data.version}/${previous.id}`} title={previous.title}
-				><span aria-hidden="true">←</span>
-				<span class="visually-hidden">Previous lab: </span>{previous.index}</a
+				><span class="visually-hidden">Previous lab: </span><span aria-hidden="true">Previous</span>
+				{previous.index}</a
 			>
-			<a href="#notebook" class="notebook-link">Notebook ↓</a>
+			<a href="#notebook" class="notebook-link">Notebook</a>
 			<a href={`/simulations/${data.version}/${next.id}`} title={next.title}
-				><span class="visually-hidden">Next lab: </span>{next.index}
-				<span aria-hidden="true">→</span></a
+				><span class="visually-hidden">Next lab: </span><span aria-hidden="true">Next</span>
+				{next.index}</a
 			>
 		</nav>
 		<p class="lab-summary">{@html sim.summaryHtml}</p>
@@ -156,7 +156,7 @@
 
 	<section class="notebook" id="notebook" aria-labelledby="notebook-title">
 		<h2 class="microlabel" id="notebook-title">
-			Notebook · {sim.components} parts · {sim.connections} wires · {@html sim.modelHtml}
+			Notebook: {sim.components} parts and {sim.connections} wires, modelled as {@html sim.modelHtml}
 		</h2>
 		<div class="notebook-grid">
 			<SimulationPedagogy
@@ -173,7 +173,7 @@
 			/>
 			<div class="lab-model">
 				<div class="model-card">
-					<span class="microlabel">governing model</span>
+					<span class="microlabel">Governing model</span>
 					<!-- Keyboard focus exposes horizontally overflowing equations to Safari users. -->
 					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 					<div class="lab-formula" role="region" aria-label="Governing model" tabindex="0">
@@ -181,7 +181,7 @@
 					</div>
 				</div>
 				<div class="spec-group">
-					<span class="microlabel">structural inventory</span>
+					<span class="microlabel">Parts</span>
 					<ul class="chips">
 						{#each sim.inventoryHtml as item, index (sim.inventory[index])}
 							<li>{@html item}</li>
@@ -189,7 +189,7 @@
 					</ul>
 				</div>
 				<div class="spec-group">
-					<span class="microlabel">boundaries</span>
+					<span class="microlabel">Limits of the model</span>
 					<ul class="bounds">
 						{#each sim.boundariesHtml as bound, index (sim.boundaries[index])}
 							<li>{@html bound}</li>
@@ -197,9 +197,9 @@
 					</ul>
 				</div>
 				<div class="spec-group">
-					<span class="microlabel">diagnosis challenge</span>
+					<span class="microlabel">Diagnosis challenge</span>
 					<span class="fault-note"
-						>Fault identity withheld: infer it from the changed outputs first.</span
+						>The fault is hidden. Work it out from the changed outputs first.</span
 					>
 				</div>
 			</div>
@@ -208,7 +208,7 @@
 
 	<nav class="env-nav" aria-label="Simulation environments">
 		<a class="env-step prev" href={`/simulations/${data.version}/${previous.id}`}>
-			<span class="microlabel">← {previous.index}</span>
+			<span class="microlabel">Previous, {previous.index}</span>
 			<span class="env-step-title">{previous.title}</span>
 		</a>
 		<div class="env-tabs">
@@ -223,7 +223,7 @@
 			{/each}
 		</div>
 		<a class="env-step next" href={`/simulations/${data.version}/${next.id}`}>
-			<span class="microlabel">{next.index} →</span>
+			<span class="microlabel">Next, {next.index}</span>
 			<span class="env-step-title">{next.title}</span>
 		</a>
 	</nav>
@@ -255,13 +255,14 @@
 			margin: 0;
 			font-size: clamp(1.35rem, 2.6vw, 1.9rem);
 			line-height: 1.15;
-			letter-spacing: -0.015em;
 			text-wrap: balance;
 		}
 	}
 
 	.back {
-		font: var(--text-sm) / 1.3 var(--font-mono);
+		font: var(--text-sm) / 1.3 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 		text-decoration: none;
 
@@ -274,7 +275,9 @@
 		padding: 2px 8px;
 		border: 1px solid var(--line-strong);
 		border-radius: 999px;
-		font: var(--text-xs) / 1.4 var(--font-mono);
+		font: var(--text-xs) / 1.4 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 	}
 
@@ -291,7 +294,9 @@
 			padding: 4px 10px;
 			border: 1px solid var(--line-strong);
 			border-radius: var(--radius-sm);
-			font: var(--text-sm) / 1.3 var(--font-mono);
+			font: var(--text-sm) / 1.3 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink);
 			text-decoration: none;
 
@@ -392,7 +397,9 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
-		font: var(--text-sm) / 1.5 var(--font-mono);
+		font: var(--text-sm) / 1.5 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 	}
 
@@ -445,7 +452,9 @@
 			min-block-size: 30px;
 			border: 1px solid var(--line);
 			border-radius: var(--radius-sm);
-			font: var(--text-xs) / 1 var(--font-mono);
+			font: var(--text-xs) / 1 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 			text-decoration: none;
 

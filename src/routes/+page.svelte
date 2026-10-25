@@ -555,6 +555,7 @@
 
 	.ln {
 		display: flex;
+		min-block-size: 24px;
 		gap: var(--space-3);
 		inline-size: 100%;
 		text-align: start;

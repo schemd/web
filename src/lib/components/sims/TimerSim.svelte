@@ -79,10 +79,10 @@
 		faults.shortedThreshold
 			? 'threshold latched: output stuck low'
 			: mode === 'astable'
-				? `astable · ${formatSi(frequency, 'Hz')} · ${(duty * 100).toFixed(0)} % duty`
+				? `astable, ${formatSi(frequency, 'Hz')}, ${(duty * 100).toFixed(0)} % duty`
 				: oneShot
-					? 'monostable · pulse in flight'
-					: 'monostable · waiting for a trigger'
+					? 'monostable, pulse in flight'
+					: 'monostable, waiting for a trigger'
 	);
 
 	/** Fire the one-shot: only starts a pulse if the timer is idle. */
@@ -281,7 +281,7 @@
 					: mode === 'astable'
 						? astableAt(x, phase).capacitorRatio * VCC
 						: monoAt(x).vc * VCC,
-			summary: () => `${(vc * VCC).toFixed(2)} V · ${charging ? 'charging' : 'discharging'}`,
+			summary: () => `${(vc * VCC).toFixed(2)} V, ${charging ? 'charging' : 'discharging'}`,
 			reading: () =>
 				reading('timer.probe.vc', `capacitor voltage ${(vc * VCC).toFixed(2)} volts`, {
 					value: (vc * VCC).toFixed(2),
@@ -301,7 +301,7 @@
 						: 0,
 			summary: () =>
 				mode === 'astable'
-					? `${formatSi(frequency, 'Hz')} · ${(duty * 100).toFixed(0)} % high`
+					? `${formatSi(frequency, 'Hz')}, ${(duty * 100).toFixed(0)} % high`
 					: `${formatSi(pulseWidth, 's')} pulse`,
 			reading: () =>
 				reading(
@@ -327,7 +327,7 @@
 	);
 	const timebase = $derived(
 		mode === 'astable'
-			? `${formatSi(CYCLES / frequency / 10, 's')}/div · time-scaled`
+			? `${formatSi(CYCLES / frequency / 10, 's')}/div, time-scaled`
 			: `${formatSi((pulseWidth * 1.5) / 10, 's')}/div`
 	);
 </script>
@@ -410,7 +410,7 @@
 				role="radio"
 				aria-checked={mode === 'astable'}
 				class="mode"
-				onclick={() => (mode = 'astable')}>astable</button
+				onclick={() => (mode = 'astable')}>Astable</button
 			>
 			<button
 				type="button"
@@ -418,7 +418,7 @@
 				role="radio"
 				aria-checked={mode === 'monostable'}
 				class="mode"
-				onclick={() => (mode = 'monostable')}>monostable</button
+				onclick={() => (mode = 'monostable')}>Monostable</button
 			>
 		</div>
 		{#if mode === 'monostable'}
@@ -468,7 +468,9 @@
 		min-block-size: 32px;
 		padding: 0.35rem 0.75rem;
 		border: 0;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--ink-mute);
 		background: var(--bg-raised);

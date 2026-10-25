@@ -57,7 +57,7 @@
 	const output = $derived(decimate(trace.bits, osr));
 	const density = $derived(trace.bits.slice(0, PERIOD).filter((bit) => bit > 0).length / PERIOD);
 	const status = $derived(
-		`${order === 1 ? 'first' : 'second'}-order · OSR ${osr} · ${enob.toFixed(1)} effective bits`
+		`${order === 1 ? 'first' : 'second'}-order, OSR ${osr}, ${enob.toFixed(1)} effective bits`
 	);
 
 	/* One input period on the scope, after the loop has settled. */
@@ -210,12 +210,7 @@
 {#snippet dock()}
 	<section class="dock-block" aria-label="Oscilloscope">
 		<p class="microlabel">Oscilloscope</p>
-		<Scope
-			{channels}
-			running={false}
-			timebase={`one input period · ${PERIOD} samples`}
-			{revision}
-		/>
+		<Scope {channels} running={false} timebase={`one input period, ${PERIOD} samples`} {revision} />
 	</section>
 	<Plot
 		label={`Bitstream spectrum: in-band SNR ${snr.toFixed(1)} decibels over ${Math.floor(bandEdge)} bins`}
@@ -227,7 +222,7 @@
 		xStart="f_s / N"
 		xEnd="f_s / 2"
 		height={140}
-		caption="bitstream spectrum, dB · log frequency"
+		caption="bitstream spectrum, dB, log frequency"
 	/>
 	<section class="dock-block" aria-label="Readouts">
 		<p class="microlabel">Readouts</p>
@@ -243,7 +238,7 @@
 				>
 			</div>
 			<div>
-				<span>resolution</span>
+				<span>Resolution</span>
 				<strong
 					><LiveMath
 						id="sd.readout.enob"
@@ -253,7 +248,7 @@
 				>
 			</div>
 			<div>
-				<span>signal band</span>
+				<span>Signal band</span>
 				<strong
 					><LiveMath
 						id="sd.readout.band"
@@ -263,7 +258,7 @@
 				>
 			</div>
 			<div>
-				<span>density</span>
+				<span>Density</span>
 				<strong
 					><LiveMath
 						id="sd.readout.density"
@@ -293,7 +288,7 @@
 		</div>
 	</div>
 	<div class="deck-group">
-		<FaultSwitch label="integrator leaks charge" bind:active={leaky} />
+		<FaultSwitch label="Integrator leaks charge" bind:active={leaky} />
 	</div>
 {/snippet}
 
@@ -326,7 +321,9 @@
 		}
 
 		& span {
-			font: var(--text-xs) / 1.4 var(--font-mono);
+			font: var(--text-xs) / 1.4 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 

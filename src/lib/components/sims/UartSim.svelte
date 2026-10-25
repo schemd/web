@@ -38,9 +38,9 @@
 	const drift = $derived((frame.length - 0.5) * (skew / 100));
 	const status = $derived(
 		decode.framingError
-			? 'framing error · stop bit read low'
+			? 'framing error, stop bit read low'
 			: decode.parityError
-				? 'parity error · a bit slipped'
+				? 'parity error, a bit slipped'
 				: decode.byte !== byte
 					? 'wrong byte, no error flagged'
 					: `received 0x${hex(byte)} cleanly`
@@ -184,7 +184,7 @@
 			<text class="axis end" x={RIGHT} y="100">idle</text>
 		</svg>
 		<figcaption>
-			line level · <span class="good-key">●</span> sample inside its bit ·
+			line level, <span class="good-key">●</span> sample inside its bit ·
 			<span class="bad-key">●</span> sample in a neighbour
 		</figcaption>
 	</figure>
@@ -202,7 +202,7 @@
 				>
 			</div>
 			<div>
-				<span>received</span>
+				<span>Received</span>
 				<strong
 					><LiveMath
 						id="uart.readout.rx"
@@ -212,7 +212,7 @@
 				>
 			</div>
 			<div>
-				<span>stop-bit drift</span>
+				<span>Stop-bit drift</span>
 				<strong
 					><LiveMath
 						id="uart.readout.drift"
@@ -296,7 +296,9 @@
 		}
 
 		& figcaption {
-			font: var(--text-xs) / 1.4 var(--font-mono);
+			font: var(--text-xs) / 1.4 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 	}
@@ -336,7 +338,9 @@
 	}
 
 	text {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 7px;
 		fill: var(--ink-faint);
 		text-anchor: middle;
@@ -383,7 +387,9 @@
 		}
 
 		& span {
-			font: var(--text-xs) / 1.4 var(--font-mono);
+			font: var(--text-xs) / 1.4 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 

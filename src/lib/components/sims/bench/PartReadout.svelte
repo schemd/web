@@ -67,7 +67,7 @@
 		display: block;
 		padding: var(--space-2) var(--space-3);
 		border: 1px solid var(--line);
-		border-inline-start: 3px solid var(--accent);
+		border-inline-start: 3px solid var(--ink);
 		border-radius: var(--radius-sm);
 		font-size: var(--text-sm);
 		overflow-wrap: anywhere;
@@ -75,7 +75,9 @@
 
 	.hint {
 		margin: 0;
-		font: var(--text-xs) / 1.5 var(--font-mono);
+		font: var(--text-xs) / 1.5 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 	}
 </style>

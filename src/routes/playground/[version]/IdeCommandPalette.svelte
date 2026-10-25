@@ -143,7 +143,7 @@
 		>
 			<header>
 				<div>
-					<p id="ide-command-title" class="microlabel">playground commands</p>
+					<p id="ide-command-title" class="microlabel">Playground commands</p>
 					<input
 						bind:this={input}
 						bind:value={query}

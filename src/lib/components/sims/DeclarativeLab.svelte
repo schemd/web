@@ -156,6 +156,9 @@
 		if (!first || first.kind !== 'readout') return manifest.title;
 		return `${first.label} ${present(readoutValue(first), first.format, first.unit)}`;
 	});
+
+	/** Manifest labels are data written in lower case; the page prints them in sentence case. */
+	const sentenceCase = (label: string): string => label.charAt(0).toUpperCase() + label.slice(1);
 </script>
 
 {#if !model}
@@ -173,7 +176,7 @@
 		{#snippet deck()}
 			{#each manifest.inputs as input (input.key)}
 				<label class="control">
-					<span class="microlabel">{input.label}</span>
+					<span class="microlabel">{sentenceCase(input.label)}</span>
 					{#if input.kind === 'toggle'}
 						<input
 							type="checkbox"
@@ -231,7 +234,7 @@
 		{#snippet dock()}
 			{#each manifest.instruments as instrument (instrument.label)}
 				<section class="instrument">
-					<p class="microlabel">{instrument.label}</p>
+					<p class="microlabel">{sentenceCase(instrument.label)}</p>
 					{#if instrument.kind === 'readout'}
 						{@const value = readoutValue(instrument)}
 						<span
@@ -254,7 +257,7 @@
 									id: 'scope',
 									letter: 'A',
 									label: instrument.label,
-									color: 'var(--accent)',
+									color: 'var(--live)',
 									unit: '',
 									summary: `${scope.filter((sample) => sample > 0.5).length} high of ${scope.length}`,
 									/* One sample per committed run, drawn as logic levels. */
@@ -312,14 +315,16 @@
 			inline-size: 1.6rem;
 			text-align: center;
 			padding-block: var(--space-1);
-			font-family: var(--font-mono);
+			font-family: var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			background: color-mix(in srgb, var(--ink) 7%, transparent);
 			color: var(--ink-faint);
 			border-radius: var(--radius-sm);
 		}
 
 		& li.high {
-			background: color-mix(in srgb, var(--accent) 22%, transparent);
+			background: color-mix(in srgb, var(--live) 22%, transparent);
 			color: var(--ink);
 		}
 	}

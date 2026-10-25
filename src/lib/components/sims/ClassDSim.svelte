@@ -69,7 +69,7 @@
 	const residualDb = $derived(20 * Math.log10(Math.max(1e-9, metrics.residual / (4 / Math.PI))));
 	const status = $derived(
 		metrics.cleanliness > 30
-			? `clean audio · carrier ${(-residualDb).toFixed(0)} dB down`
+			? `clean audio, carrier ${(-residualDb).toFixed(0)} dB down`
 			: metrics.cleanliness > 10
 				? 'audible carrier whine'
 				: 'carrier dominates the speaker'
@@ -109,7 +109,7 @@
 			label: 'audio',
 			unit: 'V',
 			sample: at(trace.audio),
-			summary: () => `${formatSi(audio, 'Hz', 0)} · ${depth.toFixed(2)} pk`,
+			summary: () => `${formatSi(audio, 'Hz', 0)}, ${depth.toFixed(2)} pk`,
 			reading: () =>
 				reading('classd.probe.net', `audio ${formatSi(audio, 'Hz', 0)}`, {
 					name: 'audio',
@@ -148,7 +148,7 @@
 			label: 'speaker',
 			unit: 'V',
 			sample: at(trace.out),
-			summary: () => `audio ×${metrics.audioGain.toFixed(2)} · carrier ${residualDb.toFixed(0)} dB`,
+			summary: () => `audio ×${metrics.audioGain.toFixed(2)}, carrier ${residualDb.toFixed(0)} dB`,
 			reading: () =>
 				reading('classd.probe.net', `speaker: carrier ${residualDb.toFixed(0)} decibels`, {
 					name: 'speaker',
@@ -305,7 +305,7 @@
 		<Scope
 			{channels}
 			running={false}
-			timebase={`two audio cycles · ${formatSi(1 / (5 * audio), 's', 1)}/div`}
+			timebase={`two audio cycles, ${formatSi(1 / (5 * audio), 's', 1)}/div`}
 			{revision}
 		/>
 	</section>
@@ -313,7 +313,7 @@
 		<p class="microlabel">Readouts</p>
 		<div class="metrics">
 			<div>
-				<span>cutoff</span>
+				<span>Cutoff</span>
 				<strong
 					><LiveMath
 						id="classd.readout.fc"
@@ -323,7 +323,7 @@
 				>
 			</div>
 			<div>
-				<span>audio gain</span>
+				<span>Audio gain</span>
 				<strong
 					><LiveMath
 						id="classd.readout.audio"
@@ -333,7 +333,7 @@
 				>
 			</div>
 			<div>
-				<span>carrier</span>
+				<span>Carrier</span>
 				<strong
 					><LiveMath
 						id="classd.readout.residual"
@@ -343,7 +343,7 @@
 				>
 			</div>
 			<div>
-				<span>cleanliness</span>
+				<span>Cleanliness</span>
 				<strong
 					><LiveMath
 						id="classd.readout.clean"
@@ -366,14 +366,14 @@
 		]}
 		xStart="100 Hz"
 		xEnd="100 kHz"
-		caption="|H(f)| in dB · 40 dB per decade above the cutoff"
+		caption="|H(f)| in dB, 40 dB per decade above the cutoff"
 	/>
 {/snippet}
 
 {#snippet deck()}
 	<ProbeSelects {nets} bind:a={probeA} bind:b={probeB} />
 	<div class="deck-group">
-		<span class="microlabel">Listen · plays sound</span>
+		<span class="microlabel">Listen (plays sound)</span>
 		<div class="presets">
 			<button
 				class="btn"
@@ -397,7 +397,7 @@
 		</p>
 	</div>
 	<div class="deck-group">
-		<FaultSwitch label="output filter capacitor open" bind:active={filterOpen} />
+		<FaultSwitch label="Output filter capacitor open" bind:active={filterOpen} />
 	</div>
 {/snippet}
 
@@ -430,7 +430,9 @@
 		}
 
 		& span {
-			font: var(--text-xs) / 1.4 var(--font-mono);
+			font: var(--text-xs) / 1.4 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 
@@ -457,7 +459,9 @@
 	.note {
 		margin: 0;
 		max-inline-size: 34ch;
-		font: var(--text-xs) / 1.5 var(--font-mono);
+		font: var(--text-xs) / 1.5 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 	}
 </style>

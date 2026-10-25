@@ -179,7 +179,7 @@
 	.bar-fill {
 		display: block;
 		block-size: 100%;
-		background: var(--accent);
+		background: var(--ink);
 		/* Square where it meets the baseline, rounded at the data end. */
 		border-start-end-radius: 4px;
 		border-end-end-radius: 4px;
@@ -208,7 +208,9 @@
 		align-items: baseline;
 		gap: var(--space-2);
 		justify-content: flex-end;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-sm);
 		color: var(--ink);
 		white-space: nowrap;
@@ -248,7 +250,9 @@
 	}
 
 	td {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		color: var(--ink);
 	}
 

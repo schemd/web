@@ -232,14 +232,18 @@
 		display: grid;
 		place-items: center;
 		margin: 0;
-		font: var(--text-xs) / 1.4 var(--font-mono);
+		font: var(--text-xs) / 1.4 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 	}
 
 	figcaption {
 		display: grid;
 		gap: var(--space-1);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--ink-mute);
 	}

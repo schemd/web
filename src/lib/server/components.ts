@@ -313,3 +313,37 @@ export function componentIndex(): readonly ComponentSummary[] {
 		};
 	});
 }
+
+export interface ComponentReferenceEntry {
+	readonly kind: string;
+	readonly family: SchematicComponentFamily;
+	readonly options: readonly OptionRow[];
+	readonly pins: readonly string[];
+	/** A declaration that compiles as written, for the playground to insert. */
+	readonly template: string;
+}
+
+let reference: readonly ComponentReferenceEntry[] | undefined;
+
+/**
+ * Every kind's options and default pins, without drawings: what the
+ * playground's parts panel and its completion need, small enough to send
+ * with the page.
+ */
+export function componentReference(): readonly ComponentReferenceEntry[] {
+	reference ??= COMPONENT_KINDS.map((kind) => {
+		const schema = SCHEMATIC_COMPONENT_SCHEMAS[kind];
+		const options = baseOptions(schema);
+		return {
+			kind,
+			family: schema.family,
+			options: schema.options.map(optionRow),
+			pins: describeComponentPorts(kind, options),
+			template: declaration(kind, FAMILY_COLOR[schema.family], options, { x: 0, y: 0 }).replace(
+				' at (0, 0)',
+				' at (X, Y)'
+			)
+		};
+	});
+	return reference;
+}

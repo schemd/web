@@ -44,6 +44,7 @@ const success = {
 		},
 		sourceMap: { nodes: [{ id: 'A', line: 1 }], wires: [] },
 		placements: [],
+		ports: {},
 		ms: 0.2
 	}
 };

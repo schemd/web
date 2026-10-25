@@ -49,8 +49,8 @@
 	const targetLabel = $derived(TARGETS.find((entry) => entry.value === target)!.label);
 	const status = $derived(
 		purity > 0.99
-			? `clean kickback · P(1) = ${probabilityOne.toFixed(3)}`
-			: `entangled · control purity ${purity.toFixed(2)}`
+			? `clean kickback, P(1) = ${probabilityOne.toFixed(3)}`
+			: `entangled, control purity ${purity.toFixed(2)}`
 	);
 
 	/* The control's Bloch vector at each timeline stage. */
@@ -211,7 +211,7 @@
 		<p class="microlabel">Readouts</p>
 		<div class="metrics">
 			<div>
-				<span>outcome</span>
+				<span>Outcome</span>
 				<strong
 					><LiveMath
 						id="kick.readout.p1"
@@ -221,7 +221,7 @@
 				>
 			</div>
 			<div>
-				<span>purity</span>
+				<span>Purity</span>
 				<strong
 					><LiveMath
 						id="kick.readout.purity"
@@ -286,7 +286,7 @@
 		>
 	</div>
 	<div class="deck-group">
-		<FaultSwitch label="target prepared off its eigenstate" bind:active={offEigen} />
+		<FaultSwitch label="Target prepared off its eigenstate" bind:active={offEigen} />
 	</div>
 {/snippet}
 
@@ -314,7 +314,9 @@
 		}
 
 		& figcaption {
-			font: var(--text-xs) / 1.4 var(--font-mono);
+			font: var(--text-xs) / 1.4 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 	}
@@ -354,7 +356,9 @@
 	}
 
 	.bloch text {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 8px;
 		fill: var(--ink-faint);
 		text-anchor: middle;
@@ -366,7 +370,9 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
-		font: var(--text-xs) / 1.5 var(--font-mono);
+		font: var(--text-xs) / 1.5 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 
 		& li {
@@ -398,7 +404,9 @@
 		grid-template-columns: 1.2em 1fr;
 		align-items: center;
 		gap: var(--space-2);
-		font: var(--text-xs) / 1 var(--font-mono);
+		font: var(--text-xs) / 1 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 
 		& i {
@@ -434,7 +442,9 @@
 		}
 
 		& span {
-			font: var(--text-xs) / 1.4 var(--font-mono);
+			font: var(--text-xs) / 1.4 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 

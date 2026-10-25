@@ -22,7 +22,7 @@
 <article class="gallery grid-backdrop">
 	<SheetFrame label="Example gallery">
 		<header class="gallery-head sheet-head">
-			<p class="microlabel">compiled corpus · {data.items.length} examples · v{data.latest}</p>
+			<p class="microlabel">{data.items.length} examples, compiled by revision {data.latest}</p>
 			<h1>Example gallery</h1>
 			<p class="lede">
 				Every diagram below is real engine output, compiled server-side from the documentation's own
@@ -46,7 +46,7 @@
 						class="open"
 						href={`/playground/${data.latest}?code=${item.code}&w=${item.width}&h=${item.height}&t=${encodeURIComponent(item.title)}`}
 					>
-						open →
+						Open
 					</a>
 				</div>
 			</li>
@@ -56,9 +56,9 @@
 
 <style>
 	.gallery {
-		max-inline-size: 1200px;
+		inline-size: min(100% - 2 * var(--space-4), var(--page-max));
 		margin-inline: auto;
-		padding: clamp(1rem, 4vw, 3rem);
+		padding-block: var(--space-8) var(--space-16);
 		display: grid;
 		gap: var(--space-6);
 	}
@@ -130,9 +130,11 @@
 
 	.open {
 		flex: none;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
-		color: var(--accent);
+		color: var(--ink);
 
 		&:hover {
 			color: var(--ink);

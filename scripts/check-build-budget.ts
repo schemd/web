@@ -148,8 +148,13 @@ const MAX_COMPILER_JS_GZIP = 50 * 1024;
  * the rest is their models and the shared dock plot. The models live in one
  * module per lab, re-exported from `simulation-models.ts`, so opening an
  * existing lab downloads none of the new physics.
+ *
+ * Raised to 212 for the datasheet redesign, measured 211.0 KiB: the
+ * playground's parts panel (search, pins, options, insert), option and port
+ * completion in the editor, the PNG, source and embed exports, and the two
+ * new component datasheet routes.
  */
-const MAX_DOCUMENT_JS_GZIP = 210 * 1024;
+const MAX_DOCUMENT_JS_GZIP = 212 * 1024;
 /* Exactly the sum of the two ceilings above, as the compiler note says. */
 const MAX_ALL_JS_GZIP = MAX_DOCUMENT_JS_GZIP + MAX_COMPILER_JS_GZIP;
 /*
@@ -219,7 +224,12 @@ const MAX_MODERN_MATH_FONTS = 320 * 1024;
    loaded only with their own lab. */
 /* Raised to 1,386 for `@schemd/core` 1.1, measured 1,382.3 KiB: the worker's
    compiler grew about 5 KiB unminified for fitting and terminal alignment. */
-const MAX_CLIENT_OUTPUT = 1_386 * 1024;
+/* Raised to 1,476 for the datasheet redesign, measured 1,471.8 KiB. The
+   typefaces account for more than all of it: Archivo's width axis and Commit
+   Mono in two weights are 185.5 KB, replacing 82.9 KB of the sheet's three
+   faces, a net 100.3 KiB. Everything else came out 10.8 KiB smaller, mostly
+   the zone rulers and glow styles the datasheet dropped. */
+const MAX_CLIENT_OUTPUT = 1_476 * 1024;
 /*
  * Eleven laboratories, each downloaded only when it is opened. Two of them are
  * manifests rather than components, so the shell's lazy registry spans both

@@ -146,7 +146,7 @@ export function curriculumMap(environments: readonly SimEnvironment[]): Curricul
 			}
 		}
 		parts.push(
-			`${emblem.kind}:${node} "${environment.index} · ${emblem.label}" at (${FIRST_COLUMN + depth * COLUMN_PITCH}, ${Math.round(y)}) #${style.color}${emblem.options ? ` ${emblem.options}` : ''}`
+			`${emblem.kind}:${node} "${environment.index} ${emblem.label}" at (${FIRST_COLUMN + depth * COLUMN_PITCH}, ${Math.round(y)}) #${style.color}${emblem.options ? ` ${emblem.options}` : ''}`
 		);
 		return y;
 	}

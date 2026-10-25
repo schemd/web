@@ -8,7 +8,7 @@ describe('hidden fault control', () => {
 		const { body } = render(FaultSwitch, {
 			props: { label: diagnosis, active: false }
 		});
-		expect(body).toContain('inject hidden fault');
+		expect(body).toContain('Inject hidden fault');
 		expect(body).not.toContain(diagnosis);
 	});
 
@@ -17,7 +17,7 @@ describe('hidden fault control', () => {
 		const { body } = render(FaultSwitch, {
 			props: { label: diagnosis, active: true }
 		});
-		expect(body).toContain('hidden fault active');
+		expect(body).toContain('Hidden fault active');
 		expect(body).not.toContain(diagnosis);
 	});
 });

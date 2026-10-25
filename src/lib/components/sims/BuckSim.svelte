@@ -320,7 +320,7 @@
 			unit: 'A',
 			sample: (x, phase) =>
 				Math.max(0, inductorCurrent + (triangleAt(carrierAt(x, phase)) - 0.5) * rippleCurrent),
-			summary: () => `${inductorCurrent.toFixed(2)} A avg · ${rippleCurrent.toFixed(2)} A p-p`,
+			summary: () => `${inductorCurrent.toFixed(2)} A avg, ${rippleCurrent.toFixed(2)} A p-p`,
 			reading: () =>
 				reading(
 					'buck.probe.inductor',
@@ -342,8 +342,7 @@
 			sample: (x, phase) =>
 				outputVoltage +
 				Math.sin(Math.PI * 2 * (carrierAt(x, phase) - effectiveDuty / 2)) * (rippleVoltage / 2),
-			summary: () =>
-				`${outputVoltage.toFixed(3)} V · ${(rippleVoltage * 1e3).toFixed(1)} mV ripple`,
+			summary: () => `${outputVoltage.toFixed(3)} V, ${(rippleVoltage * 1e3).toFixed(1)} mV ripple`,
 			reading: () =>
 				reading('buck.probe.output', `output ${outputVoltage.toFixed(3)} volts`, {
 					voltage: outputVoltage.toFixed(3),
@@ -360,7 +359,7 @@
 <Bench
 	title="Closed-loop buck converter"
 	tone="analog"
-	status={`${regime} · ${outputVoltage.toFixed(2)} V out`}
+	status={`${regime}, ${outputVoltage.toFixed(2)} V out`}
 	{stage}
 	{dock}
 	{deck}
@@ -389,12 +388,12 @@
 		<Scope
 			{channels}
 			running={!(motion.paused || motion.animationBlocked)}
-			timebase={`${((PERIODS * 100) / frequencyKilo).toPrecision(2)} µs/div · three switching periods`}
+			timebase={`${((PERIODS * 100) / frequencyKilo).toPrecision(2)} µs/div, three switching periods`}
 			{revision}
 		/>
 	</section>
 	<div class="mode-card" class:faulted={faults.gateLost} aria-live="polite" aria-atomic="true">
-		<span class="microlabel">conduction regime</span>
+		<span class="microlabel">Conduction regime</span>
 		<strong>{conduction}</strong>
 		<span>
 			{conduction === 'CCM'
@@ -488,7 +487,7 @@
 		<SimulationMotionControl {motion} label="buck-converter waveform and switching animation" />
 	</div>
 	<div class="deck-group">
-		<FaultSwitch label="high-side gate drive lost" bind:active={faults.gateLost} />
+		<FaultSwitch label="High-side gate drive lost" bind:active={faults.gateLost} />
 	</div>
 {/snippet}
 
@@ -526,7 +525,9 @@
 		color: var(--ink-mute);
 
 		& strong {
-			font: 600 var(--text-lg) / 1.1 var(--font-mono);
+			font: 600 var(--text-lg) / 1.1 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink);
 		}
 

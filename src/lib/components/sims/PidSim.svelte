@@ -86,7 +86,7 @@
 	const offsetPercent = $derived((100 * response.steadyStateError) / Math.max(1e-6, setpoint));
 	const status = $derived(
 		!response.stable
-			? 'driver pinned at the rail · loop has lost control'
+			? 'driver pinned at the rail, loop has lost control'
 			: response.overshoot > 0.05
 				? `overshoot ${(response.overshoot * 100).toFixed(0)} %`
 				: Math.abs(offsetPercent) > 2
@@ -244,7 +244,7 @@
 		<Scope
 			{channels}
 			running={false}
-			timebase="0.3 s/div · setpoint step at 0 s, load step at 1.5 s"
+			timebase="0.3 s/div, setpoint step at 0 s, load step at 1.5 s"
 			{revision}
 		/>
 	</section>
@@ -263,7 +263,7 @@
 		<p class="microlabel">Readouts</p>
 		<div class="metrics">
 			<div>
-				<span>overshoot</span>
+				<span>Overshoot</span>
 				<strong
 					><LiveMath
 						id="pid.readout.overshoot"
@@ -273,7 +273,7 @@
 				>
 			</div>
 			<div>
-				<span>settling</span>
+				<span>Settling</span>
 				<strong
 					><LiveMath
 						id="pid.readout.settle"
@@ -283,7 +283,7 @@
 				>
 			</div>
 			<div>
-				<span>offset</span>
+				<span>Offset</span>
 				<strong
 					><LiveMath
 						id="pid.readout.error"
@@ -344,7 +344,7 @@
 		</div>
 	</div>
 	<div class="deck-group">
-		<FaultSwitch label="tachometer feedback inverted" bind:active={inverted} />
+		<FaultSwitch label="Tachometer feedback inverted" bind:active={inverted} />
 	</div>
 {/snippet}
 
@@ -377,7 +377,9 @@
 		}
 
 		& span {
-			font: var(--text-xs) / 1.4 var(--font-mono);
+			font: var(--text-xs) / 1.4 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 

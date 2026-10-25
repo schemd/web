@@ -112,8 +112,8 @@
 	<SheetFrame label="Simulation laboratory">
 		<header class="terminal sheet-head">
 			<div class="terminal-head">
-				<span class="microlabel">schemd · simulation laboratory</span>
-				<span class="microlabel">v{data.version} · {environments.length} environments</span>
+				<span class="microlabel">Revision {data.version}</span>
+				<span class="microlabel">{environments.length} labs</span>
 			</div>
 			<h1>Simulation labs</h1>
 			<p class="terminal-lede">
@@ -121,7 +121,7 @@
 				left of a track; every lab to its right builds on the one it is wired to. Each is compiled from
 				<code>@schemd/core</code> source and runs a real numerical model you tune on the parts
 				themselves.
-				<a href={`/simulations/${data.version}/new`}>Describe one of your own →</a>
+				<a href={`/simulations/${data.version}/new`}>Describe one of your own</a>
 			</p>
 			{#if data.map}
 				<CurriculumMap svg={data.map.svg} labs={mapLabs} next={nextLab} />
@@ -131,7 +131,7 @@
 
 	<div class="catalog-bar plate">
 		<div>
-			<span class="microlabel">recommended curriculum · local progress</span>
+			<span class="microlabel">Recommended order, with progress kept on this device</span>
 			<p>{visibleEnvironments.length} of {environments.length} laboratories online</p>
 			<p class="completion-summary" role="status" aria-live="polite">
 				{completionCount} of {environments.length} experiments completed on this device
@@ -150,7 +150,7 @@
 		{#each visibleEnvironments as environment, index (environment.id)}
 			<li class="lab-row plate" style={`--i: ${index}`}>
 				<a class="lab-icon" href={`/simulations/${data.version}/${environment.id}`}>
-					<span class="lab-index microlabel">{environment.index} · {environment.domain}</span>
+					<span class="lab-index microlabel">{environment.index}, {environment.domain}</span>
 					<!-- Named by what it shows, then the lab it opens. -->
 					<span class="visually-hidden">{environment.title}</span>
 				</a>
@@ -161,7 +161,7 @@
 					</a>
 					<p class="tagline">{environment.tagline}</p>
 					<p class="curriculum-objective">
-						<span>Lab {environment.curriculum.order} · objective</span>
+						<span>Lab {environment.curriculum.order} objective:</span>
 						{environment.curriculum.objective}
 					</p>
 					<p class="curriculum-prerequisites">
@@ -183,7 +183,7 @@
 								<li>{item}</li>
 							{/each}
 						</ul>
-						<p class="bounds-inline microlabel">{environment.boundaries.join(' · ')}</p>
+						<p class="bounds-inline microlabel">{environment.boundaries.join('; ')}</p>
 					</div>
 				</div>
 
@@ -192,18 +192,16 @@
 						class="completion-state"
 						class:is-complete={isLabComplete(progress, environment.id)}
 					>
-						{isLabComplete(progress, environment.id) ? '✓ completed locally' : '○ not completed'}
+						{isLabComplete(progress, environment.id) ? 'Completed on this device' : 'Not completed'}
 					</span>
-					<span class="fault-note">diagnosis challenge · fault identity withheld</span>
+					<span class="fault-note">Diagnosis challenge: the fault is hidden</span>
 					<a
 						class="init"
 						href={`/simulations/${data.version}/${environment.id}`}
 						onmouseenter={() => ui.audio && playTick(520 + index * 30)}
 					>
 						<span class="init-label"
-							>{isLabComplete(progress, environment.id)
-								? 'Revisit experiment →'
-								: 'Initialize module →'}</span
+							>{isLabComplete(progress, environment.id) ? 'Revisit the lab' : 'Open the lab'}</span
 						>
 					</a>
 				</div>
@@ -214,20 +212,20 @@
 
 <style>
 	.selector {
-		padding: clamp(1rem, 3vw, 2.5rem);
+		inline-size: min(100% - 2 * var(--space-4), var(--page-max));
+		margin-inline: auto;
+		padding-block: var(--space-8) var(--space-16);
 		display: grid;
 		gap: var(--space-6);
 	}
 
 	/* ---------- Terminal status banner ---------- */
 	.terminal {
-		padding: clamp(1rem, 3vw, var(--space-8));
 		display: grid;
 		gap: var(--space-3);
 
 		& h1 {
 			font-size: var(--text-xl);
-			letter-spacing: -0.02em;
 		}
 	}
 
@@ -244,6 +242,13 @@
 		max-inline-size: 74ch;
 		margin: 0;
 		color: var(--ink-mute);
+
+		/* A link inside a sentence is underlined; colour alone is not enough. */
+		& a {
+			text-decoration: underline;
+			text-decoration-thickness: 1px;
+			text-underline-offset: 0.2em;
+		}
 	}
 
 	.catalog-bar {
@@ -271,18 +276,18 @@
 			padding: 0.45rem 0.8rem;
 			background: var(--bg-raised);
 			color: var(--ink-mute);
-			font-family: var(--font-mono);
+			font-family: var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			font-size: var(--text-2xs);
-			letter-spacing: var(--tracking-wide);
-			text-transform: uppercase;
 
 			&:hover {
 				color: var(--ink);
 			}
 
 			&[aria-pressed='true'] {
-				background: var(--accent);
-				color: var(--accent-ink);
+				background: var(--ink);
+				color: var(--bg);
 			}
 		}
 	}
@@ -341,14 +346,15 @@
 			text-decoration: none;
 
 			& h2 {
-				color: var(--accent);
+				color: var(--ink);
 			}
 		}
 
 		& h2 {
-			font-family: var(--font-mono);
+			font-family: var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			font-size: var(--text-md);
-			letter-spacing: -0.01em;
 			transition: color var(--dur-fast) var(--ease-precise);
 		}
 	}
@@ -371,19 +377,21 @@
 		display: grid;
 		gap: 2px;
 		padding-inline-start: var(--space-3);
-		border-inline-start: 2px solid var(--accent);
+		border-inline-start: 2px solid var(--ink);
 
 		& span {
-			font-family: var(--font-mono);
+			font-family: var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			font-size: var(--text-2xs);
-			letter-spacing: var(--tracking-wide);
-			text-transform: uppercase;
-			color: var(--accent);
+			color: var(--ink);
 		}
 	}
 
 	.curriculum-prerequisites {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-faint);
 	}
@@ -398,15 +406,15 @@
 			padding: 0.12rem 0.5rem;
 			border: 1px solid var(--line-strong);
 			color: var(--ink-mute);
-			font-family: var(--font-mono);
+			font-family: var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			font-size: var(--text-2xs);
-			letter-spacing: var(--tracking-wide);
-			text-transform: uppercase;
 
 			&.frontier {
-				border-color: var(--accent);
-				color: var(--accent);
-				box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
+				border-color: var(--ink);
+				color: var(--ink);
+				box-shadow: none;
 			}
 		}
 
@@ -439,7 +447,9 @@
 		gap: var(--space-1);
 
 		& li {
-			font-family: var(--font-mono);
+			font-family: var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			font-size: var(--text-2xs);
 			padding: 0.1em 0.5em;
 			border: 1px solid var(--line);
@@ -453,7 +463,6 @@
 		font-size: var(--text-2xs);
 		color: var(--ink-mute);
 		text-transform: none;
-		letter-spacing: normal;
 	}
 
 	/* right: fault relay + initialize CTA */
@@ -464,13 +473,17 @@
 	}
 
 	.fault-note {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-faint);
 	}
 
 	.completion-state {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-faint);
 
@@ -492,7 +505,7 @@
 		transition: border-color var(--dur-fast) var(--ease-precise);
 
 		&:hover {
-			border-color: var(--accent);
+			border-color: var(--ink);
 		}
 	}
 

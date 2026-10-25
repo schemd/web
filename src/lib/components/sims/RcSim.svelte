@@ -182,7 +182,7 @@
 			label: 'Vout',
 			unit: 'V',
 			sample: wave(0.5 * magnitude, phaseShift),
-			summary: () => `${magnitude.toFixed(3)} V p-p · ${(phaseShift * 57.2958).toFixed(1)}°`,
+			summary: () => `${magnitude.toFixed(3)} V p-p, ${(phaseShift * 57.2958).toFixed(1)}°`,
 			reading: () =>
 				reading('rc.probe.output', `output is ${magnitude.toFixed(3)} volts peak-to-peak`, {
 					voltage: magnitude.toFixed(3),
@@ -283,7 +283,7 @@
 		<p class="microlabel">Readouts</p>
 		<div class="rc-metrics">
 			<div>
-				<span>cutoff</span>
+				<span>Cutoff</span>
 				<strong
 					><LiveMath
 						id="rc.readout.fc"
@@ -329,7 +329,7 @@
 			<text x="18" y="123">10 Hz</text>
 			<text class="end" x="242" y="123">100 kHz</text>
 		</svg>
-		<figcaption>|H(jω)| · dashed line at the −3 dB cutoff</figcaption>
+		<figcaption>|H(jω)|, dashed line at the −3 dB cutoff</figcaption>
 	</figure>
 {/snippet}
 
@@ -353,7 +353,7 @@
 		<SimulationMotionControl {motion} label="RC waveform and frequency-response animation" />
 	</div>
 	<div class="deck-group">
-		<FaultSwitch label="capacitor branch open" bind:active={openCapacitor} />
+		<FaultSwitch label="Capacitor branch open" bind:active={openCapacitor} />
 	</div>
 {/snippet}
 
@@ -392,7 +392,9 @@
 		}
 
 		& span {
-			font: var(--text-xs) / 1.4 var(--font-mono);
+			font: var(--text-xs) / 1.4 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 
@@ -419,7 +421,9 @@
 		}
 
 		& figcaption {
-			font: var(--text-xs) / 1.4 var(--font-mono);
+			font: var(--text-xs) / 1.4 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 	}
@@ -455,7 +459,9 @@
 
 	.response-plot text {
 		fill: var(--ink-faint);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 7px;
 	}
 
