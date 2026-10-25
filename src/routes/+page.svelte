@@ -76,39 +76,6 @@
 		}
 	}
 
-	const places = $derived([
-		{
-			href: `/playground/${data.latest}`,
-			name: 'Playground',
-			does: 'Write a diagram and see it redraw as you type, with every problem underlined.'
-		},
-		{
-			href: '/components',
-			name: 'Components',
-			does: 'One datasheet per kind: its options, their ranges and defaults, and its ports.'
-		},
-		{
-			href: `/docs/${data.latest}/overview`,
-			name: 'Documentation',
-			does: 'The language and the API, each section beside a live figure.'
-		},
-		{
-			href: `/simulations/${data.latest}`,
-			name: 'Labs',
-			does: 'Circuits that run: signals travel along the routed copper.'
-		},
-		{
-			href: `/inspector/${data.latest}`,
-			name: 'Inspector',
-			does: "Nets, placements and congestion from the router's own report."
-		},
-		{
-			href: `/diff/${data.latest}`,
-			name: 'Compare releases',
-			does: 'Two releases overlaid, so a routing change reads as moved coordinates.'
-		}
-	]);
-
 	const jsonLd = $derived(
 		JSON.stringify({
 			'@context': 'https://schema.org',
@@ -144,276 +111,108 @@
 
 <article class="front page">
 	<header class="title">
-		<h1>Text-to-schematic compiler for electrical, digital, quantum and UML drawings</h1>
+		<h1>Schematics from plain text</h1>
+		<p class="lede">
+			Write one part or one wire per line. schemd places the parts, routes the wires and draws the
+			SVG.
+		</p>
 		<Pronounce />
 	</header>
 
-	<div class="columns">
-		<div class="left">
-			<section aria-labelledby="features">
-				<h2 id="features"><span class="num">1</span> Features</h2>
-				<ul>
-					<li>
-						Each net is routed once, as a tree, so wires meet at junctions and never at stray tees.
-					</li>
-					<li>The same text gives the same SVG bytes on every engine.</li>
-					<li>{data.evidence.kinds} component kinds across four domains.</li>
-					<li>Every problem in a document is reported at once, with its line and columns.</li>
-					<li>
-						No dependencies, no DOM and no font files; it runs in Node, a browser or a worker.
-					</li>
-					<li>Accessible output, with a description of the circuit for screen readers.</li>
-				</ul>
-			</section>
-
-			<section aria-labelledby="applications">
-				<h2 id="applications"><span class="num">2</span> Applications</h2>
-				<ul>
-					<li>Technical documentation written in Markdown</li>
-					<li>Course notes and laboratory handouts</li>
-					<li>Engineering blogs and wikis</li>
-					<li>Diagrams generated at build time from data</li>
-				</ul>
-			</section>
-		</div>
-
-		<section class="right" aria-labelledby="description">
-			<h2 id="description"><span class="num">3</span> Description</h2>
-			<p>
-				schemd reads a diagram written as plain text, one part or one wire per line, and compiles it
-				into an SVG drawing. Parts are placed where the author says, wires are routed by the
-				compiler, and the result is the same on every machine. The drawing comes with its netlist
-				and a source map, so a host can trace any wire back to the line that declared it.
-			</p>
-			<p>
-				It is meant for diagrams that live beside prose. A fence in a Markdown file becomes a figure
-				at build time, and a mistake in it fails the build with the line and column at fault.
-			</p>
-
-			<p class="table-caption">Table 1. Package information</p>
-			<table class="spec">
-				<tbody>
-					<tr>
-						<th scope="row">Package</th>
-						<td><code>@schemd/core</code></td>
-					</tr>
-					<tr>
-						<th scope="row">Revision</th>
-						<td class="tabular">{data.latest}</td>
-					</tr>
-					<tr>
-						<th scope="row">Runtime</th>
-						<td>Node.js 24 or newer, browsers, web workers</td>
-					</tr>
-					<tr>
-						<th scope="row">Dependencies</th>
-						<td>None</td>
-					</tr>
-					<tr>
-						<th scope="row">Licence</th>
-						<td>MIT</td>
-					</tr>
-				</tbody>
-			</table>
-		</section>
-	</div>
-
-	<section class="typical" aria-labelledby="typical">
-		<h2 id="typical"><span class="num">4</span> Typical application</h2>
-
-		<figure class="figure instrument" aria-label="One circuit, three views">
-			<div class="views" role="tablist" aria-label="Compiler views">
-				{#each VIEWS as option (option.id)}
-					<button
-						type="button"
-						role="tab"
-						aria-selected={view === option.id}
-						onclick={() => (view = option.id)}>{option.label}</button
-					>
-				{/each}
-			</div>
-
-			<div class="figure-body">
-				{#if view === 'split'}
-					<div class="split">
-						<ol
-							class="source"
-							aria-label="Source; hover or focus a line to trace it"
-							onmouseleave={() => (focusLine = undefined)}
-						>
-							{#each data.hero.lines as line (line.n)}
-								<li>
-									<button
-										type="button"
-										class="ln"
-										class:on={focusLine === line.n}
-										onmouseenter={() => ((focusNet = undefined), (focusLine = line.n))}
-										onfocus={() => ((focusNet = undefined), (focusLine = line.n))}
-										onblur={() => (focusLine = undefined)}
-									>
-										<span class="visually-hidden">Trace line</span>
-										<span class="n">{line.n}</span>
-										<!-- eslint-disable-next-line svelte/no-at-html-tags -- tokenizer output, escaped -->
-										<code>{@html line.html}</code>
-									</button>
-								</li>
-							{/each}
-						</ol>
-						<div class="drawing" data-hero-drawing data-schematic-host>
-							<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
-							{@html data.hero.svg}
-						</div>
-					</div>
-				{:else if view === 'netlist'}
-					<div class="netlist">
-						<p class="table-caption">
-							Table 2. Nets of the figure, from <code>buildNetlist</code>
-						</p>
-						<table class="spec">
-							<thead>
-								<tr>
-									<th scope="col">Net</th>
-									<th scope="col">Terminals</th>
-									<th scope="col">Lines</th>
-								</tr>
-							</thead>
-							<tbody>
-								{#each data.hero.nets as net (net.id)}
-									<tr>
-										<td>
-											<button
-												type="button"
-												class="net-id"
-												onclick={() => traceNet(net.id)}
-												aria-label={`Trace net ${net.id} on the drawing`}>{net.id}</button
-											>
-										</td>
-										<td><code>{net.terminals.join(', ')}</code></td>
-										<td class="tabular">{net.lines.join(', ')}</td>
-									</tr>
-								{/each}
-							</tbody>
-						</table>
-						<p class="note">
-							{data.hero.issues === 0
-								? 'verifyNetlist reports no problems with this circuit.'
-								: `verifyNetlist reports ${data.hero.issues} findings.`}
-						</p>
-					</div>
-				{:else}
-					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-					<pre class="svg-out" tabindex="0" aria-label="The beginning of the compiled SVG">{data
-							.hero.svgHead}</pre>
-				{/if}
-			</div>
-
-			<figcaption>
-				<b>Figure 1.</b>
-				{data.hero.title}. Compiled in {data.hero.ms} ms into {(data.hero.svgBytes / 1024).toFixed(
-					1
-				)} KB of SVG, with {data.hero.components} parts on {data.hero.nets.length} nets. Hover a line
-				of source to find its wire.
-			</figcaption>
-		</figure>
-	</section>
-
-	<section class="detail" aria-labelledby="detailed">
-		<h2 id="detailed"><span class="num">5</span> Detailed description</h2>
-
-		<h3><span class="num">5.1</span> Routing by net</h3>
-		<p>
-			The router treats a net as one conductor. Its first connection runs from terminal to terminal,
-			and each later one leaves the copper the net already has, with a dot where it joins. Two
-			separate nets never touch: where they cross, the vertical run bridges the other.
-		</p>
-		<div class="pair">
-			<figure class="figure">
-				<div class="figure-body compare">
-					<div>
-						<p class="tag">0.8</p>
-						<!-- eslint-disable-next-line svelte/no-at-html-tags -- archived compiler output -->
-						{@html data.junction08}
-					</div>
-					<div>
-						<p class="tag">{data.latest}</p>
-						<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
-						{@html data.figures['junction']}
-					</div>
-				</div>
-				<figcaption>
-					<b>Figure 2.</b> Three wires written to <code>N1</code>. Release 0.8 pulled each one out
-					through a stub first; the current release runs them straight into the junction.
-				</figcaption>
-			</figure>
-			<figure class="figure">
-				<div class="figure-body">
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
-					{@html data.figures['crossing']}
-				</div>
-				<figcaption>
-					<b>Figure 3.</b> A bridge where two nets cross, and a dot where one net crosses itself.
-				</figcaption>
-			</figure>
-		</div>
-
-		<h3><span class="num">5.2</span> Four domains, one language</h3>
-		<p>
-			The same declarations draw a logic circuit, a quantum circuit or a class diagram. Figure 1 is
-			the electrical case; the other three follow, each with one line of its source.
-		</p>
-		<div class="triple">
-			{#each data.families as family, index (family.id)}
-				<figure class="figure">
-					<div class="figure-body">
-						<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
-						{@html family.svg}
-					</div>
-					<figcaption>
-						<b>Figure {index + 4}.</b>
-						{family.title}, {family.family.toLowerCase()}.
-						<code class="line">{family.line}</code>
-					</figcaption>
-				</figure>
+	<figure class="figure instrument" aria-label="One circuit, three views">
+		<div class="views" role="tablist" aria-label="Compiler views">
+			{#each VIEWS as option (option.id)}
+				<button
+					type="button"
+					role="tab"
+					aria-selected={view === option.id}
+					onclick={() => (view = option.id)}>{option.label}</button
+				>
 			{/each}
 		</div>
 
-		<h3><span class="num">5.3</span> Verification</h3>
-		<p class="table-caption">Table 3. Figures measured from this release</p>
-		<table class="spec verification">
-			<thead>
-				<tr>
-					<th scope="col">Quantity</th>
-					<th scope="col">Value</th>
-					<th scope="col">Source</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>Component kinds</td>
-					<td class="tabular">{data.evidence.kinds}</td>
-					<td><a href="/coverage">Language coverage</a></td>
-				</tr>
-				<tr>
-					<td>Documentation diagrams that pass every design rule</td>
-					<td class="tabular">{data.evidence.clean} of {data.evidence.diagrams}</td>
-					<td><a href="/conformance">Conformance</a></td>
-				</tr>
-				<tr>
-					<td>Time to compile Figure 1</td>
-					<td class="tabular">{data.hero.ms} ms</td>
-					<td>Measured when this page was built</td>
-				</tr>
-				<tr>
-					<td>Releases recorded</td>
-					<td class="tabular">{data.evidence.releases}</td>
-					<td><a href="/changelog">Changelog</a></td>
-				</tr>
-			</tbody>
-		</table>
-	</section>
+		<div class="figure-body">
+			{#if view === 'split'}
+				<div class="split">
+					<ol
+						class="source"
+						aria-label="Source; hover or focus a line to trace it"
+						onmouseleave={() => (focusLine = undefined)}
+					>
+						{#each data.hero.lines as line (line.n)}
+							<li>
+								<button
+									type="button"
+									class="ln"
+									class:on={focusLine === line.n}
+									onmouseenter={() => ((focusNet = undefined), (focusLine = line.n))}
+									onfocus={() => ((focusNet = undefined), (focusLine = line.n))}
+									onblur={() => (focusLine = undefined)}
+								>
+									<span class="visually-hidden">Trace line</span>
+									<span class="n">{line.n}</span>
+									<!-- eslint-disable-next-line svelte/no-at-html-tags -- tokenizer output, escaped -->
+									<code>{@html line.html}</code>
+								</button>
+							</li>
+						{/each}
+					</ol>
+					<div class="drawing" data-hero-drawing data-schematic-host>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
+						{@html data.hero.svg}
+					</div>
+				</div>
+			{:else if view === 'netlist'}
+				<div class="netlist">
+					<p class="table-caption">
+						Table 2. Nets of the figure, from <code>buildNetlist</code>
+					</p>
+					<table class="spec">
+						<thead>
+							<tr>
+								<th scope="col">Net</th>
+								<th scope="col">Terminals</th>
+								<th scope="col">Lines</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each data.hero.nets as net (net.id)}
+								<tr>
+									<td>
+										<button
+											type="button"
+											class="net-id"
+											onclick={() => traceNet(net.id)}
+											aria-label={`Trace net ${net.id} on the drawing`}>{net.id}</button
+										>
+									</td>
+									<td><code>{net.terminals.join(', ')}</code></td>
+									<td class="tabular">{net.lines.join(', ')}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+					<p class="note">
+						{data.hero.issues === 0
+							? 'verifyNetlist reports no problems with this circuit.'
+							: `verifyNetlist reports ${data.hero.issues} findings.`}
+					</p>
+				</div>
+			{:else}
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+				<pre class="svg-out" tabindex="0" aria-label="The beginning of the compiled SVG">{data.hero
+						.svgHead}</pre>
+			{/if}
+		</div>
 
-	<section class="start" aria-labelledby="start">
-		<h2 id="start"><span class="num">6</span> Getting started</h2>
+		<figcaption>
+			<b>Figure 1.</b>
+			{data.hero.title}: {data.hero.components} parts on {data.hero.nets.length} nets, compiled in {data
+				.hero.ms} ms. Hover a line to find its wire.
+		</figcaption>
+	</figure>
+
+	<div class="start">
 		<div class="install">
 			<div class="seg" role="tablist" aria-label="Package manager">
 				{#each MANAGERS as manager (manager)}
@@ -436,16 +235,90 @@
 			<a class="btn btn-solid" href={`/playground/${data.latest}`}>Open the playground</a>
 			<a class="btn" href={`/docs/${data.latest}/overview`}>Read the documentation</a>
 		</div>
+	</div>
 
-		<p class="table-caption">Table 4. Where to go next</p>
-		<table class="spec">
+	<section aria-labelledby="draws">
+		<h2 id="draws"><span class="num">1</span> What it draws</h2>
+		<div class="triple">
+			{#each data.families as family, index (family.id)}
+				<figure class="figure">
+					<div class="figure-body">
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
+						{@html family.svg}
+					</div>
+					<figcaption>
+						<b>Figure {index + 2}.</b>
+						{family.title}.
+						<code class="line">{family.line}</code>
+					</figcaption>
+				</figure>
+			{/each}
+		</div>
+		<div class="pair">
+			<figure class="figure">
+				<div class="figure-body compare">
+					<div>
+						<p class="tag">0.8</p>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -- archived compiler output -->
+						{@html data.junction08}
+					</div>
+					<div>
+						<p class="tag">{data.latest}</p>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
+						{@html data.figures['junction']}
+					</div>
+				</div>
+				<figcaption>
+					<b>Figure {data.families.length + 2}.</b> Three wires to one junction, then and now.
+				</figcaption>
+			</figure>
+			<figure class="figure">
+				<div class="figure-body">
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
+					{@html data.figures['crossing']}
+				</div>
+				<figcaption>
+					<b>Figure {data.families.length + 3}.</b> Separate nets bridge where they cross.
+				</figcaption>
+			</figure>
+		</div>
+	</section>
+
+	<section aria-labelledby="glance">
+		<h2 id="glance"><span class="num">2</span> At a glance</h2>
+		<table class="spec glance">
 			<tbody>
-				{#each places as place (place.href)}
-					<tr>
-						<th scope="row"><a href={place.href}>{place.name}</a></th>
-						<td>{place.does}</td>
-					</tr>
-				{/each}
+				<tr>
+					<th scope="row">Package</th>
+					<td><code>@schemd/core</code> {data.latest}</td>
+				</tr>
+				<tr>
+					<th scope="row">Component kinds</th>
+					<td><a href="/components">{data.evidence.kinds}</a></td>
+				</tr>
+				<tr>
+					<th scope="row">Runs on</th>
+					<td>Node.js 24 or newer, browsers, web workers</td>
+				</tr>
+				<tr>
+					<th scope="row">Dependencies</th>
+					<td>None</td>
+				</tr>
+				<tr>
+					<th scope="row">Output</th>
+					<td>The same SVG bytes on every engine</td>
+				</tr>
+				<tr>
+					<th scope="row">Design rules</th>
+					<td>
+						<a href="/conformance">{data.evidence.clean} of {data.evidence.diagrams}</a> documentation
+						diagrams pass
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">Licence</th>
+					<td>MIT</td>
+				</tr>
 			</tbody>
 		</table>
 	</section>
@@ -464,10 +337,16 @@
 			max-inline-size: 24ch;
 			margin-block-end: var(--space-3);
 		}
+
+		& .lede {
+			margin: 0 0 var(--space-2);
+			font-size: var(--text-md);
+			line-height: 1.45;
+			color: var(--ink-mute);
+		}
 	}
 
-	section + section,
-	.columns + section {
+	section {
 		margin-block-start: var(--space-12);
 	}
 
@@ -478,11 +357,6 @@
 		margin-block-end: var(--space-3);
 	}
 
-	h3 {
-		font-size: var(--text-md);
-		margin-block: var(--space-8) var(--space-2);
-	}
-
 	/* Section numbers are the datasheet's own sequence. */
 	.num {
 		display: inline-block;
@@ -490,30 +364,8 @@
 		font-variant-numeric: tabular-nums;
 	}
 
-	ul {
-		margin: 0 0 var(--space-8);
-		padding-inline-start: 1.1em;
-
-		& li {
-			margin-block: var(--space-2);
-		}
-	}
-
 	p {
 		max-inline-size: var(--measure);
-	}
-
-	/* Page one of a datasheet: features and applications in a narrow column,
-	   the description beside them. */
-	.columns {
-		display: grid;
-		grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-		gap: var(--space-12);
-		margin-block-end: var(--space-12);
-	}
-
-	.right p:first-of-type {
-		margin-block-start: 0;
 	}
 
 	/* ---------- Figure 1 ---------- */
@@ -620,11 +472,12 @@
 		overflow-wrap: anywhere;
 	}
 
-	/* ---------- Detailed description ---------- */
+	/* ---------- What it draws ---------- */
 	.pair {
 		display: grid;
 		grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
 		gap: var(--space-6);
+		margin-block-start: var(--space-6);
 	}
 
 	.compare {
@@ -660,11 +513,16 @@
 		}
 	}
 
-	.verification {
+	.glance {
 		max-inline-size: 760px;
+
+		& th {
+			inline-size: 12rem;
+			font-weight: 600;
+		}
 	}
 
-	/* ---------- Getting started ---------- */
+	/* ---------- Install, under Figure 1 ---------- */
 	.install {
 		display: flex;
 		flex-wrap: wrap;
@@ -698,18 +556,7 @@
 		margin-block: var(--space-6) var(--space-4);
 	}
 
-	.start table {
-		max-inline-size: 860px;
-
-		& th {
-			inline-size: 12rem;
-			border-block-end: 1px solid var(--line);
-			font-weight: 600;
-		}
-	}
-
 	@media (max-width: 900px) {
-		.columns,
 		.split,
 		.pair {
 			grid-template-columns: minmax(0, 1fr);

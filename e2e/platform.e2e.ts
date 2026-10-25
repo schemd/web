@@ -44,7 +44,7 @@ test('landing page is SSR-valid, stable, and proves rotated native geometry', as
 	expect(response?.status()).toBe(200);
 	await expect(
 		page.getByRole('heading', {
-			name: 'Text-to-schematic compiler for electrical, digital, quantum and UML drawings'
+			name: 'Schematics from plain text'
 		})
 	).toBeVisible();
 	await expect(page.getByLabel('schemd is pronounced skemd').first()).toContainText('skemd');
