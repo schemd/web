@@ -1,0 +1,31 @@
+<!-- schemd-doc: id=markdown-adapters; label=Markdown pipelines; title=Compile only canonical schemd fences; summary=Leave prose parsing to the host and compile bounded schemd blocks with exact diagnostics.; category=Connect toolchains; order=90 -->
+
+<!-- schemd-section: id=fences; eyebrow=01 / Markdown; title=Parse the information string before the body; example-title=Markdown adapter fixture -->
+
+The information string goes to `parseSchematicFence` before the body is touched. When it returns `undefined`, the block belongs to someone else and goes straight back to the host parser. Otherwise the body is compiled and `SchematicSyntaxError.line` is reported. Swallowing a broken example only means shipping it.
+
+```ts
+const fence = parseSchematicFence(token.info);
+if (!fence) return next(token);
+return compileSchematic(token.text, { ...fence, mode: 'default' }).svg;
+```
+
+```schemd bounds="780x480" title="Markdown adapter fixture"
+source:VZ "5 V" at (80, 170) #blue [type=voltage-dc orientation=up]
+resistor:RLDR "LDR" at (300, 90) #amber [type=ldr]
+junction:NL at (500, 90) #cyan
+resistor:RFX "47 k\Omega" at (500, 230) #amber [orientation=down]
+port:LUX "to ADC" at (680, 90) #emerald
+ground:GL "0 V" at (500, 400) #slate
+
+VZ.positive -> RLDR.in #blue [ortho]
+RLDR.out -> NL.node #amber [ortho]
+NL.node -> RFX.in #cyan [ortho]
+NL.node -> LUX.in #emerald [ortho marker-end=arrow]
+RFX.out -> GL.in #slate [ortho]
+VZ.negative -> GL.in #slate [ortho]
+```
+
+This site compiles every versioned fence in its own test suite, and that is what keeps a documentation example from being decoration. Each docs line keeps its own examples. Newer syntax is never added to an older line, so only the 1.2 and 1.3 pages leave labels out.
+
+<!-- /schemd-section -->
