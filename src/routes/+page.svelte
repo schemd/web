@@ -2,12 +2,11 @@
 	import type { PageProps } from './$types';
 	import Seo from '#lib/components/Seo.svelte';
 	import Pronounce from '#lib/components/Pronounce.svelte';
-	import SheetFrame from '#lib/components/SheetFrame.svelte';
 	import { trackInteraction } from '#lib/telemetry.ts';
 
 	let { data }: PageProps = $props();
 
-	/* ---------- The instrument: one circuit, three views ---------- */
+	/* ---------- Figure 1: one circuit, three views ---------- */
 	type View = 'split' | 'netlist' | 'svg';
 	const VIEWS: readonly { id: View; label: string }[] = [
 		{ id: 'split', label: 'Source + drawing' },
@@ -26,7 +25,6 @@
 	 */
 	let focusLine = $state<number | undefined>(undefined);
 	let focusNet = $state<string | undefined>(undefined);
-	let replay = $state(0);
 
 	const focusLines = $derived(
 		focusLine !== undefined
@@ -43,11 +41,8 @@
 			.join(',');
 		const host = '[data-hero-drawing]';
 		const dim = lit === '' ? '' : `:not(${lit})`;
-		const glow =
-			lit === ''
-				? ''
-				: `${host} :is(${lit}) .schematic-trace{stroke-width:2.6;filter:drop-shadow(0 0 5px currentColor)}`;
-		return `<style>${host} [data-source-line]${dim}{opacity:.14}${glow}</style>`;
+		const bold = lit === '' ? '' : `${host} :is(${lit}) .schematic-trace{stroke-width:2.6}`;
+		return `<style>${host} [data-source-line]${dim}{opacity:.14}${bold}</style>`;
 	});
 
 	/* A net chosen in the netlist view is traced back on the drawing. */
@@ -57,7 +52,7 @@
 		view = 'split';
 	}
 
-	/* ---------- Install line ---------- */
+	/* ---------- Installation ---------- */
 	const MANAGERS = ['npm', 'pnpm', 'bun', 'yarn', 'deno'] as const;
 	type Manager = (typeof MANAGERS)[number];
 	const INSTALL: Record<Manager, string> = {
@@ -77,40 +72,40 @@
 			copied = true;
 			setTimeout(() => (copied = false), 1500);
 		} catch {
-			/* Clipboard unavailable — the command stays visible to select. */
+			/* Clipboard unavailable: the command stays visible to select. */
 		}
 	}
 
-	const modes = $derived([
+	const places = $derived([
 		{
-			route: `/docs/${data.latest}/overview`,
-			path: '/docs',
-			name: 'Read',
-			body: 'Prose beside a live figure for each section, compiled from the fence you are reading.'
+			href: `/playground/${data.latest}`,
+			name: 'Playground',
+			does: 'Write a diagram and see it redraw as you type, with every problem underlined.'
 		},
 		{
-			route: `/playground/${data.latest}`,
-			path: '/playground',
-			name: 'Write',
-			body: 'Source and drawing linked line to wire through the source map; every diagnostic underlined at once.'
+			href: '/components',
+			name: 'Components',
+			does: 'One datasheet per kind: its options, their ranges and defaults, and its ports.'
 		},
 		{
-			route: `/inspector/${data.latest}`,
-			path: '/inspector',
-			name: 'Inspect',
-			body: "Nets, placements and per-cell congestion from the compiler's own routing report."
+			href: `/docs/${data.latest}/overview`,
+			name: 'Documentation',
+			does: 'The language and the API, each section beside a live figure.'
 		},
 		{
-			route: `/simulations/${data.latest}`,
-			path: '/simulations',
-			name: 'Simulate',
-			body: 'Signals travel along the routed copper; faults dim the nets they break.'
+			href: `/simulations/${data.latest}`,
+			name: 'Labs',
+			does: 'Circuits that run: signals travel along the routed copper.'
 		},
 		{
-			route: `/diff/${data.latest}`,
-			path: '/diff',
-			name: 'Compare',
-			body: 'Two releases overlaid from their text snapshots, so a routing change reviews as moved coordinates.'
+			href: `/inspector/${data.latest}`,
+			name: 'Inspector',
+			does: "Nets, placements and congestion from the router's own report."
+		},
+		{
+			href: `/diff/${data.latest}`,
+			name: 'Compare releases',
+			does: 'Two releases overlaid, so a routing change reads as moved coordinates.'
 		}
 	]);
 
@@ -121,7 +116,7 @@
 			name: '@schemd/core',
 			alternateName: 'schemd',
 			description:
-				'Zero-dependency text-to-SVG compiler for schematics and UML. Write declarations; get accessible, deterministic vectors.',
+				'A text-to-schematic compiler with no dependencies. It turns lines of text into routed, accessible, deterministic SVG drawings of electrical, digital, quantum and UML diagrams.',
 			applicationCategory: 'DeveloperApplication',
 			operatingSystem: 'Node.js 24+',
 			softwareVersion: data.latest,
@@ -136,8 +131,8 @@
 </script>
 
 <Seo
-	title="schemd — write the circuit, get the drawing"
-	description="schemd (pronounced “skemd”, /skɛmd/) compiles plain-text schematics, logic, quantum circuits, and UML into routed, accessible, deterministic SVG. Zero dependencies, Node 24+."
+	title="schemd: text-to-schematic compiler"
+	description="schemd (pronounced “skemd”) compiles lines of text into routed, accessible, deterministic SVG drawings of electrical, digital, quantum and UML diagrams. No dependencies, Node 24 or newer."
 	canonicalPath="/"
 	{jsonLd}
 />
@@ -147,545 +142,435 @@
 	{@html focusStyle}
 </svelte:head>
 
-<article class="landing">
-	<div class="wrap">
-		<SheetFrame label="Introduction" scan>
-			<div class="hero">
-				<div class="hero-copy">
-					<p class="microlabel">
-						Text → schematic · <span class="copper">v{data.latest}</span> · MIT
-					</p>
-					<h1>Write the circuit. <em>Get the drawing.</em></h1>
-					<div class="hero-pronounce">
-						<span class="hero-brand">schemd</span>
-						<Pronounce />
-					</div>
-					<p class="lede">
-						A few lines of plain text become a routed, deterministic SVG schematic — electrical,
-						digital, quantum and UML — on a server, in a build, or in a browser worker, with no
-						dependencies.
-					</p>
-					<div class="actions">
-						<a class="btn btn-solid" href={`/playground/${data.latest}`}>Open the playground</a>
-						<a class="btn" href={`/docs/${data.latest}/overview`}>Read the docs</a>
-					</div>
-					<div class="install">
-						<div class="pm-tabs" role="tablist" aria-label="Package manager">
-							{#each MANAGERS as manager (manager)}
-								<button
-									type="button"
-									role="tab"
-									aria-selected={pm === manager}
-									onclick={() => (pm = manager)}>{manager}</button
-								>
-							{/each}
-						</div>
-						<div class="pm-line">
-							<code><span class="pm-prompt" aria-hidden="true">$</span> {installCmd}</code>
-							<button
-								type="button"
-								class="pm-copy microlabel"
-								onclick={copyInstall}
-								aria-label="Copy install command"
-							>
-								{copied ? 'copied' : 'copy'}
-							</button>
-						</div>
-					</div>
-				</div>
+<article class="front page">
+	<header class="title">
+		<h1>Text-to-schematic compiler for electrical, digital, quantum and UML drawings</h1>
+		<Pronounce />
+	</header>
 
-				<figure class="instrument" aria-label="One circuit, three views">
-					<div class="inst-head">
-						<div class="seg-tabs" role="tablist" aria-label="Compiler views">
-							{#each VIEWS as option (option.id)}
-								<button
-									type="button"
-									role="tab"
-									aria-selected={view === option.id}
-									onclick={() => (view = option.id)}>{option.label}</button
-								>
-							{/each}
-						</div>
-						<span class="microlabel file">filter.schemd</span>
-					</div>
+	<div class="columns">
+		<div class="left">
+			<section aria-labelledby="features">
+				<h2 id="features"><span class="num">1</span> Features</h2>
+				<ul>
+					<li>
+						Each net is routed once, as a tree, so wires meet at junctions and never at stray tees.
+					</li>
+					<li>The same text gives the same SVG bytes on every engine.</li>
+					<li>{data.evidence.kinds} component kinds across four domains.</li>
+					<li>Every problem in a document is reported at once, with its line and columns.</li>
+					<li>
+						No dependencies, no DOM and no font files; it runs in Node, a browser or a worker.
+					</li>
+					<li>Accessible output, with a description of the circuit for screen readers.</li>
+				</ul>
+			</section>
 
-					{#if view === 'split'}
-						<div class="split">
-							<ol
-								class="source"
-								aria-label="Source; hover or focus a line to trace it"
-								onmouseleave={() => (focusLine = undefined)}
-							>
-								{#each data.hero.lines as line (line.n)}
-									<li>
-										<button
-											type="button"
-											class="ln"
-											class:on={focusLine === line.n}
-											onmouseenter={() => ((focusNet = undefined), (focusLine = line.n))}
-											onfocus={() => ((focusNet = undefined), (focusLine = line.n))}
-											onblur={() => (focusLine = undefined)}
-										>
-											<span class="visually-hidden">Trace line</span>
-											<span class="n">{line.n}</span>
-											<code>{@html line.html}</code>
-										</button>
-									</li>
-								{/each}
-							</ol>
-							{#key replay}
-								<div class="drawing trace-on" data-hero-drawing data-schematic-host>
-									{@html data.hero.svg}
-								</div>
-							{/key}
-						</div>
-					{:else if view === 'netlist'}
-						<div class="netlist">
-							<p class="microlabel">
-								buildNetlist · {data.hero.nets.length} nets · verifyNetlist: {data.hero.issues === 0
-									? 'no rule fired'
-									: `${data.hero.issues} findings`}
-							</p>
-							<ul>
-								{#each data.hero.nets as net (net.id)}
-									<li>
-										<button
-											type="button"
-											class="net-row"
-											onclick={() => traceNet(net.id)}
-											aria-label={`Trace net ${net.id} on the drawing`}
-										>
-											<span class="net-id">{net.id}</span>
-											<span class="net-terms">{net.terminals.join(' · ')}</span>
-											<span class="microlabel">lines {net.lines.join(', ')}</span>
-										</button>
-									</li>
-								{/each}
-							</ul>
-						</div>
-					{:else}
-						<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-						<pre class="svg-out" tabindex="0" aria-label="The beginning of the compiled SVG">{data
-								.hero.svgHead}</pre>
-					{/if}
+			<section aria-labelledby="applications">
+				<h2 id="applications"><span class="num">2</span> Applications</h2>
+				<ul>
+					<li>Technical documentation written in Markdown</li>
+					<li>Course notes and laboratory handouts</li>
+					<li>Engineering blogs and wikis</li>
+					<li>Diagrams generated at build time from data</li>
+				</ul>
+			</section>
+		</div>
 
-					<div class="strip">
-						<ol class="stages" aria-label="Compiler passes">
-							<li style="--s: 0">Parse</li>
-							<li style="--s: 1">Place</li>
-							<li style="--s: 2">Route by net</li>
-							<li style="--s: 3">Emit</li>
-						</ol>
-						<dl class="metrics">
-							<div>
-								<dt>compile</dt>
-								<dd>{data.hero.ms} ms</dd>
-							</div>
-							<div>
-								<dt>parts</dt>
-								<dd>{data.hero.components}</dd>
-							</div>
-							<div>
-								<dt>nets</dt>
-								<dd>{data.hero.nets.length}</dd>
-							</div>
-							<div>
-								<dt>svg</dt>
-								<dd>{(data.hero.svgBytes / 1024).toFixed(1)} KB</dd>
-							</div>
-						</dl>
-						<button type="button" class="replay microlabel" onclick={() => (replay += 1)}
-							>Replay routing</button
-						>
-					</div>
-				</figure>
-			</div>
-		</SheetFrame>
-
-		<section class="sec" aria-labelledby="routing-h">
-			<p class="eyebrow">C4 · Routing</p>
-			<h2 id="routing-h">Routed the way a draughtsman would route it.</h2>
-			<p class="sub">
-				Every net is grown as one tree on an integer lattice, contention is negotiated away, and the
-				same source gives the same bytes on every engine.
+		<section class="right" aria-labelledby="description">
+			<h2 id="description"><span class="num">3</span> Description</h2>
+			<p>
+				schemd reads a diagram written as plain text, one part or one wire per line, and compiles it
+				into an SVG drawing. Parts are placed where the author says, wires are routed by the
+				compiler, and the result is the same on every machine. The drawing comes with its netlist
+				and a source map, so a host can trace any wire back to the line that declared it.
 			</p>
-			<div class="cards">
-				<article class="card plate-marks">
-					<div
-						class="card-fig compare"
-						aria-label="The same junction drawn by 0.8 and by the current release"
-					>
-						<div class="old">
-							<span class="microlabel tag">0.8</span>
-							<div class="fig">{@html data.junction08}</div>
-						</div>
-						<div class="new trace-on">
-							<span class="microlabel tag copper">{data.latest}</span>
-							<div class="fig">{@html data.figures['junction']}</div>
-						</div>
-					</div>
-					<div class="card-body">
-						<p class="microlabel">Trees, not detours</p>
-						<h3>Wires meet where you put the junction</h3>
-						<p>
-							Three wires written to <code>N1</code> run straight into it. 0.8 pulled each one out through
-							a stub on the left first.
-						</p>
-					</div>
-				</article>
-				<article class="card plate-marks">
-					<div class="card-fig"><div class="fig">{@html data.figures['crossing']}</div></div>
-					<div class="card-body">
-						<p class="microlabel">Contact is meaning</p>
-						<h3>Bridges where nets cross, dots where they join</h3>
-						<p>
-							Separate nets never touch: the vertical run hops. Wires of one net that cross are one
-							node, so the crossing gets a dot.
-						</p>
-					</div>
-				</article>
-				<article class="card plate-marks">
-					<div class="card-fig">
-						<svg
-							class="negotiate"
-							viewBox="0 0 320 200"
-							role="img"
-							aria-label="Two nets contend for a channel; one is rerouted around the part"
-						>
-							<rect x="128" y="74" width="64" height="52" rx="3" class="part" />
-							<path d="M 30 60 H 290" class="held" />
-							<path d="M 30 140 H 110 V 60 H 210 V 140 H 290" class="contest" />
-							<path d="M 30 140 H 110 V 168 H 210 V 140 H 290" pathLength="1" class="settle" />
-						</svg>
-					</div>
-					<div class="card-body">
-						<p class="microlabel">Negotiated, then exact</p>
-						<h3>Contention priced away, in integers</h3>
-						<p>
-							Nets that fight for a channel are torn up and rerouted with the price raised. Every
-							coordinate is an integer milli-unit, so nothing drifts.
-						</p>
-					</div>
-				</article>
-			</div>
-		</section>
-
-		<section class="sec" aria-labelledby="families-h">
-			<p class="eyebrow">D2 · Vocabulary</p>
-			<h2 id="families-h">One language, four families.</h2>
-			<p class="sub">
-				The same declarations draw a filter, a flip-flop, a Bell pair or a class diagram. Every kind
-				comes from the compiler's registry, so these pages never fall behind it.
+			<p>
+				It is meant for diagrams that live beside prose. A fence in a Markdown file becomes a figure
+				at build time, and a mistake in it fails the build with the line and column at fault.
 			</p>
-			<div class="families">
-				<article class="card family-electrical">
-					<div class="card-fig text">
-						<p class="microlabel copper">Electrical</p>
-						<p class="family-claim">
-							Passives, sources, amplifiers, switches and junctions — drawn on the sheet above.
-						</p>
-					</div>
-					<div class="card-body">
-						<code class="snip">amplifier:U1 "OPA192" at (560, 173) #purple [type=opamp]</code>
-					</div>
-				</article>
-				{#each data.families as family (family.id)}
-					<article class="card">
-						<div class="card-fig"><div class="fig">{@html family.svg}</div></div>
-						<div class="card-body">
-							<p class="microlabel">{family.family}</p>
-							<code class="snip">{family.line}</code>
-						</div>
-					</article>
-				{/each}
-			</div>
-		</section>
 
-		<section class="sec" aria-labelledby="proof-h">
-			<p class="eyebrow">E6 · Evidence</p>
-			<h2 id="proof-h">Proof, not promises.</h2>
-			<p class="sub">
-				Every figure here is measured from the compiler this page runs, or read from the evidence
-				pages.
-			</p>
-			<dl class="proof">
-				<div>
-					<dt>component kinds</dt>
-					<dd>{data.evidence.kinds}</dd>
-					<dd class="more"><a href="/coverage">language coverage →</a></dd>
-				</div>
-				<div>
-					<dt>documentation diagrams pass every design rule</dt>
-					<dd>{data.evidence.clean}<small>/{data.evidence.diagrams}</small></dd>
-					<dd class="more"><a href="/conformance">conformance →</a></dd>
-				</div>
-				<div>
-					<dt>to compile the filter at the top</dt>
-					<dd class="copper">{data.hero.ms}<small> ms</small></dd>
-				</div>
-				<div>
-					<dt>of SVG for it, byte-identical on every engine</dt>
-					<dd>{(data.hero.svgBytes / 1024).toFixed(1)}<small> KB</small></dd>
-				</div>
-				<div>
-					<dt>runtime dependencies; no DOM, canvas or fonts</dt>
-					<dd>0</dd>
-				</div>
-				<div>
-					<dt>releases tracked</dt>
-					<dd>{data.evidence.releases}</dd>
-					<dd class="more"><a href="/changelog">changelog →</a></dd>
-				</div>
-			</dl>
-		</section>
-
-		<section class="sec" aria-labelledby="modes-h">
-			<p class="eyebrow">F3 · The site</p>
-			<h2 id="modes-h">One sheet, five modes.</h2>
-			<p class="sub">
-				Every page shares the frame: zone rulers to find your place, a title block for state, copper
-				for motion. The frame adapts to the work.
-			</p>
-			<nav class="modes" aria-label="Site modes">
-				{#each modes as mode (mode.name)}
-					<a class="mode" href={mode.route}>
-						<span class="route">{mode.path}</span>
-						<span class="mode-name">{mode.name}</span>
-						<span class="mode-body">{mode.body}</span>
-					</a>
-				{/each}
-			</nav>
+			<p class="table-caption">Table 1. Package information</p>
+			<table class="spec">
+				<tbody>
+					<tr>
+						<th scope="row">Package</th>
+						<td><code>@schemd/core</code></td>
+					</tr>
+					<tr>
+						<th scope="row">Revision</th>
+						<td class="tabular">{data.latest}</td>
+					</tr>
+					<tr>
+						<th scope="row">Runtime</th>
+						<td>Node.js 24 or newer, browsers, web workers</td>
+					</tr>
+					<tr>
+						<th scope="row">Dependencies</th>
+						<td>None</td>
+					</tr>
+					<tr>
+						<th scope="row">Licence</th>
+						<td>MIT</td>
+					</tr>
+				</tbody>
+			</table>
 		</section>
 	</div>
+
+	<section class="typical" aria-labelledby="typical">
+		<h2 id="typical"><span class="num">4</span> Typical application</h2>
+
+		<figure class="figure instrument" aria-label="One circuit, three views">
+			<div class="views" role="tablist" aria-label="Compiler views">
+				{#each VIEWS as option (option.id)}
+					<button
+						type="button"
+						role="tab"
+						aria-selected={view === option.id}
+						onclick={() => (view = option.id)}>{option.label}</button
+					>
+				{/each}
+			</div>
+
+			<div class="figure-body">
+				{#if view === 'split'}
+					<div class="split">
+						<ol
+							class="source"
+							aria-label="Source; hover or focus a line to trace it"
+							onmouseleave={() => (focusLine = undefined)}
+						>
+							{#each data.hero.lines as line (line.n)}
+								<li>
+									<button
+										type="button"
+										class="ln"
+										class:on={focusLine === line.n}
+										onmouseenter={() => ((focusNet = undefined), (focusLine = line.n))}
+										onfocus={() => ((focusNet = undefined), (focusLine = line.n))}
+										onblur={() => (focusLine = undefined)}
+									>
+										<span class="visually-hidden">Trace line</span>
+										<span class="n">{line.n}</span>
+										<!-- eslint-disable-next-line svelte/no-at-html-tags -- tokenizer output, escaped -->
+										<code>{@html line.html}</code>
+									</button>
+								</li>
+							{/each}
+						</ol>
+						<div class="drawing" data-hero-drawing data-schematic-host>
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
+							{@html data.hero.svg}
+						</div>
+					</div>
+				{:else if view === 'netlist'}
+					<div class="netlist">
+						<p class="table-caption">
+							Table 2. Nets of the figure, from <code>buildNetlist</code>
+						</p>
+						<table class="spec">
+							<thead>
+								<tr>
+									<th scope="col">Net</th>
+									<th scope="col">Terminals</th>
+									<th scope="col">Lines</th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each data.hero.nets as net (net.id)}
+									<tr>
+										<td>
+											<button
+												type="button"
+												class="net-id"
+												onclick={() => traceNet(net.id)}
+												aria-label={`Trace net ${net.id} on the drawing`}>{net.id}</button
+											>
+										</td>
+										<td><code>{net.terminals.join(', ')}</code></td>
+										<td class="tabular">{net.lines.join(', ')}</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+						<p class="note">
+							{data.hero.issues === 0
+								? 'verifyNetlist reports no problems with this circuit.'
+								: `verifyNetlist reports ${data.hero.issues} findings.`}
+						</p>
+					</div>
+				{:else}
+					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+					<pre class="svg-out" tabindex="0" aria-label="The beginning of the compiled SVG">{data
+							.hero.svgHead}</pre>
+				{/if}
+			</div>
+
+			<figcaption>
+				<b>Figure 1.</b>
+				{data.hero.title}. Compiled in {data.hero.ms} ms into {(data.hero.svgBytes / 1024).toFixed(
+					1
+				)} KB of SVG, with {data.hero.components} parts on {data.hero.nets.length} nets. Hover a line
+				of source to find its wire.
+			</figcaption>
+		</figure>
+	</section>
+
+	<section class="detail" aria-labelledby="detailed">
+		<h2 id="detailed"><span class="num">5</span> Detailed description</h2>
+
+		<h3><span class="num">5.1</span> Routing by net</h3>
+		<p>
+			The router treats a net as one conductor. Its first connection runs from terminal to terminal,
+			and each later one leaves the copper the net already has, with a dot where it joins. Two
+			separate nets never touch: where they cross, the vertical run bridges the other.
+		</p>
+		<div class="pair">
+			<figure class="figure">
+				<div class="figure-body compare">
+					<div>
+						<p class="tag">0.8</p>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -- archived compiler output -->
+						{@html data.junction08}
+					</div>
+					<div>
+						<p class="tag">{data.latest}</p>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
+						{@html data.figures['junction']}
+					</div>
+				</div>
+				<figcaption>
+					<b>Figure 2.</b> Three wires written to <code>N1</code>. Release 0.8 pulled each one out
+					through a stub first; the current release runs them straight into the junction.
+				</figcaption>
+			</figure>
+			<figure class="figure">
+				<div class="figure-body">
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
+					{@html data.figures['crossing']}
+				</div>
+				<figcaption>
+					<b>Figure 3.</b> A bridge where two nets cross, and a dot where one net crosses itself.
+				</figcaption>
+			</figure>
+		</div>
+
+		<h3><span class="num">5.2</span> Four domains, one language</h3>
+		<p>
+			The same declarations draw a logic circuit, a quantum circuit or a class diagram. Figure 1 is
+			the electrical case; the other three follow, each with one line of its source.
+		</p>
+		<div class="triple">
+			{#each data.families as family, index (family.id)}
+				<figure class="figure">
+					<div class="figure-body">
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
+						{@html family.svg}
+					</div>
+					<figcaption>
+						<b>Figure {index + 4}.</b>
+						{family.title}, {family.family.toLowerCase()}.
+						<code class="line">{family.line}</code>
+					</figcaption>
+				</figure>
+			{/each}
+		</div>
+
+		<h3><span class="num">5.3</span> Verification</h3>
+		<p class="table-caption">Table 3. Figures measured from this release</p>
+		<table class="spec verification">
+			<thead>
+				<tr>
+					<th scope="col">Quantity</th>
+					<th scope="col">Value</th>
+					<th scope="col">Source</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>Component kinds</td>
+					<td class="tabular">{data.evidence.kinds}</td>
+					<td><a href="/coverage">Language coverage</a></td>
+				</tr>
+				<tr>
+					<td>Documentation diagrams that pass every design rule</td>
+					<td class="tabular">{data.evidence.clean} of {data.evidence.diagrams}</td>
+					<td><a href="/conformance">Conformance</a></td>
+				</tr>
+				<tr>
+					<td>Time to compile Figure 1</td>
+					<td class="tabular">{data.hero.ms} ms</td>
+					<td>Measured when this page was built</td>
+				</tr>
+				<tr>
+					<td>Releases recorded</td>
+					<td class="tabular">{data.evidence.releases}</td>
+					<td><a href="/changelog">Changelog</a></td>
+				</tr>
+			</tbody>
+		</table>
+	</section>
+
+	<section class="start" aria-labelledby="start">
+		<h2 id="start"><span class="num">6</span> Getting started</h2>
+		<div class="install">
+			<div class="seg" role="tablist" aria-label="Package manager">
+				{#each MANAGERS as manager (manager)}
+					<button
+						type="button"
+						role="tab"
+						aria-selected={pm === manager}
+						onclick={() => (pm = manager)}>{manager}</button
+					>
+				{/each}
+			</div>
+			<div class="command">
+				<code>{installCmd}</code>
+				<button type="button" class="copy" onclick={copyInstall} aria-label="Copy install command">
+					{copied ? 'Copied' : 'Copy'}
+				</button>
+			</div>
+		</div>
+		<div class="actions">
+			<a class="btn btn-solid" href={`/playground/${data.latest}`}>Open the playground</a>
+			<a class="btn" href={`/docs/${data.latest}/overview`}>Read the documentation</a>
+		</div>
+
+		<p class="table-caption">Table 4. Where to go next</p>
+		<table class="spec">
+			<tbody>
+				{#each places as place (place.href)}
+					<tr>
+						<th scope="row"><a href={place.href}>{place.name}</a></th>
+						<td>{place.does}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</section>
 </article>
 
 <style>
-	.landing {
-		padding-block: var(--space-8) 0;
+	.front {
+		padding-block: var(--space-8) var(--space-16);
 	}
 
-	.wrap {
-		max-inline-size: 1360px;
-		margin-inline: auto;
-		padding-inline: clamp(1rem, 3vw, 2.5rem);
-	}
+	.title {
+		margin-block-end: var(--space-8);
 
-	.copper {
-		color: var(--accent);
-	}
-
-	/* ---------- Hero ---------- */
-	.hero {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-12) clamp(2rem, 4vw, 3.5rem);
-		align-items: flex-start;
-		padding: clamp(2rem, 5vw, 4rem) clamp(1.25rem, 3.5vw, 3.5rem);
-	}
-
-	.hero-copy {
-		flex: 1 1 340px;
-		min-inline-size: 0;
-		max-inline-size: 430px;
-	}
-
-	h1 {
-		margin: var(--space-5) 0;
-		font-size: clamp(2.6rem, 4.4vw, 4.25rem);
-		line-height: 0.98;
-		letter-spacing: -0.03em;
-
-		& em {
-			font-style: normal;
-			color: var(--accent);
+		/* Measured in the heading's own characters, so it breaks as a title. */
+		& h1 {
+			max-inline-size: 24ch;
+			margin-block-end: var(--space-3);
 		}
 	}
 
-	.hero-pronounce {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: var(--space-3);
-		margin-block-end: var(--space-5);
+	section + section,
+	.columns + section {
+		margin-block-start: var(--space-12);
 	}
 
-	.hero-brand {
-		font-family: var(--font-mono);
-		font-weight: 600;
-		color: var(--accent);
+	h2 {
+		font-size: var(--text-lg);
+		padding-block-start: var(--space-2);
+		border-block-start: 2px solid var(--ink);
+		margin-block-end: var(--space-3);
+	}
+
+	h3 {
 		font-size: var(--text-md);
+		margin-block: var(--space-8) var(--space-2);
 	}
 
-	.lede {
+	/* Section numbers are the datasheet's own sequence. */
+	.num {
+		display: inline-block;
+		min-inline-size: 2.2em;
+		font-variant-numeric: tabular-nums;
+	}
+
+	ul {
 		margin: 0 0 var(--space-8);
-		font-size: 1.1875rem;
-		line-height: 1.55;
-		color: var(--ink-mute);
-	}
+		padding-inline-start: 1.1em;
 
-	.actions {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-3);
-
-		& .btn {
-			min-block-size: 48px;
+		& li {
+			margin-block: var(--space-2);
 		}
 	}
 
-	.install {
-		margin-block-start: var(--space-8);
-		max-inline-size: 380px;
-		border: 1px solid var(--line-strong);
-		border-radius: var(--radius-md);
-		background: var(--bg-inset);
-		overflow: hidden;
+	p {
+		max-inline-size: var(--measure);
 	}
 
-	.pm-tabs {
+	/* Page one of a datasheet: features and applications in a narrow column,
+	   the description beside them. */
+	.columns {
+		display: grid;
+		grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+		gap: var(--space-12);
+		margin-block-end: var(--space-12);
+	}
+
+	.right p:first-of-type {
+		margin-block-start: 0;
+	}
+
+	/* ---------- Figure 1 ---------- */
+	.views {
 		display: flex;
-		border-block-end: 1px solid var(--line);
+		gap: var(--space-6);
+		margin-block-end: var(--space-2);
 
 		& button {
-			flex: 1;
-			min-block-size: 36px;
-			font-family: var(--font-label);
-			font-size: 0.625rem;
-			letter-spacing: 0.06em;
-			color: var(--ink-faint);
+			font-stretch: var(--width-table);
+			font-weight: 600;
+			color: var(--ink-mute);
+			padding-block-end: var(--space-1);
+			border-block-end: 3px solid transparent;
 
 			&[aria-selected='true'] {
-				color: var(--accent);
-				box-shadow: inset 0 -2px 0 var(--accent);
-			}
-		}
-	}
-
-	.pm-line {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-		padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
-
-		& code {
-			flex: 1;
-			font-size: var(--text-sm);
-			color: var(--ink);
-		}
-	}
-
-	.pm-prompt {
-		color: var(--ink-faint);
-	}
-
-	.pm-copy {
-		min-block-size: 36px;
-		padding-inline: var(--space-3);
-		border-radius: var(--radius-sm);
-
-		&:hover {
-			color: var(--accent);
-		}
-	}
-
-	/* ---------- Instrument ---------- */
-	.instrument {
-		flex: 999 1 640px;
-		min-inline-size: 0;
-		margin: 0;
-		border: 1px solid var(--line-strong);
-		border-radius: var(--radius-lg);
-		background: var(--bg-inset);
-		overflow: hidden;
-		box-shadow: var(--shadow-plate);
-	}
-
-	.inst-head {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-2);
-		padding: var(--space-2);
-		border-block-end: 1px solid var(--line);
-
-		& .file {
-			margin-inline-start: auto;
-			padding-inline-end: var(--space-2);
-		}
-	}
-
-	.seg-tabs {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 4px;
-
-		& button {
-			min-block-size: 38px;
-			padding-inline: var(--space-4);
-			border-radius: var(--radius-sm);
-			font-family: var(--font-label);
-			font-size: 0.6875rem;
-			letter-spacing: 0.05em;
-			text-transform: uppercase;
-			color: var(--ink-faint);
-
-			&[aria-selected='true'] {
-				background: var(--bg-raised);
 				color: var(--ink);
-			}
-
-			&:hover {
-				color: var(--ink);
+				border-block-end-color: var(--ink);
 			}
 		}
 	}
 
 	.split {
-		display: flex;
-		flex-wrap: wrap;
+		display: grid;
+		grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+		gap: var(--space-4);
+		align-items: start;
 	}
 
-	/* The drawing is the point; the source is its legend, scrolled sideways. */
 	.source {
-		flex: 1 1 240px;
-		min-inline-size: 0;
-		max-inline-size: 320px;
-		max-block-size: 520px;
-		margin: 0;
-		padding: var(--space-3) 0;
 		list-style: none;
-		overflow: auto;
-		border-inline-end: 1px solid var(--line);
+		margin: 0;
+		padding: 0;
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		line-height: 1.55;
+		overflow-x: auto;
 	}
 
-	/* 24 px rows: each line is a touch target as well as a legend entry. */
 	.ln {
 		display: flex;
-		align-items: center;
 		gap: var(--space-3);
 		inline-size: 100%;
-		min-block-size: 24px;
-		padding: 0 var(--space-4) 0 0;
 		text-align: start;
+		padding-inline: var(--space-1);
 		white-space: pre;
-		font-size: 0.74rem;
-		line-height: 1.72;
-		border-inline-start: 2px solid transparent;
 
-		&:hover,
-		&:focus-visible,
-		&.on {
-			background: var(--bg-raised);
-			border-inline-start-color: var(--accent);
-			outline: none;
+		&.on,
+		&:focus-visible {
+			background: var(--bg);
 		}
 
 		& .n {
-			flex: none;
-			inline-size: 2.4em;
+			min-inline-size: 2ch;
 			text-align: end;
-			color: var(--ink-faint);
-			font-family: var(--font-mono);
+			color: var(--ink-mute);
+			font-variant-numeric: tabular-nums;
 		}
 
 		& code {
@@ -693,613 +578,145 @@
 		}
 	}
 
-	.drawing {
-		/* Drawn straight onto the sheet, not onto its own panel. */
-		--schematic-surface: transparent;
-		flex: 2 1 380px;
-		min-inline-size: 0;
-		display: flex;
-		align-items: center;
-		padding: var(--space-4) var(--space-3);
-
-		& :global(figure.schematic-frame) {
-			margin: 0;
-			inline-size: 100%;
-		}
-
-		& :global(figcaption),
-		& :global(.schematic-grid) {
-			display: none;
-		}
-
-		& :global(svg) {
-			display: block;
-			inline-size: 100%;
-			block-size: auto;
-		}
-
-		& :global([data-source-line]) {
-			transition: opacity var(--dur-med) var(--ease-precise);
-		}
-	}
-
-	.netlist {
-		padding: var(--space-4);
-
-		& ul {
-			display: grid;
-			gap: var(--space-2);
-			margin: var(--space-3) 0 0;
-			padding: 0;
-			list-style: none;
-		}
-	}
-
-	.net-row {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: var(--space-2) var(--space-4);
+	.drawing :global(svg) {
+		display: block;
 		inline-size: 100%;
-		min-block-size: 48px;
-		padding: var(--space-3) var(--space-4);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-md);
-		background: var(--bg-panel);
-		text-align: start;
+		block-size: auto;
+	}
 
-		&:hover,
-		&:focus-visible {
-			border-color: var(--accent);
-		}
+	.drawing :global(figure),
+	.figure-body :global(figure) {
+		margin: 0;
+	}
+
+	.drawing :global(figcaption),
+	.figure-body :global(figure > figcaption) {
+		display: none;
+	}
+
+	.netlist .table-caption {
+		margin-block-start: 0;
 	}
 
 	.net-id {
-		inline-size: 2.5em;
-		font-family: var(--font-mono);
+		font-weight: 700;
 		color: var(--accent);
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
 	}
 
-	.net-terms {
-		flex: 1 1 260px;
-		font-family: var(--font-mono);
+	.note {
 		font-size: var(--text-sm);
+		color: var(--ink-mute);
 	}
 
 	.svg-out {
 		margin: 0;
-		padding: var(--space-4);
-		max-block-size: 540px;
+		max-block-size: 420px;
 		overflow: auto;
-		font-size: 0.75rem;
-		line-height: 1.7;
-		color: var(--ink-mute);
-		white-space: pre;
+		font-size: 0.8125rem;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
 	}
 
-	.strip {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-3) var(--space-6);
-		padding: var(--space-3) var(--space-4);
-		border-block-start: 1px solid var(--line);
-	}
-
-	.stages {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2) var(--space-5);
-		margin: 0;
-		padding: 0;
-		list-style: none;
-
-		& li {
-			display: flex;
-			align-items: center;
-			gap: var(--space-2);
-			font-family: var(--font-label);
-			font-size: 0.65rem;
-			letter-spacing: 0.06em;
-			text-transform: uppercase;
-			color: var(--ink-faint);
-
-			&::before {
-				content: '';
-				inline-size: 7px;
-				block-size: 7px;
-				border-radius: 50%;
-				background: var(--accent);
-				animation: stage-on 900ms var(--ease-kinetic) both;
-				animation-delay: calc(var(--s) * 260ms);
-			}
-		}
-	}
-
-	@keyframes stage-on {
-		from {
-			background: var(--line-strong);
-			box-shadow: none;
-		}
-		60% {
-			box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent);
-		}
-		to {
-			background: var(--accent);
-		}
-	}
-
-	.metrics {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-1) var(--space-5);
-		margin: 0 0 0 auto;
-
-		& div {
-			display: flex;
-			gap: var(--space-2);
-			align-items: baseline;
-		}
-
-		& dt {
-			font-family: var(--font-label);
-			font-size: 0.6rem;
-			letter-spacing: 0.06em;
-			text-transform: uppercase;
-			color: var(--ink-faint);
-		}
-
-		& dd {
-			margin: 0;
-			font-family: var(--font-mono);
-			font-size: var(--text-sm);
-			color: var(--ink);
-		}
-	}
-
-	.replay {
-		min-block-size: 36px;
-		padding-inline: var(--space-3);
-		border: 1px solid var(--line-strong);
-		border-radius: var(--radius-sm);
-
-		&:hover {
-			border-color: var(--accent);
-			color: var(--accent);
-		}
-	}
-
-	/* ---------- Sections ---------- */
-	.sec {
-		padding-block-start: clamp(4.5rem, 9vw, 7.5rem);
-	}
-
-	h2 {
-		max-inline-size: 820px;
-		margin: var(--space-4) 0;
-		font-size: clamp(2.1rem, 3.6vw, 3.25rem);
-		line-height: 1.04;
-	}
-
-	.sub {
-		margin: 0;
-		max-inline-size: 680px;
-		font-size: var(--text-md);
-		line-height: 1.6;
-		color: var(--ink-mute);
-	}
-
-	.cards {
+	/* ---------- Detailed description ---------- */
+	.pair {
 		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: var(--space-5);
-		margin-block-start: var(--space-12);
-	}
-
-	.card {
-		display: flex;
-		flex-direction: column;
-		border: 1px solid var(--line-strong);
-		border-radius: var(--radius-lg);
-		background: var(--bg-panel);
-		overflow: hidden;
-	}
-
-	.card-fig {
-		position: relative;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		block-size: 250px;
-		padding: var(--space-4);
-		border-block-end: 1px solid var(--line);
-		background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
-		background-size: 20px 20px;
-
-		&.text {
-			flex-direction: column;
-			align-items: flex-start;
-			justify-content: center;
-			gap: var(--space-3);
-			padding: var(--space-8);
-		}
-	}
-
-	.fig {
-		--schematic-surface: transparent;
-		inline-size: 100%;
-		block-size: 100%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-
-		& :global(figure.schematic-frame) {
-			margin: 0;
-			inline-size: 100%;
-			block-size: 100%;
-			display: flex;
-			align-items: center;
-		}
-
-		& :global(figcaption) {
-			display: none;
-		}
-
-		& :global(svg) {
-			display: block;
-			inline-size: 100%;
-			block-size: 100%;
-			max-block-size: 220px;
-		}
-	}
-
-	.card-body {
-		padding: var(--space-5) var(--space-5) var(--space-6);
-
-		& h3 {
-			margin: var(--space-2) 0;
-			font-size: 1.3rem;
-			font-weight: 650;
-			letter-spacing: -0.01em;
-		}
-
-		& p:not(.microlabel) {
-			margin: 0;
-			color: var(--ink-mute);
-			line-height: 1.55;
-		}
-
-		& code {
-			font-size: 0.86em;
-		}
+		grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+		gap: var(--space-6);
 	}
 
 	.compare {
-		& .old,
-		& .new {
-			position: absolute;
-			inset: 0;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			padding: var(--space-4);
-		}
-
-		& .old {
-			animation: compare-old 7s var(--ease-kinetic) infinite both;
-		}
-
-		& .new {
-			animation: compare-new 7s var(--ease-kinetic) infinite both;
-		}
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--space-4);
 
 		& .tag {
-			position: absolute;
-			inset-block-start: var(--space-3);
-			inset-inline-start: var(--space-4);
-		}
-
-		& :global(svg) {
-			max-block-size: 210px;
-			color: var(--ink-mute);
+			margin: 0 0 var(--space-1);
+			font-stretch: var(--width-table);
+			font-size: var(--text-sm);
+			font-weight: 700;
 		}
 	}
 
-	@keyframes compare-old {
-		0%,
-		42% {
-			opacity: 1;
-		}
-		50%,
-		100% {
-			opacity: 0;
-		}
-	}
-
-	@keyframes compare-new {
-		0%,
-		44% {
-			opacity: 0;
-		}
-		52%,
-		100% {
-			opacity: 1;
-		}
-	}
-
-	.negotiate {
-		inline-size: 100%;
-		block-size: 100%;
-		fill: none;
-		stroke-linecap: round;
-		stroke-linejoin: round;
-		stroke-width: 1.8;
-
-		& .part {
-			stroke: var(--line-strong);
-			stroke-width: 1.4;
-		}
-
-		& .held {
-			stroke: var(--schematic-color-blue);
-		}
-
-		& .contest {
-			stroke: var(--danger);
-			stroke-dasharray: 6 5;
-			animation:
-				trace-march 1s linear infinite,
-				contest 6s var(--ease-kinetic) infinite both;
-		}
-
-		& .settle {
-			stroke: var(--accent);
-			stroke-dasharray: 1 1;
-			animation: settle 6s var(--ease-kinetic) infinite both;
-		}
-	}
-
-	@keyframes contest {
-		0%,
-		45% {
-			opacity: 1;
-		}
-		55%,
-		100% {
-			opacity: 0;
-		}
-	}
-
-	@keyframes settle {
-		0%,
-		50% {
-			stroke-dashoffset: 1;
-		}
-		72%,
-		100% {
-			stroke-dashoffset: 0;
-		}
-	}
-
-	.families {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: var(--space-5);
-		margin-block-start: var(--space-12);
-	}
-
-	.family-claim {
-		margin: 0;
-		max-inline-size: 420px;
-		font-size: 1.6rem;
-		font-weight: 600;
-		line-height: 1.2;
-		letter-spacing: -0.01em;
-	}
-
-	.snip {
+	.figure-body :global(svg) {
 		display: block;
-		margin-block-start: var(--space-3);
-		padding: var(--space-3);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-md);
-		background: var(--bg-inset);
-		font-size: 0.8rem;
-		color: var(--ink-mute);
-		white-space: pre;
-		overflow-x: auto;
+		inline-size: 100%;
+		block-size: auto;
 	}
 
-	.proof {
+	.triple {
 		display: grid;
-		grid-template-columns: repeat(6, minmax(0, 1fr));
-		margin: var(--space-12) 0 0;
-		border: 1px solid var(--line-strong);
-		border-radius: var(--radius-lg);
-		background: var(--bg-panel);
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: var(--space-6);
 
-		& div {
-			display: flex;
-			flex-direction: column;
-			padding: var(--space-6) var(--space-5);
-			border-inline-start: 1px solid var(--line);
-		}
-
-		& div:first-child {
-			border-inline-start: 0;
-		}
-
-		& dd {
-			order: -1;
-			margin: 0;
-			font-size: 2.6rem;
-			font-weight: 650;
-			letter-spacing: -0.02em;
-			line-height: 1;
-
-			& small {
-				font-size: 1.1rem;
-				color: var(--ink-mute);
-			}
-		}
-
-		& dt {
-			margin-block-start: var(--space-3);
-			color: var(--ink-mute);
-			font-size: var(--text-sm);
-			line-height: 1.45;
-		}
-
-		& dd.more {
-			order: 0;
-			margin-block-start: auto;
-			padding-block-start: var(--space-3);
-			font-size: var(--text-sm);
-			font-weight: 400;
-			letter-spacing: normal;
-			line-height: 1.4;
-		}
-
-		& a {
-			color: var(--ink-faint);
-
-			&:hover {
-				color: var(--accent);
-			}
+		& .line {
+			display: block;
+			margin-block-start: var(--space-1);
+			font-size: 0.8125rem;
+			color: var(--ink);
+			overflow-wrap: anywhere;
 		}
 	}
 
-	.modes {
-		display: grid;
-		grid-template-columns: repeat(5, minmax(0, 1fr));
-		margin-block-start: var(--space-12);
-		border: 1px solid var(--line-strong);
-		border-radius: var(--radius-lg);
-		overflow: hidden;
+	.verification {
+		max-inline-size: 760px;
 	}
 
-	.mode {
+	/* ---------- Getting started ---------- */
+	.install {
 		display: flex;
-		flex-direction: column;
-		gap: var(--space-2);
-		padding: var(--space-6) var(--space-5) var(--space-8);
-		border-inline-start: 1px solid var(--line);
-		background: var(--bg-panel);
-		color: var(--ink);
-		transition: background-color var(--dur-fast) var(--ease-precise);
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-4);
+		margin-block: var(--space-4);
+	}
 
-		&:first-child {
-			border-inline-start: 0;
-		}
+	.command {
+		display: flex;
+		align-items: center;
+		gap: var(--space-4);
+		padding: var(--space-2) var(--space-4);
+		background: var(--wash);
 
-		&:hover {
-			background: var(--bg-raised);
-			text-decoration: none;
-			box-shadow: inset 0 2px 0 var(--accent);
+		& code {
+			font-size: 0.9375rem;
 		}
 	}
 
-	.route {
-		font-family: var(--font-mono);
-		font-size: 0.78rem;
+	.copy {
+		font-stretch: var(--width-table);
+		font-weight: 600;
 		color: var(--accent);
 	}
 
-	.mode-name {
-		margin-block-start: var(--space-2);
-		font-size: 1.5rem;
-		font-weight: 650;
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-3);
+		margin-block: var(--space-6) var(--space-4);
 	}
 
-	.mode-body {
-		color: var(--ink-mute);
-		font-size: var(--text-sm);
-		line-height: 1.55;
-	}
+	.start table {
+		max-inline-size: 860px;
 
-	@media (max-width: 1100px) {
-		.cards {
-			grid-template-columns: minmax(0, 1fr);
-		}
-
-		.proof {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
-
-			& div:nth-child(4) {
-				border-inline-start: 0;
-			}
-
-			& div:nth-child(n + 4) {
-				border-block-start: 1px solid var(--line);
-			}
-		}
-
-		.modes {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-
-			& .mode {
-				border-block-start: 1px solid var(--line);
-			}
-		}
-	}
-
-	@media (max-width: 720px) {
-		.families {
-			grid-template-columns: minmax(0, 1fr);
-		}
-
-		.proof {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-
-			& div {
-				border-inline-start: 0 !important;
-				border-block-start: 1px solid var(--line);
-			}
-		}
-
-		.modes {
-			grid-template-columns: minmax(0, 1fr);
-
-			& .mode {
-				border-inline-start: 0;
-			}
-		}
-
-		.metrics {
-			margin-inline-start: 0;
-		}
-
-		/* On a phone the drawing leads; its source scrolls in a short well under it. */
-		.drawing {
-			order: -1;
+		& th {
+			inline-size: 12rem;
 			border-block-end: 1px solid var(--line);
-		}
-
-		.source {
-			max-inline-size: none;
-			max-block-size: 240px;
-			border-inline-end: 0;
-		}
-
-		.inst-head .file {
-			display: none;
+			font-weight: 600;
 		}
 	}
 
-	@media (prefers-reduced-motion: reduce) {
-		.compare .old {
-			display: none;
+	@media (max-width: 900px) {
+		.columns,
+		.split,
+		.pair {
+			grid-template-columns: minmax(0, 1fr);
+			gap: var(--space-6);
 		}
 
-		.compare .new,
-		.stages li::before,
-		.negotiate .contest,
-		.negotiate .settle {
-			animation: none;
-		}
-
-		.negotiate .contest {
-			display: none;
+		.triple {
+			grid-template-columns: minmax(0, 1fr);
 		}
 	}
 </style>

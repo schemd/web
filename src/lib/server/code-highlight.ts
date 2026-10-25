@@ -30,7 +30,6 @@ import python from 'shiki/langs/python.mjs';
 import typescript from 'shiki/langs/typescript.mjs';
 
 import vitesseDark from 'shiki/themes/vitesse-dark.mjs';
-import nord from 'shiki/themes/nord.mjs';
 import vitesseLight from 'shiki/themes/vitesse-light.mjs';
 
 /**
@@ -56,14 +55,14 @@ const GRAMMARS: Readonly<Record<string, string>> = {
  * One theme per blueprint mode, keyed by the mode's own name.
  *
  * `defaultColor: false` makes Shiki emit a CSS custom property per theme
- * instead of baking one colour in, so a single rendering serves all three modes
+ * instead of baking one colour in, so a single rendering serves both modes
  * and the toggle stays instant — no re-highlight, no second copy of the markup.
- * `app.css` maps `--shiki-hud`/`--shiki-cyanotype`/`--shiki-iso` per mode. The
- * keys are the mode names from `BLUEPRINT_MODES`, not descriptions of them —
- * the light mode is called `iso`, and naming its variable `light` produced a
- * rule that matched nothing while looking correct.
+ * `app.css` maps `--shiki-paper` and `--shiki-negative` per mode. The keys are
+ * the mode names from `BLUEPRINT_MODES`, not descriptions of them: naming a
+ * variable `light` once produced a rule that matched nothing while looking
+ * correct.
  */
-const THEMES = { hud: 'vitesse-dark', cyanotype: 'nord', iso: 'vitesse-light' } as const;
+const THEMES = { paper: 'vitesse-light', negative: 'vitesse-dark' } as const;
 
 /** Languages a fence may use and expect to be highlighted. */
 export const HIGHLIGHTED_LANGUAGES: readonly string[] = Object.freeze(Object.keys(GRAMMARS));
@@ -73,7 +72,7 @@ let highlighter: HighlighterCore | undefined;
 /** Build the highlighter once per process, on first use. */
 function get(): HighlighterCore {
 	highlighter ??= createHighlighterCoreSync({
-		themes: [vitesseDark, nord, vitesseLight],
+		themes: [vitesseDark, vitesseLight],
 		langs: [typescript, bash, css, python],
 		engine: createJavaScriptRegexEngine()
 	});

@@ -212,7 +212,7 @@ test('command palette modal has no detectable WCAG A/AA violations', async ({ pa
 	await page.goto('/');
 	await settled(page);
 	await expect(
-		page.getByRole('button', { name: /^search .*opens the command palette$/ })
+		page.getByRole('button', { name: /^search .*opens the command palette$/i })
 	).toBeEnabled();
 	await page.keyboard.press('Control+K');
 	await expect(page.getByRole('dialog')).toBeVisible();

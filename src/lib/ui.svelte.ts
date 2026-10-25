@@ -8,25 +8,29 @@
  */
 import { browser } from '$app/env';
 
-/** The three blueprint representation states. */
-export const BLUEPRINT_MODES = ['hud', 'cyanotype', 'iso'] as const;
+/**
+ * The two print modes: black ink on white paper, and its negative. The storage
+ * key keeps its old name, `schemd:blueprint`, so a returning visitor's choice
+ * is read; the old mode names it may hold mean nothing now and fall through.
+ */
+export const BLUEPRINT_MODES = ['paper', 'negative'] as const;
 export type BlueprintMode = (typeof BLUEPRINT_MODES)[number];
 
-/** The one-word name a mode shows in the header; storage keys stay as they were. */
+/** The one-word name a mode shows in the header. */
 export const BLUEPRINT_SHORT: Record<BlueprintMode, string> = {
-	hud: 'graphite',
-	cyanotype: 'cyanotype',
-	iso: 'print'
+	paper: 'paper',
+	negative: 'negative'
 };
 
 export const BLUEPRINT_LABELS: Record<BlueprintMode, string> = {
-	hud: 'Graphite sheet',
-	cyanotype: 'Cyanotype blueprint',
-	iso: 'Vellum print'
+	paper: 'Paper: black ink on white',
+	negative: 'Negative: white ink on black'
 };
 
-export function parseBlueprintPreference(raw: string | null): BlueprintMode {
-	return raw === 'cyanotype' || raw === 'iso' ? raw : 'hud';
+/** A stored choice, or the system's colour scheme when there is none. */
+export function parseBlueprintPreference(raw: string | null, prefersDark = false): BlueprintMode {
+	if (raw === 'paper' || raw === 'negative') return raw;
+	return prefersDark ? 'negative' : 'paper';
 }
 
 function readPreference(key: string): string | null {
@@ -50,7 +54,7 @@ function writePreference(key: string, value: string): void {
 
 /** Platform-wide reactive UI state. */
 export const ui = $state({
-	blueprint: 'hud' as BlueprintMode,
+	blueprint: 'paper' as BlueprintMode,
 	audio: false,
 	paletteOpen: false,
 	/** Docs left-sidebar collapse — persists across navigation and reloads. */
@@ -66,7 +70,10 @@ let preferencesHydrated = false;
 export function hydrateUiPreferences(): void {
 	if (!browser || preferencesHydrated) return;
 	preferencesHydrated = true;
-	ui.blueprint = parseBlueprintPreference(readPreference('schemd:blueprint'));
+	ui.blueprint = parseBlueprintPreference(
+		readPreference('schemd:blueprint'),
+		window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
+	);
 	ui.audio = readPreference('schemd:audio') === '1';
 	ui.docsNavCollapsed = readPreference('schemd:docsNav') === 'collapsed';
 	document.documentElement.dataset.blueprint = ui.blueprint;

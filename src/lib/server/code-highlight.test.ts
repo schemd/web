@@ -13,16 +13,15 @@ describe('highlighting', () => {
 
 	/*
 	 * The whole reason for `defaultColor: false`: one rendering has to serve
-	 * three blueprint modes, because the toggle is instant and re-highlighting
-	 * on the client would mean shipping the grammars to the browser.
+	 * both print modes, because the toggle is instant and re-highlighting on
+	 * the client would mean shipping the grammars to the browser.
 	 */
-	it('emits one custom property per blueprint mode, not a baked colour', () => {
-		/* Keyed by the mode names in `BLUEPRINT_MODES`. The light mode is `iso`;
-		   calling its variable `light` once produced CSS that matched nothing. */
+	it('emits one custom property per print mode, not a baked colour', () => {
+		/* Keyed by the mode names in `BLUEPRINT_MODES`; calling a variable
+		   `light` once produced CSS that matched nothing. */
 		const html = highlightCodeHtml('const x = 1;', 'ts')!;
-		expect(html).toContain('--shiki-hud');
-		expect(html).toContain('--shiki-cyanotype');
-		expect(html).toContain('--shiki-iso');
+		expect(html).toContain('--shiki-paper');
+		expect(html).toContain('--shiki-negative');
 	});
 
 	it('returns only the tokens, never Shiki’s own wrapper', () => {

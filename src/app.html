@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-blueprint="hud">
+<html lang="en" data-blueprint="paper">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-		<meta name="theme-color" content="#0e1013" />
+		<meta name="theme-color" content="#ffffff" />
 		<link rel="icon" type="image/png" href="/%sveltekit.assets%/favicon-96x96.png" sizes="96x96" />
 		<link rel="icon" type="image/svg+xml" href="/%sveltekit.assets%/favicon.svg" />
 		<link rel="shortcut icon" href="/%sveltekit.assets%/favicon.ico" />
@@ -22,12 +22,14 @@
 		<meta name="apple-mobile-web-app-title" content="schemd" />
 		<link rel="manifest" href="/%sveltekit.assets%/site.webmanifest" />
 		<script nonce="%sveltekit.nonce%">
-			/* Apply the persisted blueprint mode before first paint — zero CLS, zero flash. */
+			/* Apply the print mode before first paint, so nothing flashes: a stored
+			   choice first, then the system's colour scheme. */
 			try {
 				var mode = localStorage.getItem('schemd:blueprint');
-				if (mode === 'cyanotype' || mode === 'iso') {
-					document.documentElement.dataset.blueprint = mode;
+				if (mode !== 'paper' && mode !== 'negative') {
+					mode = matchMedia('(prefers-color-scheme: dark)').matches ? 'negative' : 'paper';
 				}
+				document.documentElement.dataset.blueprint = mode;
 			} catch (error) {}
 		</script>
 		%sveltekit.head%

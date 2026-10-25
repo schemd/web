@@ -91,7 +91,7 @@
 </script>
 
 <label class="version-select">
-	<span class="microlabel">{inDocs ? 'docs' : 'ver'}</span>
+	<span>{inDocs ? 'Docs' : 'Release'}</span>
 	<select
 		bind:this={control}
 		value={current}
@@ -100,7 +100,7 @@
 	>
 		{#each options as version (version)}
 			<option value={version}>
-				v{version}{!inDocs && version === latest ? ' · latest' : ''}
+				{version}{!inDocs && version === latest ? ' (latest)' : ''}
 			</option>
 		{/each}
 	</select>
@@ -111,26 +111,28 @@
 		display: inline-flex;
 		align-items: center;
 		gap: var(--space-2);
+		color: var(--ink-mute);
 
 		& select {
 			appearance: none;
-			font-family: var(--font-mono);
-			font-size: var(--text-xs);
-			color: var(--accent);
+			font: inherit;
+			font-stretch: var(--width-table);
+			font-weight: 600;
+			font-variant-numeric: tabular-nums;
+			color: var(--ink);
 			background:
-				linear-gradient(45deg, transparent 50%, var(--ink-faint) 50%) calc(100% - 12px) 55% / 5px
-					5px no-repeat,
-				linear-gradient(-45deg, transparent 50%, var(--ink-faint) 50%) calc(100% - 8px) 55% / 5px
-					5px no-repeat,
-				var(--bg-inset);
+				linear-gradient(45deg, transparent 50%, var(--ink) 50%) calc(100% - 11px) 55% / 5px 5px
+					no-repeat,
+				linear-gradient(-45deg, transparent 50%, var(--ink) 50%) calc(100% - 7px) 55% / 5px 5px
+					no-repeat,
+				var(--bg);
 			border: 1px solid var(--line-strong);
 			border-radius: var(--radius-sm);
-			padding: 0.28rem 1.6rem 0.28rem 0.6rem;
+			padding: 0.15rem 1.5rem 0.15rem 0.5rem;
 			cursor: pointer;
-			transition: border-color var(--dur-fast) var(--ease-precise);
 
 			&:hover {
-				border-color: var(--accent);
+				border-color: var(--ink);
 			}
 		}
 	}

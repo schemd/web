@@ -18,6 +18,8 @@ export const load: LayoutServerLoad = async ({ params }) => {
 	return {
 		versions,
 		latest,
+		/* The header band prints the revision's date, as a datasheet does. */
+		latestPublishedAt: registry.releases.find((release) => release.version === latest)?.publishedAt,
 		/* Docs are versioned by line, engines by release. The switcher offers
 		 * whichever domain the current route actually navigates in. */
 		docLines: DOCUMENTED_VERSIONS,

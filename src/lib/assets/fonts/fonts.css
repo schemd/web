@@ -1,45 +1,41 @@
 /*
- * The sheet's three typefaces, self-hosted (the CSP allows fonts from 'self'
- * only) and cut to the Latin subset: the other subsets the packages ship were
- * bytes in every build for scripts the site never sets, and a rare character
- * falls back to the system stack named after each family. Variable
- * weight axis only. All three are SIL OFL 1.1; the licences sit beside the
- * files.
+ * The datasheet's two typefaces, self-hosted (the CSP allows fonts from 'self'
+ * only) and cut to the Latin subset, which covers English and Spanish. Both
+ * are SIL OFL 1.1; the licences sit beside the files.
  *
- *   Familjen Grotesk — text and headings
- *   JetBrains Mono   — source, API names, measurements
- *   Martian Mono     — the draughtsman's lettering: zones, labels, states
+ *   Archivo     — everything that is not source, used across its width axis:
+ *                 extended for the wordmark, condensed for headings and
+ *                 tables, normal for prose
+ *   Commit Mono — source listings and the editor
+ *
+ * Archivo ships no italic here: it would double the font's weight for the
+ * handful of italic words the site sets, and the browser slants the roman.
  */
 
 @font-face {
-	font-family: 'Familjen Grotesk Variable';
+	font-family: 'Archivo Variable';
 	font-style: normal;
 	font-display: swap;
-	font-weight: 400 700;
-	src: url('./familjen-grotesk-latin-wght-normal.woff2') format('woff2-variations');
+	font-weight: 100 900;
+	font-stretch: 62% 125%;
+	src: url('./archivo-latin-wdth-normal.woff2') format('woff2-variations');
 	unicode-range:
 		U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
 		U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-	font-family: 'JetBrains Mono Variable';
+	font-family: 'Commit Mono';
 	font-style: normal;
 	font-display: swap;
-	font-weight: 100 800;
-	src: url('./jetbrains-mono-latin-wght-normal.woff2') format('woff2-variations');
-	unicode-range:
-		U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
-		U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+	font-weight: 400;
+	src: url('./commit-mono-latin-400-normal.woff2') format('woff2');
 }
 
 @font-face {
-	font-family: 'Martian Mono Variable';
+	font-family: 'Commit Mono';
 	font-style: normal;
 	font-display: swap;
-	font-weight: 100 800;
-	src: url('./martian-mono-latin-wght-normal.woff2') format('woff2-variations');
-	unicode-range:
-		U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
-		U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+	font-weight: 700;
+	src: url('./commit-mono-latin-700-normal.woff2') format('woff2');
 }

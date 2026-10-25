@@ -43,7 +43,9 @@ test('landing page is SSR-valid, stable, and proves rotated native geometry', as
 	const response = await page.goto('/');
 	expect(response?.status()).toBe(200);
 	await expect(
-		page.getByRole('heading', { name: 'Write the circuit. Get the drawing.' })
+		page.getByRole('heading', {
+			name: 'Text-to-schematic compiler for electrical, digital, quantum and UML drawings'
+		})
 	).toBeVisible();
 	await expect(page.getByLabel('schemd is pronounced skemd').first()).toContainText('skemd');
 	await expect(page.locator('[data-node-id="C1"]')).toHaveAttribute('data-orientation', 'down');
@@ -344,7 +346,7 @@ test('mobile docs expose an accessible index and compiled-example bottom sheet',
 }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto('/docs/0.4.0/overview');
-	const indexToggle = page.getByRole('button', { name: /index · Quickstart/i });
+	const indexToggle = page.getByRole('button', { name: /Contents: Quickstart/i });
 	await expect(indexToggle).toBeVisible();
 	await indexToggle.click();
 	await expect(indexToggle).toHaveAttribute('aria-expanded', 'true');
