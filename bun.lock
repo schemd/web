@@ -5,7 +5,7 @@
     "": {
       "name": "schemd-web",
       "dependencies": {
-        "@schemd/core": "^1.1.0",
+        "@schemd/core": "^1.2.0",
         "katex": "^0.19.0",
         "marked": "^18.1.1",
         "shiki": "^4.5.0",
@@ -119,7 +119,7 @@
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.1", "", {}, "sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw=="],
 
-    "@schemd/core": ["@schemd/core@1.1.0", "", {}, "sha512-PKU52e6IF0ez/30AUS6cePSbqJwFAyqsgUSRlo+t94EnFOzLuy4JNyEXszjSuCi/Jbi/e1hEz5znX6aq3MwFwg=="],
+    "@schemd/core": ["@schemd/core@1.2.0", "", {}, "sha512-5wFOYlvKVu+Zfc55kwibOEQ5UYTdGRhPE58bltctcVzgUM0YdXu+QTqU1FRCivckQXK/dQA2Oc8ubvxMUq2TEQ=="],
 
     "@shikijs/core": ["@shikijs/core@4.5.0", "", { "dependencies": { "@shikijs/primitive": "4.5.0", "@shikijs/types": "4.5.0", "@shikijs/vscode-textmate": "^10.0.2", "@types/hast": "^3.0.5", "hast-util-to-html": "^9.0.5" } }, "sha512-6CIgwq+bt2JZ3OSjb/nBkkwEf/CfpHcbam+Mg5Pllco7HAGRQ2/EFhZrrJtbyNTgKwknfVS+llsXGygiDGwJWw=="],
 
