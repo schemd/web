@@ -13,7 +13,7 @@ import { failOnClientErrors } from './support';
  * installed package are the same facts those modules derive from anyway.
  */
 const CURRENT_LINE = readdirSync('src/lib/content/schemd', { withFileTypes: true })
-	.filter((entry) => entry.isDirectory())
+	.filter((entry) => entry.isDirectory() && /^\d+\.\d+$/.test(entry.name))
 	.map((entry) => entry.name)
 	.sort((left, right) =>
 		right.localeCompare(left, undefined, { numeric: true, sensitivity: 'base' })
@@ -326,7 +326,8 @@ test('every indexable page states a canonical, and duplicates consolidate onto i
 			.filter((url) => url.includes('/simulations/'))
 			.every((url) => url.includes(`/${CURRENT_ENGINE}/`) || url.endsWith(`/${CURRENT_ENGINE}`))
 	).toBe(true);
-	expect(locations.filter((url) => url.includes('/playground/'))).toHaveLength(1);
+	expect(locations.filter((url) => url.includes('/playground/'))).toHaveLength(2);
+	expect(locations.filter((url) => /\/es\/playground\//.test(url))).toHaveLength(1);
 	expect(xml).toContain('<lastmod>');
 	expect(xml).toContain('/docs/0.2/component-reference');
 	expect(xml).toContain('/docs/0.4/component-reference');

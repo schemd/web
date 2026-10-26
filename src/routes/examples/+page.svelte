@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href } = useLanguage();
+
 	import SheetFrame from '#lib/components/SheetFrame.svelte';
 	import type { PageProps } from './$types';
 	import Seo from '#lib/components/Seo.svelte';
@@ -14,24 +17,33 @@
 </script>
 
 <Seo
-	title="Example gallery · schemd"
-	description="Every schemd documentation example compiled to accessible SVG and openable in the playground — circuits, logic, quantum, and UML."
+	title={t('Example gallery · schemd')}
+	description={t(
+		'Every schemd documentation example compiled to accessible SVG and openable in the playground — circuits, logic, quantum, and UML.'
+	)}
 	{jsonLd}
 />
 
 <article class="gallery grid-backdrop">
-	<SheetFrame label="Example gallery">
+	<SheetFrame label={t('Example gallery')}>
 		<header class="gallery-head sheet-head">
-			<p class="microlabel">{data.items.length} examples, compiled by revision {data.latest}</p>
-			<h1>Example gallery</h1>
+			<p class="microlabel">
+				{t(data.items.length)}
+				{t('examples, compiled by revision')}
+				{t(data.latest)}
+			</p>
+			<h1>{t('Example gallery')}</h1>
 			<p class="lede">
-				Every diagram below is real engine output, compiled server-side from the documentation's own
-				<code>schemd</code> fences. Open any one in the playground to take it apart.
+				{t(
+					"Every diagram below is real engine output, compiled server-side from the documentation's own"
+				)}
+				<code>schemd</code>
+				{t('fences. Open any one in the playground to take it apart.')}
 			</p>
 		</header>
 	</SheetFrame>
 
-	<ul class="grid" aria-label="Example schematics">
+	<ul class="grid" aria-label={t('Example schematics')}>
 		{#each data.items as item (item.id)}
 			<li class="card plate">
 				<div class="thumb schemd-frame" style={`aspect-ratio: ${item.width} / ${item.height}`}>
@@ -39,14 +51,16 @@
 				</div>
 				<div class="card-foot">
 					<div class="card-titles">
-						<span class="card-title">{item.title}</span>
-						<span class="microlabel">{item.doc}</span>
+						<span class="card-title">{t(item.title)}</span>
+						<span class="microlabel">{t(item.doc)}</span>
 					</div>
 					<a
 						class="open"
-						href={`/playground/${data.latest}?code=${item.code}&w=${item.width}&h=${item.height}&t=${encodeURIComponent(item.title)}`}
+						href={href(
+							`/playground/${data.latest}?code=${item.code}&w=${item.width}&h=${item.height}&t=${encodeURIComponent(item.title)}`
+						)}
 					>
-						Open
+						{t('Open')}
 					</a>
 				</div>
 			</li>

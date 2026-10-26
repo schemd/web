@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Dependency-free Schemd editor.
 	 *
@@ -464,20 +467,21 @@
 
 <div class="editor" data-error={errorLine !== undefined}>
 	<p id="editor-instructions" class="sr-only">
-		Code editor. Tab indents; Shift+Tab outdents. Press Escape then Tab to move focus out of the
-		editor. Control or Command slash toggles comments. Control or Command F opens find.
+		{t(
+			'Code editor. Tab indents; Shift+Tab outdents. Press Escape then Tab to move focus out of the editor. Control or Command slash toggles comments. Control or Command F opens find.'
+		)}
 	</p>
 
 	{#if findOpen}
-		<div class="findbar" role="search" aria-label="Find and replace">
+		<div class="findbar" role="search" aria-label={t('Find and replace')}>
 			<div class="find-row">
 				<label>
-					<span class="sr-only">Find</span>
+					<span class="sr-only">{t('Find')}</span>
 					<input
 						bind:this={findInput}
 						bind:value={findQuery}
 						type="text"
-						placeholder="Find"
+						placeholder={t('Find')}
 						autocomplete="off"
 						spellcheck="false"
 						onkeydown={(event) => {
@@ -491,45 +495,47 @@
 						}}
 					/>
 				</label>
-				<output aria-live="polite">{matchReadout}</output>
+				<output aria-live="polite">{t(matchReadout)}</output>
 				<button
 					type="button"
 					onclick={() => selectMatch(activeMatch - 1)}
-					aria-label="Previous match">↑</button
+					aria-label={t('Previous match')}>↑</button
 				>
-				<button type="button" onclick={() => selectMatch(activeMatch + 1)} aria-label="Next match"
-					>↓</button
+				<button
+					type="button"
+					onclick={() => selectMatch(activeMatch + 1)}
+					aria-label={t('Next match')}>↓</button
 				>
 				<button
 					type="button"
 					class:active={caseSensitive}
 					aria-pressed={caseSensitive}
 					onclick={() => (caseSensitive = !caseSensitive)}
-					title="Match case">Aa</button
+					title={t('Match case')}>{t('Aa')}</button
 				>
 				<button
 					type="button"
 					class:active={wholeWord}
 					aria-pressed={wholeWord}
 					onclick={() => (wholeWord = !wholeWord)}
-					title="Match whole word">W</button
+					title={t('Match whole word')}>{t('W')}</button
 				>
 				<button
 					type="button"
 					aria-expanded={replaceOpen}
 					onclick={() => (replaceOpen = !replaceOpen)}
-					aria-label="Toggle replace">⌄</button
+					aria-label={t('Toggle replace')}>⌄</button
 				>
-				<button type="button" onclick={closeFind} aria-label="Close find">×</button>
+				<button type="button" onclick={closeFind} aria-label={t('Close find')}>×</button>
 			</div>
 			{#if replaceOpen}
 				<div class="find-row replace-row">
 					<label>
-						<span class="sr-only">Replace</span>
+						<span class="sr-only">{t('Replace')}</span>
 						<input
 							bind:value={replacement}
 							type="text"
-							placeholder="Replace"
+							placeholder={t('Replace')}
 							autocomplete="off"
 							spellcheck="false"
 							onkeydown={(event) => {
@@ -538,9 +544,11 @@
 						/>
 					</label>
 					<button type="button" onclick={replaceCurrent} disabled={matches.length === 0}
-						>Replace</button
+						>{t('Replace')}</button
 					>
-					<button type="button" onclick={replaceAll} disabled={matches.length === 0}>All</button>
+					<button type="button" onclick={replaceAll} disabled={matches.length === 0}
+						>{t('All')}</button
+					>
 				</div>
 			{/if}
 		</div>
@@ -556,7 +564,7 @@
 					class="gutter-line"
 					class:caret={index === caretLine}
 					class:mapped={index === mappedLine}
-					class:error={index === errorLine}>{index + 1}</span
+					class:error={index === errorLine}>{t(index + 1)}</span
 				>
 			{/each}
 		</div>
@@ -575,7 +583,7 @@
 		<textarea
 			bind:this={textarea}
 			bind:value
-			aria-label={ariaLabel}
+			aria-label={t(ariaLabel)}
 			aria-describedby="editor-instructions"
 			aria-invalid={errorLine !== undefined}
 			aria-errormessage={errorLine !== undefined ? 'compiler-diagnostic' : undefined}
@@ -619,7 +627,7 @@
 			id="editor-completion-list"
 			class="completions"
 			role="listbox"
-			aria-label="Source completions"
+			aria-label={t('Source completions')}
 			style={`--top: ${completionTop}px; --left: ${completionLeft}px`}
 		>
 			{#each completion.items as item, index (item)}
@@ -638,7 +646,7 @@
 						onmousedown={(event) => {
 							event.preventDefault();
 							acceptCompletion(index);
-						}}>{item}</button
+						}}>{t(item)}</button
 					>
 				</li>
 			{/each}
@@ -646,11 +654,15 @@
 	{/if}
 
 	<div class="position" aria-hidden="true">
-		Ln {caretLine + 1}, Col {caretColumn + 1}{highlightingEnabled ? '' : ', plain large-file mode'}
+		{t('Ln')}
+		{t(caretLine + 1)}{t(', Col')}
+		{t(caretColumn + 1)}{highlightingEnabled ? t('') : t(', plain large-file mode')}
 	</div>
 	{#if !highlightingEnabled}
 		<p class="sr-only" role="status">
-			Syntax highlighting paused for this large source. Editing and compilation remain available.
+			{t(
+				'Syntax highlighting paused for this large source. Editing and compilation remain available.'
+			)}
 		</p>
 	{/if}
 </div>

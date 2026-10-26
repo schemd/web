@@ -2,6 +2,7 @@
 	import '#lib/assets/fonts/fonts.css';
 	import '../app.css';
 	import type { LayoutProps } from './$types';
+	import { provideLanguage, unlocalized } from '#lib/i18n/index.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import CommandPalette from '#lib/components/CommandPalette.svelte';
@@ -20,6 +21,11 @@
 	import { playTick } from '#lib/audio.ts';
 
 	let { data, children }: LayoutProps = $props();
+	const { t, href, locale } = provideLanguage(() => data);
+	const pathname = $derived(unlocalized(page.url.pathname));
+	$effect(() => {
+		document.documentElement.lang = locale();
+	});
 	let clientReady = $state(false);
 	onMount(() => {
 		hydrateUiPreferences();
@@ -34,12 +40,13 @@
 	 * to surfaces designed without one. Every document-shaped route gets it.
 	 */
 	const CHROME_FREE = ['/playground', '/simulations', '/inspector', '/embed'];
-	const showFooter = $derived(!CHROME_FREE.some((prefix) => page.url.pathname.startsWith(prefix)));
+	const showFooter = $derived(!CHROME_FREE.some((prefix) => pathname.startsWith(prefix)));
 
 	const nav = $derived([
 		{ href: `/docs/${version}/overview`, label: 'Docs', match: '/docs' },
 		{ href: `/playground/${version}`, label: 'Playground', match: '/playground' },
 		{ href: '/components', label: 'Components', match: '/components' },
+		{ href: '/templates', label: 'Templates', match: '/templates' },
 		{ href: `/simulations/${version}`, label: 'Labs', match: '/simulations' },
 		{ href: `/inspector/${version}`, label: 'Inspector', match: '/inspector' },
 		{ href: '/changelog', label: 'Changelog', match: '/changelog' }
@@ -49,7 +56,7 @@
 	const published = $derived(
 		data.latestPublishedAt === undefined
 			? undefined
-			: new Date(data.latestPublishedAt).toLocaleDateString('en-GB', {
+			: new Date(data.latestPublishedAt).toLocaleDateString(locale() === 'es' ? 'es-ES' : 'en-GB', {
 					day: 'numeric',
 					month: 'long',
 					year: 'numeric',
@@ -64,36 +71,36 @@
 	}
 </script>
 
-<a class="skip-link" href="#main">Skip to content</a>
+<a class="skip-link" href="#main">{t('Skip to content')}</a>
 
 <header class="band">
 	<div class="band-inner">
-		<a class="wordmark" href="/" aria-label="schemd home">schemd</a>
-		<p class="descriptor">Text-to-schematic compiler</p>
+		<a class="wordmark" href={href('/')} aria-label={t('schemd home')}>{t('schemd')}</a>
+		<p class="descriptor">{t('Text-to-schematic compiler')}</p>
 		<dl class="revision">
 			<div>
-				<dt>Revision</dt>
-				<dd class="tabular">{data.latest}</dd>
+				<dt>{t('Revision')}</dt>
+				<dd class="tabular">{t(data.latest)}</dd>
 			</div>
 			{#if published !== undefined}
 				<div>
-					<dt>Published</dt>
-					<dd>{published}</dd>
+					<dt>{t('Published')}</dt>
+					<dd>{t(published)}</dd>
 				</div>
 			{/if}
 		</dl>
 	</div>
 </header>
 
-<nav class="site-nav" aria-label="Primary">
+<nav class="site-nav" aria-label={t('Primary')}>
 	<div class="nav-inner">
 		<div class="nav-links">
 			{#each nav as item (item.href)}
 				<a
-					href={item.href}
-					aria-current={page.url.pathname.startsWith(item.match) ? 'page' : undefined}
+					href={href(item.href)}
+					aria-current={pathname.startsWith(item.match) ? 'page' : undefined}
 				>
-					{item.label}
+					{t(item.label)}
 				</a>
 			{/each}
 		</div>
@@ -107,18 +114,18 @@
 				aria-keyshortcuts="Meta+K Control+K"
 			>
 				<!-- Named by what it shows, so a voice command of "search" finds it. -->
-				<span>Search</span>
-				<kbd>⌘K</kbd>
-				<span class="visually-hidden">, opens the command palette</span>
+				<span>{t('Search')}</span>
+				<kbd>{t('⌘K')}</kbd>
+				<span class="visually-hidden">{t(', opens the command palette')}</span>
 			</button>
 			<button
 				type="button"
 				class="tool"
 				onclick={cycleBlueprint}
-				aria-label={`Print mode: ${BLUEPRINT_LABELS[ui.blueprint]}. Activate to switch.`}
+				aria-label={t('Print mode: {0}. Activate to switch.', [t(BLUEPRINT_LABELS[ui.blueprint])])}
 			>
 				<span class="mode-swatch" data-mode={ui.blueprint} aria-hidden="true"></span>
-				<span class="tool-text">{BLUEPRINT_SHORT[ui.blueprint]}</span>
+				<span class="tool-text">{t(BLUEPRINT_SHORT[ui.blueprint])}</span>
 			</button>
 			<button
 				type="button"
@@ -130,10 +137,24 @@
 					if (!ui.audio) return;
 					playTick(660);
 				}}
-				aria-label="Sound"
+				aria-label={t('Sound')}
 			>
-				<span class="tool-text">{ui.audio ? 'Sound on' : 'Sound off'}</span>
+				<span>{ui.audio ? t('Sound on') : t('Sound off')}</span>
 			</button>
+			<form class="language-switch" method="POST" action="/locale">
+				<input
+					type="hidden"
+					name="return"
+					value={page.url.pathname + page.url.search + page.url.hash}
+				/>
+				<button
+					class="tool"
+					name="language"
+					value={locale() === 'en' ? 'es' : 'en'}
+					aria-label={locale() === 'en' ? 'Español: read in Spanish' : 'English: leer en inglés'}
+					lang={locale() === 'en' ? 'es' : 'en'}>{locale() === 'en' ? 'Español' : 'English'}</button
+				>
+			</form>
 			<VersionSelect
 				versions={data.versions}
 				latest={data.latest}
@@ -145,14 +166,14 @@
 				href="https://github.com/schemd/core"
 				rel="noopener"
 				target="_blank"
-				aria-label="schemd on GitHub (opens in a new tab)">GitHub</a
+				aria-label={t('schemd on GitHub (opens in a new tab)')}>{t('GitHub')}</a
 			>
 			<a
 				class="tool"
 				href="https://www.npmjs.com/package/@schemd/core"
 				rel="noopener"
 				target="_blank"
-				aria-label="@schemd/core on npm (opens in a new tab)">npm</a
+				aria-label={t('@schemd/core on npm (opens in a new tab)')}>{t('npm')}</a
 			>
 		</div>
 	</div>
@@ -175,6 +196,9 @@
 <Telemetry />
 
 <style>
+	.language-switch {
+		display: contents;
+	}
 	.skip-link {
 		position: absolute;
 		inset-block-start: -100%;
@@ -347,22 +371,26 @@
 			display: none;
 		}
 
-		/* On a phone the links and tools share one strip that scrolls sideways,
-		   so no link is ever cut short. */
+		.site-nav {
+			block-size: 88px;
+		}
 		.nav-inner {
+			display: grid;
+			grid-template-rows: 44px 44px;
+			gap: 0;
+		}
+		.nav-links {
+			min-inline-size: 0;
+			overflow-x: auto;
+		}
+		.nav-tools {
+			gap: var(--space-3);
+			margin-inline-start: 0;
 			overflow-x: auto;
 			scrollbar-width: none;
 		}
-
-		.nav-links {
-			flex: none;
-			overflow: visible;
-		}
-
-		.nav-tools {
-			flex: none;
-			gap: var(--space-3);
-			padding-inline-end: var(--space-4);
+		.tool {
+			min-block-size: 40px;
 		}
 
 		.nav-tools .tool-text,

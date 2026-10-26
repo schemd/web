@@ -1,3 +1,4 @@
+import { compactMessages } from './scripts/compact-messages.ts';
 import { defineConfig } from 'vitest/config';
 import adapter from '@sveltejs/adapter-bun';
 import { sveltekit } from '@sveltejs/kit/vite';
@@ -9,8 +10,10 @@ import { katexModernFonts } from './src/lib/server/katex-css.ts';
  */
 export default defineConfig({
 	plugins: [
+		compactMessages(),
 		katexModernFonts(),
 		sveltekit({
+			paths: { origin: process.env.SCHEMD_ORIGIN },
 			adapter: adapter({
 				out: 'build',
 				precompress: true

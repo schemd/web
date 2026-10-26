@@ -84,7 +84,10 @@ export interface ComponentSheet {
 	readonly variants:
 		| {
 				readonly option: string;
-				readonly specimens: readonly (Specimen & { readonly value: string })[];
+				readonly specimens: readonly (Specimen & {
+					readonly value: string;
+					readonly pins: readonly PinRow[];
+				})[];
 		  }
 		| undefined;
 	readonly requiresOneOf: readonly string[];
@@ -194,7 +197,7 @@ function specimen(
 			schema.kind,
 			color,
 			{ ...baseOptions(schema), ...options },
-			{ x: 120, y: 80 }
+			{ x: Math.max(120, Math.ceil(CENTRE.x - minX)), y: Math.max(80, Math.ceil(CENTRE.y - minY)) }
 		)
 	};
 }
@@ -248,8 +251,11 @@ function side(normal: { readonly x: number; readonly y: number }): PinRow['side'
 	return normal.y < 0 ? 'top' : 'bottom';
 }
 
-function pins(schema: SchematicComponentSchema): PinRow[] {
-	const options = baseOptions(schema);
+function pins(
+	schema: SchematicComponentSchema,
+	variant: Readonly<Record<string, string>> = {}
+): PinRow[] {
+	const options = { ...baseOptions(schema), ...variant };
 	const component = parseSchematic(declaration(schema.kind, 'slate', options), fence('pins'))
 		.components[0]!;
 	return describeComponentPorts(schema.kind, options).map((name) => ({
@@ -267,7 +273,7 @@ export function componentSheet(kind: string): ComponentSheet | undefined {
 	const schema = (
 		SCHEMATIC_COMPONENT_SCHEMAS as Readonly<Record<string, SchematicComponentSchema>>
 	)[kind];
-	if (schema === undefined) return undefined;
+	if (!Object.hasOwn(SCHEMATIC_COMPONENT_SCHEMAS, kind) || schema === undefined) return undefined;
 	const variantOption = schema.options.find(
 		(option) => option.type === 'enum' && (option.name === 'type' || option.name === 'style')
 	);
@@ -285,8 +291,10 @@ export function componentSheet(kind: string): ComponentSheet | undefined {
 						option: variantOption.name,
 						specimens: variantOption.values.map((value) => ({
 							value,
+							pins: pins(schema, { [variantOption.name]: value }),
 							...specimen(schema, { [variantOption.name]: value }, `spec-${kind}-${value}`, {
-								scale: 1.2
+								scale: 1.2,
+								pinLabels: true
 							})
 						}))
 					},
@@ -321,6 +329,7 @@ export interface ComponentReferenceEntry {
 	readonly pins: readonly string[];
 	/** A declaration that compiles as written, for the playground to insert. */
 	readonly template: string;
+	readonly inset: { readonly x: number; readonly y: number };
 }
 
 let reference: readonly ComponentReferenceEntry[] | undefined;
@@ -334,7 +343,17 @@ export function componentReference(): readonly ComponentReferenceEntry[] {
 	reference ??= COMPONENT_KINDS.map((kind) => {
 		const schema = SCHEMATIC_COMPONENT_SCHEMAS[kind];
 		const options = baseOptions(schema);
+		const component = parseSchematic(
+			declaration(kind, FAMILY_COLOR[schema.family], options),
+			fence('placement')
+		).components[0]!;
+		const bounds = componentObstacleRectangle(component, 0);
+		const text = componentTextAnchors(component);
 		return {
+			inset: {
+				x: Math.ceil(CENTRE.x - bounds.minX + 24),
+				y: Math.ceil(CENTRE.y - Math.min(bounds.minY, component.y + text.designatorY - 14) + 24)
+			},
 			kind,
 			family: schema.family,
 			options: schema.options.map(optionRow),

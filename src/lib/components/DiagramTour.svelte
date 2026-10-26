@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Walks a diagram net by net, lighting each one as it is described.
 	 *
@@ -121,23 +124,25 @@
 	});
 </script>
 
-<section class="tour" aria-label="Guided tour of this diagram">
+<section class="tour" aria-label={t('Guided tour of this diagram')}>
 	<div class="controls">
 		<button type="button" class="btn primary" onclick={toggle} aria-pressed={playing}>
-			{playing ? 'Pause' : 'Play tour'}
+			{playing ? t('Pause') : t('Play tour')}
 		</button>
-		<button type="button" class="btn" onclick={() => step(-1)} disabled={index < 0}> Back </button>
+		<button type="button" class="btn" onclick={() => step(-1)} disabled={index < 0}>
+			{t('Back')}
+		</button>
 		<button
 			type="button"
 			class="btn"
 			onclick={() => step(1)}
 			disabled={index >= tour.stops.length - 1}
 		>
-			Next
+			{t('Next')}
 		</button>
-		<button type="button" class="btn" onclick={restart} disabled={index < 0}>Restart</button>
+		<button type="button" class="btn" onclick={restart} disabled={index < 0}>{t('Restart')}</button>
 		<label class="rate">
-			Speed
+			{t('Speed')}
 			<select bind:value={rate}>
 				<option value={0.75}>0.75×</option>
 				<option value={1}>1×</option>
@@ -146,14 +151,15 @@
 			</select>
 		</label>
 		<span class="progress" aria-hidden="true">
-			{index < 0 ? 'Summary' : `Net ${index + 1} / ${tour.stops.length}`}
+			{index < 0 ? t('Summary') : t('Net {0} / {1}', [index + 1, tour.stops.length])}
 		</span>
 	</div>
 
 	{#if !canSpeak}
 		<p class="note">
-			This browser offers no speech synthesis, so the tour reads silently — every control still
-			works and each step holds long enough to read.
+			{t(
+				'This browser offers no speech synthesis, so the tour reads silently — every control still works and each step holds long enough to read.'
+			)}
 		</p>
 	{/if}
 
@@ -161,14 +167,14 @@
 	     each step to a screen reader that is not using the browser's own voice. -->
 	<ol class="transcript" aria-live="polite">
 		<li class:is-current={index < 0}>
-			<span class="marker">Summary</span>
-			<span class="text">{tour.headline} {tour.inventory}</span>
+			<span class="marker">{t('Summary')}</span>
+			<span class="text">{t(tour.headline)} {t(tour.inventory)}</span>
 		</li>
 		{#each tour.stops as stop, stopIndex (stop.netId)}
 			<li class:is-current={index === stopIndex}>
 				<button type="button" class="jump" onclick={() => step(stopIndex - index)}>
-					<span class="marker">{stop.name ?? stop.netId}</span>
-					<span class="text">{stop.text}</span>
+					<span class="marker">{t(stop.name ?? stop.netId)}</span>
+					<span class="text">{t(stop.text)}</span>
 				</button>
 			</li>
 		{/each}

@@ -1,0 +1,3554 @@
+{
+	"": ["components", "diff", "global", "inspector", "playground", "simulations"],
+	"-15% 0px -70% 0px": ["docs"],
+	"-unit routing cell, read out of the hash the router already filled. Darker is tighter.": [
+		"inspector"
+	],
+	"—": ["global"],
+	"— and it will show its work here.": ["inspector"],
+	",": ["components", "global", "playground"],
+	", active": ["simulations"],
+	", as release": ["components"],
+	", Col": ["global"],
+	", commit": ["changelog"],
+	", documentation line": ["global"],
+	", opens the command palette": ["global"],
+	", opens the playground command palette": ["playground"],
+	", plain large-file mode": ["global"],
+	", so the placement pass had nothing to lower. Write a relation —": ["inspector"],
+	", which is not registered. A manifest can only select a model the application already ships.": [
+		"simulations"
+	],
+	"; activate to measure": ["simulations"],
+	"; hidden-fault evidence": ["global"],
+	"; syndrome": ["simulations"],
+	". Any option not listed here is an error.": ["components"],
+	". Let the guarded timers run, or fire the next event by hand — the diagram": ["simulations"],
+	". Rotating the part moves the pins with it; their names stay the same.": ["components"],
+	". Then correct and read the fidelity.": ["simulations"],
+	". You may continue; this is guidance, not a lock.": ["global"],
+	"·": ["simulations"],
+	"· schemd": ["global"],
+	"'use strict'; const { parentPort, workerData } = require('node:worker_threads'); let api; (async () => { try { api = await import(workerData.coreModuleUrl); parentPort.postMessage({ kind: 'ready' }); } catch { parentPort.postMessage({ kind: 'bootstrap-failed' }); } })(); parentPort.on('message', ({ operation, request, limits }) => { try { const startedAt = performance.now(); const options = { bounds: { width: request.width, height: request.height }, title: request.title, limits }; if (operation === 'inspect') { const document = api.parseSchematic(request.source, options); const { netlist, diagnostics } = api.inspectSchematic(document); const errors = diagnostics.filter((entry) => entry.severity === 'error').length; const warnings = diagnostics.filter((entry) => entry.severity === 'warning').length; parentPort.postMessage({ kind: 'complete', outcome: { ok: true, diagnostics: diagnostics.slice(0, {0}), truncated: diagnostics.length > {1}, counts: { errors, warnings, notes: diagnostics.length - errors - warnings }, netlist: { components: netlist.nodes.length, nets: netlist.nets.length, connections: netlist.edges.length } } }); return; } const compiled = api.compileSchematic(request.source, { ...options, limits, mode: request.mode, idPrefix: 'play' }); parentPort.postMessage({ kind: 'complete', outcome: { ok: true, svg: compiled.svg, metrics: { ...compiled.metrics }, sourceMap: compiled.sourceMap, placements: compiled.placements, ports: Object.fromEntries(api.buildNetlist(compiled.document).nodes.map((node) => [node.id, node.ports])), ms: Math.round((performance.now() - startedAt) * 100) / 100 } }); } catch (failure) { if (failure instanceof api.SchematicSyntaxError) { parentPort.postMessage({ kind: 'complete', outcome: { ok: false, message: failure.message, line: failure.line } }); } else { parentPort.postMessage({ kind: 'failed' }); } } });": [
+		"global"
+	],
+	"\" title=\"": ["playground"],
+	"\"after\" revision": ["diff"],
+	"\"before\" revision": ["diff"],
+	"({0}/{1} matching interactions)": ["global"],
+	"(latest)": ["global"],
+	"(max-width: 860px)": ["playground"],
+	"(prefers-color-scheme: dark)": ["global"],
+	"(prefers-reduced-motion: reduce)": ["simulations"],
+	"[data-port-id], [data-wire-source], [data-node-id]": ["simulations"],
+	"[data-timeline-input], .sim-stage [data-node-id] [role=\"button\"]": ["simulations"],
+	"[left=\"a,b\" right=\"y\"]": ["global"],
+	"[left=\"a\" right=\"y\"]": ["global"],
+	"[left=\"rx\" right=\"tx\"]": ["global"],
+	"[left=\"trig\" right=\"q\"]": ["global"],
+	"[role=\"switch\"], input[type=\"checkbox\"]": ["global"],
+	"{0} -> N2_{1}.in2 #slate [ortho]": ["simulations"],
+	"{0} -> X2_{1}.in2 #slate [ortho]": ["simulations"],
+	"{0} — schemd v{1}": ["docs"],
+	"{0} —[{1}]→ blocked": ["simulations"],
+	"{0} :is({1}) .schematic-trace{stroke-width:2.6}": ["home"],
+	"{0} · schemd simulation lab": ["simulations"],
+	"{0} · schemd v{1} docs": ["docs"],
+	"{0} ({1}) added": ["global"],
+	"{0} ({1}) removed": ["global"],
+	"{0} {1} by {2}": ["global"],
+	"{0} {1} port. Focus or hover for transformation details{2}.": ["simulations"],
+	"{0} % ones": ["simulations"],
+	"{0} + {1}{2} = {3}{4}": ["simulations"],
+	"{0} A avg, {1} A p-p": ["simulations"],
+	"{0} animation: {1}": ["simulations"],
+	"{0} B": ["changelog"],
+	"{0} changed from {1} to {2}": ["global"],
+	"{0} components and {1} connections.": ["templates"],
+	"{0} controls": ["simulations"],
+	"{0} drawing": ["simulations"],
+	"{0} effective bits": ["simulations"],
+	"{0} ends at {1} {2}": ["simulations"],
+	"{0} equals {1}": ["simulations"],
+	"{0} error{1}, {2} warning{3}": ["badge"],
+	"{0} H {1}": ["simulations"],
+	"{0} input node, current value {1}. Activate either port to toggle.": ["simulations"],
+	"{0} instruments": ["simulations"],
+	"{0} interactive circuit laboratories spanning digital logic, analog filters, quantum protocols, power electronics, error correction, and power electronics — each compiled from schemd source and instrumented with fault injection.": [
+		"simulations"
+	],
+	"{0} k{1}": ["simulations"],
+	"{0} KB": ["playground"],
+	"{0} kHz": ["simulations"],
+	"{0} KiB": ["changelog"],
+	"{0} L {1} {2} L {3} {4} Z": ["changelog"],
+	"{0} L{1} {2} L{3} {4} Z": ["global"],
+	"{0} m{1}": ["simulations"],
+	"{0} M{1}": ["simulations"],
+	"{0} MiB": ["changelog"],
+	"{0} minmax(0, 1fr) {1}": ["global"],
+	"{0} moved": ["global"],
+	"{0} ms": ["changelog", "playground"],
+	"{0} N·m": ["simulations"],
+	"{0} n{1}": ["simulations"],
+	"{0} of {1}": ["global"],
+	"{0} ones in {1} shots": ["simulations"],
+	"{0} p-p": ["simulations"],
+	"{0} paused to respect the reduced-motion preference.": ["simulations"],
+	"{0} paused.": ["simulations"],
+	"{0} peak": ["simulations"],
+	"{0} percent ones": ["simulations"],
+	"{0} pk": ["simulations"],
+	"{0} pk (normalized)": ["simulations"],
+	"{0} pk, ⅓ of v_o at {1}": ["simulations"],
+	"{0} preview": ["playground"],
+	"{0} primitives": ["coverage"],
+	"{0} pulse": ["simulations"],
+	"{0} rad/s": ["simulations"],
+	"{0} reference": ["playground"],
+	"{0} relabelled": ["global"],
+	"{0} responded {1}": ["global"],
+	"{0} running.": ["simulations"],
+	"{0} s": ["simulations"],
+	"{0} specimen": ["components", "playground"],
+	"{0} to {1} when {2}": ["simulations"],
+	"{0} trace": ["inspector"],
+	"{0} V": ["simulations"],
+	"{0} V DC": ["simulations"],
+	"{0} V p-p, {1}°": ["simulations"],
+	"{0} V, {1}": ["simulations"],
+	"{0} V, {1} mV ripple": ["simulations"],
+	"{0} when type={1}": ["components", "playground"],
+	"{0} µF": ["simulations"],
+	"{0} µH": ["simulations"],
+	"{0}-order, OSR {1}, {2} effective bits": ["simulations"],
+	"{0}, {1}": ["simulations"],
+	"{0}, {1} % high": ["simulations"],
+	"{0}, {1} peak": ["simulations"],
+	"{0}, {1} pk": ["simulations"],
+	"{0}, {1} V out": ["simulations"],
+	"{0}, live circuit": ["simulations"],
+	"{0}, P(target) = {1} %": ["simulations"],
+	"{0},mathrm Vlongrightarrow{1},mathrm V": ["simulations"],
+	"{0}; live values {1}": ["simulations"],
+	"{0}: \"{1}\" is both an input and a fault.": ["simulations"],
+	"{0}: {1} against {2}": ["simulations"],
+	"{0}: {1} volts at {2} delays": ["simulations"],
+	"{0}: binding on \"{1}\" names neither a node nor a wire.": ["simulations"],
+	"{0}: by {1}": ["playground"],
+	"{0}: duplicate fault key \"{1}\".": ["simulations"],
+	"{0}: duplicate input key \"{1}\".": ["simulations"],
+	"{0}: model \"{1}\" is not registered. Add it to lab-models.ts; a manifest cannot name arbitrary code.": [
+		"simulations"
+	],
+	"{0}: schemd component datasheet": ["components"],
+	"{0}: source is empty.": ["simulations"],
+	"{0}:{1} \"{2} {3}\" at ({4}, {5}) #{6}{7}": ["global"],
+	"{0}:{1} at ({2}, {3}) #{4}{5}": ["components", "playground"],
+	"{0}:N1 \"{1}\" at (190, 120) #{2}{3}": ["global"],
+	"{0}. Focus or hover a port for transformation details.": ["simulations"],
+	"{0}.{1} -> L{2}.{3} #{4} [ortho{5}]": ["global"],
+	"{0}/{1} clean": ["badge"],
+	"{0}/div": ["simulations"],
+	"{0}/div, time-scaled": ["simulations"],
+	"{0}\\xrightarrow{;{1};} {2}": ["simulations"],
+	"{0}% of primitives covered": ["coverage"],
+	"{0}% of the week": ["downloads"],
+	"{0}^{m_{{1}}}quad {2}": ["simulations"],
+	"{0}=operatorname{logic}!left({1} ight);left({2},mathrm{V} ight)": ["simulations"],
+	"{0}at ({1}, {2}) {3}": ["global"],
+	"{0}px 1px": ["global"],
+	"{0}quad f_c={1}": ["simulations"],
+	"{0}quad X_{q_{{1}}}": ["simulations"],
+	"⟨q₀ ⊕ q₁⟩ = 0": ["simulations"],
+	"@schemd/core on npm (opens in a new tab)": ["global"],
+	"/ day": ["downloads"],
+	"/skɛmd/": ["global"],
+	"\\delta : S \\times \\Sigma \\rightarrow S \\;\\cdot\\; (s, e) \\mapsto s_{\\text{next}} \\text{ if guard}(e)": [
+		"simulations"
+	],
+	"\\Delta f": ["simulations"],
+	"\\dot i_L = \\dfrac{D V_{in}-v_o}{L},\\quad \\dot v_o = \\dfrac{i_L-v_o/R}{C}": ["simulations"],
+	"\\dot\\theta_e = \\omega_{ref} - (\\omega_0 + K_v v_c) \\;\\cdot\\; \\tau\\,\\dot v_c = K_d \\sin\\theta_e - v_c": [
+		"simulations"
+	],
+	"\\Gamma = \\dfrac{Z - Z_0}{Z + Z_0} \\;\\cdot\\; V_1 = V_s\\,\\dfrac{Z_0}{R_s + Z_0}": [
+		"simulations"
+	],
+	"\\langle {0}\\rangle": ["simulations"],
+	"\\lvert {0}\\rangle": ["simulations"],
+	"\\tfrac{1}{\\sqrt2}(|0\\rangle + |1\\rangle)|1\\rangle \\xrightarrow{CP(\\varphi)} \\tfrac{1}{\\sqrt2}(|0\\rangle + e^{i\\varphi}|1\\rangle)|1\\rangle \\;\\cdot\\; P(1) = \\sin^2\\tfrac{\\varphi}{2}": [
+		"simulations"
+	],
+	"```schemd bounds=\"": ["playground"],
+	"`verifyNetlist` runs over every `schemd` fence in the documentation. The rules are the compiler's own, so what passes here is what passes in your build.": [
+		"conformance"
+	],
+	"→ {0} V": ["simulations"],
+	"+": ["docs"],
+	"+30.00 rad/s": ["simulations"],
+	"±1 two-level": ["simulations"],
+	"±1, duty follows the audio": ["simulations"],
+	"<?xml version=\"1.0\" encoding=\"UTF-8\"?>": ["sitemap.xml"],
+	"<?xml-stylesheet type=\"text/xsl\" href=\"/sitemap.xsl\"?>": ["sitemap.xml"],
+	"<figcaption class=\"microlabel\">compiled by @schemd/core → shown in the rail</figcaption>": [
+		"global"
+	],
+	"<figure class=\"doc-example\" data-example=\"{0}\">": ["global"],
+	"<figure class=\"schematic-frame\" role=\"group\" aria-label=\"{0}\"": ["global"],
+	"<figure class=\"schematic-frame\">": ["global"],
+	"<h2 id=\"{0}\"><span class=\"doc-num\">{1}</span>{2}</h2>": ["global"],
+	"<iframe src=\"{0}\" title=\"{1}\" width=\"{2}\" height=\"{3}\" loading=\"lazy\" style=\"border:0;max-inline-size:100%\"></iframe>": [
+		"playground"
+	],
+	"<pre class=\"codeblock\" tabindex=\"0\" role=\"region\" aria-label=\"{0}\"{1}><code>{2}</code></pre>": [
+		"global"
+	],
+	"<pre class=\"codeblock\" tabindex=\"0\" role=\"region\" aria-label=\"Scrollable schemd source\" data-lang=\"schemd\"><code>{0}</code></pre>": [
+		"global"
+	],
+	"<script type=\"application/ld+json\">{0}</{1}>": ["global"],
+	"<span class=\"schematic-summary\">{0}</span>": ["global"],
+	"<span class=\"tok-{0}\">{1}</span>": ["global"],
+	"<style>{0} [data-source-line]{1}{opacity:.14}{2}</style>": ["home"],
+	"<svg xmlns=\"http://www.w3.org/2000/svg\"": ["playground"],
+	"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {0} {1}\" width=\"{2}\" height=\"{3}\"><rect width=\"100%\" height=\"100%\" fill=\"#12171d\" /><text x=\"50%\" y=\"50%\" fill=\"#f0716f\" font-family=\"monospace\" font-size=\"14\" text-anchor=\"middle\">{4}</text></svg>": [
+		"embed"
+	],
+	"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{0}\" height=\"{1}\" role=\"img\" aria-label=\"{2}\"> <title>{3}</title> <rect width=\"{4}\" height=\"{5}\" fill=\"#444\" rx=\"3\" /> <rect x=\"{6}\" width=\"{7}\" height=\"{8}\" fill=\"{9}\" rx=\"3\" /> <rect x=\"{10}\" width=\"6\" height=\"{11}\" fill=\"{12}\" /> {13} {14} </svg>": [
+		"badge"
+	],
+	"<text class=\"pin-label\" x=\"{0}\" y=\"{1}\" text-anchor=\"{2}\" font-size=\"9\" stroke=\"none\">{3}</text>": [
+		"components",
+		"playground"
+	],
+	"<text x=\"{0}\" y=\"14\" fill=\"#fff\" font-family=\"Verdana,DejaVu Sans,sans-serif\" font-size=\"11\" textLength=\"{1}\" lengthAdjust=\"spacingAndGlyphs\">{2}</text>": [
+		"badge"
+	],
+	"<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\">": [
+		"sitemap.xml"
+	],
+	"<xhtml:link rel=\"alternate\" hreflang=\"{0}\" href=\"{1}\"/>": ["sitemap.xml"],
+	"|\\Phi^+\\rangle = \\dfrac{|00\\rangle + |11\\rangle}{\\sqrt{2}}": ["simulations"],
+	"|\\Phi^+\\rangle = \\dfrac{|00\\rangle + |11\\rangle}{\\sqrt{2}} \\;\\cdot\\; \\langle Z \\otimes Z \\rangle \\in [-1, +1]": [
+		"simulations"
+	],
+	"|\\psi\\rangle = \\alpha|0\\rangle + \\beta|1\\rangle \\;\\cdot\\; \\alpha = \\cos\\tfrac{\\theta}{2},\\ \\beta = e^{i\\phi}\\sin\\tfrac{\\theta}{2}": [
+		"simulations"
+	],
+	"|+0⟩": ["simulations"],
+	"|0\\rangle_L = |000\\rangle,\\ |1\\rangle_L = |111\\rangle \\;\\cdot\\; s = (q_0{\\oplus}q_1,\\ q_1{\\oplus}q_2)": [
+		"simulations"
+	],
+	"|00⟩": ["simulations"],
+	"|H(f)| = \\dfrac{1}{\\sqrt{(1 - r^2)^2 + 2r^2}},\\; r = \\dfrac{f}{f_c} \\;\\cdot\\; f_c = \\dfrac{1}{2\\pi\\sqrt{LC}}": [
+		"simulations"
+	],
+	"|H(f)| in dB, 40 dB per decade above the cutoff": ["simulations"],
+	"|H(jω)|, dashed line at the −3 dB cutoff": ["simulations"],
+	"|s\\rangle \\to (D\\,U_f)^k|s\\rangle,\\quad k \\approx \\dfrac{\\pi}{4}\\sqrt{N} \\;\\cdot\\; N = 8": [
+		"simulations"
+	],
+	"|Φ⁺⟩": ["simulations"],
+	"~": ["simulations"],
+	"−": ["docs"],
+	"⌘K": ["global"],
+	"⏸": ["simulations"],
+	"▶": ["simulations"],
+	"▸ start → RED": ["simulations"],
+	"⛔ deadlocked in YELLOW — no guard enabled": ["simulations"],
+	"✓": ["global"],
+	"$\\mathrm{OSR}: 8$–$128$": ["simulations"],
+	"$\\tau=RC: 0.05$–$2\\ \\mathrm{ms}$": ["simulations"],
+	"$1 xmlns=\"http://www.w3.org/2000/svg\"": ["embed"],
+	"$1<style> .template-link { display: block; padding: var(--space-3); border-block-end: 1px solid var(--line); }{0}{1}</style>": [
+		"playground"
+	],
+	"$1$-bit quantizer, clocked at $f_s$": ["simulations"],
+	"$16\\times$ XOR + $16\\times$ AND": ["simulations"],
+	"$2\\times$ Hadamard on the control": ["simulations"],
+	"$2\\times$ qubit register line": ["simulations"],
+	"$2^n-1$ is an upper bound reached only by a primitive feedback polynomial. Other taps partition the states into shorter loops.": [
+		"simulations"
+	],
+	"$2$ ancilla syndrome bits": ["simulations"],
+	"$3\\times$ qubit trace $(\\psi,A,B)$": ["simulations"],
+	"$3$-qubit uniform superposition": ["simulations"],
+	"$3$-section $L$–$C$ ladder $(Z_0,\\ t_d)$": ["simulations"],
+	"$4\\times$ D flip-flop chain": ["simulations"],
+	"$4$ Bell states": ["simulations"],
+	"$6$-step protocol": ["simulations"],
+	"$8\\times$ full-adder cell": ["simulations"],
+	"$8\\times$ OR carry merge": ["simulations"],
+	"$8$ data bits, LSB first": ["simulations"],
+	"$8$-bit operands · $0$–$255$": ["simulations"],
+	"$8$-state amplitude readout": ["simulations"],
+	"$A/B/C_{in}$ + Sum ports": ["simulations"],
+	"$C: 1\\ \\mathrm{nF}$–$10\\ \\mathrm{\\mu F}$": ["simulations"],
+	"$f_{ref},\\ f_0: 8$–$12\\ \\mathrm{kHz}$": ["simulations"],
+	"$f_{sw}: 20$–$500\\ \\mathrm{kHz}$": ["simulations"],
+	"$f_0$ from $RC$": ["simulations"],
+	"$f_c: 0.5$–$50\\ \\mathrm{kHz}$": ["simulations"],
+	"$f_c$ falls, so attenuation begins at a lower frequency.": ["simulations"],
+	"$f_c$ rises, so more high-frequency signal passes.": ["simulations"],
+	"$H$ + CNOT preparation": ["simulations"],
+	"$H$ on $q_0$ followed by $\\operatorname{CNOT}(q_0\\to q_1)$. Toggling the initialization ports selects which Bell pair is prepared; amplitudes and the correlation index are derived, and a measure button accumulates real Born-rule shots.": [
+		"simulations"
+	],
+	"$H$ puts the control in $|+\\rangle$, $CP(\\varphi)$ acts on the target, and a second $H$ reads the control. For an eigenstate target the eigenphase moves onto the control and $P(1)=\\sin^2(\\varphi/2)$; any other target entangles with the control and shortens its Bloch vector. Exact $4$-amplitude linear algebra drives the Bloch view and the histogram.": [
+		"simulations"
+	],
+	"$K_d: 0$–$0.5$": ["simulations"],
+	"$K_i: 0$–$20$": ["simulations"],
+	"$K_p: 0$–$10$": ["simulations"],
+	"$L$–$C$ output network": ["simulations"],
+	"$LC$ filter + speaker": ["simulations"],
+	"$N=8$ search space": ["simulations"],
+	"$R_A + R_B$ timing pair": ["simulations"],
+	"$R_f/R_g$ gain setting": ["simulations"],
+	"$R: 100\\ \\Omega$–$1\\ \\mathrm{M\\Omega}$": ["simulations"],
+	"$RC$ loop filter": ["simulations"],
+	"$t: 0$–$10\\,t_d$": ["simulations"],
+	"$V_{cc}=5\\ \\mathrm V$": ["simulations"],
+	"$V_{in}: 5$–$36\\ \\mathrm V$": ["simulations"],
+	"$X/Z$ correction gates": ["simulations"],
+	"$Z_0: 25$–$150\\ \\Omega$": ["simulations"],
+	"$Z_L: 5\\ \\Omega$–$5\\ \\mathrm{k\\Omega}$": ["simulations"],
+	"0.00 s": ["simulations"],
+	"0.000 + 0.000i": ["simulations"],
+	"0px 1px": ["global"],
+	"0x{0} {1}": ["simulations"],
+	"1-bit quantizer, clocked": ["simulations"],
+	"1.00 kHz": ["simulations"],
+	"1.00 ms": ["simulations"],
+	"1.000 V p-p": ["simulations"],
+	"1.000 V step": ["simulations"],
+	"1.20 kHz": ["simulations"],
+	"1.59 kHz": ["simulations"],
+	"1/{0} of v_o": ["simulations"],
+	"10 Hz": ["simulations"],
+	"10.00 kHz": ["simulations"],
+	"10.00 kΩ": ["simulations"],
+	"10.00 nF": ["simulations"],
+	"100 kHz": ["simulations"],
+	"100.00 nF": ["simulations"],
+	"12 volts to 5 volts": ["simulations"],
+	"16× XOR + 16× AND": ["simulations"],
+	"1px {0}px": ["global"],
+	"1px 0px": ["global"],
+	"1st/2nd-order ΔΣ modulator + FFT": ["simulations"],
+	"2 ancilla syndrome bits": ["simulations"],
+	"2× Hadamard on the control": ["simulations"],
+	"2× qubit register line": ["simulations"],
+	"24 volts to 12 volts": ["simulations"],
+	"3-qubit uniform superposition": ["simulations"],
+	"3-section L–C ladder (Z₀, t_d)": ["simulations"],
+	"3.39 kHz": ["simulations"],
+	"3× qubit trace (ψ, A, B)": ["simulations"],
+	"4 Bell states": ["simulations"],
+	"4 guarded transitions": ["simulations"],
+	"4-Bit Fibonacci LFSR": ["simulations"],
+	"4× D flip-flop chain": ["simulations"],
+	"400.00 Hz": ["simulations"],
+	"5 volts to 1.2 volts": ["simulations"],
+	"50 % ones": ["simulations"],
+	"555 Astable Multivibrator": ["simulations"],
+	"555 timer": ["simulations"],
+	"555 timer animation": ["simulations"],
+	"555 timer model. Drag the value tags on R A, R B and the timing capacitor; click a wire to clip a probe on.": [
+		"simulations"
+	],
+	"555 timer state and waveform animation": ["simulations"],
+	"6-step protocol": ["simulations"],
+	"8 data bits, LSB first": ["simulations"],
+	"8-Bit Digital Adder": ["simulations"],
+	"8-bit operands · 0–255": ["simulations"],
+	"8-pin 555 IC block": ["simulations"],
+	"8-state amplitude readout": ["simulations"],
+	"8× full-adder cell": ["simulations"],
+	"8× OR carry merge": ["simulations"],
+	"A": ["simulations"],
+	"A $50\\ \\Omega$ line ends in an open circuit. When the step first reaches the far end, what does the far-end voltage do?": [
+		"simulations"
+	],
+	"A 4-bit Fibonacci linear-feedback shift register with taps at stages 3 and 4 — the primitive polynomial $x^4+x^3+1$. Each clock edge shifts the register and feeds back the XOR of the tapped bits. The result cycles through all 15 non-zero states before repeating: a deterministic sequence wearing the disguise of randomness.": [
+		"simulations"
+	],
+	"A 4-bit Fibonacci linear-feedback shift register with taps at stages 3 and 4 — the primitive polynomial x⁴ + x³ + 1. Each clock edge shifts the register and feeds back the XOR of the tapped bits. The result cycles through all 15 non-zero states before repeating: a deterministic sequence wearing the disguise of randomness.": [
+		"simulations"
+	],
+	"A capacitor and resistor form a high-pass signal path.": ["templates"],
+	"A capacitor is a bucket. Slow signals fill it; fast ones wiggle away before it can respond.": [
+		"simulations"
+	],
+	"A carry is not reaching the next cell; the low bits are still right.": ["simulations"],
+	"A clock is just a capacitor climbing between two lines, forever losing its patience at the top and giving up at the bottom.": [
+		"simulations"
+	],
+	"A comparator turns the audio and a triangle carrier into a two-level PWM wave, a half-bridge switches it at full power, and a Butterworth LC filter recovers the audio. The filter’s gain at the audio and carrier frequencies is computed live, and the Listen button plays the actual signal so the carrier whine is audible when the filter fails to remove it.": [
+		"simulations"
+	],
+	"A comparator turns the audio and a triangle carrier into a two-level PWM wave, a half-bridge switches it, and a Butterworth $LC$ filter with $f_c=1/(2\\pi\\sqrt{LC})$ recovers the audio. The filter gain at the audio and carrier frequencies is computed live, and Listen plays the actual signal, so the carrier whine is audible when the filter fails to remove it.": [
+		"simulations"
+	],
+	"A constant, non-zero offset that supplies the control voltage.": ["simulations"],
+	"A controlled gate is symmetric about which qubit “owns” the phase: if the target is an eigenstate, the phase lands on the control instead.": [
+		"simulations"
+	],
+	"A controlled-phase gate multiplies only $|11\\rangle$ by $e^{i\\varphi}$. Put the control in $|+\\rangle$ and the target in $|1\\rangle$, an **eigenstate** of the phase gate, and the state factorises: $\\tfrac{1}{\\sqrt2}(|0\\rangle + e^{i\\varphi}|1\\rangle)\\otimes|1\\rangle$. The target is untouched, and the phase has been **kicked back** onto the control’s relative phase, where the final Hadamard turns it into a measurable probability $P(1) = \\sin^2\\frac{\\varphi}{2}$. This is the engine of phase estimation and of Grover’s oracle. If the target is not an eigenstate, the two qubits entangle instead: the control’s Bloch vector shrinks toward the centre and the clean interference fringe washes out.": [
+		"simulations"
+	],
+	"A finite-state machine is a transition function $\\delta : S \\times \\Sigma \\rightarrow S$: given the current state $s$ and an event $e$, it names exactly one next state — but only if the transition’s **guard** is satisfied. That is the whole of it. A traffic light is $S = \\{\\text{Red}, \\text{Green}, \\text{Yellow}\\}$ and the events are timer expiries. What schemd lets you see, that a textbook cannot, is that the *drawing* and the *behaviour* are the same object: the token sitting on Red is the machine’s state, and firing $t > T_{red}$ literally advances $\\delta$ along the arrow you drew. Composability, unreachable states, and deadlocks stop being abstractions — they are places the token can or cannot go.": [
+		"simulations"
+	],
+	"A first-order shunt-capacitor filter. The cutoff and the |H(jω)| magnitude are derived live; the output wire fades its opacity and stretches its dash pattern to visualise physical damping, and both channels drive the oscilloscope.": [
+		"simulations"
+	],
+	"A first-order shunt-capacitor filter. The cutoff and the $|H(j\\omega)|$ magnitude are derived live; the output wire fades its opacity and stretches its dash pattern to visualise physical damping, and both channels drive the oscilloscope.": [
+		"simulations"
+	],
+	"A handful of flip-flops and a single XOR generate a stream that passes for random — yet is perfectly deterministic and repeats after exactly $2^n - 1$ steps.": [
+		"simulations"
+	],
+	"A higher OSR narrows the shaded signal band into the quiet region of the shaped noise. Watch the gain per doubling: about $9\\,\\mathrm{dB}$ for $L=1$ and $15\\,\\mathrm{dB}$ for $L=2$.": [
+		"simulations"
+	],
+	"A laboratory is a compiled diagram, a model, and a set of bindings from the model's signals onto the drawing's nodes and wires. Everything below is data — the": [
+		"simulations"
+	],
+	"A larger shunt capacitor has lower impedance at the carrier frequency, so it shunts more of the carrier to ground, not less.": [
+		"simulations"
+	],
+	"A linear amplifier wastes power by holding its transistors half-on. A class-D stage never does: the comparator outputs $+1$ while the audio exceeds a triangle carrier and $-1$ otherwise, so the **duty cycle** follows the audio. The switched wave carries the audio at low frequency plus the carrier and its harmonics high above it. A second-order $LC$ low-pass with $f_c = \\frac{1}{2\\pi\\sqrt{LC}}$ passes the first and attenuates the second by about $40\\,\\mathrm{dB}$ per decade. Put $f_c$ well above the audio and well below the carrier and the speaker hears music; let the carrier through and it hears a whine. Real amplifiers switch at hundreds of kilohertz; this one is slowed into earshot so you can hear exactly what the filter removes.": [
+		"simulations"
+	],
+	"A low stop bit is a framing error; a parity bit that disagrees with the count of ones is a parity error.": [
+		"simulations"
+	],
+	"A new mean is computed from the already-skewed amplitude distribution.": ["simulations"],
+	"A non-inverting op-amp wrapped in a Wien $RC$ network. When the loop gain crosses unity at exactly one frequency, thermal noise is amplified into a clean sinusoid; a nonlinear gain limiter parks the amplitude on a stable limit cycle. The phase portrait shows the oscillation being born — a Hopf bifurcation you can trigger with a knob.": [
+		"simulations"
+	],
+	"A non-inverting op-amp wrapped in a Wien RC network. When the loop gain crosses unity at exactly one frequency, thermal noise is amplified into a clean sinusoid; a nonlinear gain limiter parks the amplitude on a stable limit cycle. The phase portrait shows the oscillation being born — a Hopf bifurcation you can trigger with a knob.": [
+		"simulations"
+	],
+	"A one-bit converter is terribly wrong at every instant — but it is wrong in a way that averages out, and the error is pushed to frequencies you are about to throw away.": [
+		"simulations"
+	],
+	"A one-bit modulator’s quantization error is as large as the signal. Where does a sigma-delta loop put most of that error?": [
+		"simulations"
+	],
+	"A one-bit quantizer can only say $+1$ or $-1$, an error as large as the signal. The loop fixes it in time rather than in amplitude: the integrator accumulates the difference between the input and every bit already sent, and the next bit is chosen to pay that debt back. Over many samples the **density of ones** tracks the input. In frequency terms the error is multiplied by $(1 - z^{-1})^L$, which is near zero at low frequency and large near $f_s/2$: **noise shaping**. Oversample by $\\mathrm{OSR}$, filter away everything above the signal band, and each doubling of OSR buys about $3(2L+1)\\,\\mathrm{dB}$; a second integrator ($L = 2$) makes that slope much steeper.": [
+		"simulations"
+	],
+	"A pass raised before it could emit. This is on us, not on you — the request was well-formed but the server tripped.": [
+		"global"
+	],
+	"A pedagogy action sequence cannot be empty.": ["simulations"],
+	"A possible bit flip changes one physical rail without revealing ψ.": ["simulations"],
+	"A quantum circuit with control, phase and readout.": ["templates"],
+	"A real charge/discharge loop clocking an output LED.": ["simulations"],
+	"A register": ["simulations"],
+	"A reset requires an explicit transition or reset event. No enabled edge means the active-state token stays where it is.": [
+		"simulations"
+	],
+	"A resistor divider would burn the excess voltage as heat. A buck converter refuses to waste it: the switch turns the input fully on and fully off at high frequency, and the $L$–$C$ pair acts as a flywheel that averages the chopping. Sit in continuous conduction and the average obeys the beautifully simple $v_o = D\\,V_{in}$ — the output is just the input scaled by the fraction of time the switch is closed. The governing pair $\\dot i_L = \\frac{DV_{in}-v_o}{L},\\ \\dot v_o = \\frac{i_L - v_o/R}{C}$ shows the inductor current and output voltage chasing each other toward that average, with efficiency the divider could never touch.": [
+		"simulations"
+	],
+	"A schematic trace ending at an open, unconnected terminal": ["global"],
+	"a shorter arrow means the control is entangled with the target": ["simulations"],
+	"A sine passes through one or two integrators, a one-bit quantizer, and a one-bit DAC in feedback. A $4096$-sample FFT of the bitstream shows the quantization noise shaped by $(1-z^{-1})^L$ out of the signal band, and the in-band SNR and ENOB follow the order $L$ and oversampling ratio.": [
+		"simulations"
+	],
+	"A sine passes through one or two integrators, a one-bit quantizer, and a one-bit DAC in feedback. A 4096-sample FFT of the bitstream shows the quantization noise shaped up and out of the signal band, and the in-band SNR and effective number of bits follow the order and oversampling ratio.": [
+		"simulations"
+	],
+	"A sinusoidal phase detector compares the reference with the VCO, a first-order $RC$ loop filter smooths the error into $v_c$, and the VCO retunes to $\\omega_0+K_vv_c$. The state $(\\theta_e, v_c)$ is integrated live, so acquisition, lock, and cycle slipping all appear on the scope and in the phase portrait.": [
+		"simulations"
+	],
+	"A sinusoidal phase detector compares the reference with the VCO, a first-order RC loop filter smooths the error into a control voltage, and the VCO retunes. The phase error and control voltage are integrated live, so acquisition, lock, and cycle slipping all appear on the scope and in the phase portrait.": [
+		"simulations"
+	],
+	"A speed loop around a DC motor with inertia $J$, friction $b$, and a driver that saturates at $\\pm12\\ \\mathrm V$. The controller sums $K_pe$, $K_i\\int e\\,dt$, and $K_d\\dot e$ with conditional-integration anti-windup; each change re-simulates the full step response, including a load step halfway through.": [
+		"simulations"
+	],
+	"A speed loop around a DC motor with inertia, friction, and a saturating driver. The controller sums proportional, integral, and derivative paths with conditional-integration anti-windup; each change re-simulates the full step response, including a load step halfway through, and reports overshoot, settling time, and steady-state error.": [
+		"simulations"
+	],
+	"A step behind a source resistance $R_s$ enters a lossless line of impedance $Z_0=\\sqrt{L/C}$, drawn as its distributed $L$–$C$ ladder. Each end reflects a fraction $\\Gamma$ of every arriving wave; the lattice sum gives $V(x,t)$ at every point and instant, so the probes read a real time-domain reflectometer.": [
+		"simulations"
+	],
+	"A step behind a source resistance enters a lossless line, drawn as its distributed L–C ladder. Each end reflects a fraction Γ of every arriving wave; the lattice sum gives the voltage at every point and instant, so the probes read a real time-domain reflectometer.": [
+		"simulations"
+	],
+	"A synchronous step-down converter with a continuous-time $L$–$C$ state solver and switching-ripple reconstruction. Sweep duty cycle, source voltage, load, inductance, capacitance, and carrier frequency; the laboratory identifies conduction mode, efficiency, ripple, and transient settling in real time.": [
+		"simulations"
+	],
+	"A synchronous step-down converter with a continuous-time L–C state solver and switching-ripple reconstruction. Sweep duty cycle, source voltage, load, inductance, capacitance, and carrier frequency; the laboratory identifies conduction mode, efficiency, ripple, and transient settling in real time.": [
+		"simulations"
+	],
+	"A text-to-schematic compiler with no dependencies. Every drawing on this site is compiled by the release it documents.": [
+		"global"
+	],
+	"A text-to-schematic compiler with no dependencies. It turns lines of text into routed, accessible, deterministic SVG drawings of electrical, digital, quantum and UML diagrams.": [
+		"home"
+	],
+	"A traffic-signal controller drawn as a genuine UML state machine — initial pseudostate, three states, four guarded transitions. Firing an event (or letting the timer run) moves a live token: the active state glows, the taken transition pulses, and an event-trace log records the run. The diagram is not a picture of the machine; it *is* the machine.": [
+		"simulations"
+	],
+	"A transmitter frames a byte with a start bit, eight data bits LSB first, optional parity, and a stop bit. The receiver has its own baud clock: it syncs on the start edge and samples the middle of each bit by its own count, so clock mismatch accumulates across the frame and corrupts the last bits first. A logic analyzer shows the line and every sampling instant.": [
+		"simulations"
+	],
+	"A transmitter frames a byte with a start bit, eight data bits LSB first, optional parity, and a stop bit. The receiver syncs on the start edge and samples at $(k+\\tfrac12)T_{bit}(1+\\varepsilon)$ by its own clock, so a clock error $\\varepsilon$ accumulates across the frame and corrupts the last bits first.": [
+		"simulations"
+	],
+	"A two-qubit CNOT gate is aligned with both input wires, which enter at different heights; the compiler computes the gate span from those connections.": [
+		"templates"
+	],
+	"A UART frame carries one byte.": ["global"],
+	"A UART line idles high. A **start bit** pulls it low; that falling edge is the receiver’s only timing reference. It then waits half a bit and samples, and again every $T_{bit}$ by its own clock, through eight data bits (least significant first), an optional **parity** bit, and a **stop bit** that must read high. If the receiver’s clock is off by $\\varepsilon$, its $k$-th sample lands at $(k + \\frac12)T_{bit}(1+\\varepsilon)$: the error grows with every bit, and once it exceeds half a bit the sample reads a neighbour. With ten bits per frame that allows roughly $|\\varepsilon| < 5\\%$; real links budget about $2\\%$ to share between both ends.": [
+		"simulations"
+	],
+	"A useful miss: keep the prediction visible and use the trace to find the broken assumption.": [
+		"global"
+	],
+	"A vertical Zener reference.": ["templates"],
+	"A wire is not instant. For one trip of the line the source cannot know what is at the far end — and the reflection is the far end’s answer.": [
+		"simulations"
+	],
+	"A wire names a pin as": ["components"],
+	"A_{{0}}\\oplus B_{{1}}": ["simulations"],
+	"a_ilongrightarrow2langle a angle-a_i": ["simulations"],
+	"a_ilongrightarrow2langle a angle-a_iquad P(lvert{0} angle)={1}%": ["simulations"],
+	"A{0} ⊕ B{1} combines with the incoming carry; the generated and propagated carries then determine S{2}.": [
+		"simulations"
+	],
+	"A{0}.out -> N1_{1}.in1 #blue [ortho]": ["simulations"],
+	"A{0}.out -> X1_{1}.in1 #blue [ortho]": ["simulations"],
+	"A/B/Cᵢₙ + Sum ports": ["simulations"],
+	"Aa": ["global"],
+	"above.": ["diff"],
+	"Accepts": ["components"],
+	"Accumulate the error": ["simulations"],
+	"acquiring lock": ["simulations"],
+	"ACTIVE": ["simulations"],
+	"Active analog": ["simulations"],
+	"Active low-pass filter": ["global"],
+	"Active state": ["simulations"],
+	"Add integral action to remove the offset.": ["simulations"],
+	"add integral gain and confirm the offset disappears": ["simulations"],
+	"Adder": ["global"],
+	"Addition is fast, but the carry is a rumour — and a rumour has to travel.": ["simulations"],
+	"Adjacent components": ["components"],
+	"Adjacent documentation": ["docs"],
+	"advance one more round and inspect over-rotation": ["simulations"],
+	"advance through all five remaining protocol stages": ["simulations"],
+	"advance through two complete oracle-and-diffusion rounds": ["simulations"],
+	"Advanced": ["simulations"],
+	"Advanced quantum": ["simulations"],
+	"After": ["diff"],
+	"After $H$ and CNOT prepare $|\\Phi^+\\rangle$, which outcomes can a $Z$-basis measurement produce?": [
+		"simulations"
+	],
+	"After enough round trips the echoes die away and the line settles at the DC divider of Rs and the load.": [
+		"simulations"
+	],
+	"After Tgreen, the active state advances to Yellow.": ["simulations"],
+	"After the Bell measurement and Bob’s $X^{m_2}Z^{m_1}$ correction, the output fidelity locks to $F = 1$. The state arrived, exactly, on two classical bits of help.": [
+		"simulations"
+	],
+	"After Tred, the guarded transition moves control to Green.": ["simulations"],
+	"Alice completes her Bell measurement but Bob receives no correction bits. What happens to fidelity?": [
+		"simulations"
+	],
+	"Alice’s measurements contain the correction recipe, not a copy of ψ.": ["simulations"],
+	"Alice’s state |ψ⟩ is parameterised on the Bloch angles. Stepped playback advances the register through entanglement, Bell measurement, and the classically controlled X^{m₂}/Z^{m₁} corrections; hovering any gate reveals its action in Dirac notation.": [
+		"simulations"
+	],
+	"Alice’s state $|\\psi\\rangle$ is parameterised on the Bloch angles. Stepped playback advances the register through entanglement, Bell measurement, and the classically controlled $X^{m_2}/Z^{m_1}$ corrections; hovering any gate reveals its action in Dirac notation.": [
+		"simulations"
+	],
+	"All": ["global", "simulations"],
+	"All four bit strings with equal probability.": ["simulations"],
+	"All labs": ["simulations"],
+	"All nine result bits settle at the same instant.": ["simulations"],
+	"All parts": ["playground"],
+	"all-zero state forbidden": ["simulations"],
+	"alpha {0}, beta {1}, probabilities {2} and {3}": ["simulations"],
+	"alpha or beta": ["simulations"],
+	"alpha={0}quad\beta={1}quad P(0)={2}quad P(1)={3}": ["simulations"],
+	"Always $0$: the gate only acted on the target.": ["simulations"],
+	"Always $1$: the phase flipped the control from $|+\\rangle$ to $|-\\rangle$.": ["simulations"],
+	"Amplifier feedback active.": ["simulations"],
+	"Amplifier feedback degraded: gain resistor open.": ["simulations"],
+	"Amplify a perturbation": ["simulations"],
+	"amplitude $0.05$–$0.7$": ["simulations"],
+	"amplitude 0.05 – 0.7": ["simulations"],
+	"amplitude amplification over 8 states": ["simulations"],
+	"amplitude approximately {0}": ["simulations"],
+	"amplitude-limiting element": ["simulations"],
+	"amplitudes ±1/√2": ["simulations"],
+	"amplitudes $\\pm 1/\\sqrt{2}$": ["simulations"],
+	"An amplifier with just enough positive feedback sings a pure tone out of noise.": [
+		"simulations"
+	],
+	"An event arrives with no enabled transition from the current state. What must a deterministic machine do?": [
+		"simulations"
+	],
+	"An oscillator that listens: it tunes itself until its phase stops slipping.": ["simulations"],
+	"Analog": ["simulations"],
+	"and": ["components"],
+	"and:N1_{0} \"A\" at ({1}, {2}) #amber": ["simulations"],
+	"and:N2_{0} \"A\" at ({1}, {2}) #amber": ["simulations"],
+	"answers the only question a build asks. The badge below reports this corpus:": ["conformance"],
+	"Any hex,": ["playground"],
+	"Any text": ["components", "playground"],
+	"Any text, or empty": ["components", "playground"],
+	"API.right -> NET.left #slate [ortho association label=\"builds\"]": ["global"],
+	"Applied": ["simulations"],
+	"Apply changes": ["simulations"],
+	"Apply conditional corrections": ["simulations"],
+	"apply correction": ["simulations"],
+	"apply iff m₁ = 1": ["simulations"],
+	"apply iff m₂ = 1": ["simulations"],
+	"apply Pauli corrections": ["simulations"],
+	"Apply the controlled phase": ["simulations"],
+	"Apply the second round — the optimum.": ["simulations"],
+	"Apply Vᵢₙ": ["simulations"],
+	"aria-label=\"Código desplazable: $1\"": ["global"],
+	"ArrowDown": ["global", "playground"],
+	"ArrowLeft": ["global"],
+	"ArrowRight": ["global"],
+	"ArrowUp": ["global", "playground"],
+	"Astable": ["simulations"],
+	"astable + monostable modes": ["simulations"],
+	"astable, {0}, {1} % duty": ["simulations"],
+	"asynchronous framing + mid-bit sampling": ["simulations"],
+	"at ({0}, {1})": ["global", "playground"],
+	"at (0, 0)": ["components", "playground"],
+	"at (X, Y)": ["components", "playground"],
+	"At a glance": ["home"],
+	"At high frequencies, far above the signal band.": ["simulations"],
+	"At least one of": ["components"],
+	"at the conduction boundary": ["simulations"],
+	"At the far end the load reflects the fraction Γ of the arriving wave; a matched load reflects nothing.": [
+		"simulations"
+	],
+	"At the setpoint $e = 0$, so $K_pe = 0$ and nothing opposes friction. The motor slows until the error is large enough to hold it.": [
+		"simulations"
+	],
+	"At unity loop gain and zero phase, the selected sinusoid persists.": ["simulations"],
+	"Attenuate and phase-balance": ["simulations"],
+	"AUD": ["simulations"],
+	"audible carrier whine": ["simulations"],
+	"audio {0}": ["simulations"],
+	"audio + triangle carrier": ["simulations"],
+	"audio ×{0}, carrier {1} dB": ["simulations"],
+	"audio $100\\ \\mathrm{Hz}$–$2\\ \\mathrm{kHz}$": ["simulations"],
+	"audio 100 Hz – 2 kHz": ["simulations"],
+	"Audio frequency, 100 hertz to 2 kilohertz": ["simulations"],
+	"Audio gain": ["simulations"],
+	"audio gain {0}": ["simulations"],
+	"audio to carrier ratio {0} decibels": ["simulations"],
+	"Author": ["global"],
+	"Auto-run active.": ["simulations"],
+	"Auto-run paused.": ["simulations"],
+	"Auto-run uses the causal stage delay configured in the timeline above.": ["simulations"],
+	"average of {0} bits": ["simulations"],
+	"Average the bitstream": ["simulations"],
+	"awaiting sample": ["simulations"],
+	"B": ["changelog", "simulations"],
+	"B register": ["simulations"],
+	"b_{mathrm{fb}}=q_3oplus q_4={0}": ["simulations"],
+	"b_{next} = Q_3 \\oplus Q_4": ["simulations"],
+	"B{0}.out -> N1_{1}.in2 #blue [ortho]": ["simulations"],
+	"B{0}.out -> X1_{1}.in2 #blue [ortho]": ["simulations"],
+	"Back": ["global"],
+	"Backspace": ["global"],
+	"Barkhausen classifier": ["simulations"],
+	"BCM": ["simulations"],
+	"Before": ["diff"],
+	"Before running $11111111_2 + 1_2$: which part of the result can settle first?": ["simulations"],
+	"Before the edge, the selected Q3 and Q4 taps XOR to establish the next D input.": [
+		"simulations"
+	],
+	"Bell pair": ["global"],
+	"bell pair entangled": ["simulations"],
+	"Bell stage must be non-negative.": ["simulations"],
+	"Bell-basis measurement": ["simulations"],
+	"Bell-basis rotation": ["simulations"],
+	"Bell-basis transform": ["simulations"],
+	"Bell-state entanglement": ["simulations"],
+	"Bell-State Entanglement": ["simulations"],
+	"Bell-State Entanglement Visualizer": ["simulations"],
+	"Bell-state quantum circuit. Hover or focus an operator for its transformation.": ["simulations"],
+	"Below the setpoint: a P loop needs some error to keep pushing.": ["simulations"],
+	"Bias the timing ladder": ["simulations"],
+	"Binary result": ["simulations"],
+	"birth of the limit cycle": ["simulations"],
+	"bit flip": ["simulations"],
+	"bit flip on qubit {0}": ["simulations"],
+	"bits must be an integer from 1 through 30.": ["simulations"],
+	"bitstream spectrum, dB, log frequency": ["simulations"],
+	"Bitstream spectrum: in-band SNR {0} decibels over {1} bins": ["simulations"],
+	"bitstream, {0} percent ones": ["simulations"],
+	"Bloch $\\theta\\in[0,\\pi],\\ \\phi\\in[0,2\\pi]$": ["simulations"],
+	"Bloch vector length {0}": ["simulations"],
+	"Bloch vector of the control {0}, length {1}": ["simulations"],
+	"Bloch θ ∈ [0, π], φ ∈ [0, 2π]": ["simulations"],
+	"Bob applies X and Z conditioned on the two measurement bits.": ["simulations"],
+	"Both qubits begin separable and deterministic.": ["simulations"],
+	"Both revisions compile in this tab with the installed": ["diff"],
+	"bottom": ["global"],
+	"boundary conduction": ["simulations"],
+	"BRIDGE": ["simulations"],
+	"Bridge C": ["simulations"],
+	"Bridge R": ["simulations"],
+	"Bridges and dots": ["global"],
+	"Browse templates": ["home", "playground"],
+	"Buck converter": ["global"],
+	"Buck converter. Drag the value tags on the source, controller, switch, inductor, capacitor, and load; click a wire to clip a probe on.": [
+		"simulations"
+	],
+	"Buck parameters must be positive.": ["simulations"],
+	"Buck-converter animation": ["simulations"],
+	"buck-converter waveform and switching animation": ["simulations"],
+	"Build a simulation lab · schemd": ["simulations"],
+	"Builds on": ["simulations"],
+	"Builds on:": ["global"],
+	"bun add @schemd/core": ["home"],
+	"button, input, select, textarea, [role=\"button\"], [role=\"radio\"], [role=\"switch\"]": [
+		"global"
+	],
+	"by {0}": ["inspector"],
+	"Bypass the edit debounce": ["playground"],
+	"BYTE": ["simulations"],
+	"byte + TX shift register": ["simulations"],
+	"C 1 nF – 10 µF": ["simulations"],
+	"C branch OPEN (fault)": ["simulations"],
+	"C_{mathrm{out}}={0},mathrm{mu F}": ["simulations"],
+	"C_{mathrm{out}}={0}quad {1}": ["simulations"],
+	"C_T={0}quad V_C={1},mathrm V": ["simulations"],
+	"C={0},mathrm{mu F}": ["simulations"],
+	"call on the server, taken apart. Edit the document and run it again — the URL carries the source, so an inspector link is a citable bug report.": [
+		"inspector"
+	],
+	"camera=(), geolocation=(), microphone=(), payment=(), usb=()": ["global"],
+	"cannot be written together.": ["components"],
+	"Canvas unavailable.": ["playground"],
+	"Capacitance": ["simulations"],
+	"capacitor branch open": ["simulations"],
+	"Capacitor branch open": ["simulations"],
+	"capacitor current path": ["simulations"],
+	"capacitor current path; cutoff {0}": ["simulations"],
+	"capacitor voltage {0} volts": ["simulations"],
+	"Carrier": ["simulations"],
+	"carrier {0}": ["simulations"],
+	"carrier $4$–$20\\ \\mathrm{kHz}$ (slowed into earshot)": ["simulations"],
+	"carrier 4 – 20 kHz (slowed into earshot)": ["simulations"],
+	"carrier dominates the speaker": ["simulations"],
+	"Carrier frequency, 4 to 20 kilohertz": ["simulations"],
+	"carrier residual {0} dB": ["simulations"],
+	"carrier residual {0} decibels": ["simulations"],
+	"carrier residual −20 dB": ["simulations"],
+	"carry chain interrupted": ["simulations"],
+	"carry chain stuck-at-0": ["simulations"],
+	"carry front": ["simulations"],
+	"Carry front at cell {0} of {1}.": ["simulations"],
+	"carry in": ["simulations"],
+	"Carry in": ["simulations"],
+	"carry out": ["simulations"],
+	"Carry out": ["simulations"],
+	"carry out equals {0}": ["simulations"],
+	"Cascading ripple-carry gate matrix with a live combinational pass.": ["simulations"],
+	"Category": ["global"],
+	"Causal signal trace": ["simulations"],
+	"CCM": ["simulations"],
+	"CCM / BCM / DCM classification": ["simulations"],
+	"CF": ["simulations"],
+	"Change an input; step the timeline to watch the logic settle.": ["simulations"],
+	"change load resistance until the conduction classifier changes": ["simulations"],
+	"change R_A and inspect the capacitor trace": ["simulations"],
+	"change R_B and inspect the duty cycle": ["simulations"],
+	"change the capacitance control and compare the cutoff": ["simulations"],
+	"change the duty-cycle control and compare output voltage": ["simulations"],
+	"change the filter capacitance and compare the carrier residual": ["simulations"],
+	"Changelog": ["changelog", "global"],
+	"Changelog · schemd": ["changelog"],
+	"Channel {0}, {1}: {2}": ["simulations"],
+	"Characteristic impedance must be positive.": ["global"],
+	"Charge Cₜ": ["simulations"],
+	"Charge the capacitor": ["simulations"],
+	"Charging goes through $R_A + R_B$ but discharging only through $R_B$. As $R_B$ dominates, the two times become more alike, so duty approaches—but never reaches—$50\\%$ in this topology.": [
+		"simulations"
+	],
+	"Cheap RC clock (+6 %)": ["simulations"],
+	"Check the stop bit and parity": ["simulations"],
+	"Check your own diagrams": ["conformance"],
+	"checks name the culprit without ever reading": ["simulations"],
+	"Choose a diagram": ["templates"],
+	"choose a marked target state": ["simulations"],
+	"Choose a target and apply one Grover round.": ["simulations"],
+	"Choose propagation stage": ["simulations"],
+	"Chop a voltage fast enough, and an inductor plus a capacitor remember only its average.": [
+		"simulations"
+	],
+	"Chop audio into a square wave, then filter the music back out — and listen to both.": [
+		"simulations"
+	],
+	"CHSH": ["simulations"],
+	"CHSH {0} — above 2 is a correlation no local model reproduces.": ["simulations"],
+	"CHSH witness": ["simulations"],
+	"CHSH witness $S\\in[0,2\\sqrt{2}]$": ["simulations"],
+	"CHSH witness S ∈ [0, 2√2]": ["simulations"],
+	"CIN": ["simulations"],
+	"Class-D amplifier": ["simulations"],
+	"Class-D Amplifier You Can Hear": ["simulations"],
+	"Class-D amplifier: audio and triangle carrier into a PWM comparator, a half-bridge, an L C filter, and a speaker. Drag the value tags; click a wire to probe it.": [
+		"simulations"
+	],
+	"class:API \"Compiler\" at (170, 150) #blue [stereotype=\"entry\" attributes=\"- limits: Limits\" operations=\"+ compile(src): Svg;+ diagnose(src): List\"] class:NET \"Netlist\" at (500, 150) #emerald [attributes=\"- nets: Net[];- nodes: Node[]\" operations=\"+ verify(): Report\"] API.right -> NET.left #slate [ortho association label=\"builds\"]": [
+		"global"
+	],
+	"classical bound": ["simulations"],
+	"classical correction link cut": ["simulations"],
+	"Classical correction link cut": ["simulations"],
+	"Classically, finding one marked item among $N$ takes about $N/2$ guesses; there is no cleverer way to check an unstructured list. Grover’s insight is geometric. Put all $N = 8$ states in equal superposition $|s\\rangle$, then repeat two reflections. The **oracle** $U_f$ flips the *sign* of the target’s amplitude only — a phase nudge you cannot see by measuring. The **diffusion** operator $2|s\\rangle\\langle s| - I$ reflects every amplitude about their mean, which converts that hidden sign into a *taller bar*. Each round rotates the state vector by a fixed angle toward the target, so the target’s probability grows like $\\sin^2\\!\\big((2k{+}1)\\theta\\big)$. After the optimal $k \\approx \\frac{\\pi}{4}\\sqrt N = 2$ rounds it peaks near $94\\%$ — a quadratic $\\sqrt N$ speedup you can watch happen bar by bar. Run too many rounds and it rotates *past* the target and back down.": [
+		"simulations"
+	],
+	"clean": ["inspector"],
+	"Clean": ["conformance"],
+	"clean audio, carrier {0} dB down": ["simulations"],
+	"clean kickback, P(1) = {0}": ["simulations"],
+	"Cleanliness": ["simulations"],
+	"Click a gate or a qubit to read its action and state.": ["simulations"],
+	"Click a gate or qubit in the drawing to read it here.": ["simulations"],
+	"Click a part or wire in the drawing to read it here.": ["simulations"],
+	"Click a wire to clip a probe on.": ["simulations"],
+	"Click an input port to flip its bit; the carry ripples through the chain.": ["simulations"],
+	"Click any A, B, or C": ["simulations"],
+	"Click the 555, the LED, or the timing capacitor to read it.": ["simulations"],
+	"Click the amplifier or the gain divider to read it.": ["simulations"],
+	"Clipboard access was denied.": ["playground"],
+	"CLIPPING (rail latch)": ["simulations"],
+	"CLK": ["simulations"],
+	"clock error ±10 %": ["simulations"],
+	"clock error $\\pm10\\%$": ["simulations"],
+	"Clock the register": ["simulations"],
+	"clock:CLK \"clk\" at (90, 200) #amber flipflop:Q1 \"D1\" at (300, 200) #blue [type=d] flipflop:Q2 \"D2\" at (480, 200) #cyan [type=d] flipflop:Q3 \"D3\" at (660, 200) #emerald [type=d] flipflop:Q4 \"D4\" at (840, 200) #amber [type=d] CLK.out -> Q1.clock #amber [ortho] CLK.out -> Q2.clock #amber [ortho] CLK.out -> Q3.clock #amber [ortho] CLK.out -> Q4.clock #amber [ortho] Q1.q -> Q2.d #blue [line] Q2.q -> Q3.d #cyan [line] Q3.q -> Q4.d #emerald [line]": [
+		"simulations"
+	],
+	"clocked shift register over GF(2)": ["simulations"],
+	"close": ["playground"],
+	"Close command palette": ["global"],
+	"Close find": ["global"],
+	"Close playground commands": ["playground"],
+	"Close the loop": ["simulations"],
+	"Closed-loop buck converter": ["simulations"],
+	"Closed-Loop Buck Converter": ["simulations"],
+	"CLS": ["api", "global"],
+	"CMP": ["simulations"],
+	"CNOT control/target": ["simulations"],
+	"CNOT coupling offline, cross states permitted": ["simulations"],
+	"CNOT entangler": ["simulations"],
+	"CNOT entangler offline": ["simulations"],
+	"Code editor. Tab indents; Shift+Tab outdents. Press Escape then Tab to move focus out of the editor. Control or Command slash toggles comments. Control or Command F opens find.": [
+		"global"
+	],
+	"coherent coupling, nominal": ["simulations"],
+	"collect another sample and inspect the CHSH witness": ["simulations"],
+	"collect two independent 64-shot samples": ["simulations"],
+	"CollectionPage": ["examples"],
+	"colour works too.": ["playground"],
+	"Colours": ["playground"],
+	"Comma-separated pin names, at most {0}; each starts with a letter, and {1} are reserved": [
+		"components",
+		"playground"
+	],
+	"Command palette": ["global"],
+	"Commands": ["playground"],
+	"Comment or uncomment the selection": ["playground"],
+	"Commit all four stages": ["simulations"],
+	"Commit before the explanation appears. This is a prediction, not a quiz score.": ["global"],
+	"Commit Cₒᵤₜ and Σ": ["simulations"],
+	"Commit hypothesis and reveal answer": ["global"],
+	"Compare audio with the carrier": ["simulations"],
+	"Compare releases": ["global"],
+	"Compare the evidence—not your wording—to decide what you missed.": ["global"],
+	"Compare the phases": ["simulations"],
+	"Compare the spectra: the noise floor near the signal band drops and rises more steeply toward $f_s/2$. The in-band SNR and ENOB climb.": [
+		"simulations"
+	],
+	"Compare two revisions of a schemd diagram and read the semantic delta: the components, nets, and connections that changed.": [
+		"diff"
+	],
+	"Compilation complete. {0} components and {1} connections.": ["playground"],
+	"Compilation error{0}: {1}": ["playground"],
+	"Compilation exceeded the {0} ms server deadline.": ["api"],
+	"Compilation failed unexpectedly.": ["api", "global"],
+	"Compilation failed.": ["embed", "playground"],
+	"Compilation stages": ["inspector"],
+	"Compile": ["playground"],
+	"Compile endpoint unreachable.": ["playground"],
+	"Compile now": ["playground"],
+	"Compile rate limit exceeded.": ["api"],
+	"Compile schemd source to SVG live: three output modes, a raw markup view, and shareable workspace links.": [
+		"playground"
+	],
+	"Compiled": ["inspector", "playground"],
+	"Compiled example for the active section": ["docs"],
+	"Compiled revisions": ["diff"],
+	"Compiled schematic and UML examples, each openable in the playground.": ["examples"],
+	"Compiled schematic preview": ["playground"],
+	"Compiler and netlist": ["global"],
+	"Compiler at a glance": ["changelog"],
+	"Compiler diagnostics": ["playground"],
+	"Compiler inspector": ["inspector"],
+	"Compiler is at capacity. Retry shortly.": ["api"],
+	"Compiler metrics": ["changelog"],
+	"Compiler mode": ["playground"],
+	"Compiler release": ["inspector"],
+	"Compiler unavailable.": ["diff"],
+	"Compiler views": ["home"],
+	"Compiler vocabulary, revision": ["coverage"],
+	"Compiler-style diagnostic": ["global"],
+	"Compiling": ["playground"],
+	"Completed here": ["simulations"],
+	"Completed on this device": ["simulations"],
+	"component": ["diff"],
+	"Component": ["inspector"],
+	"Component API": ["global"],
+	"Component kinds": ["home"],
+	"Components": ["components", "global", "inspector"],
+	"Components · schemd": ["components"],
+	"Compose a schemd simulation laboratory as a manifest: a compiled diagram, a whitelisted model, and declarative bindings from signals onto nodes and wires.": [
+		"simulations"
+	],
+	"conditional correction": ["simulations"],
+	"conditional X correction": ["simulations"],
+	"conditional Z correction": ["simulations"],
+	"Conduction regime": ["simulations"],
+	"Confirm the period is exactly 15.": ["simulations"],
+	"Conformance": ["conformance", "global"],
+	"Conformance · schemd": ["conformance"],
+	"Congestion": ["inspector"],
+	"Connect primitive feedback taps to the period of an LFSR sequence.": ["simulations"],
+	"connection": ["diff"],
+	"connection {0} added": ["global"],
+	"connection {0} removed": ["global"],
+	"Connections": ["inspector"],
+	"Connectivity against seven design rules.": ["inspector"],
+	"Content-Type must be application/json.": ["global"],
+	"Contents": ["docs"],
+	"Contents:": ["docs"],
+	"Continue to": ["global"],
+	"continuous conduction": ["simulations"],
+	"continuous-time averaged state space": ["simulations"],
+	"Control": ["simulations"],
+	"control {0} volts": ["simulations"],
+	"control + target qubits": ["simulations"],
+	"Control Bloch vector at each stage": ["simulations"],
+	"control measurement": ["simulations"],
+	"Control qubit after CP(φ)": ["simulations"],
+	"Control systems": ["simulations"],
+	"control to |+⟩": ["simulations"],
+	"control voltage": ["simulations"],
+	"control voltage {0} volts": ["simulations"],
+	"controlled not creates the Bell pair": ["simulations"],
+	"controlled not rotates toward the Bell basis": ["simulations"],
+	"Controlled phase": ["templates"],
+	"controlled phase {0} degrees": ["simulations"],
+	"controlled phase $CP(\\varphi)$": ["simulations"],
+	"Controlled phase angle, 0 to 360 degrees": ["simulations"],
+	"controlled two-qubit operator": ["simulations"],
+	"controlled-phase CP(φ)": ["simulations"],
+	"Cookie": ["global"],
+	"Copied": ["home", "playground", "simulations"],
+	"Copies a link that opens this document": ["playground"],
+	"Copies an iframe you can paste into a page": ["playground"],
+	"Copy": ["home"],
+	"Copy bounds, title, and source": ["playground"],
+	"Copy embed code": ["playground"],
+	"Copy fence": ["playground"],
+	"Copy install command": ["home"],
+	"Copy link": ["playground"],
+	"Copy Markdown fence": ["playground"],
+	"Copy plain Schemd source": ["playground"],
+	"Copy share link": ["playground"],
+	"Copy shareable link": ["simulations"],
+	"Copy source": ["playground"],
+	"COR": ["simulations"],
+	"Core": ["simulations"],
+	"Corpus / Design rules": ["conformance"],
+	"Corpus usage by family": ["coverage"],
+	"Correct the identified rail": ["simulations"],
+	"Correct: $f_c=1/(2\\pi RC)$. A larger charge reservoir takes longer to respond, moving the pole downward.": [
+		"simulations"
+	],
+	"Correct. $e^{i\\pi} = -1$ kicks back as a sign on $|1\\rangle$, turning $|+\\rangle$ into $|-\\rangle$, which $H$ maps to $|1\\rangle$.": [
+		"simulations"
+	],
+	"Correct. $f_c \\propto 1/\\sqrt{LC}$, and a second-order filter attenuates about $40\\,\\mathrm{dB}$ per decade above $f_c$.": [
+		"simulations"
+	],
+	"Correct. Entanglement transfers the state only up to one of four Pauli frames; $m_1,m_2$ tell Bob which frame to undo.": [
+		"simulations"
+	],
+	"Correct. Grover amplification is a rotation, not monotonic accumulation; too many iterations move amplitude away again.": [
+		"simulations"
+	],
+	"Correct. Maximal period is a property of primitive taps, not merely of having four flip-flops.": [
+		"simulations"
+	],
+	"Correct. The Wien network returns one third, so gain below $3$ makes $A\\beta<1$ and every trip around the loop shrinks.": [
+		"simulations"
+	],
+	"Correct. With no matching edge, $\\delta(s,e)$ produces no transition; inventing a destination would make the model non-deterministic.": [
+		"simulations"
+	],
+	"correction applied, residual pattern {0}, logical fidelity {1}": ["simulations"],
+	"correction lost — state degraded": ["simulations"],
+	"corrects any single bit-flip": ["simulations"],
+	"Correlation": ["simulations"],
+	"Counter datapath": ["templates"],
+	"COUT": ["simulations"],
+	"Cout absorbs ripple while the load draws the average inductor current.": ["simulations"],
+	"CP": ["simulations"],
+	"CP multiplies only |11⟩ by the phase; with the target in |1⟩ that phase lands on the control’s relative phase.": [
+		"simulations"
+	],
+	"Create the Bell resource": ["simulations"],
+	"Cross gain = 3 and watch the tone ignite.": ["simulations"],
+	"Cross the noisy channel": ["simulations"],
+	"Crystal-grade clock (+0.5 %)": ["simulations"],
+	"CS": ["simulations"],
+	"CT": ["simulations"],
+	"CTRL": ["simulations"],
+	"Current action:": ["global"],
+	"Current divides at the output node and charges C. The RC time constant sets how quickly Vout can follow.": [
+		"simulations"
+	],
+	"Current through RB raises the timing capacitor toward the upper threshold.": ["simulations"],
+	"Curriculum map": ["simulations"],
+	"Cutoff": ["simulations"],
+	"cutoff frequency {0}": ["simulations"],
+	"CX |a,b⟩ = |a, b ⊕ a⟩": ["simulations"],
+	"cycle slipping, outside the hold range": ["simulations"],
+	"D path": ["simulations"],
+	"DAC": ["simulations"],
+	"Daily downloads": ["downloads"],
+	"Daily installs of @schemd/core over the last {0} days, peaking at {1} per day.": ["downloads"],
+	"Daily installs over the last": ["downloads"],
+	"Daily mean over 30 days": ["downloads"],
+	"DATA": ["simulations"],
+	"data + error outputs": ["simulations"],
+	"Datasheet": ["playground"],
+	"Datasheets for all {0} schemd component kinds: their options, the values and ranges each accepts, their defaults and their pins, generated from the compiler.": [
+		"components"
+	],
+	"Day": ["global"],
+	"days": ["downloads"],
+	"DCM": ["simulations"],
+	"debt per sample": ["simulations"],
+	"DEC": ["simulations"],
+	"DECAYING → silence": ["simulations"],
+	"Decide one bit": ["simulations"],
+	"decimated by {0}": ["simulations"],
+	"decoder accuses qubit {0}": ["simulations"],
+	"Decoding returns the protected logical state.": ["simulations"],
+	"Default": ["components", "playground"],
+	"degraded: wiring fault active": ["simulations"],
+	"Deliberate demonstrations": ["conformance"],
+	"Deliver the byte": ["simulations"],
+	"Delta i_L={0},mathrm{A_{pp}}": ["simulations"],
+	"Delta t_{mathrm{stop}}={0},T_{bit}": ["simulations"],
+	"Delta v_o={0},mathrm{mV_{pp}}": ["simulations"],
+	"Demonstrations": ["conformance"],
+	"deno add npm:@schemd/core": ["home"],
+	"Density": ["simulations"],
+	"Dependencies": ["home"],
+	"Deploy interaction": ["templates"],
+	"Derivative gain": ["simulations"],
+	"derivative path": ["simulations"],
+	"Derived from the netlist, not written by hand — the same connectivity the design rules read. Play the tour and each net lights up in the diagram as it is described.": [
+		"inspector"
+	],
+	"Describe": ["inspector"],
+	"Describe a laboratory": ["simulations"],
+	"Describe one of your own": ["simulations"],
+	"Design rules": ["home", "inspector"],
+	"detector {0} volts": ["simulations"],
+	"deterministic $\\delta$": ["simulations"],
+	"deterministic δ": ["simulations"],
+	"Detune past $K_vK_d$. The phase error now runs away, $v_c$ beats instead of settling, and the portrait traces a closed orbit: cycle slipping.": [
+		"simulations"
+	],
+	"Detune past the hold range": ["simulations"],
+	"Detune the receiver clock until bits slip.": ["simulations"],
+	"detune the receiver clock until the samples slip": ["simulations"],
+	"detune the reference beyond the hold range": ["simulations"],
+	"detune the two-qubit gate": ["simulations"],
+	"Detune the two-qubit gate": ["simulations"],
+	"detuning {0} against a hold range of {1}": ["simulations"],
+	"DeveloperApplication": ["home"],
+	"dfrac{ ext{audio}}{ ext{carrier}}={0},mathrm{dB}": ["simulations"],
+	"Diagnose a converter that lost its resolution.": ["simulations"],
+	"Diagnose a correction that targets the wrong rail.": ["simulations"],
+	"Diagnose a far end that answers wrongly.": ["simulations"],
+	"Diagnose a fringe that has lost contrast.": ["simulations"],
+	"Diagnose a link that never frames.": ["simulations"],
+	"Diagnose a loop that never pulls in.": ["simulations"],
+	"Diagnose a loop that runs away.": ["simulations"],
+	"Diagnose a missing overflow before inspecting the relay.": ["simulations"],
+	"Diagnose a sequence that repeats too soon.": ["simulations"],
+	"Diagnose an amplifier that whines.": ["simulations"],
+	"Diagnose an output rail that coasts to zero.": ["simulations"],
+	"Diagnose the loss of non-classical correlation.": ["simulations"],
+	"Diagnose the state that cannot make progress.": ["simulations"],
+	"Diagnose why a pure tone clips against the rails.": ["simulations"],
+	"Diagnose why attenuation disappears.": ["simulations"],
+	"Diagnose why Bob’s fidelity no longer reaches one.": ["simulations"],
+	"Diagnose why the requested target is not amplified.": ["simulations"],
+	"Diagnosis attempt recorded. Authored answer:": ["global"],
+	"Diagnosis challenge": ["simulations"],
+	"Diagnosis challenge: the fault is hidden": ["simulations"],
+	"Diagram diff": ["diff"],
+	"Diagrams": ["conformance"],
+	"Dial an arbitrary $|\\psi\\rangle$ on the Bloch sphere.": ["simulations"],
+	"DIFF": ["simulations"],
+	"Diffuser": ["simulations"],
+	"diffusion $2|s\\rangle\\langle s|-I$": ["simulations"],
+	"diffusion 2|s⟩⟨s| − I": ["simulations"],
+	"diffusion raises target probability to {0} percent": ["simulations"],
+	"diffusion reflects each amplitude about the mean": ["simulations"],
+	"digital": ["global"],
+	"Digital": ["components", "global", "playground", "simulations", "templates"],
+	"Digital blocks connected through named terminals.": ["templates"],
+	"Direct manipulation enabled": ["simulations"],
+	"Discard the local draft after confirmation": ["playground"],
+	"Discard this draft and restore the verified starter schematic?": ["playground"],
+	"discontinuous conduction": ["simulations"],
+	"discrete PID + first-order DC motor with saturation": ["simulations"],
+	"dismiss": ["global"],
+	"Distinguish an entangled Bell state from a classical mixture using outcomes and CHSH.": [
+		"simulations"
+	],
+	"Disturb one communication path, step to the end, and compare the measurement bits with Bob’s corrections. Which required dependency is absent?": [
+		"simulations"
+	],
+	"Disturb one guard, drive the token around the cycle, and locate the state whose exit can no longer become enabled.": [
+		"simulations"
+	],
+	"Disturb the correction map, inject one error, and compare syndrome with the corrected rail. Which mapping sends correction to the wrong qubit?": [
+		"simulations"
+	],
+	"Disturb the feedback network, record repeats, and infer from the shortened cycle which recurrence no longer spans all non-zero states.": [
+		"simulations"
+	],
+	"Disturb the gain path and distinguish a bounded limit cycle from rail clipping. Which loop condition is no longer regulated?": [
+		"simulations"
+	],
+	"Disturb the oracle, run two rounds, and compare the requested target with the amplified bar. Which state did the phase flip actually mark?": [
+		"simulations"
+	],
+	"Disturb the power stage and compare duty command, switch-node activity, and $v_o$. Where does commanded energy stop entering the $LC$ network?": [
+		"simulations"
+	],
+	"Disturb the preparation, sample again, and use both the histogram and $S$ value to identify which operation stopped creating non-classical correlation.": [
+		"simulations"
+	],
+	"Disturb the threshold network and watch $V_C$. Which missing threshold crossing best explains the output becoming motionless?": [
+		"simulations"
+	],
+	"Docs": ["changelog", "global"],
+	"docs · v{0}": ["global"],
+	"docs · v{0} · {1}": ["global"],
+	"Docs for": ["playground"],
+	"Document": ["inspector"],
+	"Document is too large for a reliable URL": ["playground"],
+	"Documentation": ["docs", "global"],
+	"documentation diagrams pass": ["home"],
+	"Documentation index": ["docs"],
+	"Documentation version": ["global"],
+	"documented diagrams passes every rule.": ["conformance"],
+	"Documented usages of each component family, across the docs corpus and the canonical catalog.": [
+		"coverage"
+	],
+	"Download PNG": ["playground"],
+	"Download source": ["playground"],
+	"Download SVG": ["playground"],
+	"Downloads at a glance": ["downloads"],
+	"Downloads by release": ["downloads"],
+	"Drag $Z_L$ above and below $Z_0$. The near-end probe shows a second step at $2t_d$ whose sign follows $\\Gamma_L$: up for a high load, down for a low one.": [
+		"simulations"
+	],
+	"Drag a value tag to change that part. Click a node on the line to clip a probe on; the scope shows ten one-way delays.": [
+		"simulations"
+	],
+	"Drag a value tag to change that part. Click a wire to clip a probe on.": ["simulations"],
+	"Drag the byte and the receiver-clock tags. The analyzer shows the line and every instant the receiver samples it.": [
+		"simulations"
+	],
+	"Drag the clock error. The sample ticks drift across the frame, the last bits go first, and eventually the stop bit is read low: a framing error.": [
+		"simulations"
+	],
+	"Drag θ and φ on the input state. Hover a gate for its action; click one to read it.": [
+		"simulations"
+	],
+	"Drag φ on the controlled-phase gate and choose the target state. Step the timeline to follow the control; click a gate to read it.": [
+		"simulations"
+	],
+	"Drawing": ["playground"],
+	"Drawing sheet": ["playground"],
+	"drive": ["simulations"],
+	"Drive a PWM power stage across CCM, boundary, and discontinuous conduction.": ["simulations"],
+	"Drive and discharge": ["simulations"],
+	"Drive current through R": ["simulations"],
+	"Drive the speaker": ["simulations"],
+	"Drive voltage accelerates the rotor against its inertia, friction, and any load torque.": [
+		"simulations"
+	],
+	"driver limit ±12 V": ["simulations"],
+	"driver limit $\\pm12\\ \\mathrm V$": ["simulations"],
+	"driver pinned at the rail, loop has lost control": ["simulations"],
+	"Drop the load current until conduction goes discontinuous.": ["simulations"],
+	"DRV": ["simulations"],
+	"duty {0} percent": ["simulations"],
+	"Duty cycle": ["simulations"],
+	"Dynamic RC Low-Pass Filter": ["simulations"],
+	"EACCESS": ["global"],
+	"Each bit of the answer needs two facts: the sum $S_i = A_i \\oplus B_i \\oplus C_i$ and the carry it hands upward, $C_{i+1} = A_iB_i + C_i(A_i \\oplus B_i)$. The $\\oplus$ (XOR) tells you the bit; the AND/OR pair tells you whether a $1$ spilled over. Here is the catch a newcomer never sees on paper: **bit $i$ cannot finish until bit $i-1$ has decided its carry.** So the truth does not appear everywhere at once — it *ripples*, one cell at a time, from the least significant bit to the most. That travel time is exactly why real processors abandon this circuit for carry-lookahead.": [
+		"simulations"
+	],
+	"Each clock edge, the register shifts one place and a new bit enters from the left: the XOR of a chosen set of **taps**. Over the field $\\text{GF}(2)$ this is just repeated multiplication, and if the tap positions correspond to a *primitive polynomial* — here $x^4 + x^3 + 1$ — the register visits **every** non-zero 4-bit state before returning home. That is $2^4 - 1 = 15$ states in a fixed but scrambled order: a maximal-length sequence. It looks statistically random (equal 0s and 1s, flat autocorrelation) which is why LFSRs sit inside CRCs, spread-spectrum radios, and cheap noise sources — yet knowing the taps and one state predicts all of it forever. The all-zero state is the one trap: it maps to itself, a dead register.": [
+		"simulations"
+	],
+	"Each edge produces a new 4-bit pattern. Write them down — you will pass through all 15 non-zero values with no repeats until the cycle closes.": [
+		"simulations"
+	],
+	"Each gain answers a different question: P asks how far off you are, I asks how long you have been off, and D asks how fast you are closing in.": [
+		"simulations"
+	],
+	"Each template opens as editable source in the playground.": ["templates"],
+	"Echo toward the source": ["simulations"],
+	"Edges": ["inspector"],
+	"EFAULT": ["global"],
+	"Eight full-adder cells built from XOR/AND/OR primitives. Changing an operand or carry input dispatches one synchronous logic pass; high nets glow as the carry ripples left to right.": [
+		"simulations"
+	],
+	"electrical": ["global"],
+	"Electrical": ["components", "playground", "templates"],
+	"Embed code copied": ["playground"],
+	"Embedded schematic": ["embed"],
+	"Emit": ["inspector"],
+	"Emit the sequence bit": ["simulations"],
+	"Enabled transition": ["simulations"],
+	"ENC": ["simulations"],
+	"encode psi into the three-qubit repetition code": ["simulations"],
+	"Encode redundancy": ["simulations"],
+	"Encode this workspace in a URL": ["playground"],
+	"End": ["global"],
+	"end {0} {1}": ["simulations"],
+	"Engine processing speed": ["changelog"],
+	"engine. The delta below is topological: it reports the components, nets, and connections that differ, not the pixels.": [
+		"diff"
+	],
+	"ENOROUTE": ["global"],
+	"entangle A↔B": ["simulations"],
+	"Entangle with CNOT": ["simulations"],
+	"entangled, control purity {0}": ["simulations"],
+	"Entanglement alone cannot signal or select Bob’s Pauli frame. If this were true, teleportation would permit faster-than-light communication.": [
+		"simulations"
+	],
+	"Enter": ["global", "playground", "simulations"],
+	"enter an A value, then a B value": ["simulations"],
+	"Enter the machine": ["simulations"],
+	"ERR": ["simulations"],
+	"error": ["global", "playground"],
+	"Error": ["global"],
+	"Error correction": ["global"],
+	"Error-correction decoder": ["simulations"],
+	"Error{0}": ["playground"],
+	"Errors": ["conformance"],
+	"Esc": ["global", "playground"],
+	"Escape": ["global", "playground", "simulations"],
+	"ESIGNAL": ["global"],
+	"estimated efficiency {0} percent": ["simulations"],
+	"\betaangle arphi": ["simulations"],
+	"event queue + trace log": ["simulations"],
+	"Event trace": ["simulations"],
+	"Event trace log": ["simulations"],
+	"event-driven Boolean solver": ["simulations"],
+	"event-driven finite-state executor": ["simulations"],
+	"Every carry is forced low. The low bits stay correct, which is what makes it hard to spot — only sums that should have carried are wrong.": [
+		"simulations"
+	],
+	"Every declaration in this document states": ["inspector"],
+	"Every diagram below is real engine output, compiled server-side from the documentation's own": [
+		"examples"
+	],
+	"Every documented diagram, checked": ["conformance"],
+	"Every documented schemd diagram checked against the compiler's design rules: shorted rails, width and domain mismatches, contended drivers, and disconnected subcircuits.": [
+		"conformance"
+	],
+	"Every interaction contract is complete.": ["global"],
+	"Every line as the tokenizer sees it.": ["inspector"],
+	"Every one of the": ["conformance"],
+	"Every option, pin and variant of": ["components"],
+	"Every schemd documentation example compiled to accessible SVG and openable in the playground — circuits, logic, quantum, and UML.": [
+		"examples"
+	],
+	"Every stage below is the real thing: one": ["inspector"],
+	"Evidence": ["global"],
+	"Evidence loop": ["global"],
+	"evidence recorded": ["global"],
+	"Evidence steps complete. Commit a fault hypothesis below.": ["global"],
+	"Evidence steps complete. Inject the hidden fault and inspect what changes before diagnosing it.": [
+		"global"
+	],
+	"exact UTF-8 bytes reported by the compiler's own metrics": ["changelog"],
+	"Exactly {0}": ["components", "playground"],
+	"Exactly at the setpoint, once it has stopped oscillating.": ["simulations"],
+	"Exactly zero; lock means the waves line up.": ["simulations"],
+	"Exactly. Stabilizer parity identifies the error location while preserving the unknown $\\alpha$ and $\\beta$.": [
+		"simulations"
+	],
+	"Exactly. The amplitudes of $|01\\rangle$ and $|10\\rangle$ are zero; sampling reveals perfect same-bit correlation.": [
+		"simulations"
+	],
+	"Example gallery": ["examples"],
+	"Example gallery · schemd": ["examples"],
+	"Example schematics": ["examples"],
+	"examples": ["coverage"],
+	"Examples": ["global"],
+	"examples, compiled by revision": ["examples"],
+	"Executable state machine": ["simulations"],
+	"Executable UML traffic-signal state machine": ["simulations"],
+	"Execution progress": ["simulations"],
+	"expected": ["conformance"],
+	"expected: {0}": ["global"],
+	"Experiment complete": ["global"],
+	"experiments completed on this device": ["simulations"],
+	"Explain asynchronous framing and the clock tolerance of mid-bit sampling.": ["simulations"],
+	"Explain Grover search as amplitude rotation and identify over-rotation.": ["simulations"],
+	"Explain lock as a steady phase error and find the hold range of a PLL.": ["simulations"],
+	"Explain why entanglement and two classical bits are both necessary for teleportation.": [
+		"simulations"
+	],
+	"Explorer": ["global"],
+	"ext{CHSH witness}quad ext{local realism}le 2": ["simulations"],
+	"ext{framing }{0}quad ext{parity }{1}": ["simulations"],
+	"ext{initial pseudostate}": ["simulations"],
+	"extract & correct": ["simulations"],
+	"Extract the syndrome": ["simulations"],
+	"extract the syndrome and apply correction": ["simulations"],
+	"f = \\dfrac{1.44}{(R_A + 2R_B)\\,C} \\;\\cdot\\; D = \\dfrac{R_A + R_B}{R_A + 2R_B}": [
+		"simulations"
+	],
+	"f ref": ["simulations"],
+	"f_0 = \\dfrac{1}{2\\pi RC} \\;\\cdot\\; A\\beta = 1 \\text{ (Barkhausen), gain } = 3": [
+		"simulations"
+	],
+	"f_0={0}quad ext{positive feedback}": ["simulations"],
+	"f_c = \\dfrac{1}{2\\pi RC} \\;\\cdot\\; |H(j\\omega)| = \\dfrac{1}{\\sqrt{1 + (f/f_c)^2}}": [
+		"simulations"
+	],
+	"f_c 0.5 – 50 kHz": ["simulations"],
+	"f_ref, f₀ 8 – 12 kHz": ["simulations"],
+	"f_sw 20–500 kHz": ["simulations"],
+	"f={0}quad D={1}%": ["simulations"],
+	"F=lvertlanglepsi ertpsi_{mathrm{out}} angle vert^2": ["simulations"],
+	"f₀ from RC": ["simulations"],
+	"F1": ["playground"],
+	"F8": ["playground"],
+	"FAR": ["simulations"],
+	"far end": ["simulations"],
+	"Fault injection": ["simulations"],
+	"FB": ["simulations"],
+	"Feed an amplifier a whisper of its own output — in phase, at one special frequency — and it will build a pure tone from nothing but noise.": [
+		"simulations"
+	],
+	"Feed the bit back": ["simulations"],
+	"Feed the output back": ["simulations"],
+	"feedback DAC + decimator": ["simulations"],
+	"feedback tap moved (short cycle)": ["simulations"],
+	"Fence": ["playground"],
+	"Fence copied": ["playground"],
+	"fences add real-world usages on top. Open any primitive to take it apart in the playground.": [
+		"coverage"
+	],
+	"fences. Open any one in the playground to take it apart.": ["examples"],
+	"FF": ["simulations"],
+	"fidelity {0}": ["simulations"],
+	"fidelity $F=|\\langle\\psi|\\psi_{out}\\rangle|^2$": ["simulations"],
+	"fidelity F = |⟨ψ|ψ_out⟩|²": ["simulations"],
+	"fidelity is the squared overlap of input and output states": ["simulations"],
+	"fidelity unavailable": ["simulations"],
+	"field names one of the": ["simulations"],
+	"Fifty-fifty, because the control was in superposition.": ["simulations"],
+	"Figure": ["components", "docs", "home"],
+	"Figure 1.": ["components", "home"],
+	"Files": ["changelog"],
+	"Filter capacitance": ["simulations"],
+	"filter cutoff {0}": ["simulations"],
+	"Filter inductance": ["simulations"],
+	"Filter into the load": ["simulations"],
+	"Filter playground commands": ["playground"],
+	"Filter response: audio at {0}, carrier at {1}, cutoff {2}": ["simulations"],
+	"Filter simulations by complexity tier": ["simulations"],
+	"Filter the carrier": ["simulations"],
+	"Filter the error": ["simulations"],
+	"final drive {0} volts": ["simulations"],
+	"Find": ["global", "playground"],
+	"Find and replace": ["global", "playground"],
+	"Findings": ["inspector"],
+	"Fire event": ["simulations"],
+	"Fire events and watch a token walk the transitions of a running UML machine.": ["simulations"],
+	"fire the next event and inspect whether an edge is enabled": ["simulations"],
+	"Fire the timer events in sequence.": ["simulations"],
+	"fire three timer events to complete one state cycle": ["simulations"],
+	"fired": ["inspector"],
+	"First order": ["simulations"],
+	"First-order low-pass response; operating point at {0}, gain {1}": ["simulations"],
+	"Fitted CNOT": ["templates"],
+	"Flagged diagrams": ["conformance"],
+	"flags": ["simulations"],
+	"flip qubit {0}": ["simulations"],
+	"flip qubit {0} back": ["simulations"],
+	"flipflop:FF \"D-FF\" at (260, 140) #purple [type=d]": ["global"],
+	"Focus source editor": ["playground"],
+	"follows the previous observation": ["global"],
+	"For $N = 8$ the optimal count is $k = 2$. The target probability peaks near $0.945$. This is $\\sqrt N$ scaling made visible: two rounds, not four guesses.": [
+		"simulations"
+	],
+	"For $N=8$, apply a third Grover round after the optimal two. What happens to target probability?": [
+		"simulations"
+	],
+	"forgets its debt": ["simulations"],
+	"Form the error": ["simulations"],
+	"Form the feedback bit": ["simulations"],
+	"Four flip-flops and one XOR make a stream that looks random but repeats after exactly 15.": [
+		"simulations"
+	],
+	"FOUT": ["simulations"],
+	"framing {0}, parity {1}": ["simulations"],
+	"framing error, stop bit read low": ["simulations"],
+	"Freeze relative placements to coordinates": ["playground"],
+	"frequency {0}": ["simulations"],
+	"frequency {0}, duty {1} percent": ["simulations"],
+	"Frequency response": ["simulations"],
+	"frequency-domain transfer function": ["simulations"],
+	"Frontier": ["simulations"],
+	"Froze {0} relative {1} to coordinates.": ["playground"],
+	"gain": ["simulations"],
+	"Gain": ["simulations"],
+	"gain {0}; mu {1}": ["simulations"],
+	"gain $2.8$–$3.2$": ["simulations"],
+	"gain 2.8 – 3.2": ["simulations"],
+	"gain-set resistor open (latch-up)": ["simulations"],
+	"Gain-set resistor open (latch-up)": ["simulations"],
+	"gained {0}": ["global"],
+	"Generated from the compiler; nothing here is listed by hand.": ["coverage"],
+	"GitHub": ["global"],
+	"GND": ["simulations"],
+	"Go to error on line {0}": ["playground"],
+	"Go to line": ["playground"],
+	"Governing model": ["simulations"],
+	"Grammar": ["global"],
+	"GREEN": ["simulations"],
+	"Green → Yellow": ["simulations"],
+	"Grover 3-Qubit Search": ["simulations"],
+	"Grover 3-qubit search circuit": ["simulations"],
+	"Grover search": ["global", "simulations"],
+	"Grover’s algorithm searching an $8$-item space with $3$ qubits. Uniform superposition, then repeated rounds of oracle (phase-flip the target) and diffusion (invert about the mean) rotate the state vector toward the marked item. Real $8$-amplitude linear algebra drives a live bar chart; after the optimal $\\lfloor\\pi\\sqrt{8}/4\\rfloor=2$ rounds the target probability peaks near $94\\%$.": [
+		"simulations"
+	],
+	"Grover’s algorithm searching an 8-item space with 3 qubits. Uniform superposition, then repeated rounds of oracle (phase-flip the target) and diffusion (invert about the mean) rotate the state vector toward the marked item. Real 8-amplitude linear algebra drives a live bar chart; after the optimal ⌊π√8/4⌋ = 2 rounds the target probability peaks near 94%.": [
+		"simulations"
+	],
+	"Grow $R_B$ and watch the duty cycle approach 50%.": ["simulations"],
+	"Growth requires loop gain above unity. Below the Barkhausen threshold, noise loses amplitude on every circulation.": [
+		"simulations"
+	],
+	"guarded, timed transitions": ["simulations"],
+	"Guided tour of this diagram": ["global"],
+	"H {0}": ["simulations"],
+	"H {0} V {1}": ["simulations"],
+	"H + CNOT preparation": ["simulations"],
+	"H = 1/√2 · [ 1 1 ; 1 −1 ]": ["simulations"],
+	"H and CNOT entangle Alice’s and Bob’s resource qubits.": ["simulations"],
+	"H on q₀ followed by CNOT(q₀→q₁). Toggling the initialization ports selects which Bell pair is prepared; amplitudes and the correlation index are derived, and a measure button accumulates real Born-rule shots.": [
+		"simulations"
+	],
+	"H places q₀ in a balanced superposition.": ["simulations"],
+	"H turns the control into |+⟩, so both branches of the controlled gate are present at once.": [
+		"simulations"
+	],
+	"H_{q_{{0}}}quad ext{build uniform superposition}": ["simulations"],
+	"Hadamard completes the Bell-basis rotation": ["simulations"],
+	"Hadamard creates a superposition": ["simulations"],
+	"Hadamard gate": ["simulations"],
+	"Hadamard on qubit {0}": ["simulations"],
+	"Hadamard on the control": ["simulations"],
+	"Hadamard q₀": ["simulations"],
+	"Hadamard transform": ["simulations"],
+	"half-bridge switch": ["simulations"],
+	"Halve C and watch the cutoff move.": ["simulations"],
+	"Height": ["playground"],
+	"Hidden fault active; restore the circuit": ["simulations"],
+	"Hide": ["docs", "playground"],
+	"Hide compiled example": ["docs"],
+	"Hide contents": ["docs"],
+	"HIGH": ["simulations"],
+	"HIGH (≈Vcc)": ["simulations"],
+	"HIGH (timing)": ["simulations"],
+	"high load, positive echo": ["simulations"],
+	"high paths": ["simulations"],
+	"High-pass filter": ["templates"],
+	"High-side gate drive lost": ["simulations"],
+	"high-side MOSFET gate drive lost": ["simulations"],
+	"High-side switch active.": ["simulations"],
+	"High-side switch degraded: gate drive lost.": ["simulations"],
+	"Hlvert q_0 angle=(lvert0 angle+(-1)^{{0}}lvert1 angle)/sqrt2": ["simulations"],
+	"Hlvert0 angle=(lvert0 angle+lvert1 angle)/sqrt2": ["simulations"],
+	"Hlvertpsi anglequad ext{rotates into the Bell basis}": ["simulations"],
+	"Hold a constant phase offset": ["simulations"],
+	"Hold range": ["simulations"],
+	"hold range ±K_vK_d = ±1.2 kHz": ["simulations"],
+	"hold range $\\pm K_vK_d=\\pm1.2\\ \\mathrm{kHz}$": ["simulations"],
+	"Hold the current state.": ["simulations"],
+	"Home": ["global"],
+	"Hopf onset at gain = 3": ["simulations"],
+	"Hopf onset at gain $=3$": ["simulations"],
+	"Hover an active operator to inspect its transform": ["simulations"],
+	"Hover or focus the chart, then use ← → to step through days.": ["global"],
+	"How many documented diagrams each design rule fired on, by severity.": ["conformance"],
+	"htmlData{math-slot={0}}{ ext{{1}}}": ["simulations"],
+	"hybrid charge/discharge integrator": ["simulations"],
+	"Hz": ["simulations"],
+	"I path": ["simulations"],
+	"I_{mathrm{load}}={0},mathrm Aquad i_L={1},mathrm A": ["simulations"],
+	"I_C path": ["simulations"],
+	"i_L={0},mathrm AquadDelta i_L={1},mathrm{A_{pp}}quad {2}": ["simulations"],
+	"ideal": ["simulations"],
+	"ideal kickback gives {0}": ["simulations"],
+	"idle": ["simulations"],
+	"idle (LOW)": ["simulations"],
+	"image/svg+xml; charset=utf-8": ["badge", "embed"],
+	"Impedance cannot be negative.": ["global"],
+	"in": ["simulations"],
+	"In continuous conduction, increase $D$ while $V_{in}$ stays fixed. What should $v_o$ do?": [
+		"simulations"
+	],
+	"In lock the phase error stops changing, and its constant value supplies exactly the control voltage the VCO needs.": [
+		"simulations"
+	],
+	"in-band signal to noise {0} decibels": ["simulations"],
+	"in-band SNR": ["simulations"],
+	"Increase $C$ until $f_c$ sits between the audio and the carrier. The carrier residual falls by $40\\,\\mathrm{dB}$ per decade of separation; press Listen to hear the whine fade.": [
+		"simulations"
+	],
+	"Increase $R_B$ while $R_A$ and $C$ stay fixed. What changes first?": ["simulations"],
+	"Increasing $R_B$ lengthens the RC time constant. It also reduces the relative influence of $R_A$, moving duty downward toward—not away from—$50\\%$.": [
+		"simulations"
+	],
+	"Inductance": ["simulations"],
+	"inductor current {0} amperes, {1}": ["simulations"],
+	"Inductor current cannot jump, so each pulse changes it by a finite slope.": ["simulations"],
+	"inductor current stays above zero": ["simulations"],
+	"inductor fully demagnetizes": ["simulations"],
+	"inductor ripple {0} amperes peak-to-peak": ["simulations"],
+	"Infer a single-qubit bit flip from syndrome parity without reading the logical state.": [
+		"simulations"
+	],
+	"initial pseudostate": ["simulations"],
+	"Inject a bit flip, then step the timeline through syndrome, decode, and correct. Click a qubit or gate to read it.": [
+		"simulations"
+	],
+	"Inject a bit-flip on any one line.": ["simulations"],
+	"Inject a bit-flip on any physical qubit. The two": ["simulations"],
+	"Inject hidden fault": ["simulations"],
+	"inject one bit flip on a physical qubit": ["simulations"],
+	"Inject the disturbance and compare commanded duty, switch-node activity, inductor current, and output voltage. Locate where energy stops entering the averaging network.": [
+		"simulations"
+	],
+	"Inject the disturbance and compare the control voltage with the detector output. Ask which block stopped turning phase error into a tuning voltage.": [
+		"simulations"
+	],
+	"Inject the disturbance and compare the detector output with the control voltage. Does the phase error still reach the VCO, and where is the signal lost?": [
+		"simulations"
+	],
+	"Inject the disturbance and compare the PWM and output probes. The output now looks like the switched wave: which part of the filter stopped shunting the carrier?": [
+		"simulations"
+	],
+	"Inject the disturbance and distinguish a stable limit cycle from saturation. Use the loop-gain evidence to locate the missing amplitude control.": [
+		"simulations"
+	],
+	"Inject the disturbance and inspect the spectrum near DC. Shaped noise should fall toward zero frequency: which part of the loop no longer accumulates the error?": [
+		"simulations"
+	],
+	"Inject the disturbance and read the echo’s sign and size. Work out $\\Gamma_L$ from the near-end step, then infer what the load must now look like.": [
+		"simulations"
+	],
+	"Inject the disturbance and read the low-frequency end of the spectrum. Shaped noise should fall toward DC; ask which block stopped remembering the debt.": [
+		"simulations"
+	],
+	"Inject the disturbance and sweep frequency. If the output tracks the input everywhere, use the missing pole—not the switch label—to identify which energy-storage path stopped participating.": [
+		"simulations"
+	],
+	"Inject the disturbance and watch the actuator trace. If more gain makes things worse rather than better, ask which way the controller now believes the error points.": [
+		"simulations"
+	],
+	"Inject the disturbance with the target set to $|1\\rangle$. Compare the Bloch vector’s length and the fringe contrast with the ideal case: what must the target really be?": [
+		"simulations"
+	],
+	"Inject the disturbance with the target set to $|1\\rangle$. Compare the Bloch vector’s length with the ideal case, and infer what the target must really be.": [
+		"simulations"
+	],
+	"Inject the disturbance with zero clock error, then read the idle level and the start bit on the analyzer. What has changed about the line itself?": [
+		"simulations"
+	],
+	"Inject the disturbance with zero clock error. Read the idle level and the start bit on the analyzer: what would the receiver have to assume to decode this line?": [
+		"simulations"
+	],
+	"Inject the disturbance without reading its label. Compare the expected overflow with the observed sum: which information path stopped carrying evidence forward?": [
+		"simulations"
+	],
+	"Inject the disturbance, count clocks until the first repeated state, and use the shortened cycle to infer which recurrence lost its primitive structure.": [
+		"simulations"
+	],
+	"Inject the disturbance, drive the token around the cycle, and identify the first state whose exit never becomes enabled. Name the liveness failure from the trace.": [
+		"simulations"
+	],
+	"Inject the disturbance, predict the correct nine-bit result, then follow the last active carry. Name the failed information path from evidence before reading the relay label.": [
+		"simulations"
+	],
+	"Inject the disturbance, preserve Alice’s measurement record, and compare it with Bob’s applied corrections. Infer the missing dependency before inspecting the relay.": [
+		"simulations"
+	],
+	"Inject the disturbance, record the syndrome, and compare the indicated rail with the applied correction. Infer the broken map from the residual error.": [
+		"simulations"
+	],
+	"Inject the disturbance, sample again, and compare both the forbidden outcomes and CHSH witness. Infer which stage failed to turn a product state into an entangled one.": [
+		"simulations"
+	],
+	"Inject the disturbance, then compare the PWM probe with the output probe and listen. Which element must have stopped attenuating the carrier?": [
+		"simulations"
+	],
+	"Inject the disturbance, then measure the near-end echo at $2t_d$. From its size, compute $\\Gamma_L$ and say what impedance the far end now presents.": [
+		"simulations"
+	],
+	"Inject the disturbance, then sweep well above the old cutoff. Does the output still show a pole, and which branch would explain the changed frequency response?": [
+		"simulations"
+	],
+	"Inject the disturbance, then watch the actuator trace after the step. Does more drive move the measured speed toward or away from the setpoint, and what does that say about the feedback path?": [
+		"simulations"
+	],
+	"inject the hidden carry disturbance and inspect the changed evidence": ["simulations"],
+	"inject the hidden communication disturbance and inspect the changed evidence": ["simulations"],
+	"inject the hidden decoder disturbance and inspect the changed evidence": ["simulations"],
+	"inject the hidden feedback disturbance and inspect the changed evidence": ["simulations"],
+	"inject the hidden filter disturbance and inspect the changed evidence": ["simulations"],
+	"inject the hidden gain-path disturbance and inspect the changed evidence": ["simulations"],
+	"inject the hidden guard disturbance and inspect the changed evidence": ["simulations"],
+	"inject the hidden line disturbance and inspect the analyzer": ["simulations"],
+	"inject the hidden line disturbance and inspect the changed echo": ["simulations"],
+	"inject the hidden loop disturbance and inspect the changed evidence": ["simulations"],
+	"inject the hidden modulator disturbance and inspect the changed spectrum": ["simulations"],
+	"inject the hidden output disturbance and inspect the changed evidence": ["simulations"],
+	"inject the hidden power-stage disturbance and inspect the changed evidence": ["simulations"],
+	"inject the hidden preparation disturbance and inspect the Bloch vector": ["simulations"],
+	"inject the hidden preparation disturbance and inspect the changed evidence": ["simulations"],
+	"injectable $X$ error": ["simulations"],
+	"injectable X error": ["simulations"],
+	"INP": ["api", "global"],
+	"input {0} peak": ["simulations"],
+	"Input amplitude": ["simulations"],
+	"input is 1 volt peak-to-peak at {0}": ["simulations"],
+	"input minus the last bit": ["simulations"],
+	"input quantum state": ["simulations"],
+	"input rail {0} volts DC": ["simulations"],
+	"input sine": ["simulations"],
+	"input sine $x$": ["simulations"],
+	"input source node": ["simulations"],
+	"Input voltage": ["simulations"],
+	"input, select, textarea": ["global"],
+	"input[type=\"range\"], select": ["global"],
+	"Insert": ["playground"],
+	"Inspect compiler markup": ["playground"],
+	"Inspect the portable fenced source": ["playground"],
+	"Inspection failed unexpectedly.": ["global"],
+	"Inspector": ["global"],
+	"Inspector document": ["inspector"],
+	"Install": ["changelog"],
+	"Install footprint per release": ["changelog"],
+	"Install telemetry": ["downloads", "global"],
+	"Install telemetry · schemd": ["downloads"],
+	"installed engine": ["changelog"],
+	"Installs attributed to each published release over the last week.": ["downloads"],
+	"Installs last week, by release": ["downloads"],
+	"INT": ["simulations"],
+	"Integral gain": ["simulations"],
+	"integral path": ["simulations"],
+	"integrator leaks charge": ["simulations"],
+	"Integrator leaks charge": ["simulations"],
+	"Interactive {0} schematic": ["simulations"],
+	"Interactive 8-Bit Digital Adder schematic. Activate A, B, or carry input ports to toggle them.": [
+		"simulations"
+	],
+	"Interactive guided walk-through": ["global"],
+	"Interfere the control": ["simulations"],
+	"interrupt the carry chain": ["simulations"],
+	"Interrupt the carry chain": ["simulations"],
+	"Invalid @schemd/core manifest at {0}.": ["global"],
+	"Invalid bounds.": ["embed"],
+	"Invalid raster dimensions.": ["playground"],
+	"Invalid return origin": ["locale"],
+	"Invalid return path": ["locale"],
+	"Inversion about the mean raises the marked amplitude and suppresses the other seven.": [
+		"simulations"
+	],
+	"is": ["simulations"],
+	"It decays to silence.": ["simulations"],
+	"It drops because Bob cannot undo the measurement-dependent rotation.": ["simulations"],
+	"It falls because the state rotates past the target.": ["simulations"],
+	"It falls, because $f_c$ drops by $\\sqrt2$ and the carrier sits further into the stopband.": [
+		"simulations"
+	],
+	"It grows into a stable sinusoid.": ["simulations"],
+	"It jumps to twice the launched step, $2V_1$.": ["simulations"],
+	"It keeps rising toward $100\\%$.": ["simulations"],
+	"It remains $1$ because entanglement already carried the complete state.": ["simulations"],
+	"It remains fixed because the $LC$ network rejects PWM changes.": ["simulations"],
+	"It rises approximately in proportion to $D$.": ["simulations"],
+	"It rises to the launched step $V_1$ and stays there.": ["simulations"],
+	"It rises, because a bigger capacitor stores more ripple.": ["simulations"],
+	"ItemList": ["simulations"],
+	"items must be an integer ≥ 2.": ["simulations"],
+	"John Owolabi Idogun": ["docs", "global", "home"],
+	"John Owolabi Idogun.": ["global"],
+	"Jump automatically to the initial state.": ["simulations"],
+	"Just past $3$, the phase portrait blooms from a point into a closed loop: oscillation born from noise. This birth-of-a-cycle is the Hopf bifurcation.": [
+		"simulations"
+	],
+	"K_d 0 – 0.5": ["simulations"],
+	"K_d sin θₑ": ["simulations"],
+	"K_dsin heta_e": ["simulations"],
+	"K_i 0 – 20": ["simulations"],
+	"K_p 0 – 10": ["simulations"],
+	"Kd": ["simulations"],
+	"KD": ["simulations"],
+	"Keep $R$ fixed and increase $C$. What happens to the cutoff $f_c$?": ["simulations"],
+	"Ki": ["simulations"],
+	"KI": ["simulations"],
+	"Kind": ["components"],
+	"kinds": ["components"],
+	"kinds of part. Each has a datasheet, printed from the compiler itself: the options it accepts, their ranges and defaults, and its pins.": [
+		"components"
+	],
+	"Kp": ["simulations"],
+	"KP": ["simulations"],
+	"Kp scales the error now, Ki its accumulated history, and Kd its rate of change, in three parallel paths.": [
+		"simulations"
+	],
+	"L {0} {1}": ["simulations"],
+	"L and C form a second-order low-pass that passes the audio and shunts the carrier to the return.": [
+		"simulations"
+	],
+	"L and C must be positive.": ["global"],
+	"L–C output network": ["simulations"],
+	"L={0},mathrm{mu H}": ["simulations"],
+	"Lab": ["simulations"],
+	"Lab {0}: {1}.{2}{3}": ["simulations"],
+	"Lab builder, revision": ["simulations"],
+	"Lab complete: prediction,": ["global"],
+	"laboratories online": ["simulations"],
+	"Laboratory manifest, as JSON": ["simulations"],
+	"labs": ["simulations"],
+	"Labs": ["changelog", "global"],
+	"Landing": ["global"],
+	"langle a angle={0}quad ext{reflection axis}": ["simulations"],
+	"langle Zotimes Z angle_{mathrm{empirical}}": ["simulations"],
+	"langle Zotimes Z angle={0}quad {1}; ext{shots}": ["simulations"],
+	"Language coverage": ["coverage", "global"],
+	"Language coverage · schemd": ["coverage"],
+	"Last 24 hours": ["downloads"],
+	"Last 30 days": ["downloads"],
+	"Last 7 days": ["downloads"],
+	"last sample off by {0} bit": ["simulations"],
+	"last, |{0}⟩": ["simulations"],
+	"latest install": ["changelog"],
+	"lattice (bounce) diagram of a lossless line": ["simulations"],
+	"Launch a step down a cable and watch the far end answer back.": ["simulations"],
+	"Launch the step": ["simulations"],
+	"Launched": ["simulations"],
+	"launched step {0} volts": ["simulations"],
+	"LC filter": ["templates"],
+	"LC filter + speaker": ["simulations"],
+	"LCP": ["api", "global"],
+	"Learning-action count does not match steps for simulation \"{0}\".": ["simulations"],
+	"LED": ["simulations"],
+	"LED {0} at {1}": ["simulations"],
+	"LED off": ["simulations"],
+	"LED ON": ["simulations"],
+	"left": ["global"],
+	"Lex": ["inspector"],
+	"LF": ["simulations"],
+	"LFSR": ["global"],
+	"LFSR failed to return to its seed within the finite state space.": ["simulations"],
+	"Licence": ["home"],
+	"lifeline:CI7 \"CI runner\" at (220, 270) #cyan [width=170 height=400] lifeline:PG7 \"Pages host\" at (620, 270) #amber [width=170 height=400] artifact:ST7 \"site/\" at (880, 420) #emerald [width=170 height=80] CI7.right90 -> PG7.left90 #cyan [line synchronous label=\"deploy(1.3.0)\"] PG7.left180 -> CI7.right180 #amber [line return dashed label=\"200 OK\"] CI7.right270 -> PG7.left270 #cyan [line asynchronous label=\"invalidate cache\"] ST7.left -> PG7.right350 #emerald [ortho dependency label=\"build output\"]": [
+		"templates"
+	],
+	"Lifelines and messages for a documentation deployment.": ["templates"],
+	"Limits of the model": ["simulations"],
+	"line": ["conformance"],
+	"Line": ["inspector"],
+	"LINE": ["simulations"],
+	"line {0}": ["global"],
+	"Line {0} does not state a position this can rewrite.": ["global"],
+	"Line {0} is not in the document.": ["global"],
+	"Line {0}: {1}": ["simulations"],
+	"Line characteristic impedance": ["simulations"],
+	"line level,": ["simulations"],
+	"Lines": ["home"],
+	"Link copied": ["playground"],
+	"Listen (plays sound)": ["simulations"],
+	"Listen at the speaker": ["simulations"],
+	"Listen before the filter": ["simulations"],
+	"ListItem": ["simulations"],
+	"Literal search in source": ["playground"],
+	"Live basis-state probability distribution": ["simulations"],
+	"Live circuit": ["simulations"],
+	"live circuits on three tracks: digital, analog, and quantum. Start at the left of a track; every lab to its right builds on the one it is wired to. Each is compiled from": [
+		"simulations"
+	],
+	"Live low-pass frequency response": ["simulations"],
+	"Live npm download counts for @schemd/core: daily, weekly, and monthly installs, a 30-day trend, and the share carried by each published release.": [
+		"downloads"
+	],
+	"Live preview": ["simulations"],
+	"Live State Machine": ["simulations"],
+	"Live, checked": ["downloads"],
+	"Ln": ["global"],
+	"load": ["simulations"],
+	"load $Z_L$": ["simulations"],
+	"load connector open": ["simulations"],
+	"Load connector open": ["simulations"],
+	"load current {0} amperes; inductor current {1} amperes": ["simulations"],
+	"Load impedance, 5 ohms to 5 kilohms": ["simulations"],
+	"load reflection coefficient {0}": ["simulations"],
+	"Load resistance": ["simulations"],
+	"Load the byte": ["simulations"],
+	"Load torque step": ["simulations"],
+	"load Z_L": ["simulations"],
+	"Loading local progress.": ["global"],
+	"Local saving unavailable": ["playground"],
+	"Lock is not equal frequencies by luck — it is the loop holding a constant phase error, because a constant error is exactly the voltage the VCO needs.": [
+		"simulations"
+	],
+	"locked, phase offset {0}°": ["simulations"],
+	"Logic analyzer": ["simulations"],
+	"Logical fidelity": ["simulations"],
+	"logical fidelity {0}": ["simulations"],
+	"logical fidelity $0/1$": ["simulations"],
+	"logical fidelity 0/1": ["simulations"],
+	"logical fidelity unavailable": ["simulations"],
+	"logical qubit → 3 physical": ["simulations"],
+	"logical qubit $\\to 3$ physical": ["simulations"],
+	"Long enough wires stop behaving like a single node. A step enters the line seeing only its characteristic impedance $Z_0 = \\sqrt{L/C}$, so it launches $V_1 = V_s\\,\\frac{Z_0}{R_s+Z_0}$ whatever the load is. One delay $t_d$ later the wave reaches the load, which reflects the fraction $\\Gamma_L = \\frac{Z_L - Z_0}{Z_L + Z_0}$ back toward the source; there $\\Gamma_S$ reflects it again. An open end ($\\Gamma = +1$) doubles the voltage, a short ($\\Gamma = -1$) cancels it, and a **matched** load ($Z_L = Z_0$, $\\Gamma = 0$) swallows the wave so the line behaves as if it went on forever. The near-end trace is a map of the line: each step is an echo, and its time tells you how far away the mismatch is.": [
+		"simulations"
+	],
+	"loop filter": ["simulations"],
+	"loop filter output": ["simulations"],
+	"Loop filter resistance": ["simulations"],
+	"loop filter shorted to ground": ["simulations"],
+	"Loop filter shorted to ground": ["simulations"],
+	"loop margin {0}": ["simulations"],
+	"Loop order": ["simulations"],
+	"loss, so the amplifier must supply a gain of": ["simulations"],
+	"lost {0}": ["global"],
+	"LOW": ["simulations"],
+	"LOW (0 V)": ["simulations"],
+	"low load, negative echo": ["simulations"],
+	"Low paths muted": ["simulations"],
+	"Lower the filter cutoff below the carrier.": ["simulations"],
+	"lvert ec r vert={0}": ["simulations"],
+	"lvert H(f_{mathrm{carrier}}) vert={0},mathrm{dB}": ["simulations"],
+	"lvert H(f_a) vert={0}": ["simulations"],
+	"lvert H(jomega_0) vert= frac13": ["simulations"],
+	"lvert H(jomega) vert={0};left({1},mathrm{dB} ight)": ["simulations"],
+	"lvert H(jomega) vertquad ext{cutoff line damps as the pole falls}": ["simulations"],
+	"lvert q_2q_1q_0 angle=lvert{0} angle": ["simulations"],
+	"lvert s angle= rac1{sqrt8}sum_xlvert x anglequad a_x={0}": ["simulations"],
+	"lvert{0} angle": ["simulations"],
+	"lvertDelta f vert={0}quad K_vK_d={1}": ["simulations"],
+	"lvertpsi angle={0}lvert0 angle+left({1} ight)lvert1 angle": ["simulations"],
+	"lvertpsi anglelongrightarrow {0}": ["simulations"],
+	"lvertpsi anglelongrightarrowalphalvert000 angle+\betalvert111 angle": ["simulations"],
+	"lvertpsi_{mathrm{out}} angle=alphalvert0 angle+\betalvert1 anglequad F={0}": ["simulations"],
+	"M {0} {1}": ["simulations"],
+	"M {0} {1} H {2}": ["simulations"],
+	"M {0} {1} L {2} {3}": ["changelog"],
+	"m_1={0}quad m_2={1}": ["simulations"],
+	"M_Zlongrightarrow m_{{0}};{1}": ["simulations"],
+	"m₁ = 0 → identity": ["simulations"],
+	"m₁ = 1 → phase flip": ["simulations"],
+	"m₂ = 0 → identity": ["simulations"],
+	"m₂ = 1 → flip": ["simulations"],
+	"magnitude {0}, {1} decibels": ["simulations"],
+	"majority-vote decoder": ["simulations"],
+	"Make the model answer you.": ["global"],
+	"Malformed compile request.": ["api", "global"],
+	"Malformed JSON request.": ["global"],
+	"Malformed telemetry batch.": ["api"],
+	"Malformed verify request.": ["api"],
+	"Manifest": ["simulations"],
+	"Manifest editor": ["simulations"],
+	"Manifest is not valid JSON: {0}": ["simulations"],
+	"Manifest is valid and its diagram compiles.": ["simulations"],
+	"Manifest must be an object.": ["simulations"],
+	"Manifest problems": ["simulations"],
+	"MARGINAL (Barkhausen)": ["simulations"],
+	"Mark one of the eight states, then": ["simulations"],
+	"marked state {0}": ["simulations"],
+	"Match case": ["global"],
+	"Match the load": ["simulations"],
+	"match the load to the line impedance": ["simulations"],
+	"Match the load to the line.": ["simulations"],
+	"Match the source": ["simulations"],
+	"Match whole word": ["global"],
+	"matched load, no echo": ["simulations"],
+	"matched source, one echo, then quiet": ["simulations"],
+	"mathrm{ENOB}={0}; ext{bits}": ["simulations"],
+	"mathrm{OUT}={0}quad @quad f={1}": ["simulations"],
+	"max-age=31536000; includeSubDomains": ["global"],
+	"Maximal-Length LFSR": ["simulations"],
+	"Mean": ["simulations"],
+	"Mean ⟨a⟩": ["simulations"],
+	"mean amplitude {0}": ["simulations"],
+	"Measure": ["simulations"],
+	"Measure 200 shots": ["simulations"],
+	"measure classical bits": ["simulations"],
+	"Measure correlation": ["simulations"],
+	"Measure one qubit and you instantly know the other — not because a signal raced across, but because they were never really two things.": [
+		"simulations"
+	],
+	"Measure state": ["simulations"],
+	"Measure the control": ["simulations"],
+	"Measure the speed": ["simulations"],
+	"Measurement": ["simulations"],
+	"measurement bit one {0}": ["simulations"],
+	"measurement bit two {0}": ["simulations"],
+	"measurement bits {0} and {1}": ["simulations"],
+	"Measurement leaves the 50/50 theoretical distribution intact until sampled.": ["simulations"],
+	"measurement ports": ["simulations"],
+	"measurement probability {0} percent for state {1}": ["simulations"],
+	"measurement ready": ["simulations"],
+	"Measurements": ["simulations"],
+	"Measuring a qubit destroys its superposition, so the classical trick of \"read it and fix it\" is off the table. The bit-flip code sidesteps this beautifully. Encode $\\alpha|0\\rangle + \\beta|1\\rangle$ as $\\alpha|000\\rangle + \\beta|111\\rangle$ — the amplitudes are untouched, just spread across three qubits. Now measure two **parities**: $s_0 = q_0 \\oplus q_1$ and $s_1 = q_1 \\oplus q_2$. A parity reveals whether two qubits *differ*, never their actual values, so the delicate $\\alpha, \\beta$ survive. Yet the syndrome $(s_0, s_1)$ points straight at the flipped qubit: $10$ means $q_0$, $11$ means $q_1$, $01$ means $q_2$, $00$ means clean. Flip it back and the logical state is exactly restored. This is the whole reason scalable quantum computing is believed possible.": [
+		"simulations"
+	],
+	"median compile": ["changelog"],
+	"median of 9 passes over an 11-declaration workload, measured live on this server against the installed compiler (v": [
+		"changelog"
+	],
+	"Meet the load": ["simulations"],
+	"Missing learning design for simulation \"{0}\".": ["simulations"],
+	"MIT": ["home"],
+	"MIT licence, ©": ["global"],
+	"Mode": ["simulations"],
+	"models this application ships, and cannot name anything else.": ["simulations"],
+	"Models:": ["simulations"],
+	"Modulation depth": ["simulations"],
+	"Modulator order": ["simulations"],
+	"Monostable": ["simulations"],
+	"Monostable elapsed time cannot be negative and R/C must be positive.": ["simulations"],
+	"monostable, pulse in flight": ["simulations"],
+	"monostable, waiting for a trigger": ["simulations"],
+	"mord mathtt": ["simulations"],
+	"motor + tachometer": ["simulations"],
+	"motor drive": ["simulations"],
+	"Motor speed loop: error junction, parallel proportional, integral, and derivative paths, driver, motor, and tachometer feedback. Drag the gain tags; click a wire to probe it.": [
+		"simulations"
+	],
+	"motor speed ω(t) against the setpoint": ["simulations"],
+	"MOUT": ["simulations"],
+	"Move $f_{ref}$ inside the hold range. The VCO frequency chases it, rings once or twice through the loop filter, and settles with a new, constant phase offset.": [
+		"simulations"
+	],
+	"move gain across three and inspect the phase portrait": ["simulations"],
+	"Move one feedback tap away from the primitive polynomial. Must the period remain $15$?": [
+		"simulations"
+	],
+	"Move the carrier closer to the audio.": ["simulations"],
+	"move the carrier frequency and compare the cleanliness": ["simulations"],
+	"ms": ["changelog"],
+	"ms. Hover a line to find its wire.": ["home"],
+	"multiplies |11⟩ by e^(i·{0}°)": ["simulations"],
+	"must be written.": ["components"],
+	"My laboratory": ["simulations"],
+	"N = 8 search space": ["simulations"],
+	"N1_{0}.out -> O1_{1}.in1 #amber [ortho]": ["simulations"],
+	"N2_{0}.out -> O1_{1}.in2 #amber [ortho]": ["simulations"],
+	"Name the suspected mechanism and the evidence that led you there. This text is not saved.": [
+		"global"
+	],
+	"natural-sampling PWM + 2nd-order LC filter": ["simulations"],
+	"navigate": ["global", "playground"],
+	"NEAR": ["simulations"],
+	"near / far probes": ["simulations"],
+	"near end": ["simulations"],
+	"Near-short the load": ["simulations"],
+	"near/far probes": ["simulations"],
+	"Negative": ["global"],
+	"Negative: white ink on black": ["global"],
+	"Neighbouring labs": ["simulations"],
+	"net": ["diff"],
+	"Net": ["home"],
+	"Net {0} / {1}": ["global"],
+	"net {0} added": ["global"],
+	"net {0} changed": ["global"],
+	"net {0} removed": ["global"],
+	"net not found": ["global"],
+	"Netlist": ["home"],
+	"Nets": ["inspector"],
+	"nets, compiled in": ["home"],
+	"Next": ["components", "docs", "global", "simulations"],
+	"Next lab:": ["simulations"],
+	"Next match": ["global"],
+	"Next step": ["simulations"],
+	"Next,": ["simulations"],
+	"nine-bit result": ["simulations"],
+	"nine-bit result equals {0}": ["simulations"],
+	"no correction needed": ["simulations"],
+	"no correction requested": ["simulations"],
+	"no current: branch open": ["simulations"],
+	"No delta while a revision fails to compile — fix the": ["diff"],
+	"no diagnosis yet": ["global"],
+	"No documentation corpus found for {0}.": ["global"],
+	"No documentation page named {0}.": ["docs"],
+	"No documentation release named {0}.": ["docs"],
+	"No documented lines found under content/schemd/<major.minor>/.": ["global"],
+	"No embed release named {0}.": ["embed"],
+	"no error": ["simulations"],
+	"no error detected": ["simulations"],
+	"No exit guard is enabled; state machine deadlocked.": ["simulations"],
+	"No inspector release named {0}.": ["inspector"],
+	"No kind matches “": ["playground"],
+	"No lab manifest registered for {0}.": ["simulations"],
+	"No matches": ["global"],
+	"No matches. Try “ports”.": ["global"],
+	"No matching command.": ["playground"],
+	"No per-release breakdown in this snapshot.": ["downloads"],
+	"No pins; this part is drawn but not wired.": ["playground"],
+	"No playground release named {0}.": ["playground"],
+	"No prerequisite": ["simulations"],
+	"No release named {0}.": ["diff"],
+	"No route to this node": ["global"],
+	"No shared clock: the receiver times every bit from one falling edge.": ["simulations"],
+	"No simulation component registered for {0}.": ["simulations"],
+	"No simulation release named {0}.": ["simulations"],
+	"No topological change. The two revisions describe the same circuit.": ["diff"],
+	"No. The state graph can split into shorter cycles.": ["simulations"],
+	"Node.js 24 or newer, browsers, web workers": ["home"],
+	"Node.js 24+": ["home"],
+	"Nodes": ["inspector"],
+	"Noise at the op-amp input is the seed; loop gain decides whether it grows.": ["simulations"],
+	"nominal": ["simulations"],
+	"non-classical": ["simulations"],
+	"None": ["components", "home"],
+	"none — start here.": ["global"],
+	"nonlinear phase-error dynamics": ["simulations"],
+	"Not completed": ["simulations"],
+	"Not enough observations to plot a series.": ["global"],
+	"not yet observed": ["global"],
+	"Notebook": ["simulations"],
+	"Notebook:": ["simulations"],
+	"Notes": ["conformance"],
+	"Nothing happens — and that *nothing* is meaningful. A well-formed machine simply has no arrow for an impossible input; the token holds.": [
+		"simulations"
+	],
+	"Nothing happens until the source has charged the whole line.": ["simulations"],
+	"Now the target is not an eigenstate. The Bloch vector shortens: purity falls below $1$, and the control has become entangled with the target instead of simply rotating.": [
+		"simulations"
+	],
+	"npm": ["global"],
+	"npm could not be reached, so release figures may be out of date.": ["global"],
+	"Npm dist metadata unavailable in this snapshot.": ["changelog"],
+	"npm i @schemd/core": ["home"],
+	"npm latest": ["changelog"],
+	"npm publishes counts, not a feed, so this page holds one streaming connection open and the server polls the registry once a minute on behalf of every reader. The counts step rather than tick — npm settles a day hours after it closes — so the header reports when it last looked instead of animating a number that has not moved.": [
+		"downloads"
+	],
+	"Number from {0} to {1}": ["components", "playground"],
+	"O1_{0}.out -> COUT.in #purple [ortho]": ["simulations"],
+	"objective:": ["simulations"],
+	"observations and": ["global"],
+	"observations, and diagnosis recorded.": ["global"],
+	"Observe Vₒᵤₜ": ["simulations"],
+	"observed": ["global"],
+	"Occupancy per": ["inspector"],
+	"Occupied cells": ["inspector"],
+	"of": ["global", "home", "simulations"],
+	"of the compiler states them.": ["components"],
+	"off": ["simulations"],
+	"OFF": ["simulations"],
+	"Offer": ["home"],
+	"Offset": ["simulations"],
+	"On each clock the quantizer outputs +1 or −1 by the integrator’s sign, and the flip-flop holds it for one period.": [
+		"simulations"
+	],
+	"on line {0}": ["playground"],
+	"one active state": ["simulations"],
+	"One bit, sampled fast, can carry sixteen — if you push the noise somewhere else.": [
+		"simulations"
+	],
+	"One circuit, three views": ["home"],
+	"One clock edge samples the prepared feedback and all four D inputs simultaneously.": [
+		"simulations"
+	],
+	"one diagnosis": ["global"],
+	"One logical qubit enters the encoder.": ["simulations"],
+	"One of {0} values": ["components", "playground"],
+	"one third along": ["simulations"],
+	"One trigger, one clean pulse of width $1.1\\,R_A C$, then silence until the next trigger. The astable clock became a stopwatch.": [
+		"simulations"
+	],
+	"one-third magnitude": ["simulations"],
+	"Only": ["components", "playground"],
+	"Only $00$ and $11$ ever appear, roughly half each — perfectly correlated outcomes from a state with no definite value beforehand.": [
+		"simulations"
+	],
+	"Only $00$ and $11$, with approximately equal frequency.": ["simulations"],
+	"Only after the eighth full-adder cell settles is the byte result and final carry committed.": [
+		"simulations"
+	],
+	"op-amp gain stage": ["simulations"],
+	"open": ["global"],
+	"Open": ["examples"],
+	"Open in playground": ["components", "docs"],
+	"Open in the playground": ["conformance"],
+	"Open template": ["templates"],
+	"Open the {0} primitive in the playground": ["coverage"],
+	"Open the lab": ["simulations"],
+	"Open the playground": ["home"],
+	"opening the stream…": ["downloads"],
+	"operand A": ["simulations"],
+	"Operand A bits, most significant first": ["simulations"],
+	"operand B": ["simulations"],
+	"Operand B bits, most significant first": ["simulations"],
+	"Operating points": ["simulations"],
+	"operatorname{CNOT}_{psi o A}:lvert a,b anglelongrightarrowlvert a,boplus a angle": [
+		"simulations"
+	],
+	"operatorname{CNOT}:(lvert00 angle+lvert10 angle)/sqrt2longrightarrowlvertPhi^+ angle": [
+		"simulations"
+	],
+	"operatorname{CNOT}:lvert a,b anglelongrightarrowlvert a,boplus a angle": ["simulations"],
+	"operatorname{measure}longrightarrow P(lvert{0} angle)={1}%": ["simulations"],
+	"operatorname{state}({0})quad N_{mathrm{visit}}={1}quad {2}": ["simulations"],
+	"optimal $k=2$ rounds": ["simulations"],
+	"optimal k = 2 rounds": ["simulations"],
+	"Option": ["components"],
+	"Options": ["components", "playground"],
+	"Options go in square brackets after the colour, as": ["components"],
+	"or": ["playground"],
+	"or:O1_{0} \"O\" at ({1}, {2}) #purple": ["simulations"],
+	"ORACLE": ["simulations"],
+	"oracle $U_f$ (phase flip)": ["simulations"],
+	"oracle marks state {0}": ["simulations"],
+	"oracle marks the wrong state": ["simulations"],
+	"Oracle marks the wrong state": ["simulations"],
+	"oracle phase flips state {0}": ["simulations"],
+	"Oracle U_f": ["simulations"],
+	"oracle U_f (phase flip)": ["simulations"],
+	"order $L\\in\\{1,2\\}$": ["simulations"],
+	"order 1 or 2": ["simulations"],
+	"OSCILLATING (limit cycle)": ["simulations"],
+	"Oscilloscope": ["simulations"],
+	"Oscilloscope with no probe attached. Click a wire in the drawing to clip a probe on.": [
+		"simulations"
+	],
+	"Oscilloscope, rolling trace": ["simulations"],
+	"Oscilloscope. {0}.": ["simulations"],
+	"OSR": ["simulations"],
+	"OSR 8 – 128": ["simulations"],
+	"Others": ["simulations"],
+	"OUT": ["components", "playground", "simulations"],
+	"Outcome": ["simulations"],
+	"Output": ["home", "playground"],
+	"output {0} at {1}": ["simulations"],
+	"output {0} normalized": ["simulations"],
+	"output {0} volts": ["simulations"],
+	"output {0} volts; ideal {1} volts": ["simulations"],
+	"output bit": ["simulations"],
+	"Output capacitance": ["simulations"],
+	"output fidelity {0}": ["simulations"],
+	"output filter capacitor open": ["simulations"],
+	"Output filter capacitor open": ["simulations"],
+	"output is {0} volts peak-to-peak": ["simulations"],
+	"output LED + limiter": ["simulations"],
+	"overline{y}; ext{ones}={0}%": ["simulations"],
+	"Oversampling ratio, 8 to 128": ["simulations"],
+	"Overshoot": ["simulations"],
+	"overshoot {0} %": ["simulations"],
+	"overshoot {0} percent": ["simulations"],
+	"P only": ["simulations"],
+	"P path": ["simulations"],
+	"P(00) = P(11) = 1/2": ["simulations"],
+	"P(1) = {0}": ["simulations"],
+	"P(1) = sin²(φ/2) for an eigenstate target; anything else entangles the qubits and washes out the fringe.": [
+		"simulations"
+	],
+	"Package": ["home"],
+	"Package manager": ["home"],
+	"pages": ["docs"],
+	"Pages that teach a rule must break it. These diagrams declare the diagnostics they expect, so they never masquerade as defects.": [
+		"conformance"
+	],
+	"Paper": ["global"],
+	"Paper: black ink on white": ["global"],
+	"parallel $K_p,\\ K_i/s,\\ K_d s$ paths": ["simulations"],
+	"parallel K_p, K_i/s, K_d·s paths": ["simulations"],
+	"Parity": ["simulations"],
+	"Parity adds one bit that makes the count of ones even. A single slipped bit now raises a parity error, even when the stop bit still happens to read high.": [
+		"simulations"
+	],
+	"Parity checks locate the error while preserving the logical amplitudes.": ["simulations"],
+	"parity error, a bit slipped": ["simulations"],
+	"parity none / even / odd": ["simulations"],
+	"parity none/even/odd": ["simulations"],
+	"Parse": ["inspector"],
+	"Part reading": ["simulations"],
+	"Parts": ["playground", "simulations"],
+	"parts and": ["simulations"],
+	"parts on": ["home"],
+	"passband tracking": ["simulations"],
+	"Paste this into any Markdown pipeline": ["playground"],
+	"Pause": ["global", "simulations"],
+	"pause ⏸": ["simulations"],
+	"pause animation": ["simulations"],
+	"pause auto-run": ["simulations"],
+	"Pause auto-run of the state machine": ["simulations"],
+	"paused": ["simulations"],
+	"Paused for your reduced-motion preference. Resume only if desired.": ["simulations"],
+	"PD": ["simulations"],
+	"Peak": ["downloads"],
+	"peak $P(\\mathrm{target})\\approx0.945$": ["simulations"],
+	"Peak load": ["inspector"],
+	"peak P(target) ≈ 0.945": ["simulations"],
+	"per-gate propagation delay": ["simulations"],
+	"period $2^4-1=15$": ["simulations"],
+	"period 2⁴ − 1 = 15": ["simulations"],
+	"Persist this workspace in this browser": ["playground"],
+	"Person": ["docs", "global", "home"],
+	"phase": ["simulations"],
+	"phase {0} degrees": ["simulations"],
+	"Phase error": ["simulations"],
+	"phase error {0} degrees": ["simulations"],
+	"Phase kickback": ["global", "simulations"],
+	"Phase Kickback": ["simulations"],
+	"Phase kickback circuit: control qubit through H, a controlled phase onto the target, H, and measurement. Drag the phase tag on the controlled-phase gate.": [
+		"simulations"
+	],
+	"phase portrait": ["simulations"],
+	"Phase portrait": ["simulations"],
+	"Phase portrait: a fixed point, the loop is locked": ["simulations"],
+	"Phase portrait: the loop is moving": ["simulations"],
+	"Phase-locked loop": ["simulations"],
+	"Phase-Locked Loop": ["simulations"],
+	"Phase-locked loop animation": ["simulations"],
+	"Phase-locked loop: reference, XOR phase detector, R C loop filter, and VCO with feedback. Drag the tags on the reference, the resistor, and the VCO; click a wire to probe it.": [
+		"simulations"
+	],
+	"phaseIndex is outside the Grover schedule.": ["simulations"],
+	"Phi": ["simulations"],
+	"Physical qubit states": ["simulations"],
+	"Pick $q_0$, $q_1$, or $q_2$. The physical state is now corrupted — but you are forbidden from reading the data to find out how.": [
+		"simulations"
+	],
+	"Pick any $\\theta, \\phi$. This is Alice’s unknown state — and neither she nor Bob is allowed to read it.": [
+		"simulations"
+	],
+	"PID control": ["global"],
+	"PID Motor Speed Control": ["simulations"],
+	"PID speed loop": ["simulations"],
+	"Pin": ["components"],
+	"pin 3": ["simulations"],
+	"pin 3 output:": ["simulations"],
+	"Pin names depend on the selected variant. Each drawing labels its own pins.": ["components"],
+	"Pins": ["components", "playground"],
+	"Place": ["inspector"],
+	"Place an LC cutoff between the audio band and the PWM carrier.": ["simulations"],
+	"Play": ["simulations"],
+	"play ⏵": ["simulations"],
+	"Play tour": ["global"],
+	"Playback controls": ["simulations"],
+	"Playground": ["changelog", "global"],
+	"Playground · schemd v{0}": ["playground"],
+	"Playground commands": ["playground"],
+	"Playground commands (F1 or Command/Control Shift P)": ["playground"],
+	"Playground schematic": ["global", "playground"],
+	"PLL": ["global"],
+	"PMOS high-side switch": ["simulations"],
+	"PNG export could not decode the generated SVG.": ["playground"],
+	"PNG export failed safely. Download SVG instead.": ["playground"],
+	"PNG export is unavailable in this browser.": ["playground"],
+	"pnpm add @schemd/core": ["home"],
+	"port in the schematic": ["simulations"],
+	"port:A \"A\" at (100, 170) #amber port:B \"B\" at (620, 170) #amber port:C \"C\" at (100, 270) #amber port:D \"D\" at (620, 270) #amber port:T \"T\" at (360, 70) #amber [orientation=down] port:U \"U\" at (360, 380) #amber [orientation=up] port:S \"S\" at (470, 70) #blue [orientation=down] port:Z \"Z\" at (470, 380) #blue [orientation=up] A.out -> B.in #amber [ortho net=N] C.out -> D.in #amber [ortho net=N] T.out -> U.out #amber [ortho net=N] S.out -> Z.out #blue [ortho]": [
+		"global"
+	],
+	"port:A{0} \"A_{1}\" at ({2}, {3}) #blue": ["simulations"],
+	"port:B{0} \"B_{1}\" at ({2}, {3}) #blue": ["simulations"],
+	"port:CIN \"C_{in}\" at ({0}, 55) #slate": ["simulations"],
+	"port:COUT \"C_{out}\" at ({0}, {1}) #emerald": ["simulations"],
+	"port:D \"D\" at (70, 110) #blue clock:CLK \"CLK\" at (70, 220) #amber flipflop:FF \"D-FF\" at (260, 140) #purple [type=d] not:INV \"NOT\" at (430, 110) #cyan port:Q \"Q\" at (590, 110) #emerald D.out -> FF.d #blue [digital ortho] CLK.out -> FF.clock #amber [digital ortho] FF.q -> INV.in #purple [digital ortho] INV.out -> Q.in #emerald [digital ortho]": [
+		"global"
+	],
+	"port:P0 \"in\" at (60, 100) #blue resistor:R1 \"R\" at (200, 100) #amber capacitor:C1 \"C\" at (340, 100) #cyan nand:N1 \"N\" at (480, 160) #purple ground:G1 \"gnd\" at (340, 220) #slate port:P1 \"out\" at (600, 160) #emerald P0.out -> R1.in #blue [ortho] R1.out -> C1.in #amber [ortho] C1.out -> N1.in1 #cyan [ortho] C1.out -> G1.in #slate [ortho] N1.out -> P1.in #purple [ortho arrow]": [
+		"changelog"
+	],
+	"port:PULSE \"pulses\" at (80, 130) #blue buffer:SH7 \"clean\" at (280, 130) #cyan [type=schmitt] counter:CT7 \"count\" at (500, 150) #amber port:LIM \"limit\" at (80, 330) #amber comparator:CM7 \"N = limit\" at (760, 250) #purple port:DONE \"batch done\" at (1040, 250) #emerald PULSE.out -> SH7.in1 #blue [digital ortho] SH7.out1 -> CT7.clock #cyan [digital ortho] CT7.out1 -> CM7.in1 #amber [digital ortho] LIM.out -> CM7.in2 #amber [digital ortho] CM7.eq -> DONE.in #emerald [digital ortho marker-end=arrow]": [
+		"templates"
+	],
+	"port:S{0} \"S_{1}\" at ({2}, {3}) #emerald": ["simulations"],
+	"port:VIN \"V_{in}\" at (80, 110) #blue resistor:R1 \"R\" at (300, 110) #amber port:OUT \"V_{out}\" at (540, 110) #emerald VIN.out -> R1.in #blue [line] R1.out -> OUT.in #emerald [line marker-end=arrow]": [
+		"embed"
+	],
+	"port:VIN \"V_{in}\" at (90, 120) #blue resistor:R1 \"1 k\\Omega\" at (250, 120) #amber junction:N1 at (400, 120) #cyan capacitor:C1 \"100 nF\" at (400, 260) #cyan [orientation=down] resistor:R2 \"10 k\\Omega\" at (560, 120) #amber junction:N2 at (710, 120) #cyan capacitor:C2 \"10 nF\" at (710, 260) #cyan [orientation=down] port:VOUT \"V_{out}\" at (880, 120) #emerald ground:G1 at (560, 400) #slate VIN.out -> R1.in #blue [ortho] R1.out -> N1.node #amber [ortho] N1.node -> C1.in #cyan [ortho] N1.node -> R2.in #cyan [ortho] R2.out -> N2.node #amber [ortho] N2.node -> C2.in #cyan [ortho] N2.node -> VOUT.in #emerald [ortho marker-end=arrow] C1.out -> G1.in #slate [ortho] C2.out -> G1.in #slate [ortho]": [
+		"templates"
+	],
+	"positive feedback at {0}": ["simulations"],
+	"POST": ["global", "playground"],
+	"Power electronics": ["simulations"],
+	"power stage disabled": ["simulations"],
+	"power stage off": ["simulations"],
+	"Power-on follows the initial transition into Red.": ["simulations"],
+	"Pr(00)=Pr(11)= frac12": ["simulations"],
+	"Predict averaged buck-converter output and recognize conduction-mode boundaries.": [
+		"simulations"
+	],
+	"Predict guarded state transitions and identify a liveness failure.": ["simulations"],
+	"Predict how component values move a first-order pole and attenuation.": ["simulations"],
+	"Predict, then test": ["global"],
+	"Prediction choices": ["global"],
+	"Prediction committed:": ["global"],
+	"Prepare |00⟩": ["simulations"],
+	"Prepare |ψ⟩": ["simulations"],
+	"Prepare $|\\Phi^+\\rangle$ and measure ×64 repeatedly.": ["simulations"],
+	"Prepare control and target": ["simulations"],
+	"Prepare the four Bell states; sample the ⟨Z⊗Z⟩ correlation.": ["simulations"],
+	"Prepare the target in |+⟩ instead.": ["simulations"],
+	"prepare the target in the plus state": ["simulations"],
+	"Prepare ψ and ancillas": ["simulations"],
+	"prepare:HC \"|1\\rangle\" at (100, 100) #blue prepare:HT \"|1\\rangle\" at (100, 270) #blue cnot:CX at (460, 185) #purple [fit=wires] port:HOC \"control out\" at (790, 100) #emerald port:HOT \"target out\" at (790, 270) #emerald HC.out -> CX.in1 #blue [quantum ortho] HT.out -> CX.in2 #blue [quantum ortho] CX.out1 -> HOC.in #purple [quantum ortho] CX.out2 -> HOT.in #purple [quantum ortho marker-end=arrow]": [
+		"templates"
+	],
+	"prepare:P0 \"|+\\rangle\" at (80, 120) #blue prepare:P1 \"|1\\rangle\" at (80, 280) #blue cphase:CP7 \"CP\" at (400, 200) #purple [fit=wires] measure:MX7 \"M_x\" at (680, 120) #cyan classical-bit:CB7 \"c_0\" at (880, 120) #emerald P0.out -> CP7.in1 #blue [quantum ortho] P1.out -> CP7.in2 #blue [quantum ortho] CP7.out1 -> MX7.in #purple [quantum ortho] MX7.classical -> CB7.in #cyan [classical line marker-end=arrow]": [
+		"templates"
+	],
+	"prepare:Q0 \"|0\\rangle\" at (70, 90) #blue": ["global"],
+	"prepare:Q0 \"|0\\rangle\" at (70, 90) #blue prepare:Q1 \"|0\\rangle\" at (70, 210) #blue hadamard:H \"H\" at (220, 90) #cyan cnot:CX \"CX\" at (380, 150) #purple [fit=wires] measure:M0 \"M\" at (560, 90) #emerald measure:M1 \"M\" at (560, 210) #emerald Q0.out -> H.in #blue [quantum] H.out -> CX.in1 #cyan [quantum] Q1.out -> CX.in2 #blue [quantum] CX.out1 -> M0.in #purple [quantum] CX.out2 -> M1.in #purple [quantum]": [
+		"global"
+	],
+	"prepared {0}": ["simulations"],
+	"Prerequisite:": ["global"],
+	"Preview": ["global", "playground"],
+	"Preview channel": ["playground"],
+	"Previous": ["components", "docs", "simulations"],
+	"Previous lab:": ["simulations"],
+	"Previous match": ["global"],
+	"Previous step": ["simulations"],
+	"Previous,": ["simulations"],
+	"Primary": ["global"],
+	"primitive polynomial taps": ["simulations"],
+	"Primitive taps — all {0} non-zero states before repeating.": ["simulations"],
+	"Primitives exercised across": ["coverage"],
+	"Print mode: {0}. Activate to switch.": ["global"],
+	"probability {0} percent": ["simulations"],
+	"Probability bar graph for basis states 00, 01, 10, and 11": ["simulations"],
+	"probability of 1 is {0}": ["simulations"],
+	"probability of measuring 1 is {0}": ["simulations"],
+	"probability of one {0}": ["simulations"],
+	"probability of zero {0}": ["simulations"],
+	"Probe {0} on {1}": ["simulations"],
+	"Probe A": ["simulations"],
+	"Probe B": ["simulations"],
+	"Probes": ["simulations"],
+	"Progress held for this page only": ["global"],
+	"Progress saved locally": ["global"],
+	"Projection complete: the register collapsed to |{0}⟩.": ["simulations"],
+	"projective operator": ["simulations"],
+	"pronounced like": ["global"],
+	"propagating": ["simulations"],
+	"propagation nominal": ["simulations"],
+	"Propagation stage delay": ["simulations"],
+	"Proportional gain": ["simulations"],
+	"proportional path": ["simulations"],
+	"Prose derived from the same model.": ["inspector"],
+	"Protect a qubit you are forbidden to read by measuring only disagreement.": ["simulations"],
+	"Protocol playback": ["simulations"],
+	"Protocol stage": ["simulations"],
+	"PSI": ["simulations"],
+	"public, max-age=300, s-maxage=900, stale-while-revalidate=86400": ["badge"],
+	"public, max-age=3600": ["embed", "sitemap.xml"],
+	"public, max-age=86400": ["sitemap.xsl"],
+	"Publication not confirmed": ["changelog"],
+	"Publication unconfirmed": ["changelog"],
+	"Publish date not in the seed": ["changelog"],
+	"Published": ["global"],
+	"pulse in flight…": ["simulations"],
+	"pulse width {0}": ["simulations"],
+	"pulse-width modulated, plus or minus one": ["simulations"],
+	"Purity": ["simulations"],
+	"purity |r| ∈ [0, 1]": ["simulations"],
+	"purity $|\\vec r|\\in[0,1]$": ["simulations"],
+	"Push the reference beyond the hold range.": ["simulations"],
+	"Put the control in superposition": ["simulations"],
+	"PWM": ["simulations"],
+	"PWM {0} % at {1} kHz": ["simulations"],
+	"PWM comparator": ["simulations"],
+	"PWM drives QH; the switch node alternates between source and freewheel paths.": ["simulations"],
+	"PWM feedback controller": ["simulations"],
+	"q_{{0}}quad P(mathrm{target})={1}%": ["simulations"],
+	"Q_Hquad {0}quad D={1}": ["simulations"],
+	"q₀ controls q₁; the pair becomes one correlated Bell state.": ["simulations"],
+	"q₀ starts at |1⟩": ["simulations"],
+	"Q1 accepts feedback while Q2, Q3, and Q4 accept the previous neighboring bits on the same edge—not as a serial ripple.": [
+		"simulations"
+	],
+	"q₁ starts at |1⟩": ["simulations"],
+	"Q4 is observed as one symbol of the maximal-length repeating sequence.": ["simulations"],
+	"QH": ["simulations"],
+	"quantum": ["global"],
+	"Quantum": ["components", "global", "playground", "simulations", "templates"],
+	"Quantum error correction": ["simulations"],
+	"Quantum Error Correction": ["simulations"],
+	"Quantum error-correction model": ["simulations"],
+	"quantum systems": ["global"],
+	"Quantum teleportation": ["simulations"],
+	"Quantum Teleportation Protocol": ["simulations"],
+	"Quantum teleportation register. Drag theta and phi on the input state; hover gates for their Dirac-notation action.": [
+		"simulations"
+	],
+	"quantum-state phasor animation": ["simulations"],
+	"Quantum-state phasor animation": ["simulations"],
+	"qubit {0}": ["simulations"],
+	"qubit {0}, target probability {1} percent": ["simulations"],
+	"Quickstart": ["global"],
+	"R 100 Ω – 1 MΩ": ["simulations"],
+	"R A": ["simulations"],
+	"R and C must be positive and frequency cannot be negative.": ["simulations"],
+	"R B": ["simulations"],
+	"R limits current; its voltage drop grows as the capacitor demands more charge.": ["simulations"],
+	"R source": ["simulations"],
+	"R_A + R_B timing pair": ["simulations"],
+	"R_f / R_g gain setting": ["simulations"],
+	"RA": ["simulations"],
+	"Raise $K_i$. The steady-state error goes to zero, even after the load step, but too much integral overshoots and rings. Then add $K_d$ to damp it.": [
+		"simulations"
+	],
+	"Raise the gain from below 3.": ["simulations"],
+	"raise the oversampling ratio and compare the in-band SNR": ["simulations"],
+	"Raise the oversampling ratio.": ["simulations"],
+	"Raise the proportional gain and read the offset.": ["simulations"],
+	"raise the proportional gain and read the steady-state offset": ["simulations"],
+	"Rasterize a 2× preview locally": ["playground"],
+	"RB": ["simulations"],
+	"RC filter": ["global"],
+	"RC frequency response analyzer": ["simulations"],
+	"RC ladder": ["templates"],
+	"RC loop filter": ["simulations"],
+	"RC low-pass filter. Drag the value tags on the source, resistor, and capacitor; click a wire to clip a probe on.": [
+		"simulations"
+	],
+	"RC waveform and frequency-response animation": ["simulations"],
+	"RCLK": ["simulations"],
+	"Read a reflection coefficient from a near-end echo and terminate a line.": ["simulations"],
+	"Read the documentation": ["home"],
+	"Read the syndrome, not the data.": ["simulations"],
+	"Reading": ["simulations"],
+	"Readouts": ["simulations"],
+	"Ready": ["playground"],
+	"Received": ["simulations"],
+	"received {0}, hex {1}": ["simulations"],
+	"received 0x{0} cleanly": ["simulations"],
+	"Receiver clock error, minus 10 to plus 10 percent": ["simulations"],
+	"Recommended first:": ["global"],
+	"Recommended lab": ["global"],
+	"Recommended next": ["simulations"],
+	"Recommended order, with progress kept on this device": ["simulations"],
+	"Recover": ["global"],
+	"Recover |ψ⟩": ["simulations"],
+	"Recovered draft": ["playground"],
+	"Recovered the last local draft.": ["playground"],
+	"Recovery draft saved.": ["playground"],
+	"RED": ["simulations"],
+	"Red / Green / Yellow states": ["simulations"],
+	"Red → Green": ["simulations"],
+	"Red → Green → Yellow → Red. The active state glows and each taken transition pulses; the trace log is the exact run $\\delta(\\delta(\\delta(s_0, e_1), e_2), \\dots)$.": [
+		"simulations"
+	],
+	"REF": ["simulations"],
+	"Reference": ["playground"],
+	"reference {0}": ["simulations"],
+	"Reference frequency, 8 to 12 kilohertz": ["simulations"],
+	"reference ground": ["simulations"],
+	"reference oscillator": ["simulations"],
+	"reference oscillator $f_{ref}$": ["simulations"],
+	"Reflectometer": ["simulations"],
+	"register prepared": ["simulations"],
+	"register value": ["simulations"],
+	"Registered inverter": ["global"],
+	"registry synced {0}": ["changelog"],
+	"Registry-synced release timeline for @schemd/core: install footprint, file counts, publication dates, and compiler benchmarks measured on this server.": [
+		"changelog"
+	],
+	"registry. Every primitive carries a canonical, compiling example, so coverage is a genuine 100% — and the documentation's": [
+		"coverage"
+	],
+	"Relate modulator order and oversampling to noise shaping and ENOB.": ["simulations"],
+	"Relate RC charge thresholds to oscillator frequency and duty cycle.": ["simulations"],
+	"Relations": ["inspector"],
+	"Relations lowered to coordinates.": ["inspector"],
+	"relative phase to population": ["simulations"],
+	"Release": ["global"],
+	"Release figures are read from npm.": ["global"],
+	"Release history": ["changelog"],
+	"releases recorded.": ["global"],
+	"releases tracked": ["changelog"],
+	"releases with traffic": ["downloads"],
+	"relocate one feedback tap": ["simulations"],
+	"Replace": ["global"],
+	"Replace one or every literal match": ["playground"],
+	"Request body is required.": ["global"],
+	"Request body is too large.": ["global"],
+	"required gain is three": ["simulations"],
+	"reset": ["simulations"],
+	"Reset": ["simulations"],
+	"Reset (seed noise)": ["simulations"],
+	"reset ⭯": ["simulations"],
+	"Reset execution": ["simulations"],
+	"Reset state": ["simulations"],
+	"Reset to first step": ["simulations"],
+	"Resistance": ["simulations"],
+	"resistor:R1 \"a\" at (200, 160) #amber junction:N1 \"V_{x}\" at (360, 160) #amber resistor:R2 \"b\" at (520, 160) #amber capacitor:C1 \"c\" at (360, 280) #cyan [orientation=down] R1.out -> N1.node #amber [ortho] N1.node -> R2.in #amber [ortho] N1.node -> C1.in #amber [ortho]": [
+		"global"
+	],
+	"Resize {0}. Arrow keys resize, Enter toggles.": ["global"],
+	"Resolution": ["simulations"],
+	"Resolve bit {0}{1}": ["simulations"],
+	"Resolved": ["inspector"],
+	"Resource budgets": ["global"],
+	"Restart": ["global"],
+	"Restore starter schematic": ["playground"],
+	"resume animation": ["simulations"],
+	"Retries": ["inspector"],
+	"Retune the reference and watch the loop follow.": ["simulations"],
+	"retune the reference frequency and watch the loop reacquire": ["simulations"],
+	"Retune the VCO": ["simulations"],
+	"RETURN": ["simulations"],
+	"Return the caret to Schemd source": ["playground"],
+	"Review /": ["diff"],
+	"Review a diagram change · schemd v{0}": ["diff"],
+	"Review the completed curriculum": ["global"],
+	"Revision": ["global", "simulations"],
+	"revisions": ["diff"],
+	"Revisions": ["diff"],
+	"Revisit the lab": ["simulations"],
+	"Rewrite every relation as the position it resolved to": ["playground"],
+	"RF": ["simulations"],
+	"RG": ["simulations"],
+	"rgb(128 128 128 / 0.2)": ["simulations"],
+	"rgb(128 128 128 / 0.45)": ["simulations"],
+	"right": ["global"],
+	"Right. An open end has $\\Gamma_L = +1$: the reflected wave equals the incident one and the two add at the end.": [
+		"simulations"
+	],
+	"Right. The loop filters the error by $(1-z^{-1})^L$, a high-pass shape, so a low-pass decimator removes most of it.": [
+		"simulations"
+	],
+	"Ripple-carry adder": ["simulations"],
+	"RL": ["simulations"],
+	"RLOAD": ["simulations"],
+	"Roadmap": ["global"],
+	"Rotate the whole haystack toward the needle — √N queries, not N.": ["simulations"],
+	"Round {0}, {1}": ["simulations"],
+	"Round 1 · inversion": ["simulations"],
+	"Round 1 · mean": ["simulations"],
+	"Round 1 · oracle": ["simulations"],
+	"Round 2 · inversion": ["simulations"],
+	"Round 2 · mean": ["simulations"],
+	"Round 2 · oracle": ["simulations"],
+	"Round 3 · mean": ["simulations"],
+	"Round 3 · oracle": ["simulations"],
+	"Round 3 · over-rotation": ["simulations"],
+	"rounds amplify the target; the final demonstration round deliberately rotates past it.": [
+		"simulations"
+	],
+	"rounds must be a non-negative integer.": ["simulations"],
+	"Route": ["inspector"],
+	"route · live npm": ["global"],
+	"route · v{0}": ["global"],
+	"Routed on the first pass — the greedy source-order route placed every trace, so rip-up was never entered.": [
+		"inspector"
+	],
+	"Routing congestion heatmap": ["inspector"],
+	"RP": ["simulations"],
+	"RS": ["simulations"],
+	"RTN": ["simulations"],
+	"run": ["playground"],
+	"Run": ["inspector"],
+	"run state machine": ["simulations"],
+	"Run state machine automatically": ["simulations"],
+	"Run the CHSH witness.": ["simulations"],
+	"Run the experiment": ["global"],
+	"Run the machine or fire events by hand. Click a state or transition to read it.": [
+		"simulations"
+	],
+	"run the protocol": ["simulations"],
+	"Runs on": ["home"],
+	"RX": ["simulations"],
+	"RX clock": ["simulations"],
+	"RX with independent baud clock": ["simulations"],
+	"s": ["diff"],
+	"S_0; ext{rail}": ["simulations"],
+	"S_i = A_i \\oplus B_i \\oplus C_i \\;\\cdot\\; C_{i+1} = A_iB_i + C_i(A_i \\oplus B_i)": [
+		"simulations"
+	],
+	"s={0}_2quad(q_0oplus q_1,;q_1oplus q_2)": ["simulations"],
+	"Same-bit outcomes": ["simulations"],
+	"Sample A, B, and Cᵢₙ": ["simulations"],
+	"Sample demand": ["simulations"],
+	"sample in a neighbour": ["simulations"],
+	"sample inside its bit ·": ["simulations"],
+	"Sample mid-bit by the local clock": ["simulations"],
+	"saturating driver": ["simulations"],
+	"Save a self-describing .schemd.md file": ["playground"],
+	"Save a standalone themed vector": ["playground"],
+	"Save recovery draft": ["playground"],
+	"Saved in this browser": ["playground"],
+	"Schematics from plain text": ["home"],
+	"schemd": ["global"],
+	"schemd — schematics compiled from plain text": ["global"],
+	"schemd — the vector schematic compiler": ["global"],
+	"schemd (pronounced “skemd”) compiles lines of text into routed, accessible, deterministic SVG drawings of electrical, digital, quantum and UML diagrams. No dependencies, Node 24 or newer.": [
+		"home"
+	],
+	"schemd bounds=\"{0}x{1}\" title=\"{2}\"": ["api", "embed", "simulations"],
+	"schemd bounds=\"680x340\" title=\"Benchmark workload\"": ["changelog"],
+	"schemd conformance": ["badge"],
+	"schemd conformance badge": ["conformance"],
+	"schemd draws": ["components"],
+	"schemd example gallery": ["examples"],
+	"schemd has no component kind called {0}.": ["components"],
+	"schemd home": ["global"],
+	"schemd is pronounced skemd": ["global"],
+	"schemd on GitHub (opens in a new tab)": ["global"],
+	"schemd simulation laboratory": ["simulations"],
+	"schemd source editor": ["global"],
+	"schemd: text-to-schematic compiler": ["home"],
+	"Schottky freewheel diode": ["simulations"],
+	"Scrollable {0} code": ["global"],
+	"Scrollable active example source": ["docs"],
+	"Scrollable code block": ["global"],
+	"Scrollable Markdown fence": ["playground"],
+	"Scrollable raw SVG": ["playground"],
+	"Scrub through a schemd compilation stage by stage — tokens, AST, resolved placement, routing and congestion, design rules, emitted bytes, and derived prose.": [
+		"inspector"
+	],
+	"Search": ["global"],
+	"Search {0} kinds": ["playground"],
+	"Search commands and documentation": ["global"],
+	"Search documentation, playground, simulations…": ["global"],
+	"Search results": ["global"],
+	"second integrator": ["simulations"],
+	"Second order": ["simulations"],
+	"second-order loop with amplitude limiting": ["simulations"],
+	"seed (1–15)": ["simulations"],
+	"seed default": ["changelog"],
+	"Select one frequency": ["simulations"],
+	"Semantic delta": ["diff"],
+	"Semicolon-separated rows, at most {0}, each up to {1} characters": ["components", "playground"],
+	"Send the start edge": ["simulations"],
+	"Send two classical bits": ["simulations"],
+	"sent": ["simulations"],
+	"sent {0}, hex {1}": ["simulations"],
+	"separable": ["simulations"],
+	"Separate nets bridge where they cross.": ["home"],
+	"Separate two hypotheses with evidence: a third round rotates past the correct target, while a disturbed oracle makes a different bar grow after the optimal two rounds.": [
+		"simulations"
+	],
+	"sequence period": ["simulations"],
+	"Sequential digital": ["simulations"],
+	"Serial line for byte 0x{0}: {1} between idle {2}s. Receiver read {3}; {4} samples landed in the wrong bit.": [
+		"simulations"
+	],
+	"serial m-sequence output": ["simulations"],
+	"series + shunt $RC$ bridge": ["simulations"],
+	"series + shunt RC bridge": ["simulations"],
+	"series resistor $R$": ["simulations"],
+	"series resistor R": ["simulations"],
+	"serving seed — registry refresh runs in the background": ["changelog"],
+	"SET": ["simulations"],
+	"Set $A = 11111111$ and $B = 0$, then toggle $C_{in}$. A single carry sweeps all the way to $C_{out}$ — one bit of input, eight cells of consequence. This is the worst case, $t \\propto n$.": [
+		"simulations"
+	],
+	"Set $A$ and $B$, then watch the glow: the low bits settle first and a bright carry front climbs upward. You are literally watching information propagate.": [
+		"simulations"
+	],
+	"Set amplifier gain just below $3$. What happens to a small disturbance at $f_0$?": [
+		"simulations"
+	],
+	"Set f to the cutoff": ["simulations"],
+	"set gain below three and inspect decay": ["simulations"],
+	"Set gain to 3": ["simulations"],
+	"set θ, then set φ on the Bloch sphere": ["simulations"],
+	"setpoint $\\omega_{set}$": ["simulations"],
+	"setpoint ω_set": ["simulations"],
+	"Settle at the divider": ["simulations"],
+	"settled": ["simulations"],
+	"settled in {0}": ["simulations"],
+	"Settles": ["simulations"],
+	"settles at {0} volts": ["simulations"],
+	"Settling": ["simulations"],
+	"settling time {0}": ["simulations"],
+	"Share": ["global"],
+	"shared clock": ["simulations"],
+	"Shared document; save it yourself": ["playground"],
+	"Sheet": ["playground"],
+	"shots": ["simulations"],
+	"Show": ["playground"],
+	"Show compiled example": ["docs"],
+	"Show contents": ["docs"],
+	"Show Markdown fence": ["playground"],
+	"Show raw SVG": ["playground"],
+	"Show rendered preview": ["playground"],
+	"Show that an eigenstate target moves a controlled phase onto the control.": ["simulations"],
+	"shunt capacitor $C$": ["simulations"],
+	"shunt capacitor C": ["simulations"],
+	"Side": ["components"],
+	"Sigma-delta converter": ["simulations"],
+	"Sigma-Delta Converter": ["simulations"],
+	"Sigma-delta modulator: summing node, integrator, clocked one-bit quantizer, feedback DAC, and decimator. Drag the tags on the input and the decimator; click a wire to probe it.": [
+		"simulations"
+	],
+	"Signal band": ["simulations"],
+	"signal band up to f s over {0}": ["simulations"],
+	"Signal integrity": ["simulations"],
+	"Signal propagation timeline": ["simulations"],
+	"Signed amplitude bars": ["simulations"],
+	"simulation animation": ["simulations"],
+	"Simulation animation": ["simulations"],
+	"Simulation curriculum": ["global"],
+	"Simulation environments": ["simulations"],
+	"Simulation Lab": ["global"],
+	"Simulation laboratory": ["simulations"],
+	"Simulation laboratory · schemd v{0}": ["simulations"],
+	"Simulation labs": ["simulations"],
+	"sin^2 frac{ arphi}{2}={0}": ["simulations"],
+	"single serial line": ["simulations"],
+	"single-qubit operator": ["simulations"],
+	"Single-step the clock and read the state.": ["simulations"],
+	"single-step the LFSR and read the register": ["simulations"],
+	"skemd": ["global"],
+	"Skip to content": ["global"],
+	"Slow the carrier down. With less room between the two, no single cutoff can pass the audio and block the carrier: the cleanliness readout drops.": [
+		"simulations"
+	],
+	"Smaller bucket, faster response: $f_c$ doubles. The filter now passes signals it used to block — you moved the verdict by changing one component.": [
+		"simulations"
+	],
+	"SoftwareApplication": ["docs", "home"],
+	"Sound": ["global"],
+	"Sound off": ["global"],
+	"Sound on": ["global"],
+	"Source": ["simulations"],
+	"Source + drawing": ["home"],
+	"source and runs a real numerical model you tune on the parts themselves.": ["simulations"],
+	"Source chars": ["inspector"],
+	"Source completions": ["global"],
+	"Source copied": ["playground"],
+	"Source copied.": ["playground"],
+	"Source downloaded.": ["playground"],
+	"Source map": ["inspector"],
+	"source reflection coefficient {0}": ["simulations"],
+	"Source resistance": ["simulations"],
+	"source steps to 1 volt at t equals 0": ["simulations"],
+	"Source, compiled by release": ["playground"],
+	"Source; hover or focus a line to trace it": ["home"],
+	"source:SRC5 \"AC\" at (80, 120) #blue [type=voltage-ac] capacitor:CS5 \"C\" at (280, 120) #cyan junction:JN5 at (460, 120) #cyan resistor:RS5 \"R\" at (460, 240) #amber [orientation=down] port:VO5 \"out\" at (720, 120) #emerald SRC5.positive -> CS5.in #blue [ortho] CS5.out -> JN5.node #cyan [ortho] JN5.node -> RS5.in #amber [ortho] JN5.node -> VO5.in #emerald [ortho]": [
+		"templates"
+	],
+	"source:VIN \"AC\" at (100, 140) #blue [type=voltage-ac] resistor:R1 \"1 k\\Omega\" at (360, 140) #amber junction:VOUT \"V_{out}\" at (600, 140) #cyan ground:GND \"0 V\" at (360, 360) #slate VIN.positive -> R1.in #blue [line] R1.out -> VOUT.node #amber [line] VIN.negative -> GND.in #slate [ortho]": [
+		"diff"
+	],
+	"source:VIN \"AC\" at (100, 140) #blue [type=voltage-ac] resistor:R1 \"2 k\\Omega\" at (360, 140) #amber junction:VOUT \"V_{out}\" at (600, 140) #cyan capacitor:C1 \"100 nF\" at (600, 300) #cyan [orientation=down] ground:GND \"0 V\" at (360, 360) #slate VIN.positive -> R1.in #blue [line] R1.out -> VOUT.node #amber [line] VOUT.node -> C1.in #cyan [ortho] VIN.negative -> GND.in #slate [ortho]": [
+		"diff"
+	],
+	"source:VIN \"V_{in}\" at (100, 230) #blue [type=voltage-ac orientation=up] resistor:R1 \"10 k\\Omega\" at (240, 160) #amber junction:N1 \"V_{c}\" at (360, 160) #amber capacitor:C1 \"1 nF\" at (360, 260) #cyan [orientation=down] amplifier:U1 \"OPA192\" at (560, 173) #purple [type=opamp] junction:FB \"V_{fb}\" at (460, 290) #purple resistor:RF \"100 k\\Omega\" at (620, 290) #amber resistor:RG \"10 k\\Omega\" at (460, 360) #amber [orientation=down] junction:VOUT \"V_{out}\" at (740, 173) #emerald ground:G \"0 V\" at (360, 460) #slate ground:G2 \"0 V\" at (460, 510) #slate VIN.positive -> R1.in #blue [ortho] R1.out -> N1.node #amber [ortho] N1.node -> U1.positive #amber [ortho] N1.node -> C1.in #cyan [ortho] U1.negative -> FB.node #purple [ortho] FB.node -> RF.in #purple [ortho] RF.out -> VOUT.node #emerald [ortho] U1.out -> VOUT.node #emerald [ortho] FB.node -> RG.in #purple [ortho] RG.out -> G2.in #slate [ortho] C1.out -> G.in #slate [ortho] VIN.negative -> G.in #slate [ortho]": [
+		"global"
+	],
+	"source:VS \"9 V\" at (380, 90) #blue [type=voltage-dc orientation=down] resistor:RZ \"1 k\\Omega\" at (380, 240) #amber [orientation=down] junction:JZ at (380, 360) #cyan diode:DZ \"5.1 V\" at (380, 490) #rose [type=zener orientation=up] port:REF \"V_{ref}\" at (660, 360) #emerald ground:GZ at (380, 640) #slate VS.positive -> RZ.in #blue [ortho] RZ.out -> JZ.node #amber [ortho] JZ.node -> DZ.cathode #rose [ortho] JZ.node -> REF.in #emerald [ortho marker-end=arrow] DZ.anode -> GZ.in #slate [ortho]": [
+		"templates"
+	],
+	"Sp": ["simulations"],
+	"spans": ["inspector"],
+	"speaker: carrier {0} decibels": ["simulations"],
+	"Speed": ["global"],
+	"Speed setpoint": ["simulations"],
+	"SPK": ["simulations"],
+	"Spread evenly across all frequencies, like plain quantization.": ["simulations"],
+	"Stabilize loop gain": ["simulations"],
+	"stabilizer parity + syndrome decoder": ["simulations"],
+	"stage delay {0} seconds": ["simulations"],
+	"START": ["simulations"],
+	"Start with $|00\\rangle$, apply $H$ to the first qubit, then a CNOT, and you reach $|\\Phi^+\\rangle = \\frac{|00\\rangle + |11\\rangle}{\\sqrt 2}$. Notice what is missing: there is **no** $|01\\rangle$ and **no** $|10\\rangle$. The two qubits have no state of their own — only the *pair* has a state. A skeptic says \"they were secretly agreed in advance,\" like two gloves in sealed boxes. Quantum mechanics answers with the CHSH test: local hidden agreements can never push the correlation witness $S$ above $2$, yet this state reaches $S = 2\\sqrt 2 \\approx 2.83$. Watching $S$ climb past $2$ is watching local realism fail in front of you.": [
+		"simulations"
+	],
+	"Starter schematic restored.": ["playground"],
+	"Starter templates": ["templates"],
+	"State": ["playground"],
+	"state {0}, {1} visits{2}": ["simulations"],
+	"state {0}{1}": ["simulations"],
+	"State a specific hypothesis using at least two words and 12 characters.": ["global"],
+	"State machine": ["global"],
+	"State phasors": ["simulations"],
+	"state reconstructed": ["simulations"],
+	"state reconstructed exactly": ["simulations"],
+	"State residency": ["simulations"],
+	"state vector, Z basis": ["simulations"],
+	"State-machine animation is paused for your reduced-motion preference. “Run state machine” starts it explicitly.": [
+		"simulations"
+	],
+	"State-machine auto-run": ["simulations"],
+	"state-vector + Born sampler": ["simulations"],
+	"Status": ["global"],
+	"steady-state error {0} radians per second": ["simulations"],
+	"steady-state offset {0} %": ["simulations"],
+	"step": ["simulations"],
+	"Step": ["simulations"],
+	"Step {0}": ["simulations"],
+	"step {0} of {1}, {2}{3}": ["simulations"],
+	"step ⏭": ["simulations"],
+	"Step a three-qubit register through the full teleportation script.": ["simulations"],
+	"Step forward": ["simulations"],
+	"Step response: overshoot {0} percent, settling {1}": ["simulations"],
+	"step source + R_s": ["simulations"],
+	"step source $V_s$ + $R_s$": ["simulations"],
+	"Step the reference +600 Hz": ["simulations"],
+	"Step through execution": ["simulations"],
+	"Step through execution, hover a gate for its operator, then measure.": ["simulations"],
+	"Step through the protocol and read the fidelity.": ["simulations"],
+	"step through the remaining fourteen non-zero states": ["simulations"],
+	"stepped three-qubit protocol": ["simulations"],
+	"Stimulus frequency, 10 hertz to 100 kilohertz": ["simulations"],
+	"Stop": ["simulations"],
+	"Stop-bit drift": ["simulations"],
+	"stopband attenuation": ["simulations"],
+	"Store energy in L": ["simulations"],
+	"Strip chart": ["simulations"],
+	"subcircuit lc [l=\"10 \\mu H\" c=\"100 nF\"] { inductor:L \"{{l}}\" at (0, 0) #purple junction:N right-of L by 50 #cyan capacitor:C \"{{c}}\" below N by 50 aligned-x with N #cyan [orientation=down] L.out -> N.node #purple [ortho] N.node -> C.in #cyan [ortho] expose in = L.in expose out = N.node expose gnd = C.out } source:SW \"V_{sw}\" at (90, 160) #blue [type=voltage-pulse] lc:F1 at (260, 160) lc:F2 at (540, 160) [l=\"4.7 \\mu H\" c=\"47 nF\"] port:VF \"V_{f}\" at (820, 160) #emerald ground:GND \"0 V\" at (420, 450) #slate SW.positive -> F1.in #blue [ortho] F1.out -> F2.in #cyan [ortho] F2.out -> VF.in #emerald [ortho] SW.negative -> GND.in #slate [ortho] F1.gnd -> GND.in #slate [ortho] F2.gnd -> GND.in #slate [ortho]": [
+		"templates"
+	],
+	"Subtract the last bit": ["simulations"],
+	"SUM": ["simulations"],
+	"sum $0$–$511$ with carry-out": ["simulations"],
+	"sum 0–511 with carry-out": ["simulations"],
+	"Sum and drive": ["simulations"],
+	"sum bits": ["simulations"],
+	"Summary": ["global"],
+	"summing node + integrator": ["simulations"],
+	"Superposition": ["simulations"],
+	"superposition formed": ["simulations"],
+	"supply {0} volts": ["simulations"],
+	"Sustain Vₒ": ["simulations"],
+	"SVG bytes": ["inspector"],
+	"SVG out": ["home"],
+	"SVG source": ["playground"],
+	"SW": ["simulations"],
+	"sweep $10\\ \\mathrm{Hz}$–$100\\ \\mathrm{kHz}$": ["simulations"],
+	"sweep 10 Hz – 100 kHz": ["simulations"],
+	"Sweep R, C, and frequency; watch the pole attenuate the output trace.": ["simulations"],
+	"sweep the controlled phase angle and read the control": ["simulations"],
+	"Sweep the duty cycle $D$.": ["simulations"],
+	"Sweep the frequency slider past the cutoff.": ["simulations"],
+	"Sweep the load and read the echo.": ["simulations"],
+	"sweep the load impedance and compare the near-end echo": ["simulations"],
+	"Sweep the phase angle and read the control.": ["simulations"],
+	"sweep the stimulus-frequency control across the cutoff": ["simulations"],
+	"switch node": ["simulations"],
+	"switch node PWM {0} percent at {1} kilohertz": ["simulations"],
+	"Switch the bridge": ["simulations"],
+	"switch the modulator to a second-order loop": ["simulations"],
+	"Switch the output pane to SVG": ["playground"],
+	"Switch the power node": ["simulations"],
+	"Switch to a second-order loop.": ["simulations"],
+	"Switch to monostable and fire a single shot.": ["simulations"],
+	"switch to monostable mode before firing a one-shot": ["simulations"],
+	"Switching frequency": ["simulations"],
+	"SYN": ["simulations"],
+	"Syndrome": ["simulations"],
+	"syndrome {0}": ["simulations"],
+	"syndrome {0}, fidelity {1}": ["simulations"],
+	"syndrome ∈ {00,01,10,11}": ["simulations"],
+	"syndrome $\\in\\{00,01,10,11\\}$": ["simulations"],
+	"syndrome bit one {0}": ["simulations"],
+	"syndrome bit zero {0}": ["simulations"],
+	"syndrome decoder miswired": ["simulations"],
+	"Syndrome decoder miswired": ["simulations"],
+	"Syntax highlighting paused for this large source. Editing and compilation remain available.": [
+		"global"
+	],
+	"t > T": ["simulations"],
+	"t > T_green": ["simulations"],
+	"t > T_red": ["simulations"],
+	"t > T_yellow": ["simulations"],
+	"t_{mathrm{scale}}={0} imes": ["simulations"],
+	"t_g={0},mathrm{ns/gate}quad t_{mathrm{crit}}approx{1},mathrm{ns}": ["simulations"],
+	"t_k = \\left(k + \\tfrac12\\right) T_{bit}(1 + \\varepsilon) \\;\\cdot\\; |\\varepsilon| \\lesssim \\dfrac{1}{2N_{bits}}": [
+		"simulations"
+	],
+	"Tab": ["global", "playground"],
+	"Table": ["components"],
+	"Table 1. Pin functions": ["components"],
+	"Table 2. Nets of the figure, from": ["home"],
+	"Table 2. Options": ["components"],
+	"TACH": ["simulations"],
+	"tachometer feedback inverted": ["simulations"],
+	"Tachometer feedback inverted": ["simulations"],
+	"tag identifies the public release after a live refresh; the installed engine version is read independently from its package manifest. Unpublished local builds and cold-start seeds remain explicitly marked as publication-unconfirmed.": [
+		"changelog"
+	],
+	"Target": ["simulations"],
+	"target must address an item in the search space.": ["simulations"],
+	"target prepared in {0}": ["simulations"],
+	"target prepared off its eigenstate": ["simulations"],
+	"Target prepared off its eigenstate": ["simulations"],
+	"Target state": ["simulations"],
+	"targets |0⟩, |1⟩, |+⟩, |−⟩": ["simulations"],
+	"targets $|0\\rangle,|1\\rangle,|+\\rangle,|-\\rangle$": ["simulations"],
+	"TCLK": ["simulations"],
+	"TechArticle": ["docs", "simulations"],
+	"Teleportation": ["global"],
+	"Teleportation fidelity,": ["simulations"],
+	"Template families": ["templates"],
+	"Templates": ["global"],
+	"terminal not exported": ["global"],
+	"Terminals": ["home"],
+	"Text of {0} to {1} characters": ["components", "playground"],
+	"Text-to-schematic compiler": ["global"],
+	"text/xsl; charset=utf-8": ["sitemap.xsl"],
+	"That changed “{0}”. This step asks you to {1}.": ["global"],
+	"That describes two independent superpositions. The CNOT removes the cross outcomes by correlating the two rails.": [
+		"simulations"
+	],
+	"That is an open-loop quantizer. Feedback through the integrator shapes the error spectrum instead of leaving it white.": [
+		"simulations"
+	],
+	"That is the matched case, $\\Gamma_L = 0$. An open end reflects everything, so the far end sees incident plus reflected wave.": [
+		"simulations"
+	],
+	"That measurement would collapse the protected superposition. The syndrome deliberately extracts only relational parity.": [
+		"simulations"
+	],
+	"That would require carry lookahead. This circuit exposes a serial $C_i\\to C_{i+1}$ dependency, so simultaneous settlement is impossible.": [
+		"simulations"
+	],
+	"The 3-qubit bit-flip code: one logical qubit is spread across three physical qubits, a bit-flip error is injected on any line, and two ancilla qubits extract a syndrome that names the culprit — without ever measuring the data. A majority-vote correction restores the logical state and the fidelity returns to one.": [
+		"simulations"
+	],
+	"The 555 watches one voltage: the charge on $C_T$. It charges through $R_A + R_B$ until it touches $\\tfrac{2}{3}V_{cc}$, then discharges through $R_B$ until it sags to $\\tfrac{1}{3}V_{cc}$, then repeats — a triangle wave feeding two comparators. Because the RC climb is **exponential**, not linear, the high and low times are unequal, giving $f = \\frac{1.44}{(R_A + 2R_B)\\,C}$ and a duty always above 50%. Flip to **monostable** mode and the same climb happens exactly once per trigger: one pulse of width $t = 1.1\\,R_A C$ — a circuit that holds its breath for a precise, tunable moment.": [
+		"simulations"
+	],
+	"The answer remains sealed until every evidence action is complete.": ["global"],
+	"The answer remains sealed until you activate the hidden fault and observe its evidence.": [
+		"global"
+	],
+	"The Barkhausen criterion is deceptively simple: for sustained oscillation the signal must travel around the loop and come back **exactly in phase and exactly the same size**, i.e. loop gain $A\\beta = 1$. The Wien network passes only one frequency $f_0 = \\frac{1}{2\\pi RC}$ with zero phase shift and a $\\frac{1}{3}$ attenuation, so the amplifier must supply a gain of exactly $3$ to close the loop there and nowhere else. Set the gain a hair above $3$ and any noise at $f_0$ grows exponentially; a gentle nonlinearity then pulls it back, and the amplitude settles onto a **limit cycle**. Cross the gain through $3$ and you have crossed a Hopf bifurcation — a fixed point becoming a stable oscillation, drawn live in the phase portrait.": [
+		"simulations"
+	],
+	"The beginning of the compiled SVG": ["home"],
+	"The boxes-and-arrows diagram is not documentation of the machine — run an event through it and it *is* the machine.": [
+		"simulations"
+	],
+	"The capacitor needs time to charge through $R$, and that time sets a verdict. Below the cutoff $f_c = \\frac{1}{2\\pi RC}$ the bucket keeps up and the output follows the input. Above it, the signal reverses before the bucket fills, so the amplitude collapses as $|H(j\\omega)| = \\frac{1}{\\sqrt{1 + (f/f_c)^2}}$. At $f = f_c$ exactly, the output has dropped to $\\frac{1}{\\sqrt 2} \\approx 0.707$ of the input — the famous **−3 dB point**, the frequency where the filter says *\"this is where I start giving up.\"*": [
+		"simulations"
+	],
+	"The carrier is slowed into earshot; real amplifiers switch at hundreds of kilohertz.": [
+		"simulations"
+	],
+	"The CNOT no longer entangles. Each qubit still measures at random, so nothing looks wrong one wire at a time — but the CHSH value drops to the classical bound, because the correlation is gone.": [
+		"simulations"
+	],
+	"The comparator outputs high while the audio exceeds the triangle carrier, so the duty cycle follows the audio.": [
+		"simulations"
+	],
+	"The compiler failed in a way it does not have a diagnostic for.": ["inspector"],
+	"The compiler faulted": ["global"],
+	"The control changed. Keep experimenting until you {0}.": ["global"],
+	"The control qubit is put in superposition, a controlled-phase gate acts on the target, and a final Hadamard reads the control. When the target is an eigenstate of the phase gate, its eigenphase moves onto the control intact; any other target entangles with the control and shortens its Bloch vector. Exact 4-amplitude linear algebra drives the Bloch view and the measurement histogram.": [
+		"simulations"
+	],
+	"The control starts in |0⟩ and the target in the chosen state; an eigenstate of the phase gate is what makes kickback clean.": [
+		"simulations"
+	],
+	"The control voltage moves the VCO away from its free-running frequency by Kv volts-to-hertz.": [
+		"simulations"
+	],
+	"The controller compares feedback against the regulation target.": ["simulations"],
+	"The curriculum map could not be compiled:": ["global"],
+	"The DAC turns the bit back into ±1 so the next error accounts for it.": ["simulations"],
+	"The decimator low-pass filters the fast bitstream and keeps every OSR-th sample: the shaped noise is filtered away.": [
+		"simulations"
+	],
+	"The deliberately extra oracle pass starts rotating the state beyond the optimal two-round stopping point.": [
+		"simulations"
+	],
+	"The denominator grows with $C$, so this prediction has the direction reversed. Test it against the moving cutoff marker.": [
+		"simulations"
+	],
+	"The detector multiplies the reference by the fed-back VCO output; its average is proportional to the sine of the phase error.": [
+		"simulations"
+	],
+	"The detector outputs $K_d\\sin\\theta_e$, the filter averages it into $v_c$, and the VCO runs at $\\omega_0 + K_v v_c$. If the reference sits above the free-running frequency, the VCO needs a positive control voltage to keep up, and the only way to make one is a **steady phase lead**: $\\sin\\theta_e = \\frac{\\omega_{ref}-\\omega_0}{K_vK_d}$. That is why a locked loop shows a fixed offset between the two waves, not zero. Push the detuning past the hold range $|\\omega_{ref}-\\omega_0| < K_vK_d$ and no phase can produce enough voltage: the error grows without bound and the loop **slips cycles**, which the phase portrait shows as an orbit instead of a point.": [
+		"simulations"
+	],
+	"The diffuser computes the mean amplitude—the reflection axis for amplification.": [
+		"simulations"
+	],
+	"The empirical $S$ settles near $2\\sqrt 2$. Any glove-in-a-box explanation is capped at $2$; you are past it. That gap is the whole of quantum non-locality.": [
+		"simulations"
+	],
+	"The error $e = \\omega_{set} - \\omega$ drives three paths. **Proportional** $K_pe$ pushes harder the further off you are, but a motor fighting friction needs a steady push, and a P-only loop can only make one by keeping some error: a steady-state offset. **Integral** $K_i\\int e\\,dt$ keeps adding while any error remains, so it removes that offset, at the price of overshoot if it accumulates too eagerly. **Derivative** $K_d\\,\\dot e$ reacts to how fast the error is shrinking and brakes the approach. The driver saturates at its supply, so an integrator that keeps adding while the output is pinned **winds up**; this controller stops integrating then, which is the anti-windup the lab shows.": [
+		"simulations"
+	],
+	"The fault is hidden. Work it out from the changed outputs first.": ["simulations"],
+	"The filter cutoff must be positive.": ["global"],
+	"The filter rejects switching ripple, not the PWM average. Changing duty changes the average energy delivered each cycle.": [
+		"simulations"
+	],
+	"The final Hadamard interferes the two branches. With a relative phase of $\\pi$ they interfere completely, giving a certain outcome.": [
+		"simulations"
+	],
+	"The first ones — the receiver has not locked on yet.": ["simulations"],
+	"The first pass could not place every trace. Each retry tore up what had been laid, promoted the failed trace to the front, and reordered the rest shortest-span-first.": [
+		"inspector"
+	],
+	"The front charges each section of distributed capacitance through its inductance, one delay per line length.": [
+		"simulations"
+	],
+	"The front travels at a finite speed and reaches the far end after one delay $t_d$; the far end reacts the moment it arrives.": [
+		"simulations"
+	],
+	"The gate acts on the target, yet the control is the one that changes.": ["simulations"],
+	"The half-bridge copies the PWM wave at full supply: its transistors are only ever fully on or fully off.": [
+		"simulations"
+	],
+	"The idle-high line falls for the start bit; that single edge is the only timing the receiver gets.": [
+		"simulations"
+	],
+	"The individual bits are random, while their parity is perfectly correlated.": ["simulations"],
+	"The input register changes now; no sum output is allowed to jump ahead of the carry front.": [
+		"simulations"
+	],
+	"The integrator remembers the running debt between the input and the bits; this memory is what shapes the noise.": [
+		"simulations"
+	],
+	"The last ones — the error accumulates from the start edge.": ["simulations"],
+	"The logical value is distributed across three physical qubits.": ["simulations"],
+	"The loop is locked to a reference $500\\ \\mathrm{Hz}$ above the VCO’s free-running frequency. What is the steady phase error $\\theta_e$?": [
+		"simulations"
+	],
+	"The low bit settles first; the decision ripples upward.": ["simulations"],
+	"the machine.": ["simulations"],
+	"The marked amplitude receives a second phase flip before the final amplification pass.": [
+		"simulations"
+	],
+	"The markup, and what it costs.": ["inspector"],
+	"The model supports your prediction. Now make it earn that claim.": ["global"],
+	"The negative-feedback divider holds amplifier gain near three.": ["simulations"],
+	"The no-cloning theorem forbids copying an unknown $|\\psi\\rangle = \\alpha|0\\rangle + \\beta|1\\rangle$, so teleportation does something stranger. Alice entangles her mystery qubit with half of a shared Bell pair and measures both in the Bell basis. Her measurement **destroys** the original and yields two classical bits $m_1, m_2$ — pure randomness that says nothing about $\\alpha, \\beta$. She phones those two bits to Bob, who applies $X^{m_2}Z^{m_1}$ to his half, and the exact state re-materialises on his side. Nothing carrying $\\alpha$ and $\\beta$ ever crossed the gap; the entanglement was pre-laid, and two classical bits finished the job. Fidelity $F = |\\langle\\psi|\\psi_{out}\\rangle|^2 = 1$ — bit-for-bit, provably the same state.": [
+		"simulations"
+	],
+	"The oracle flips the target’s sign; diffusion turns that into height. One round already lifts the target bar well above the uniform $\\tfrac{1}{8}$.": [
+		"simulations"
+	],
+	"The oscillator slows and its duty cycle moves closer to $50\\%$.": ["simulations"],
+	"The oscillator speeds up and spends a larger fraction high.": ["simulations"],
+	"The output is high during the charge interval; after the upper threshold trips, it goes low while the discharge transistor returns Cₜ toward ⅓ Vcc.": [
+		"simulations"
+	],
+	"The output probe returns the measured rail to the PWM controller.": ["simulations"],
+	"The output qubit now has the original state; the input itself was destroyed by measurement.": [
+		"simulations"
+	],
+	"The pair never entangles: each qubit is random on its own and the correlation is classical.": [
+		"simulations"
+	],
+	"The path you followed resolves to no component in the document. It may have moved, been renamed, or never been laid out.": [
+		"global"
+	],
+	"The preview appears once the manifest is valid and its diagram compiles.": ["simulations"],
+	"The probe sees the attenuated, phase-shifted output only after the storage node responds.": [
+		"simulations"
+	],
+	"The RC loop filter averages the detector output into a control voltage, removing the double-frequency ripple.": [
+		"simulations"
+	],
+	"The reassembled data bits leave the receiver as one byte, correct only if every sample landed in its own bit.": [
+		"simulations"
+	],
+	"The receiver only hears the start edge. After that it is counting in the dark, and a few percent of clock error is enough to land in the wrong bit.": [
+		"simulations"
+	],
+	"The receiver waits half a bit, then samples once per bit time by its own baud clock; any mismatch accumulates.": [
+		"simulations"
+	],
+	"The receiver’s clock runs $4\\%$ fast. Which bits of the frame are most at risk?": [
+		"simulations"
+	],
+	"The reflection axis has moved with the amplified distribution; another pass no longer points toward certainty.": [
+		"simulations"
+	],
+	"The reflection travels back and reaches the near end at twice the delay, where the source reflects Γ of it again.": [
+		"simulations"
+	],
+	"The register is sampled after the deliberately over-rotated third round so its lower success probability is observable.": [
+		"simulations"
+	],
+	"the register toward it. Each round is an oracle phase-flip, a mean reflection, and a diffuser rebound. The first": [
+		"simulations"
+	],
+	"The registry did not answer; this is the last good reading": ["downloads"],
+	"The regulated rail tracks $D\\,V_{in}$ almost exactly — you are setting an output voltage by setting a *fraction of time*, not by dissipating the difference.": [
+		"simulations"
+	],
+	"The request completed, but the response carried a status the client could not route.": [
+		"global"
+	],
+	"The result to explain": ["global"],
+	"The rotation angle is fixed. Once the target direction is passed, another reflection pair lowers its amplitude.": [
+		"simulations"
+	],
+	"The same rules run as a service, so a project can gate its own build without installing the compiler. Nothing is stored and no source leaves the request.": [
+		"conformance"
+	],
+	"The same SVG bytes on every engine": ["home"],
+	"The schemd {0} ({1}): {2} options with their ranges and defaults, {3} pins, and every variant drawn by the compiler.": [
+		"components"
+	],
+	"The second H turns the control’s relative phase into a measurable population difference.": [
+		"simulations"
+	],
+	"The second reflection concentrates almost all probability on the marked state.": ["simulations"],
+	"The sequence returns to its start after $2^4 - 1$ clocks. Fewer flip-flops would give $2^n - 1$; the maximal length is the payoff of primitive taps.": [
+		"simulations"
+	],
+	"The series RC path passes the zero-phase Wien frequency preferentially.": ["simulations"],
+	"The server returns a deterministic snapshot immediately, then refreshes npm and GitHub in the background. npm’s": [
+		"changelog"
+	],
+	"The short warning interval completes the safe cycle.": ["simulations"],
+	"The shunt RC branch makes the positive-feedback factor exactly 1/3 at resonance.": [
+		"simulations"
+	],
+	"The source establishes the stimulus and the return reference.": ["simulations"],
+	"The source sees only the line impedance Z₀, so it launches V₁ = Vs·Z₀/(Rs + Z₀) whatever the load is.": [
+		"simulations"
+	],
+	"The start edge resynchronises the receiver exactly, so the first samples are the most accurate. Drift grows from there.": [
+		"simulations"
+	],
+	"The summing junction subtracts the measured speed from the setpoint; everything downstream reacts to this error.": [
+		"simulations"
+	],
+	"The summing node takes the input minus the one-bit DAC output: the error of everything sent so far.": [
+		"simulations"
+	],
+	"The syndrome conditionally flips the damaged physical bit.": ["simulations"],
+	"The tachometer reports the shaft speed back to the summing junction, closing the loop.": [
+		"simulations"
+	],
+	"The taps are no longer a primitive polynomial. The register still shifts, but it closes into a short cycle instead of visiting all fifteen non-zero states.": [
+		"simulations"
+	],
+	"The taps are no longer primitive, so the sequence closes early.": ["simulations"],
+	"The taps are no longer primitive: the sequence closes after {0} states.": ["simulations"],
+	"The target is $|1\\rangle$ and $\\varphi = \\pi$. After the final Hadamard, what does measuring the control give?": [
+		"simulations"
+	],
+	"The target is an eigenstate, so it is unchanged, but the eigenphase lands on the control. That is the kickback.": [
+		"simulations"
+	],
+	"The telemetry stream failed:": ["downloads"],
+	"The third inversion rotates amplitude away from the marked state, exposing why Grover iterations must stop near the optimum.": [
+		"simulations"
+	],
+	"The three contributions add into one command, which the driver delivers until it saturates at its supply.": [
+		"simulations"
+	],
+	"The timing capacitor integrates between $\\tfrac{1}{3}V_{cc}$ and $\\tfrac{2}{3}V_{cc}$. The timing-branch stroke weight scales with instantaneous $V_C$, and the LED node flashes in sync with the calculated frequency (time-scaled for visibility).": [
+		"simulations"
+	],
+	"The timing capacitor integrates between ⅓·V_cc and ⅔·V_cc. The timing-branch stroke weight scales with instantaneous V_C, and the LED node flashes in sync with the calculated frequency (time-scaled for visibility).": [
+		"simulations"
+	],
+	"The timing wire thickens with the instantaneous capacitor voltage. It is not a metaphor — that stroke *is* $V_C(t)$ sweeping from $\\tfrac{1}{3}$ to $\\tfrac{2}{3}V_{cc}$.": [
+		"simulations"
+	],
+	"The token sits on the": ["simulations"],
+	"The transistors only ever know two states — fully on or fully off — and the music lives in how long each one lasts.": [
+		"simulations"
+	],
+	"The transmitter adds a start bit, the data bits least significant first, optional parity, and a stop bit.": [
+		"simulations"
+	],
+	"The two parity bits light up a unique pattern that names the guilty qubit while learning nothing about $\\alpha, \\beta$. Watch the logical fidelity snap back to $1$ after correction.": [
+		"simulations"
+	],
+	"The unknown state and two |0⟩ ancillas enter on separate rails.": ["simulations"],
+	"The unknown state interferes with Alice’s entangled qubit before measurement.": ["simulations"],
+	"The validated AST, in source order.": ["inspector"],
+	"The VCO output returns to the detector, closing the loop: a frequency error becomes a growing phase error.": [
+		"simulations"
+	],
+	"The Wien network passes exactly one frequency with zero phase shift and a": ["simulations"],
+	"theoretical amplitude²": ["simulations"],
+	"Theta": ["simulations"],
+	"This browser offers no speech synthesis, so the tour reads silently — every control still works and each step holds long enough to read.": [
+		"global"
+	],
+	"This component is only aligned, so it has no distance to drag.": ["global"],
+	"This document already states every position as coordinates.": ["playground"],
+	"This document is too large for a reliable embed address": ["playground"],
+	"This document is too large for a reliable share link": ["playground"],
+	"This documentation is available in English. Spanish documentation starts at version 1.2.": [
+		"docs"
+	],
+	"This kind has no pins; it is drawn but not wired.": ["components"],
+	"This laboratory names the model": ["simulations"],
+	"This page has no figures.": ["docs"],
+	"This page is generated from the compiler's own": ["coverage"],
+	"This playground compiles with the installed @schemd/core (v{0}). Historical releases are documented, not re-executed — so the preview below is v{1} output.": [
+		"playground"
+	],
+	"This port is closed": ["global"],
+	"This stage was never reached — the document did not get past validation. The token stream and the diagnostic are what there is to look at.": [
+		"inspector"
+	],
+	"Three Hadamards spread one unit of probability evenly across all eight basis states.": [
+		"simulations"
+	],
+	"Three wires to one junction, then and now.": ["home"],
+	"THRES shorted to ground": ["simulations"],
+	"threshold $\\tfrac{2}{3}$ · trigger $\\tfrac{1}{3}$": ["simulations"],
+	"threshold ⅔ · trigger ⅓": ["simulations"],
+	"Threshold and trigger inputs switch the internal latch at ⅓ and ⅔ Vcc.": ["simulations"],
+	"threshold latched: output stuck low": ["simulations"],
+	"time {0} one-way delays": ["simulations"],
+	"time 0 – 10 t_d": ["simulations"],
+	"Time along the run, in one-way delays": ["simulations"],
+	"Time-domain reflectometer": ["simulations"],
+	"Timer {0} mode active.": ["simulations"],
+	"Timer degraded: threshold input is shorted to ground.": ["simulations"],
+	"Timer mode": ["simulations"],
+	"Timer phase must be finite and resistances must be positive.": ["simulations"],
+	"Timer presentation frequencies must be finite and non-negative.": ["simulations"],
+	"Timer resistances and capacitance must be positive.": ["simulations"],
+	"timing capacitance {0}; capacitor voltage {1} volts": ["simulations"],
+	"Timing capacitor": ["simulations"],
+	"timing capacitor $C_T$": ["simulations"],
+	"timing capacitor C_T": ["simulations"],
+	"Title": ["playground"],
+	"to close the loop and sing.": ["simulations"],
+	"Toggle carry-in with an all-ones operand.": ["simulations"],
+	"Toggle line comment": ["playground"],
+	"Toggle replace": ["global"],
+	"toggle the carry-in control after entering all ones": ["simulations"],
+	"Toggle the compiler output pane": ["playground"],
+	"Toggle the component vocabulary pane": ["playground"],
+	"Toggle the qubits to choose the marked item; step the timeline to watch amplitudes rotate. Click a gate to read it.": [
+		"simulations"
+	],
+	"Too long to share as a link.": ["simulations"],
+	"Too much integral": ["simulations"],
+	"Tools": ["global"],
+	"top": ["global"],
+	"TOUT": ["simulations"],
+	"Trace a carry dependency through a combinational gate network.": ["simulations"],
+	"Trace line": ["home"],
+	"Trace net {0} on the drawing": ["home"],
+	"Traces": ["inspector"],
+	"Traces torn up": ["inspector"],
+	"Traces, retries, and canvas pressure.": ["inspector"],
+	"track": ["simulations"],
+	"Transfer challenge: the fault is unknown": ["global"],
+	"transition band": ["simulations"],
+	"transition guard inverted (deadlock)": ["simulations"],
+	"Transmission line": ["global"],
+	"Transmission line drawn as an L C ladder between a step source and a load. Drag the tags on R_s, the line, and Z_L; click a line node to probe it.": [
+		"simulations"
+	],
+	"Transmission-Line Reflections": ["simulations"],
+	"Transmission-line step animation": ["simulations"],
+	"Transmitted byte": ["simulations"],
+	"Travel down the line": ["simulations"],
+	"TRI": ["simulations"],
+	"triangle carrier": ["simulations"],
+	"trigger one-shot": ["simulations"],
+	"Trip the 555 comparators": ["simulations"],
+	"Try": ["simulations"],
+	"Try a part in the playground": ["coverage"],
+	"Try to fire an event with no matching transition.": ["simulations"],
+	"TTFB": ["api", "global"],
+	"Tune P, I, and D for a fast, offset-free step response without windup.": ["simulations"],
+	"Tune three gains until the motor arrives fast, without overshoot, and stays there.": [
+		"simulations"
+	],
+	"Tuned PID": ["simulations"],
+	"turn on even parity": ["simulations"],
+	"Turn on even parity.": ["simulations"],
+	"Turn the motor": ["simulations"],
+	"Two LC stages are declared as reusable subcircuits, so each stage can be placed and connected independently.": [
+		"templates"
+	],
+	"Two passive RC stages with supply and return.": ["templates"],
+	"two thirds along": ["simulations"],
+	"two-qubit state vector + reduced Bloch vector": ["simulations"],
+	"TX": ["simulations"],
+	"TX line polarity inverted": ["simulations"],
+	"Type a command…": ["playground"],
+	"Type two numbers and watch the front move.": ["simulations"],
+	"u = K_p e + K_i\\!\\int e\\,dt + K_d\\,\\dfrac{de}{dt} \\;\\cdot\\; J\\dot\\omega = K u - b\\,\\omega - \\tau_L": [
+		"simulations"
+	],
+	"U_f ext{ marks }lvert{0} anglequad ext{(phase flip)}": ["simulations"],
+	"u_infty={0},mathrm V": ["simulations"],
+	"UART": ["global"],
+	"UART link: a byte and transmit clock into the transmitter, one serial line, and a receiver with its own baud clock. Drag the tags on the byte and the receiver clock.": [
+		"simulations"
+	],
+	"UART logic analyzer": ["simulations"],
+	"UART Logic Analyzer": ["simulations"],
+	"Uƒ flips only the marked state’s phase. Its probability is unchanged, but its sign is now different.": [
+		"simulations"
+	],
+	"uml": ["global"],
+	"UML": ["components", "global", "playground", "templates"],
+	"UML statechart": ["simulations"],
+	"uncovered": ["coverage"],
+	"Under $3$, disturbances decay — the output dies to silence. That is a stable fixed point.": [
+		"simulations"
+	],
+	"Unexpected signal": ["global"],
+	"unexpected throw in render pass": ["global"],
+	"unhandled status": ["global"],
+	"Uniform superposition": ["simulations"],
+	"uniform superposition, every amplitude {0}": ["simulations"],
+	"Unknown fault": ["global"],
+	"Unknown language": ["locale"],
+	"Unknown simulation environment: {0}": ["simulations"],
+	"Unpacked install footprint by release": ["changelog"],
+	"Unreachable: canonical benchmark fence.": ["changelog"],
+	"Unreachable: canonical fence for {0}.": ["simulations"],
+	"Unreachable: canonical fence.": ["api"],
+	"Unsaved changes": ["playground"],
+	"USD": ["home"],
+	"Use loop gain and phase to predict oscillator startup or decay.": ["simulations"],
+	"UTC": ["global"],
+	"v": ["changelog"],
+	"V {0}": ["simulations"],
+	"V_{CC}={0},mathrm V": ["simulations"],
+	"V_{mathrm{in}}; ext{versus};V_{mathrm{out}}": ["simulations"],
+	"V_{mathrm{in}}={0},mathrm V": ["simulations"],
+	"V_{mathrm{in}}=1.000,mathrm{V_{pp}}quad @quad f={0}": ["simulations"],
+	"V_{mathrm{out}}={0},mathrm Vquad V_{mathrm{ideal}}={1},mathrm V": ["simulations"],
+	"V_{mathrm{out}}={0},mathrm VquadDelta v_o={1},mathrm{mV_{pp}}": ["simulations"],
+	"V_{mathrm{out}}={0},mathrm{V_{pp}}quad {1},mathrm{dB}quad arphi={2}^{circ}": ["simulations"],
+	"v_{mathrm{sw}}=operatorname{PWM}({0}%)quad @quad {1},mathrm{kHz}": ["simulations"],
+	"V_1={0},mathrm V": ["simulations"],
+	"v_c={0},mathrm V": ["simulations"],
+	"V_C={0},mathrm Vquad {1}": ["simulations"],
+	"V_cc = 5 V": ["simulations"],
+	"V_in 5–36 V": ["simulations"],
+	"V_infty={0},mathrm V": ["simulations"],
+	"v_o={0}quad ext{(normalized)}": ["simulations"],
+	"V!left({0},;{1},t_d ight)={2},mathrm V": ["simulations"],
+	"Variants": ["components"],
+	"VC": ["simulations"],
+	"VCC": ["simulations"],
+	"Vcc drives RA and the timing network.": ["simulations"],
+	"VCO": ["simulations"],
+	"VCO {0}": ["simulations"],
+	"VCO $\\omega_0+K_vv_c$": ["simulations"],
+	"VCO free-running frequency": ["simulations"],
+	"VCO frequency {0}": ["simulations"],
+	"VCO output": ["simulations"],
+	"VCO with feedback": ["simulations"],
+	"Vector": ["inspector"],
+	"Verification failed unexpectedly.": ["api"],
+	"Verification rate limit exceeded.": ["api"],
+	"Verified schematic": ["api"],
+	"Verify": ["inspector"],
+	"verifyNetlist reports {0} findings.": ["home"],
+	"verifyNetlist reports no problems with this circuit.": ["home"],
+	"Version {0} destinations": ["changelog"],
+	"View as table": ["global"],
+	"viewBox=\"{0} {1} {2} {3}\" width=\"{4}\" height=\"{5}\"": ["components", "playground"],
+	"viewBox=\"0 0 {0} {1}\" width=\"{2}\" height=\"{3}\"": ["components", "playground"],
+	"viewBox=\"40 92 800 500\"": ["global"],
+	"Vin": ["simulations"],
+	"VIN": ["simulations"],
+	"VN": ["simulations"],
+	"VO": ["simulations"],
+	"Voltage along the line at {0} one-way delays": ["simulations"],
+	"voltage ripple {0} millivolts peak-to-peak": ["simulations"],
+	"Vout": ["simulations"],
+	"VOUT": ["simulations"],
+	"VP": ["simulations"],
+	"VS": ["simulations"],
+	"W": ["global"],
+	"Waiting for both revisions to compile.": ["diff"],
+	"Waiting for the first reading from the registry…": ["downloads"],
+	"Warnings": ["conformance"],
+	"Watch $V_C$ ride between the two thresholds.": ["simulations"],
+	"Watch it compile": ["inspector"],
+	"Watch the classifier flip CCM → BCM → DCM as the inductor current hits zero each cycle. The simple $D\\,V_{in}$ law quietly stops holding.": [
+		"simulations"
+	],
+	"Watch the output trace fade and its dash-pattern stretch as $f$ climbs past $f_c$ — the fading *is* the attenuation, drawn in real physical proportion.": [
+		"simulations"
+	],
+	"WebSite": ["global"],
+	"Weigh present, past, and trend": ["simulations"],
+	"What changed in this diagram?": ["diff"],
+	"What information do the two syndrome measurements reveal?": ["simulations"],
+	"What it draws": ["home"],
+	"What reaches the speaker is the audio plus whatever carrier residual the filter let through.": [
+		"simulations"
+	],
+	"Where the corpus spends its examples": ["coverage"],
+	"Whether the encoded logical qubit is $|0\\rangle$ or $|1\\rangle$.": ["simulations"],
+	"Which @schemd/core primitives the documentation exercises, derived from the compiler's own exported vocabulary and every schemd fence in the docs corpus.": [
+		"coverage"
+	],
+	"Which physical qubits disagree, not the logical amplitudes.": ["simulations"],
+	"Which rules fired": ["conformance"],
+	"Whole number from {0} to {1}": ["components", "playground"],
+	"Why gain 3": ["simulations"],
+	"Why the evidence behaves this way": ["global"],
+	"Width": ["playground"],
+	"Wien bridge R and C must be positive.": ["simulations"],
+	"Wien oscillator": ["global"],
+	"Wien oscillator and waveform animation": ["simulations"],
+	"Wien oscillator model. Drag the gain tag on R f and the bridge R and C tags; click a wire to clip a probe on.": [
+		"simulations"
+	],
+	"Wien-bridge oscillator": ["simulations"],
+	"Wien-Bridge Oscillator": ["simulations"],
+	"Wien-oscillator animation": ["simulations"],
+	"Wires": ["playground"],
+	"Wires meet at the junction": ["global"],
+	"wires, modelled as": ["simulations"],
+	"With $\\theta_e = 0$ the detector outputs zero, so $v_c$ would decay and the VCO would fall back to $\\omega_0$. Lock with detuning needs a phase offset.": [
+		"simulations"
+	],
+	"With $K_i = 0$, more $K_p$ makes the rise faster and the offset smaller, but never zero: friction needs a push, and P only pushes while there is error.": [
+		"simulations"
+	],
+	"With $Z_L = Z_0$ the far end absorbs the wave on arrival: no echo, and the near end settles at $V_1$ in a single step. This is why fast buses are terminated.": [
+		"simulations"
+	],
+	"with its default options, pins named.": ["components"],
+	"With only proportional control ($K_i = K_d = 0$), the motor must overcome friction. Where does its speed settle?": [
+		"simulations"
+	],
+	"With the target in $|1\\rangle$, the control’s Bloch vector turns around the equator by exactly $\\varphi$, and $P(1)$ follows $\\sin^2\\frac{\\varphi}{2}$ from $0$ to $1$.": [
+		"simulations"
+	],
+	"workload output": ["changelog"],
+	"Workload output weight": ["changelog"],
+	"Workspace is too large for a reliable embed URL. Download the source instead.": ["playground"],
+	"Workspace is too large for a reliable URL. Download the source instead.": ["playground"],
+	"Workspace schematic": ["playground"],
+	"Write one part or one wire per line. schemd places the parts, routes the wires and draws the SVG.": [
+		"home"
+	],
+	"Writing one": ["components"],
+	"wrong byte, no error flagged": ["simulations"],
+	"wrong-oracle perturbation exceeds the search space.": ["simulations"],
+	"X": ["simulations"],
+	"x − y": ["simulations"],
+	"X on qubit {0}": ["simulations"],
+	"X_{q_{{0}}}quad {1}": ["simulations"],
+	"x:": ["simulations"],
+	"X/Z correction gates": ["simulations"],
+	"x^4 + x^3 + 1 \\;\\cdot\\; \\text{period} = 2^n - 1 = 15": ["simulations"],
+	"X1_{0}.out -> N2_{1}.in1 #cyan [ortho]": ["simulations"],
+	"X1_{0}.out -> X2_{1}.in1 #cyan [ortho]": ["simulations"],
+	"X2_{0}.out -> S{1}.in #emerald [ortho]": ["simulations"],
+	"XC": ["simulations"],
+	"XOR feedback taps $3,4$": ["simulations"],
+	"XOR feedback taps 3,4": ["simulations"],
+	"XOR phase detector": ["simulations"],
+	"XOR phase detector $K_d\\sin\\theta_e$": ["simulations"],
+	"xor:X1_{0} \"X\" at ({1}, {2}) #cyan": ["simulations"],
+	"xor:X2_{0} \"X\" at ({1}, {2}) #cyan": ["simulations"],
+	"y:": ["simulations"],
+	"Y(z) = X(z) + (1 - z^{-1})^L E(z) \\;\\cdot\\; \\mathrm{ENOB} = \\dfrac{\\mathrm{SNR} - 1.76}{6.02}": [
+		"simulations"
+	],
+	"y={0}quad n={1}": ["simulations"],
+	"yarn add @schemd/core": ["home"],
+	"YELLOW": ["simulations"],
+	"Yellow → Red": ["simulations"],
+	"YELLOW exit guard inverted (deadlock)": ["simulations"],
+	"Yes. $R_B$ lengthens both paths and makes their times more alike; $R_A$ remains only in the charge path, so exact $50\\%$ is still unreachable.": [
+		"simulations"
+	],
+	"Yes. Any nonzero four-bit register has period $2^4-1$.": ["simulations"],
+	"Yes. Each higher cell waits for $C_i$, so the dependency travels from the least significant bit toward $C_{out}$.": [
+		"simulations"
+	],
+	"Yes. Inductor volt-second balance gives $v_o\\approx D V_{in}$ in the ideal continuous-conduction regime.": [
+		"simulations"
+	],
+	"Yes. The sample for bit $k$ is off by about $(k+\\tfrac12)\\varepsilon$ bit times, so the stop bit sees the largest drift.": [
+		"simulations"
+	],
+	"Yes. The steady drive is $K_pe$, so a non-zero drive needs a non-zero error. Integral action removes it.": [
+		"simulations"
+	],
+	"Yes. The VCO needs $v_c = \\Delta\\omega / K_v$, and the detector can only produce it with $\\sin\\theta_e = \\Delta\\omega/(K_vK_d)$.": [
+		"simulations"
+	],
+	"You can protect a qubit you are not even allowed to look at — by measuring only whether the copies *disagree*, never what they say.": [
+		"simulations"
+	],
+	"You cannot find the needle faster by looking harder — but you can rotate the entire haystack until the needle is all that remains.": [
+		"simulations"
+	],
+	"You double the filter capacitance $C$. What happens to the carrier residual at the speaker?": [
+		"simulations"
+	],
+	"You never move the qubit. You move its *description* — and the original is destroyed in the act.": [
+		"simulations"
+	],
+	"You reached a real node, but its terminal is not exposed on the public net.": ["global"],
+	"Your fault hypothesis": ["global"],
+	"Z load": ["simulations"],
+	"Z_L 5 Ω – 5 kΩ": ["simulations"],
+	"Z-basis measurement": ["simulations"],
+	"Z₀ 25 – 150 Ω": ["simulations"],
+	"ZC": ["simulations"],
+	"Zener reference": ["templates"],
+	"α (reference)": ["simulations"],
+	"β at phase φ": ["simulations"],
+	"Σ decimal": ["simulations"],
+	"ΣP =": ["simulations"],
+	"τ = RC 0.05 – 2 ms": ["simulations"],
+	"ω set": ["simulations"]
+}

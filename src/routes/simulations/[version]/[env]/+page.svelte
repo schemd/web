@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href, locale } = useLanguage();
+
 	import type { PageProps } from './$types';
 	import Seo from '#lib/components/Seo.svelte';
 	import { setContext, type Component } from 'svelte';
@@ -94,16 +97,17 @@
 		JSON.stringify({
 			'@context': 'https://schema.org',
 			'@type': 'TechArticle',
-			headline: `${sim.title} — schemd simulation`,
-			about: sim.domain,
-			description: sim.summary
+			headline: t('{0} · schemd simulation lab', [t(sim.title)]),
+			inLanguage: locale(),
+			about: t(sim.domain),
+			description: t(sim.summary)
 		})
 	);
 </script>
 
 <Seo
-	title={`${sim.title} · schemd simulation lab`}
-	description={sim.summary}
+	title={t('{0} · schemd simulation lab', [t(sim.title)])}
+	description={t(sim.summary)}
 	canonicalPath={`/simulations/${data.latest}/${sim.id}`}
 	type="article"
 	{jsonLd}
@@ -114,20 +118,24 @@
 	     studies about it sits in the notebook under the bench. -->
 	<header class="lab-bar">
 		<div class="lab-name">
-			<a href={`/simulations/${data.version}`} class="back">All labs</a>
-			<span class="zone is-current">{sim.index}</span>
-			<h1>{sim.title}</h1>
-			<span class="domain-badge">{sim.domain}</span>
+			<a href={href(`/simulations/${data.version}`)} class="back">{t('All labs')}</a>
+			<span class="zone is-current">{t(sim.index)}</span>
+			<h1>{t(sim.title)}</h1>
+			<span class="domain-badge">{t(sim.domain)}</span>
 		</div>
-		<nav class="lab-steps" aria-label="Neighbouring labs">
-			<a href={`/simulations/${data.version}/${previous.id}`} title={previous.title}
-				><span class="visually-hidden">Previous lab: </span><span aria-hidden="true">Previous</span>
-				{previous.index}</a
+		<nav class="lab-steps" aria-label={t('Neighbouring labs')}>
+			<a href={href(`/simulations/${data.version}/${previous.id}`)} title={t(previous.title)}
+				><span class="visually-hidden">{t('Previous lab:')} </span><span aria-hidden="true"
+					>{t('Previous')}</span
+				>
+				{t(previous.index)}</a
 			>
-			<a href="#notebook" class="notebook-link">Notebook</a>
-			<a href={`/simulations/${data.version}/${next.id}`} title={next.title}
-				><span class="visually-hidden">Next lab: </span><span aria-hidden="true">Next</span>
-				{next.index}</a
+			<a href="#notebook" class="notebook-link">{t('Notebook')}</a>
+			<a href={href(`/simulations/${data.version}/${next.id}`)} title={t(next.title)}
+				><span class="visually-hidden">{t('Next lab:')} </span><span aria-hidden="true"
+					>{t('Next')}</span
+				>
+				{t(next.index)}</a
 			>
 		</nav>
 		<p class="lab-summary">{@html sim.summaryHtml}</p>
@@ -156,12 +164,17 @@
 
 	<section class="notebook" id="notebook" aria-labelledby="notebook-title">
 		<h2 class="microlabel" id="notebook-title">
-			Notebook: {sim.components} parts and {sim.connections} wires, modelled as {@html sim.modelHtml}
+			{t('Notebook:')}
+			{t(sim.components)}
+			{t('parts and')}
+			{t(sim.connections)}
+			{t('wires, modelled as')}
+			{@html sim.modelHtml}
 		</h2>
 		<div class="notebook-grid">
 			<SimulationPedagogy
 				id={sim.id}
-				title={sim.title}
+				title={t(sim.title)}
 				version={data.version}
 				fault={sim.fault}
 				pedagogy={sim.pedagogy}
@@ -173,15 +186,15 @@
 			/>
 			<div class="lab-model">
 				<div class="model-card">
-					<span class="microlabel">Governing model</span>
+					<span class="microlabel">{t('Governing model')}</span>
 					<!-- Keyboard focus exposes horizontally overflowing equations to Safari users. -->
 					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-					<div class="lab-formula" role="region" aria-label="Governing model" tabindex="0">
+					<div class="lab-formula" role="region" aria-label={t('Governing model')} tabindex="0">
 						{@html sim.formulaHtml}
 					</div>
 				</div>
 				<div class="spec-group">
-					<span class="microlabel">Parts</span>
+					<span class="microlabel">{t('Parts')}</span>
 					<ul class="chips">
 						{#each sim.inventoryHtml as item, index (sim.inventory[index])}
 							<li>{@html item}</li>
@@ -189,7 +202,7 @@
 					</ul>
 				</div>
 				<div class="spec-group">
-					<span class="microlabel">Limits of the model</span>
+					<span class="microlabel">{t('Limits of the model')}</span>
 					<ul class="bounds">
 						{#each sim.boundariesHtml as bound, index (sim.boundaries[index])}
 							<li>{@html bound}</li>
@@ -197,34 +210,34 @@
 					</ul>
 				</div>
 				<div class="spec-group">
-					<span class="microlabel">Diagnosis challenge</span>
+					<span class="microlabel">{t('Diagnosis challenge')}</span>
 					<span class="fault-note"
-						>The fault is hidden. Work it out from the changed outputs first.</span
+						>{t('The fault is hidden. Work it out from the changed outputs first.')}</span
 					>
 				</div>
 			</div>
 		</div>
 	</section>
 
-	<nav class="env-nav" aria-label="Simulation environments">
-		<a class="env-step prev" href={`/simulations/${data.version}/${previous.id}`}>
-			<span class="microlabel">Previous, {previous.index}</span>
-			<span class="env-step-title">{previous.title}</span>
+	<nav class="env-nav" aria-label={t('Simulation environments')}>
+		<a class="env-step prev" href={href(`/simulations/${data.version}/${previous.id}`)}>
+			<span class="microlabel">{t('Previous,')} {t(previous.index)}</span>
+			<span class="env-step-title">{t(previous.title)}</span>
 		</a>
 		<div class="env-tabs">
 			{#each data.environments as environment (environment.id)}
 				<a
-					href={`/simulations/${data.version}/${environment.id}`}
+					href={href(`/simulations/${data.version}/${environment.id}`)}
 					aria-current={environment.id === sim.id ? 'page' : undefined}
-					title={environment.title}
+					title={t(environment.title)}
 				>
-					{environment.index}
+					{t(environment.index)}
 				</a>
 			{/each}
 		</div>
-		<a class="env-step next" href={`/simulations/${data.version}/${next.id}`}>
-			<span class="microlabel">Next, {next.index}</span>
-			<span class="env-step-title">{next.title}</span>
+		<a class="env-step next" href={href(`/simulations/${data.version}/${next.id}`)}>
+			<span class="microlabel">{t('Next,')} {t(next.index)}</span>
+			<span class="env-step-title">{t(next.title)}</span>
 		</a>
 	</nav>
 </div>

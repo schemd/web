@@ -113,4 +113,16 @@ describe('simulation learning design', () => {
 			'buck:conduction-left-ccm': 'change load resistance until the conduction classifier changes'
 		});
 	});
+
+	test('keeps guided interaction contracts independent of translated accessible names', () => {
+		for (const environment of listSimulationEnvironments()) {
+			for (const step of environment.pedagogy.steps) {
+				for (const selector of [step.action.selector, ...(step.action.sequence ?? [])]) {
+					expect(selector, `${environment.id}: ${step.label}`).not.toMatch(
+						/\[(?:aria-label|title)(?:[~|^$*]?=|\])/
+					);
+				}
+			}
+		}
+	});
 });

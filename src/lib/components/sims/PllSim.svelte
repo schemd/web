@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Phase-locked loop on the v2 bench.
 	 *
@@ -260,7 +263,7 @@
 	const detune = $derived(reference - freeRunning);
 </script>
 
-<Bench title="Phase-locked loop" tone="analog" {status} {stage} {dock} {deck} />
+<Bench title={t('Phase-locked loop')} tone="analog" status={t(status)} {stage} {dock} {deck} />
 
 {#snippet stage()}
 	<div class="pll-canvas">
@@ -268,7 +271,9 @@
 			class="sim-stage pll-stage schemd-frame"
 			bind:this={host}
 			role="group"
-			aria-label="Phase-locked loop: reference, XOR phase detector, R C loop filter, and VCO with feedback. Drag the tags on the reference, the resistor, and the VCO; click a wire to probe it."
+			aria-label={t(
+				'Phase-locked loop: reference, XOR phase detector, R C loop filter, and VCO with feedback. Drag the tags on the reference, the resistor, and the VCO; click a wire to probe it.'
+			)}
 			data-model-stage={timeline.step}
 		>
 			{@html svg}
@@ -279,8 +284,8 @@
 {/snippet}
 
 {#snippet dock()}
-	<section class="dock-block" aria-label="Oscilloscope">
-		<p class="microlabel">Oscilloscope</p>
+	<section class="dock-block" aria-label={t('Oscilloscope')}>
+		<p class="microlabel">{t('Oscilloscope')}</p>
 		<Scope
 			{channels}
 			running={!(motion.paused || motion.animationBlocked)}
@@ -288,45 +293,48 @@
 			{revision}
 		/>
 	</section>
-	<section class="dock-block" aria-label="Readouts">
-		<p class="microlabel">Readouts</p>
+	<section class="dock-block" aria-label={t('Readouts')}>
+		<p class="microlabel">{t('Readouts')}</p>
 		<div class="metrics">
 			<div>
-				<span>VCO</span>
+				<span>{t('VCO')}</span>
 				<strong
 					><LiveMath
 						id="pll.readout.vco"
-						label={`VCO frequency ${formatSi(vcoFrequency * 1e3, 'Hz')}`}
+						label={t('VCO frequency {0}', [formatSi(vcoFrequency * 1e3, 'Hz')])}
 						values={{ value: formatSi(vcoFrequency * 1e3, 'Hz') }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>Phase error</span>
+				<span>{t('Phase error')}</span>
 				<strong
 					><LiveMath
 						id="pll.readout.error"
-						label={`phase error ${((wrapped * 180) / Math.PI).toFixed(0)} degrees`}
+						label={t('phase error {0} degrees', [((wrapped * 180) / Math.PI).toFixed(0)])}
 						values={{ value: ((wrapped * 180) / Math.PI).toFixed(0) }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>Control</span>
+				<span>{t('Control')}</span>
 				<strong
 					><LiveMath
 						id="pll.readout.vc"
-						label={`control voltage ${signed(control)} volts`}
+						label={t('control voltage {0} volts', [signed(control)])}
 						values={{ value: signed(control) }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>Hold range</span>
+				<span>{t('Hold range')}</span>
 				<strong
 					><LiveMath
 						id="pll.readout.detune"
-						label={`detuning ${formatSi(Math.abs(detune) * 1e3, 'Hz')} against a hold range of ${formatSi(holdRange * 1e3, 'Hz')}`}
+						label={t('detuning {0} against a hold range of {1}', [
+							formatSi(Math.abs(detune) * 1e3, 'Hz'),
+							formatSi(holdRange * 1e3, 'Hz')
+						])}
 						values={{
 							detune: formatSi(Math.abs(detune) * 1e3, 'Hz'),
 							range: formatSi(holdRange * 1e3, 'Hz')
@@ -339,8 +347,8 @@
 	<PhasePortrait
 		points={orbit}
 		label={locked
-			? 'Phase portrait: a fixed point, the loop is locked'
-			: 'Phase portrait: the loop is moving'}
+			? t('Phase portrait: a fixed point, the loop is locked')
+			: t('Phase portrait: the loop is moving')}
 		xLabel="detector output"
 		yLabel="control voltage"
 		xMath={reading('pll.axis.x', 'detector output')}
@@ -351,29 +359,29 @@
 {#snippet deck()}
 	<ProbeSelects {nets} bind:a={probeA} bind:b={probeB} />
 	<div class="deck-group">
-		<span class="microlabel">Try</span>
+		<span class="microlabel">{t('Try')}</span>
 		<div class="presets">
 			<button
 				class="btn"
 				type="button"
 				data-preset="step-reference"
 				onclick={() => (reference = Math.min(12, freeRunning + 0.6))}
-				>Step the reference +600 Hz</button
+				>{t('Step the reference +600 Hz')}</button
 			>
 			<button
 				class="btn"
 				type="button"
 				data-preset="detune"
 				onclick={() => (reference = Math.min(12, freeRunning + 1.8))}
-				>Detune past the hold range</button
+				>{t('Detune past the hold range')}</button
 			>
 		</div>
 	</div>
 	<div class="deck-group">
-		<SimulationMotionControl {motion} label="Phase-locked loop animation" />
+		<SimulationMotionControl {motion} label={t('Phase-locked loop animation')} />
 	</div>
 	<div class="deck-group">
-		<FaultSwitch label="Loop filter shorted to ground" bind:active={shorted} />
+		<FaultSwitch label={t('Loop filter shorted to ground')} bind:active={shorted} />
 	</div>
 {/snippet}
 

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Reusable VS Code-style workspace shell.
 	 *
@@ -136,13 +139,13 @@
 
 <div class="workspace" class:dragging style={`grid-template-columns: ${gridTemplate}`}>
 	{#if left}
-		<section class="pane pane-left" aria-label={leftLabel} data-open={leftOpen}>
+		<section class="pane pane-left" aria-label={t(leftLabel)} data-open={leftOpen}>
 			{@render left()}
 		</section>
 		<button
 			type="button"
 			class="handle"
-			aria-label={`Resize ${leftLabel}. Arrow keys resize, Enter toggles.`}
+			aria-label={t('Resize {0}. Arrow keys resize, Enter toggles.', [leftLabel])}
 			aria-pressed={leftOpen}
 			onpointerdown={(event) => startDrag('left', event)}
 			onkeydown={(event) => keyResize('left', event)}
@@ -157,34 +160,34 @@
 		<button
 			type="button"
 			class="handle"
-			aria-label={`Resize ${rightLabel}. Arrow keys resize, Enter toggles.`}
+			aria-label={t('Resize {0}. Arrow keys resize, Enter toggles.', [rightLabel])}
 			aria-pressed={rightOpen}
 			onpointerdown={(event) => startDrag('right', event)}
 			onkeydown={(event) => keyResize('right', event)}
 		></button>
-		<section class="pane pane-right" aria-label={rightLabel} data-open={rightOpen}>
+		<section class="pane pane-right" aria-label={t(rightLabel)} data-open={rightOpen}>
 			{@render right()}
 		</section>
 	{/if}
 </div>
 
-<footer class="statusbar" aria-label="Status">
+<footer class="statusbar" aria-label={t('Status')}>
 	{#if left}
 		<button type="button" aria-pressed={leftOpen} onclick={() => (leftOpen = !leftOpen)}>
-			{leftLabel}
+			{t(leftLabel)}
 		</button>
 	{/if}
 	{#if right}
 		<button type="button" aria-pressed={rightOpen} onclick={() => (rightOpen = !rightOpen)}>
-			{rightLabel}
+			{t(rightLabel)}
 		</button>
 	{/if}
 	{#if titleBlock.length > 0}
 		<dl class="title-cells">
 			{#each titleBlock as cell (cell.label)}
 				<div data-tone={cell.tone}>
-					<dt>{cell.label}</dt>
-					<dd>{cell.value}</dd>
+					<dt>{t(cell.label)}</dt>
+					<dd>{t(cell.value)}</dd>
 				</div>
 			{/each}
 		</dl>

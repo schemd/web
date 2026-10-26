@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href } = useLanguage();
+
 	/**
 	 * The end matter every reading page closes with: where else to go, and the
 	 * revision, licence and source of the figures on the page.
@@ -66,26 +69,27 @@
 <footer class="end page">
 	<div class="columns">
 		<div class="about">
-			<p class="name">schemd</p>
+			<p class="name">{t('schemd')}</p>
 			<p>
-				A text-to-schematic compiler with no dependencies. Every drawing on this site is compiled by
-				the release it documents.
+				{t(
+					'A text-to-schematic compiler with no dependencies. Every drawing on this site is compiled by the release it documents.'
+				)}
 			</p>
 			<ul class="elsewhere">
 				{#each elsewhere as link (link.href)}
 					<li>
-						<a href={link.href} rel="noopener" target="_blank">{link.label}</a>
+						<a href={href(link.href)} rel="noopener" target="_blank">{t(link.label)}</a>
 					</li>
 				{/each}
 			</ul>
 		</div>
 
 		{#each columns as column (column.heading)}
-			<nav aria-label={column.heading}>
-				<h2>{column.heading}</h2>
+			<nav aria-label={t(column.heading)}>
+				<h2>{t(column.heading)}</h2>
 				<ul>
 					{#each column.links as link (link.href)}
-						<li><a href={link.href}>{link.label}</a></li>
+						<li><a href={href(link.href)}>{t(link.label)}</a></li>
 					{/each}
 				</ul>
 			</nav>
@@ -93,12 +97,15 @@
 	</div>
 
 	<p class="imprint">
-		Revision <span class="tabular">{latest}</span>, documentation line
-		<span class="tabular">{docLine}</span>, {releases} releases recorded.
+		{t('Revision')} <span class="tabular">{t(latest)}</span>{t(', documentation line')}
+		<span class="tabular">{t(docLine)}</span>, {t(releases)}
+		{t('releases recorded.')}
 		{registryLive
-			? 'Release figures are read from npm.'
-			: 'npm could not be reached, so release figures may be out of date.'}
-		MIT licence, © {year} John Owolabi Idogun.
+			? t('Release figures are read from npm.')
+			: t('npm could not be reached, so release figures may be out of date.')}
+		{t('MIT licence, ©')}
+		{t(year)}
+		{t('John Owolabi Idogun.')}
 	</p>
 </footer>
 

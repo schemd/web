@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * The v2 laboratory bench.
 	 *
@@ -34,22 +37,27 @@
 
 <article class="bench" data-tone={tone} data-testid={`${tone}-simulation-workbench`}>
 	<div class="bench-grid">
-		<section class="stage" aria-label={`${title}, live circuit`}>
+		<section class="stage" aria-label={t('{0}, live circuit', [title])}>
 			<header class="stage-bar">
-				<span class="microlabel">Live circuit</span>
-				<span class="state" role="status"><i aria-hidden="true"></i>{status}</span>
+				<span class="microlabel">{t('Live circuit')}</span>
+				<span class="state" role="status"><i aria-hidden="true"></i>{t(status)}</span>
 			</header>
 			<!-- svelte-ignore a11y_no_noninteractive_tabindex (on a phone the drawing scrolls sideways, so the keyboard must reach it) -->
-			<div class="stage-body sheet-grid" role="region" aria-label={`${title} drawing`} tabindex="0">
+			<div
+				class="stage-body sheet-grid"
+				role="region"
+				aria-label={t('{0} drawing', [title])}
+				tabindex="0"
+			>
 				{@render stage()}
 			</div>
-			<p class="stage-hint">{hint}</p>
+			<p class="stage-hint">{t(hint)}</p>
 		</section>
-		<aside class="dock" aria-label={`${title} instruments`}>
+		<aside class="dock" aria-label={t('{0} instruments', [title])}>
 			{@render dock()}
 		</aside>
 	</div>
-	<footer class="deck" aria-label={`${title} controls`}>
+	<footer class="deck" aria-label={t('{0} controls', [title])}>
 		{@render deck()}
 	</footer>
 </article>

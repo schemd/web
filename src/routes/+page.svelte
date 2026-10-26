@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href } = useLanguage();
+
 	import type { PageProps } from './$types';
 	import Seo from '#lib/components/Seo.svelte';
 	import Pronounce from '#lib/components/Pronounce.svelte';
@@ -98,8 +101,10 @@
 </script>
 
 <Seo
-	title="schemd: text-to-schematic compiler"
-	description="schemd (pronounced “skemd”) compiles lines of text into routed, accessible, deterministic SVG drawings of electrical, digital, quantum and UML diagrams. No dependencies, Node 24 or newer."
+	title={t('schemd: text-to-schematic compiler')}
+	description={t(
+		'schemd (pronounced “skemd”) compiles lines of text into routed, accessible, deterministic SVG drawings of electrical, digital, quantum and UML diagrams. No dependencies, Node 24 or newer.'
+	)}
 	canonicalPath="/"
 	{jsonLd}
 />
@@ -111,22 +116,23 @@
 
 <article class="front page">
 	<header class="title">
-		<h1>Schematics from plain text</h1>
+		<h1>{t('Schematics from plain text')}</h1>
 		<p class="lede">
-			Write one part or one wire per line. schemd places the parts, routes the wires and draws the
-			SVG.
+			{t(
+				'Write one part or one wire per line. schemd places the parts, routes the wires and draws the SVG.'
+			)}
 		</p>
 		<Pronounce />
 	</header>
 
-	<figure class="figure instrument" aria-label="One circuit, three views">
-		<div class="views" role="tablist" aria-label="Compiler views">
+	<figure class="figure instrument" aria-label={t('One circuit, three views')}>
+		<div class="views" role="tablist" aria-label={t('Compiler views')}>
 			{#each VIEWS as option (option.id)}
 				<button
 					type="button"
 					role="tab"
 					aria-selected={view === option.id}
-					onclick={() => (view = option.id)}>{option.label}</button
+					onclick={() => (view = option.id)}>{t(option.label)}</button
 				>
 			{/each}
 		</div>
@@ -136,7 +142,7 @@
 				<div class="split">
 					<ol
 						class="source"
-						aria-label="Source; hover or focus a line to trace it"
+						aria-label={t('Source; hover or focus a line to trace it')}
 						onmouseleave={() => (focusLine = undefined)}
 					>
 						{#each data.hero.lines as line (line.n)}
@@ -149,8 +155,8 @@
 									onfocus={() => ((focusNet = undefined), (focusLine = line.n))}
 									onblur={() => (focusLine = undefined)}
 								>
-									<span class="visually-hidden">Trace line</span>
-									<span class="n">{line.n}</span>
+									<span class="visually-hidden">{t('Trace line')}</span>
+									<span class="n">{t(line.n)}</span>
 									<!-- eslint-disable-next-line svelte/no-at-html-tags -- tokenizer output, escaped -->
 									<code>{@html line.html}</code>
 								</button>
@@ -165,14 +171,14 @@
 			{:else if view === 'netlist'}
 				<div class="netlist">
 					<p class="table-caption">
-						Table 2. Nets of the figure, from <code>buildNetlist</code>
+						{t('Table 2. Nets of the figure, from')} <code>buildNetlist</code>
 					</p>
 					<table class="spec">
 						<thead>
 							<tr>
-								<th scope="col">Net</th>
-								<th scope="col">Terminals</th>
-								<th scope="col">Lines</th>
+								<th scope="col">{t('Net')}</th>
+								<th scope="col">{t('Terminals')}</th>
+								<th scope="col">{t('Lines')}</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -183,62 +189,74 @@
 											type="button"
 											class="net-id"
 											onclick={() => traceNet(net.id)}
-											aria-label={`Trace net ${net.id} on the drawing`}>{net.id}</button
+											aria-label={t('Trace net {0} on the drawing', [net.id])}>{t(net.id)}</button
 										>
 									</td>
 									<td><code>{net.terminals.join(', ')}</code></td>
-									<td class="tabular">{net.lines.join(', ')}</td>
+									<td class="tabular">{t(net.lines.join(', '))}</td>
 								</tr>
 							{/each}
 						</tbody>
 					</table>
 					<p class="note">
 						{data.hero.issues === 0
-							? 'verifyNetlist reports no problems with this circuit.'
-							: `verifyNetlist reports ${data.hero.issues} findings.`}
+							? t('verifyNetlist reports no problems with this circuit.')
+							: t('verifyNetlist reports {0} findings.', [data.hero.issues])}
 					</p>
 				</div>
 			{:else}
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-				<pre class="svg-out" tabindex="0" aria-label="The beginning of the compiled SVG">{data.hero
-						.svgHead}</pre>
+				<pre class="svg-out" tabindex="0" aria-label={t('The beginning of the compiled SVG')}>{data
+						.hero.svgHead}</pre>
 			{/if}
 		</div>
 
 		<figcaption>
-			<b>Figure 1.</b>
-			{data.hero.title}: {data.hero.components} parts on {data.hero.nets.length} nets, compiled in {data
-				.hero.ms} ms. Hover a line to find its wire.
+			<b>{t('Figure 1.')}</b>
+			{t(data.hero.title)}: {t(data.hero.components)}
+			{t('parts on')}
+			{t(data.hero.nets.length)}
+			{t('nets, compiled in')}
+			{t(data.hero.ms)}
+			{t('ms. Hover a line to find its wire.')}
 		</figcaption>
 	</figure>
 
 	<div class="start">
 		<div class="install">
-			<div class="seg" role="tablist" aria-label="Package manager">
+			<div class="seg" role="tablist" aria-label={t('Package manager')}>
 				{#each MANAGERS as manager (manager)}
 					<button
 						type="button"
 						role="tab"
 						aria-selected={pm === manager}
-						onclick={() => (pm = manager)}>{manager}</button
+						onclick={() => (pm = manager)}>{t(manager)}</button
 					>
 				{/each}
 			</div>
 			<div class="command">
 				<code>{installCmd}</code>
-				<button type="button" class="copy" onclick={copyInstall} aria-label="Copy install command">
-					{copied ? 'Copied' : 'Copy'}
+				<button
+					type="button"
+					class="copy"
+					onclick={copyInstall}
+					aria-label={t('Copy install command')}
+				>
+					{copied ? t('Copied') : t('Copy')}
 				</button>
 			</div>
 		</div>
 		<div class="actions">
-			<a class="btn btn-solid" href={`/playground/${data.latest}`}>Open the playground</a>
-			<a class="btn" href={`/docs/${data.latest}/overview`}>Read the documentation</a>
+			<a class="btn btn-solid" href={href(`/playground/${data.latest}`)}
+				>{t('Open the playground')}</a
+			>
+			<a class="btn" href={href(`/docs/${data.latest}/overview`)}>{t('Read the documentation')}</a>
+			<a class="btn" href={href('/templates')}>{t('Browse templates')}</a>
 		</div>
 	</div>
 
 	<section aria-labelledby="draws">
-		<h2 id="draws"><span class="num">1</span> What it draws</h2>
+		<h2 id="draws"><span class="num">1</span> {t('What it draws')}</h2>
 		<div class="triple">
 			{#each data.families as family, index (family.id)}
 				<figure class="figure">
@@ -247,8 +265,8 @@
 						{@html family.svg}
 					</div>
 					<figcaption>
-						<b>Figure {index + 2}.</b>
-						{family.title}.
+						<b>{t('Figure')} {t(index + 2)}.</b>
+						{t(family.title)}.
 						<code class="line">{family.line}</code>
 					</figcaption>
 				</figure>
@@ -263,13 +281,14 @@
 						{@html data.junction08}
 					</div>
 					<div>
-						<p class="tag">{data.latest}</p>
+						<p class="tag">{t(data.latest)}</p>
 						<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
 						{@html data.figures['junction']}
 					</div>
 				</div>
 				<figcaption>
-					<b>Figure {data.families.length + 2}.</b> Three wires to one junction, then and now.
+					<b>{t('Figure')} {t(data.families.length + 2)}.</b>
+					{t('Three wires to one junction, then and now.')}
 				</figcaption>
 			</figure>
 			<figure class="figure">
@@ -278,46 +297,49 @@
 					{@html data.figures['crossing']}
 				</div>
 				<figcaption>
-					<b>Figure {data.families.length + 3}.</b> Separate nets bridge where they cross.
+					<b>{t('Figure')} {t(data.families.length + 3)}.</b>
+					{t('Separate nets bridge where they cross.')}
 				</figcaption>
 			</figure>
 		</div>
 	</section>
 
 	<section aria-labelledby="glance">
-		<h2 id="glance"><span class="num">2</span> At a glance</h2>
+		<h2 id="glance"><span class="num">2</span> {t('At a glance')}</h2>
 		<table class="spec glance">
 			<tbody>
 				<tr>
-					<th scope="row">Package</th>
-					<td><code>@schemd/core</code> {data.latest}</td>
+					<th scope="row">{t('Package')}</th>
+					<td><code>@schemd/core</code> {t(data.latest)}</td>
 				</tr>
 				<tr>
-					<th scope="row">Component kinds</th>
-					<td><a href="/components">{data.evidence.kinds}</a></td>
+					<th scope="row">{t('Component kinds')}</th>
+					<td><a href={href('/components')}>{t(data.evidence.kinds)}</a></td>
 				</tr>
 				<tr>
-					<th scope="row">Runs on</th>
-					<td>Node.js 24 or newer, browsers, web workers</td>
+					<th scope="row">{t('Runs on')}</th>
+					<td>{t('Node.js 24 or newer, browsers, web workers')}</td>
 				</tr>
 				<tr>
-					<th scope="row">Dependencies</th>
-					<td>None</td>
+					<th scope="row">{t('Dependencies')}</th>
+					<td>{t('None')}</td>
 				</tr>
 				<tr>
-					<th scope="row">Output</th>
-					<td>The same SVG bytes on every engine</td>
+					<th scope="row">{t('Output')}</th>
+					<td>{t('The same SVG bytes on every engine')}</td>
 				</tr>
 				<tr>
-					<th scope="row">Design rules</th>
+					<th scope="row">{t('Design rules')}</th>
 					<td>
-						<a href="/conformance">{data.evidence.clean} of {data.evidence.diagrams}</a> documentation
-						diagrams pass
+						<a href={href('/conformance')}
+							>{t(data.evidence.clean)} {t('of')} {t(data.evidence.diagrams)}</a
+						>
+						{t('documentation diagrams pass')}
 					</td>
 				</tr>
 				<tr>
-					<th scope="row">Licence</th>
-					<td>MIT</td>
+					<th scope="row">{t('Licence')}</th>
+					<td>{t('MIT')}</td>
 				</tr>
 			</tbody>
 		</table>

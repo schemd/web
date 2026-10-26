@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * One industrial switchboard lever for the fault-injection panel.
 	 *
@@ -32,7 +35,7 @@
 		<input type="checkbox" role="switch" checked={active} onchange={toggle} />
 		<span class="fault-lever" aria-hidden="true"></span>
 		<span class="fault-label"
-			>{active ? 'Hidden fault active; restore the circuit' : 'Inject hidden fault'}</span
+			>{active ? t('Hidden fault active; restore the circuit') : t('Inject hidden fault')}</span
 		>
 	</label>
 </div>

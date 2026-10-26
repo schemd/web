@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Read any part or wire by clicking it.
 	 *
@@ -46,14 +49,14 @@
 	});
 </script>
 
-<section class="part-readout" aria-label="Part reading" aria-live="polite">
-	<p class="microlabel">Reading</p>
+<section class="part-readout" aria-label={t('Part reading')} aria-live="polite">
+	<p class="microlabel">{t('Reading')}</p>
 	{#if reading}
 		<output class="probe-tip"
-			><LiveMath id={reading.id} label={reading.label} values={reading.values} /></output
+			><LiveMath id={reading.id} label={t(reading.label)} values={reading.values} /></output
 		>
 	{:else}
-		<p class="hint">{hint}</p>
+		<p class="hint">{t(hint)}</p>
 	{/if}
 </section>
 

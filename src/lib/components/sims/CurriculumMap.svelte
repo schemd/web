@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href } = useLanguage();
+
 	/**
 	 * The curriculum, as a schematic you can walk.
 	 *
@@ -91,13 +94,13 @@
 
 <figure class="curriculum">
 	<figcaption class="legend">
-		<span class="microlabel">Curriculum map</span>
+		<span class="microlabel">{t('Curriculum map')}</span>
 		<ul>
 			{#each tracks as [key, name] (key)}
-				<li><i class="swatch {key}" aria-hidden="true"></i>{name} track</li>
+				<li><i class="swatch {key}" aria-hidden="true"></i>{t(name)} {t('track')}</li>
 			{/each}
-			<li><i class="swatch done" aria-hidden="true"></i>Completed here</li>
-			{#if next}<li><i class="swatch next" aria-hidden="true"></i>Recommended next</li>{/if}
+			<li><i class="swatch done" aria-hidden="true"></i>{t('Completed here')}</li>
+			{#if next}<li><i class="swatch next" aria-hidden="true"></i>{t('Recommended next')}</li>{/if}
 		</ul>
 	</figcaption>
 	<div class="map-stage sheet-grid">
@@ -110,9 +113,14 @@
 				{#if box}
 					<a
 						class="map-node"
-						href={lab.href}
+						href={href(lab.href)}
 						style={`left:${box.x}px;top:${box.y}px;width:${box.w}px;height:${box.h}px`}
-						aria-label={`Lab ${lab.index}: ${lab.title}.${lab.done ? ' Completed on this device.' : ''}${lab.id === next ? ' Recommended next.' : ''}`}
+						aria-label={t('Lab {0}: {1}.{2}{3}', [
+							lab.index,
+							lab.title,
+							lab.done ? ' Completed on this device.' : '',
+							lab.id === next ? ' Recommended next.' : ''
+						])}
 						onpointerenter={() => (active = lab.id)}
 						onpointerleave={() => (active = active === lab.id ? null : active)}
 						onfocus={() => (active = lab.id)}
@@ -134,13 +142,15 @@
 					style={`left:${centre}px;top:${below ? box.y + box.h + 6 : box.y - 6}px`}
 					role="presentation"
 				>
-					<span class="microlabel">Lab {activeLab.index}, {activeLab.domain}, {activeLab.tier}</span
+					<span class="microlabel"
+						>{t('Lab')} {t(activeLab.index)}, {t(activeLab.domain)}, {t(activeLab.tier)}</span
 					>
-					<strong>{activeLab.title}</strong>
-					<span>{activeLab.tagline}</span>
-					<span class="objective">{activeLab.objective}</span>
-					{#if activeLab.done}<span class="state done">Completed on this device</span
-						>{:else if activeLab.id === next}<span class="state next">Recommended next</span>{/if}
+					<strong>{t(activeLab.title)}</strong>
+					<span>{t(activeLab.tagline)}</span>
+					<span class="objective">{t(activeLab.objective)}</span>
+					{#if activeLab.done}<span class="state done">{t('Completed on this device')}</span
+						>{:else if activeLab.id === next}<span class="state next">{t('Recommended next')}</span
+						>{/if}
 				</div>
 			{/if}
 		</div>

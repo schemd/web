@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	interface IdeCommand {
 		readonly id: string;
 		readonly label: string;
@@ -143,20 +146,20 @@
 		>
 			<header>
 				<div>
-					<p id="ide-command-title" class="microlabel">Playground commands</p>
+					<p id="ide-command-title" class="microlabel">{t('Playground commands')}</p>
 					<input
 						bind:this={input}
 						bind:value={query}
 						onkeydown={onInputKeydown}
 						type="text"
 						role="combobox"
-						aria-label="Filter playground commands"
+						aria-label={t('Filter playground commands')}
 						aria-expanded="true"
 						aria-controls="ide-command-results"
 						aria-activedescendant={results[active]
 							? `ide-command-${results[active]!.id}`
 							: undefined}
-						placeholder="Type a command…"
+						placeholder={t('Type a command…')}
 						autocomplete="off"
 						spellcheck="false"
 					/>
@@ -165,11 +168,11 @@
 					bind:this={closeButton}
 					type="button"
 					onclick={close}
-					aria-label="Close playground commands">×</button
+					aria-label={t('Close playground commands')}>×</button
 				>
 			</header>
 
-			<ul id="ide-command-results" role="listbox" aria-label="Playground commands">
+			<ul id="ide-command-results" role="listbox" aria-label={t('Playground commands')}>
 				{#each results as command, index (command.id)}
 					<li role="presentation">
 						<button
@@ -185,20 +188,20 @@
 							onclick={() => void run(command)}
 						>
 							<span>
-								<strong>{command.label}</strong>
-								<small>{command.detail}</small>
+								<strong>{t(command.label)}</strong>
+								<small>{t(command.detail)}</small>
 							</span>
-							{#if command.shortcut}<kbd>{command.shortcut}</kbd>{/if}
+							{#if command.shortcut}<kbd>{t(command.shortcut)}</kbd>{/if}
 						</button>
 					</li>
 				{:else}
-					<li class="empty" role="option" aria-selected="false">No matching command.</li>
+					<li class="empty" role="option" aria-selected="false">{t('No matching command.')}</li>
 				{/each}
 			</ul>
 			<footer class="microlabel">
-				<span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
-				<span><kbd>Enter</kbd> run</span>
-				<span><kbd>Esc</kbd> close</span>
+				<span><kbd>↑</kbd><kbd>↓</kbd> {t('navigate')}</span>
+				<span><kbd>{t('Enter')}</kbd> {t('run')}</span>
+				<span><kbd>{t('Esc')}</kbd> {t('close')}</span>
 			</footer>
 		</div>
 	</div>

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href } = useLanguage();
+
 	/**
 	 * Conformance report.
 	 *
@@ -38,55 +41,58 @@
 </script>
 
 <Seo
-	title="Conformance · schemd"
-	description="Every documented schemd diagram checked against the compiler's design rules: shorted rails, width and domain mismatches, contended drivers, and disconnected subcircuits."
+	title={t('Conformance · schemd')}
+	description={t(
+		"Every documented schemd diagram checked against the compiler's design rules: shorted rails, width and domain mismatches, contended drivers, and disconnected subcircuits."
+	)}
 />
 
 <article class="conformance">
-	<SheetFrame label="Conformance">
+	<SheetFrame label={t('Conformance')}>
 		<header class="sheet-head">
-			<p class="kicker">Corpus / Design rules</p>
-			<h1>Every documented diagram, checked</h1>
+			<p class="kicker">{t('Corpus / Design rules')}</p>
+			<h1>{t('Every documented diagram, checked')}</h1>
 			<p class="lede">
-				`verifyNetlist` runs over every `schemd` fence in the documentation. The rules are the
-				compiler's own, so what passes here is what passes in your build.
+				{t(
+					"`verifyNetlist` runs over every `schemd` fence in the documentation. The rules are the compiler's own, so what passes here is what passes in your build."
+				)}
 			</p>
 		</header>
 	</SheetFrame>
 
 	<dl class="tally">
 		<div>
-			<dt>Diagrams</dt>
-			<dd>{data.totals.diagrams}</dd>
+			<dt>{t('Diagrams')}</dt>
+			<dd>{t(data.totals.diagrams)}</dd>
 		</div>
 		<div>
-			<dt>Clean</dt>
-			<dd class="ok">{data.totals.clean}</dd>
+			<dt>{t('Clean')}</dt>
+			<dd class="ok">{t(data.totals.clean)}</dd>
 		</div>
 		<div>
-			<dt>Errors</dt>
-			<dd class:bad={data.totals.errors > 0}>{data.totals.errors}</dd>
+			<dt>{t('Errors')}</dt>
+			<dd class:bad={data.totals.errors > 0}>{t(data.totals.errors)}</dd>
 		</div>
 		<div>
-			<dt>Warnings</dt>
-			<dd>{data.totals.warnings}</dd>
+			<dt>{t('Warnings')}</dt>
+			<dd>{t(data.totals.warnings)}</dd>
 		</div>
 		<div>
-			<dt>Notes</dt>
-			<dd>{data.totals.infos}</dd>
+			<dt>{t('Notes')}</dt>
+			<dd>{t(data.totals.infos)}</dd>
 		</div>
 		<div>
-			<dt>Demonstrations</dt>
-			<dd>{data.totals.demonstrations}</dd>
+			<dt>{t('Demonstrations')}</dt>
+			<dd>{t(data.totals.demonstrations)}</dd>
 		</div>
 	</dl>
 
 	{#if data.byRule.length}
 		<section aria-labelledby="rules-heading">
-			<h2 id="rules-heading">Which rules fired</h2>
+			<h2 id="rules-heading">{t('Which rules fired')}</h2>
 			<BarSeries
 				items={ruleBars}
-				summary="How many documented diagrams each design rule fired on, by severity."
+				summary={t('How many documented diagrams each design rule fired on, by severity.')}
 				unit="diagrams"
 			/>
 		</section>
@@ -94,24 +100,25 @@
 
 	{#if data.demonstrations.length}
 		<section aria-labelledby="demo-heading">
-			<h2 id="demo-heading">Deliberate demonstrations</h2>
+			<h2 id="demo-heading">{t('Deliberate demonstrations')}</h2>
 			<p class="lede">
-				Pages that teach a rule must break it. These diagrams declare the diagnostics they expect,
-				so they never masquerade as defects.
+				{t(
+					'Pages that teach a rule must break it. These diagrams declare the diagnostics they expect, so they never masquerade as defects.'
+				)}
 			</p>
 			<ul class="flagged">
 				{#each data.demonstrations as entry (entry.id)}
 					<li>
 						<h3>
-							{entry.title}
-							<a href="/docs/latest/{entry.doc}">{entry.doc}</a>
+							{t(entry.title)}
+							<a href={href('/docs/latest/' + entry.doc)}>{t(entry.doc)}</a>
 						</h3>
 						<ul>
 							{#each entry.expected as diagnostic (diagnostic.code + diagnostic.message)}
 								<li>
-									<span class="severity {diagnostic.severity}">expected</span>
-									<span class="code">{diagnostic.code}</span>
-									<span>{diagnostic.message}</span>
+									<span class="severity {diagnostic.severity}">{t('expected')}</span>
+									<span class="code">{t(diagnostic.code)}</span>
+									<span>{t(diagnostic.message)}</span>
 								</li>
 							{/each}
 						</ul>
@@ -122,10 +129,11 @@
 	{/if}
 
 	<section aria-labelledby="service-heading">
-		<h2 id="service-heading">Check your own diagrams</h2>
+		<h2 id="service-heading">{t('Check your own diagrams')}</h2>
 		<p class="lede">
-			The same rules run as a service, so a project can gate its own build without installing the
-			compiler. Nothing is stored and no source leaves the request.
+			{t(
+				'The same rules run as a service, so a project can gate its own build without installing the compiler. Nothing is stored and no source leaves the request.'
+			)}
 		</p>
 		<pre class="usage"><code
 				>curl -X POST https://schemd.johnowolabiidogun.dev/api/verify \
@@ -136,39 +144,50 @@
  "diagnostics": [&lbrace;"code": "shorted-supply", "severity": "error", "line": 4, ...&rbrace;]&rbrace;</code
 			></pre>
 		<p class="lede">
-			<code>ok</code> answers the only question a build asks. The badge below reports this corpus:
+			<code>ok</code>
+			{t('answers the only question a build asks. The badge below reports this corpus:')}
 		</p>
 		<p>
-			<img src="/badge/conformance.svg" alt="schemd conformance badge" width="228" height="20" />
+			<img
+				src="/badge/conformance.svg"
+				alt={t('schemd conformance badge')}
+				width="228"
+				height="20"
+			/>
 		</p>
 	</section>
 
 	<section aria-labelledby="flagged-heading">
-		<h2 id="flagged-heading">Flagged diagrams</h2>
+		<h2 id="flagged-heading">{t('Flagged diagrams')}</h2>
 		{#if clean}
 			<p class="clean">
-				Every one of the {data.totals.diagrams} documented diagrams passes every rule.
+				{t('Every one of the')}
+				{t(data.totals.diagrams)}
+				{t('documented diagrams passes every rule.')}
 			</p>
 		{:else}
 			<ul class="flagged">
 				{#each data.flagged as entry (entry.id)}
 					<li class={entry.verdict}>
 						<h3>
-							{entry.title}
-							<a href="/docs/latest/{entry.doc}">{entry.doc}</a>
+							{t(entry.title)}
+							<a href={href('/docs/latest/' + entry.doc)}>{t(entry.doc)}</a>
 						</h3>
 						<ul>
 							{#each entry.diagnostics as diagnostic (diagnostic.code + diagnostic.message)}
 								<li>
-									<span class="severity {diagnostic.severity}">{diagnostic.severity}</span>
-									<span class="code">{diagnostic.code}</span>
-									<span>{diagnostic.message}</span>
-									{#if diagnostic.line !== undefined}<span class="line">line {diagnostic.line}</span
+									<span class="severity {diagnostic.severity}">{t(diagnostic.severity)}</span>
+									<span class="code">{t(diagnostic.code)}</span>
+									<span>{t(diagnostic.message)}</span>
+									{#if diagnostic.line !== undefined}<span class="line"
+											>{t('line')} {t(diagnostic.line)}</span
 										>{/if}
 								</li>
 							{/each}
 						</ul>
-						<a class="open" href="/playground/latest?code={entry.code}">Open in the playground</a>
+						<a class="open" href={href('/playground/latest?code=' + entry.code)}
+							>{t('Open in the playground')}</a
+						>
 					</li>
 				{/each}
 			</ul>

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/** A labelled page section. In the datasheet design it is plain paper. */
 	import type { Snippet } from 'svelte';
 
@@ -10,7 +13,7 @@
 	let { label, children }: Props = $props();
 </script>
 
-<section class="sheet" aria-label={label}>
+<section class="sheet" aria-label={t(label)}>
 	{@render children()}
 </section>
 

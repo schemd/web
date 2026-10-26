@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/** Interactive 8-bit ripple-carry adder driven by compiler delegation hooks. */
 	import { rippleCarry } from '#lib/simulation-models.ts';
 	import { delegatedNodeId, setNodeActive, setWireSignalFrom } from '#lib/sim-dom.ts';
@@ -125,7 +128,7 @@
 			if (value === undefined) continue;
 			input.setAttribute(
 				'aria-label',
-				`${id} input node, current value ${value}. Activate either port to toggle.`
+				t('{0} input node, current value {1}. Activate either port to toggle.', [id, value])
 			);
 			input.setAttribute('data-logic-state', String(value));
 			for (const port of input.querySelectorAll('[data-port-id]')) {
@@ -136,10 +139,16 @@
 </script>
 
 <Bench
-	title="Ripple-carry adder"
+	title={t('Ripple-carry adder')}
 	tone="digital"
-	status={`${operandA} + ${operandB}${carryIn ? ' + 1' : ''} = ${total}${stuckCarry ? ', carry stuck' : ''}`}
-	hint="Click an input port to flip its bit; the carry ripples through the chain."
+	status={t('{0} + {1}{2} = {3}{4}', [
+		operandA,
+		operandB,
+		t(carryIn ? ' + 1' : ''),
+		total,
+		t(stuckCarry ? ', carry stuck' : '')
+	])}
+	hint={t('Click an input port to flip its bit; the carry ripples through the chain.')}
 	stage={canvas}
 	dock={readouts}
 	deck={controls}
@@ -150,13 +159,15 @@
 		class="sim-stage adder-stage schemd-frame"
 		bind:this={host}
 		role="group"
-		aria-label="Interactive 8-Bit Digital Adder schematic. Activate A, B, or carry input ports to toggle them."
+		aria-label={t(
+			'Interactive 8-Bit Digital Adder schematic. Activate A, B, or carry input ports to toggle them.'
+		)}
 		data-model-stage={timeline.step}
 	>
 		{@html svg}
 		<div class="canvas-instruction">
-			<span>Direct manipulation enabled</span>
-			<strong>Click any A, B, or C<sub>in</sub> port in the schematic</strong>
+			<span>{t('Direct manipulation enabled')}</span>
+			<strong>{t('Click any A, B, or C')}<sub>{t('in')}</sub> {t('port in the schematic')}</strong>
 		</div>
 	</div>
 {/snippet}
@@ -164,7 +175,7 @@
 {#snippet controls()}
 	<div class="register-console">
 		<label>
-			<span>A register</span>
+			<span>{t('A register')}</span>
 			<input
 				type="number"
 				data-lab-input="a"
@@ -172,17 +183,17 @@
 				max="255"
 				value={operandA}
 				oninput={(event) => (operandA = clampByte(event.currentTarget.valueAsNumber))}
-				aria-label="operand A"
+				aria-label={t('operand A')}
 			/>
 			<code>0x{operandA.toString(16).padStart(2, '0').toUpperCase()}</code>
 		</label>
-		<div class="bit-bank" aria-label="Operand A bits, most significant first">
+		<div class="bit-bank" aria-label={t('Operand A bits, most significant first')}>
 			{#each aBits.toReversed() as bit, index (index)}
-				<span class:high={bit === 1}>{bit}</span>
+				<span class:high={bit === 1}>{t(bit)}</span>
 			{/each}
 		</div>
 		<label>
-			<span>B register</span>
+			<span>{t('B register')}</span>
 			<input
 				type="number"
 				data-lab-input="b"
@@ -190,13 +201,13 @@
 				max="255"
 				value={operandB}
 				oninput={(event) => (operandB = clampByte(event.currentTarget.valueAsNumber))}
-				aria-label="operand B"
+				aria-label={t('operand B')}
 			/>
 			<code>0x{operandB.toString(16).padStart(2, '0').toUpperCase()}</code>
 		</label>
-		<div class="bit-bank" aria-label="Operand B bits, most significant first">
+		<div class="bit-bank" aria-label={t('Operand B bits, most significant first')}>
 			{#each bBits.toReversed() as bit, index (index)}
-				<span class:high={bit === 1}>{bit}</span>
+				<span class:high={bit === 1}>{t(bit)}</span>
 			{/each}
 		</div>
 	</div>
@@ -208,36 +219,37 @@
 				checked={carryIn === 1}
 				onchange={(event) => (carryIn = event.currentTarget.checked ? 1 : 0)}
 			/>
-			<span>Carry in</span>
-			<strong>{carryIn}</strong>
+			<span>{t('Carry in')}</span>
+			<strong>{t(carryIn)}</strong>
 		</label>
-		<FaultSwitch label="Interrupt the carry chain" bind:active={stuckCarry} />
+		<FaultSwitch label={t('Interrupt the carry chain')} bind:active={stuckCarry} />
 	</div>
 {/snippet}
 
 {#snippet readouts()}
 	<div class="result-readout">
 		<div>
-			<span>Σ decimal</span>
-			<output data-lab-signal="total" aria-label={`nine-bit result equals ${total}`}>{total}</output
+			<span>{t('Σ decimal')}</span>
+			<output data-lab-signal="total" aria-label={t('nine-bit result equals {0}', [total])}
+				>{t(total)}</output
 			>
 		</div>
 		<div>
-			<span>Binary result</span>
+			<span>{t('Binary result')}</span>
 			<code>{binaryResult}</code>
 		</div>
 		<div>
-			<span>Carry out</span>
-			<output data-lab-signal="carryOut" aria-label={`carry out equals ${result.carry}`}
-				>{result.carry}</output
+			<span>{t('Carry out')}</span>
+			<output data-lab-signal="carryOut" aria-label={t('carry out equals {0}', [result.carry])}
+				>{t(result.carry)}</output
 			>
 		</div>
 	</div>
 	<div class="signal-health">
-		<span><i class="high"></i>{highNetCount} high paths</span>
-		<span><i></i>Low paths muted</span>
+		<span><i class="high"></i>{t(highNetCount)} {t('high paths')}</span>
+		<span><i></i>{t('Low paths muted')}</span>
 		<span class:warning={stuckCarry}
-			>{stuckCarry ? 'carry chain interrupted' : 'propagation nominal'}</span
+			>{stuckCarry ? t('carry chain interrupted') : t('propagation nominal')}</span
 		>
 	</div>
 {/snippet}

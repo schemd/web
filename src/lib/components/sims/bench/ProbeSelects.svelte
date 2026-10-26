@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/** Keyboard route to the probes: the same two channels the clips on the drawing set. */
 	import type { ProbeNet } from './types';
 
@@ -12,25 +15,25 @@
 </script>
 
 <div class="probe-selects">
-	<span class="microlabel">Probes</span>
+	<span class="microlabel">{t('Probes')}</span>
 	<div class="row">
 		<label>
-			<span class="ch ch-a" aria-hidden="true">A</span>
-			<select bind:value={a} aria-label="Probe A">
-				<option value={null}>off</option>
+			<span class="ch ch-a" aria-hidden="true">{t('A')}</span>
+			<select bind:value={a} aria-label={t('Probe A')}>
+				<option value={null}>{t('off')}</option>
 				<!-- A net already on the other channel is offered but not selectable: two
 				     identical traces would only hide each other. -->
 				{#each nets as net (net.id)}<option value={net.id} disabled={net.id === b}
-						>{net.label}</option
+						>{t(net.label)}</option
 					>{/each}
 			</select>
 		</label>
 		<label>
-			<span class="ch ch-b" aria-hidden="true">B</span>
-			<select bind:value={b} aria-label="Probe B">
-				<option value={null}>off</option>
+			<span class="ch ch-b" aria-hidden="true">{t('B')}</span>
+			<select bind:value={b} aria-label={t('Probe B')}>
+				<option value={null}>{t('off')}</option>
 				{#each nets as net (net.id)}<option value={net.id} disabled={net.id === a}
-						>{net.label}</option
+						>{t(net.label)}</option
 					>{/each}
 			</select>
 		</label>

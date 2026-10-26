@@ -1,3 +1,5 @@
+import { translator, type Locale } from '#lib/i18n/index.ts';
+import { messagesFor } from './message-catalog';
 import katex from 'katex';
 import type { SimulationMathRegistry } from '#lib/simulation-math.ts';
 import type { RenderedSimulationStage, SimulationStage } from '#lib/simulation-timelines.ts';
@@ -317,13 +319,16 @@ function renderTimelineText(value: string): string {
 }
 
 export const renderSimulationTimeline = (
-	stages: readonly SimulationStage[]
-): readonly RenderedSimulationStage[] =>
-	stages.map((stage) => ({
+	stages: readonly SimulationStage[],
+	locale: Locale = 'en'
+): readonly RenderedSimulationStage[] => {
+	const t = translator(messagesFor('/simulations', locale));
+	return stages.map((stage) => ({
 		...stage,
-		labelHtml: renderTimelineText(stage.label),
-		explanationHtml: renderTimelineText(stage.explanation)
+		labelHtml: renderTimelineText(t(stage.label)),
+		explanationHtml: renderTimelineText(t(stage.explanation))
 	}));
+};
 
 export const renderSimulationMath = (simulationId: string): SimulationMathRegistry => {
 	const selected = templates[simulationId as keyof typeof templates];

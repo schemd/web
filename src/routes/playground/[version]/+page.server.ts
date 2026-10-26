@@ -1,3 +1,4 @@
+import { localized, localeOf } from '#lib/i18n/index.ts';
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getRegistry, resolveReleaseVersion, WEBSITE_CORE_VERSION } from '#lib/server/registry.ts';
@@ -23,7 +24,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	/* Canonicalize aliases (`latest`, `0.3`) to the concrete release URL,
 	 * preserving `?code=`/bounds so an opened example survives the hop. */
 	if (params.version !== version) {
-		redirect(307, `/playground/${version}${url.search}`);
+		redirect(307, localized(`/playground/${version}${url.search}`, localeOf(url.pathname)));
 	}
 	return {
 		version,

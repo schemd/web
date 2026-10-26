@@ -1,3 +1,4 @@
+import { localized, localeOf } from '#lib/i18n/index.ts';
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getRegistry, resolveReleaseVersion, WEBSITE_CORE_VERSION } from '#lib/server/registry.ts';
@@ -36,7 +37,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		error(404, `No release named ${params.version}.`);
 	}
 	if (params.version !== version) {
-		redirect(307, `/diff/${version}${url.search}`);
+		redirect(307, localized(`/diff/${version}${url.search}`, localeOf(url.pathname)));
 	}
 	return {
 		version,

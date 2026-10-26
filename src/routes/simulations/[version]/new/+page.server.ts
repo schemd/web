@@ -1,3 +1,4 @@
+import { localized, localeOf } from '#lib/i18n/index.ts';
 import { error, redirect } from '@sveltejs/kit';
 import { compileSchematic } from '@schemd/core';
 import type { PageServerLoad } from './$types';
@@ -79,7 +80,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	const registry = await getRegistry();
 	const version = resolveReleaseVersion(registry, params.version);
 	if (version === undefined) error(404, `No simulation release named ${params.version}.`);
-	if (params.version !== version) redirect(307, `/simulations/${version}/new${url.search}`);
+	if (params.version !== version)
+		redirect(307, localized(`/simulations/${version}/new${url.search}`, localeOf(url.pathname)));
 
 	/* A lab arrives in the URL through the same encoder the playground shares
 	   workspaces with, so a builder link is as portable as a playground link. */

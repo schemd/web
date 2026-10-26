@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href } = useLanguage();
+
 	/**
 	 * Seven stages of one compilation, scrubbable.
 	 *
@@ -42,7 +45,7 @@
 	const dirty = $derived(draft !== data.source);
 
 	function run() {
-		void goto(`/inspector/${data.version}?code=${encodeWorkspaceState(draft)}`, {
+		void goto(href(`/inspector/${data.version}?code=${encodeWorkspaceState(draft)}`), {
 			reset: false
 		});
 	}
@@ -57,41 +60,44 @@
 </script>
 
 <Seo
-	title="Compiler inspector"
-	description="Scrub through a schemd compilation stage by stage — tokens, AST, resolved placement, routing and congestion, design rules, emitted bytes, and derived prose."
+	title={t('Compiler inspector')}
+	description={t(
+		'Scrub through a schemd compilation stage by stage — tokens, AST, resolved placement, routing and congestion, design rules, emitted bytes, and derived prose.'
+	)}
 />
 
 <div class="inspector">
-	<SheetFrame label="Compiler inspector">
+	<SheetFrame label={t('Compiler inspector')}>
 		<header class="masthead sheet-head">
-			<p class="microlabel">Compiler release {data.engineVersion}</p>
-			<h1>Watch it compile</h1>
+			<p class="microlabel">{t('Compiler release')} {t(data.engineVersion)}</p>
+			<h1>{t('Watch it compile')}</h1>
 			<p class="lede">
-				Every stage below is the real thing: one <code>compileSchematic</code> call on the server, taken
-				apart. Edit the document and run it again — the URL carries the source, so an inspector link is
-				a citable bug report.
+				{t('Every stage below is the real thing: one')} <code>compileSchematic</code>
+				{t(
+					'call on the server, taken apart. Edit the document and run it again — the URL carries the source, so an inspector link is a citable bug report.'
+				)}
 			</p>
 		</header>
 	</SheetFrame>
 
 	<div class="workbench">
-		<section class="editor" aria-label="Document">
+		<section class="editor" aria-label={t('Document')}>
 			<div class="panel-head">
-				<h2>Document</h2>
+				<h2>{t('Document')}</h2>
 				<button type="button" class="run" onclick={run} disabled={!dirty}>
-					{dirty ? 'Run' : 'Compiled'}
+					{dirty ? t('Run') : t('Compiled')}
 				</button>
 			</div>
 			<CodeEditor bind:value={draft} errorLine={data.ok ? undefined : data.failure.line} />
 			{#if !data.ok}
 				<p class="diagnostic" role="alert">
-					{#if data.failure.line !== undefined}<b>Line {data.failure.line}:</b>{/if}
-					{data.failure.message}
+					{#if data.failure.line !== undefined}<b>{t('Line')} {t(data.failure.line)}:</b>{/if}
+					{t(data.failure.message)}
 				</p>
 			{/if}
 		</section>
 
-		<section class="stages" aria-label="Compilation stages">
+		<section class="stages" aria-label={t('Compilation stages')}>
 			<nav class="stage-rail">
 				{#each STAGES as entry, index (entry.id)}
 					<button
@@ -100,53 +106,54 @@
 						class:is-active={stage === entry.id}
 						onclick={() => (stage = entry.id)}
 					>
-						<span class="stage-index">{index + 1}</span>
-						<span class="stage-label">{entry.label}</span>
+						<span class="stage-index">{t(index + 1)}</span>
+						<span class="stage-label">{t(entry.label)}</span>
 					</button>
 				{/each}
 			</nav>
 
 			<div class="stage-body">
-				<p class="stage-blurb">{STAGES.find((entry) => entry.id === stage)!.blurb}</p>
+				<p class="stage-blurb">{t(STAGES.find((entry) => entry.id === stage)!.blurb)}</p>
 
 				{#if stage === 'lex'}
 					<ol class="lex">
 						{#each data.lex as line, index (index)}
 							<li class:is-selected={selectedLine === index + 1}>
 								<button type="button" onclick={() => (selectedLine = index + 1)}>
-									<span class="gutter">{index + 1}</span>
+									<span class="gutter">{t(index + 1)}</span>
 									<span class="tokens">
 										{#each line.tokens as token, tokenIndex (tokenIndex)}
 											<span
 												class="tok {token.cls ? `tok-${token.cls}` : ''}"
-												title={token.cls ?? 'text'}>{token.text}</span
+												title={t(token.cls ?? 'text')}>{t(token.text)}</span
 											>
 										{/each}
 									</span>
-									<span class="line-kind">{line.kind}</span>
+									<span class="line-kind">{t(line.kind)}</span>
 								</button>
 							</li>
 						{/each}
 					</ol>
 				{:else if !data.ok}
 					<p class="unreached">
-						This stage was never reached — the document did not get past validation. The token
-						stream and the diagnostic are what there is to look at.
+						{t(
+							'This stage was never reached — the document did not get past validation. The token stream and the diagnostic are what there is to look at.'
+						)}
 					</p>
 				{:else if stage === 'parse'}
 					<ul class="ast">
 						{#each data.ast as node (node.line)}
 							<li class:is-selected={selectedLine === node.line}>
 								<button type="button" onclick={() => (selectedLine = node.line)}>
-									<span class="gutter">{node.line}</span>
-									<span class="ast-id">{node.id}</span>
-									<span class="ast-kind">{node.summary}</span>
+									<span class="gutter">{t(node.line)}</span>
+									<span class="ast-id">{t(node.id)}</span>
+									<span class="ast-kind">{t(node.summary)}</span>
 								</button>
 								<dl class="fields">
 									{#each node.fields as field (field.name)}
 										<div>
-											<dt>{field.name}</dt>
-											<dd>{field.value}</dd>
+											<dt>{t(field.name)}</dt>
+											<dd>{t(field.value)}</dd>
 										</div>
 									{/each}
 								</dl>
@@ -156,32 +163,38 @@
 				{:else if stage === 'place'}
 					{#if data.placements.length === 0}
 						<p class="unreached">
-							Every declaration in this document states <code>at (x, y)</code>, so the placement
-							pass had nothing to lower. Write a relation — <code>right-of R1 by 150</code> — and it will
-							show its work here.
+							{t('Every declaration in this document states')} <code>at (x, y)</code>{t(
+								', so the placement pass had nothing to lower. Write a relation —'
+							)} <code>right-of R1 by 150</code>
+							{t('— and it will show its work here.')}
 						</p>
 					{:else}
 						<table class="grid">
 							<thead>
-								<tr><th>Line</th><th>Component</th><th>Relations</th><th>Resolved</th></tr>
+								<tr
+									><th>{t('Line')}</th><th>{t('Component')}</th><th>{t('Relations')}</th><th
+										>{t('Resolved')}</th
+									></tr
+								>
 							</thead>
 							<tbody>
 								{#each data.placements as placement (placement.id)}
 									<tr class:is-selected={selectedLine === placement.line}>
-										<td class="num">{placement.line}</td>
-										<td class="mono">{placement.id}</td>
+										<td class="num">{t(placement.line)}</td>
+										<td class="mono">{t(placement.id)}</td>
 										<td>
 											{#each placement.relations as relation, index (index)}
 												<span class="relation">
-													{relation.kind}
-													{relation.ref}{relation.port ? `.${relation.port}` : ''}{relation.gap !==
-													undefined
-														? ` by ${relation.gap}`
-														: ''}
+													{t(relation.kind)}
+													{t(relation.ref)}{relation.port
+														? t(`.${relation.port}`)
+														: t('')}{relation.gap !== undefined
+														? t(' by {0}', [relation.gap])
+														: t('')}
 												</span>
 											{/each}
 										</td>
-										<td class="mono num">({placement.resolved.x}, {placement.resolved.y})</td>
+										<td class="mono num">({t(placement.resolved.x)}, {t(placement.resolved.y)})</td>
 									</tr>
 								{/each}
 							</tbody>
@@ -190,42 +203,46 @@
 				{:else if stage === 'route'}
 					<dl class="tiles">
 						<div>
-							<dt>Retries</dt>
-							<dd>{data.routing.attempts}</dd>
+							<dt>{t('Retries')}</dt>
+							<dd>{t(data.routing.attempts)}</dd>
 						</div>
 						<div>
-							<dt>Traces torn up</dt>
-							<dd>{data.routing.rippedUp.length}</dd>
+							<dt>{t('Traces torn up')}</dt>
+							<dd>{t(data.routing.rippedUp.length)}</dd>
 						</div>
 						<div>
-							<dt>Occupied cells</dt>
-							<dd>{data.routing.congestion.length}</dd>
+							<dt>{t('Occupied cells')}</dt>
+							<dd>{t(data.routing.congestion.length)}</dd>
 						</div>
 						<div>
-							<dt>Peak load</dt>
-							<dd>{peakLoad}</dd>
+							<dt>{t('Peak load')}</dt>
+							<dd>{t(peakLoad)}</dd>
 						</div>
 					</dl>
 					<p class="note">
 						{#if data.routing.attempts === 0}
-							Routed on the first pass — the greedy source-order route placed every trace, so rip-up
-							was never entered.
+							{t(
+								'Routed on the first pass — the greedy source-order route placed every trace, so rip-up was never entered.'
+							)}
 						{:else}
-							The first pass could not place every trace. Each retry tore up what had been laid,
-							promoted the failed trace to the front, and reordered the rest shortest-span-first.
+							{t(
+								'The first pass could not place every trace. Each retry tore up what had been laid, promoted the failed trace to the front, and reordered the rest shortest-span-first.'
+							)}
 						{/if}
 					</p>
 
-					<h3>Congestion</h3>
+					<h3>{t('Congestion')}</h3>
 					<p class="note">
-						Occupancy per {data.congestionCell}-unit routing cell, read out of the hash the router
-						already filled. Darker is tighter.
+						{t('Occupancy per')}
+						{t(data.congestionCell)}{t(
+							'-unit routing cell, read out of the hash the router already filled. Darker is tighter.'
+						)}
 					</p>
 					<svg
 						class="heatmap"
 						viewBox="0 0 {data.bounds.width} {data.bounds.height}"
 						role="img"
-						aria-label="Routing congestion heatmap"
+						aria-label={t('Routing congestion heatmap')}
 					>
 						<rect width={data.bounds.width} height={data.bounds.height} class="heat-bg" />
 						{#each data.routing.congestion as cell, index (index)}
@@ -236,110 +253,111 @@
 								height={data.congestionCell}
 								class="heat-cell"
 								opacity={0.15 + 0.85 * (cell.load / peakLoad)}
-								><title>{cell.load} spans</title></rect
+								><title>{t(cell.load)} {t('spans')}</title></rect
 							>
 						{/each}
 					</svg>
 
-					<h3>Traces</h3>
+					<h3>{t('Traces')}</h3>
 					<ul class="traces">
 						<!-- Keyed by position, not by endpoint: one terminal can drive several
 						     traces, so `data-wire-source` is not unique. -->
 						{#each data.traces as trace, index (index)}
-							<li><span class="mono">{trace.endpoint}</span><code>{trace.d}</code></li>
+							<li><span class="mono">{t(trace.endpoint)}</span><code>{trace.d}</code></li>
 						{/each}
 					</ul>
 				{:else if stage === 'verify'}
 					<dl class="tiles">
 						<div>
-							<dt>Nodes</dt>
-							<dd>{data.netlist.nodes}</dd>
+							<dt>{t('Nodes')}</dt>
+							<dd>{t(data.netlist.nodes)}</dd>
 						</div>
 						<div>
-							<dt>Nets</dt>
-							<dd>{data.netlist.nets.length}</dd>
+							<dt>{t('Nets')}</dt>
+							<dd>{t(data.netlist.nets.length)}</dd>
 						</div>
 						<div>
-							<dt>Edges</dt>
-							<dd>{data.netlist.edges}</dd>
+							<dt>{t('Edges')}</dt>
+							<dd>{t(data.netlist.edges)}</dd>
 						</div>
 						<div>
-							<dt>Findings</dt>
-							<dd>{data.diagnostics.length}</dd>
+							<dt>{t('Findings')}</dt>
+							<dd>{t(data.diagnostics.length)}</dd>
 						</div>
 					</dl>
-					<h3>Design rules</h3>
+					<h3>{t('Design rules')}</h3>
 					<ul class="rules">
 						{#each data.rules as rule (rule.code)}
 							<li class:is-fired={rule.fired > 0}>
-								<span class="rule-state">{rule.fired > 0 ? 'fired' : 'clean'}</span>
-								<span class="mono">{rule.code}</span>
-								<span class="rule-summary">{rule.summary}</span>
+								<span class="rule-state">{rule.fired > 0 ? t('fired') : t('clean')}</span>
+								<span class="mono">{t(rule.code)}</span>
+								<span class="rule-summary">{t(rule.summary)}</span>
 							</li>
 						{/each}
 					</ul>
 					{#if data.diagnostics.length > 0}
-						<h3>Findings</h3>
+						<h3>{t('Findings')}</h3>
 						<ul class="findings">
 							{#each data.diagnostics as finding, index (index)}
 								<li>
-									<b>{finding.severity}</b> <span class="mono">{finding.code}</span>
-									{finding.message}
+									<b>{t(finding.severity)}</b> <span class="mono">{t(finding.code)}</span>
+									{t(finding.message)}
 								</li>
 							{/each}
 						</ul>
 					{/if}
-					<h3>Nets</h3>
+					<h3>{t('Nets')}</h3>
 					<ul class="nets">
 						{#each data.netlist.nets as net (net.id)}
 							<li>
-								<span class="mono">{net.name ?? net.id}</span>
-								<span class="net-terminals">{net.terminals.join(', ')}</span>
+								<span class="mono">{t(net.name ?? net.id)}</span>
+								<span class="net-terminals">{t(net.terminals.join(', '))}</span>
 							</li>
 						{/each}
 					</ul>
 				{:else if stage === 'emit'}
 					<dl class="tiles">
 						<div>
-							<dt>SVG bytes</dt>
-							<dd>{data.metrics.svgBytes.toLocaleString('en-US')}</dd>
+							<dt>{t('SVG bytes')}</dt>
+							<dd>{t(data.metrics.svgBytes.toLocaleString('en-US'))}</dd>
 						</div>
 						<div>
-							<dt>Components</dt>
-							<dd>{data.metrics.components}</dd>
+							<dt>{t('Components')}</dt>
+							<dd>{t(data.metrics.components)}</dd>
 						</div>
 						<div>
-							<dt>Connections</dt>
-							<dd>{data.metrics.connections}</dd>
+							<dt>{t('Connections')}</dt>
+							<dd>{t(data.metrics.connections)}</dd>
 						</div>
 						<div>
-							<dt>Source chars</dt>
-							<dd>{data.metrics.sourceCharacters.toLocaleString('en-US')}</dd>
+							<dt>{t('Source chars')}</dt>
+							<dd>{t(data.metrics.sourceCharacters.toLocaleString('en-US'))}</dd>
 						</div>
 					</dl>
 					<div class="preview sheet-grid trace-on">{@html data.svg}</div>
-					<h3>Source map</h3>
+					<h3>{t('Source map')}</h3>
 					<table class="grid">
-						<thead><tr><th>Line</th><th>Vector</th></tr></thead>
+						<thead><tr><th>{t('Line')}</th><th>{t('Vector')}</th></tr></thead>
 						<tbody>
 							{#each data.sourceMap.nodes as node (node.id)}
 								<tr class:is-selected={selectedLine === node.line}>
-									<td class="num">{node.line}</td><td class="mono">{node.id}</td>
+									<td class="num">{t(node.line)}</td><td class="mono">{t(node.id)}</td>
 								</tr>
 							{/each}
 							{#each data.sourceMap.wires as wire, index (index)}
 								<tr class:is-selected={selectedLine === wire.line}>
-									<td class="num">{wire.line}</td>
-									<td class="mono">{wire.source} → {wire.target}</td>
+									<td class="num">{t(wire.line)}</td>
+									<td class="mono">{t(wire.source)} → {t(wire.target)}</td>
 								</tr>
 							{/each}
 						</tbody>
 					</table>
 				{:else if stage === 'describe'}
-					<p class="headline">{data.description.headline}</p>
+					<p class="headline">{t(data.description.headline)}</p>
 					<p class="note">
-						Derived from the netlist, not written by hand — the same connectivity the design rules
-						read. Play the tour and each net lights up in the diagram as it is described.
+						{t(
+							'Derived from the netlist, not written by hand — the same connectivity the design rules read. Play the tour and each net lights up in the diagram as it is described.'
+						)}
 					</p>
 					<!-- The tour lights nets inside this element, which is why the preview
 					     is rendered here rather than only in the Emit stage. -->

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Reusable step-by-step playback controller.
 	 *
@@ -85,15 +88,15 @@
 	});
 </script>
 
-<div class="stepper" role="group" aria-label="Playback controls">
+<div class="stepper" role="group" aria-label={t('Playback controls')}>
 	<div class="transport">
 		<button
 			type="button"
 			class="step-btn"
 			onclick={previous}
 			disabled={atStart}
-			aria-label="Previous step"
-			title="Previous step"
+			aria-label={t('Previous step')}
+			title={t('Previous step')}
 		>
 			⏮
 		</button>
@@ -102,18 +105,19 @@
 			class="step-btn play"
 			aria-pressed={playing}
 			onclick={toggle}
-			aria-label={playing ? 'Pause' : 'Play'}
-			title={playing ? 'Pause' : 'Play'}
+			aria-label={playing ? t('Pause') : t('Play')}
+			title={playing ? t('Pause') : t('Play')}
 		>
-			{playing ? '⏸' : '▶'}
+			{playing ? t('⏸') : t('▶')}
 		</button>
 		<button
 			type="button"
 			class="step-btn"
 			onclick={next}
+			data-action="next-step"
 			disabled={atEnd}
-			aria-label="Next step"
-			title="Next step"
+			aria-label={t('Next step')}
+			title={t('Next step')}
 		>
 			⏭
 		</button>
@@ -122,14 +126,14 @@
 			class="step-btn"
 			onclick={reset}
 			disabled={atStart && !playing}
-			aria-label="Reset to first step"
-			title="Reset"
+			aria-label={t('Reset to first step')}
+			title={t('Reset')}
 		>
 			⭯
 		</button>
 	</div>
 
-	<div class="track" role="group" aria-label="Choose propagation stage">
+	<div class="track" role="group" aria-label={t('Choose propagation stage')}>
 		{#each { length: count } as d, index (`${index}-${d}`)}
 			<button
 				type="button"
@@ -140,15 +144,15 @@
 					playing = false;
 					go(index);
 				}}
-				aria-label={labels[index] ?? `Step ${index + 1}`}
-				title={labels[index] ?? `Step ${index + 1}`}
+				aria-label={t(labels[index] ?? `Step ${index + 1}`)}
+				title={t(labels[index] ?? `Step ${index + 1}`)}
 			></button>
 		{/each}
 	</div>
 
 	<p class="caption">
-		<span class="microlabel">Step {step + 1} / {count}</span>
-		<span class="label">{currentLabel}</span>
+		<span class="microlabel">{t('Step')} {t(step + 1)} / {t(count)}</span>
+		<span class="label">{t(currentLabel)}</span>
 	</p>
 </div>
 

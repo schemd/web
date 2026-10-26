@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * PID motor speed control on the v2 bench.
 	 *
@@ -220,7 +223,7 @@
 	const plotMin = $derived(Math.min(0, ...response.speeds));
 </script>
 
-<Bench title="PID speed loop" tone="analog" {status} {stage} {dock} {deck} />
+<Bench title={t('PID speed loop')} tone="analog" status={t(status)} {stage} {dock} {deck} />
 
 {#snippet stage()}
 	<div class="pid-canvas">
@@ -228,7 +231,9 @@
 			class="sim-stage pid-stage schemd-frame"
 			bind:this={host}
 			role="group"
-			aria-label="Motor speed loop: error junction, parallel proportional, integral, and derivative paths, driver, motor, and tachometer feedback. Drag the gain tags; click a wire to probe it."
+			aria-label={t(
+				'Motor speed loop: error junction, parallel proportional, integral, and derivative paths, driver, motor, and tachometer feedback. Drag the gain tags; click a wire to probe it.'
+			)}
 			data-model-stage={timeline.step}
 		>
 			{@html svg}
@@ -239,8 +244,8 @@
 {/snippet}
 
 {#snippet dock()}
-	<section class="dock-block" aria-label="Strip chart">
-		<p class="microlabel">Strip chart</p>
+	<section class="dock-block" aria-label={t('Strip chart')}>
+		<p class="microlabel">{t('Strip chart')}</p>
 		<Scope
 			{channels}
 			running={false}
@@ -249,7 +254,10 @@
 		/>
 	</section>
 	<Plot
-		label={`Step response: overshoot ${(response.overshoot * 100).toFixed(1)} percent, settling ${settling}`}
+		label={t('Step response: overshoot {0} percent, settling {1}', [
+			(response.overshoot * 100).toFixed(1),
+			settling
+		])}
 		series={[{ id: 'speed', values: response.speeds, tone: 'cyan' }]}
 		min={plotMin}
 		max={plotMax}
@@ -257,47 +265,49 @@
 		markers={[{ at: 0.5, tone: 'amber', label: 'load step' }]}
 		xStart="0 s"
 		xEnd="3 s"
-		caption="motor speed ω(t) against the setpoint"
+		caption={t('motor speed ω(t) against the setpoint')}
 	/>
-	<section class="dock-block" aria-label="Readouts">
-		<p class="microlabel">Readouts</p>
+	<section class="dock-block" aria-label={t('Readouts')}>
+		<p class="microlabel">{t('Readouts')}</p>
 		<div class="metrics">
 			<div>
-				<span>Overshoot</span>
+				<span>{t('Overshoot')}</span>
 				<strong
 					><LiveMath
 						id="pid.readout.overshoot"
-						label={`overshoot ${(response.overshoot * 100).toFixed(1)} percent`}
+						label={t('overshoot {0} percent', [(response.overshoot * 100).toFixed(1)])}
 						values={{ value: (response.overshoot * 100).toFixed(1) }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>Settling</span>
+				<span>{t('Settling')}</span>
 				<strong
 					><LiveMath
 						id="pid.readout.settle"
-						label={`settling time ${settling}`}
+						label={t('settling time {0}', [settling])}
 						values={{ value: settling }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>Offset</span>
+				<span>{t('Offset')}</span>
 				<strong
 					><LiveMath
 						id="pid.readout.error"
-						label={`steady-state error ${signed(response.steadyStateError)} radians per second`}
+						label={t('steady-state error {0} radians per second', [
+							signed(response.steadyStateError)
+						])}
 						values={{ value: signed(response.steadyStateError) }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>drive</span>
+				<span>{t('drive')}</span>
 				<strong
 					><LiveMath
 						id="pid.readout.drive"
-						label={`final drive ${signed(last(paths.drive))} volts`}
+						label={t('final drive {0} volts', [signed(last(paths.drive))])}
 						values={{ value: signed(last(paths.drive)) }}
 					/></strong
 				>
@@ -309,7 +319,7 @@
 {#snippet deck()}
 	<ProbeSelects {nets} bind:a={probeA} bind:b={probeB} />
 	<div class="deck-group">
-		<span class="microlabel">Try</span>
+		<span class="microlabel">{t('Try')}</span>
 		<div class="presets">
 			<button
 				class="btn"
@@ -319,7 +329,7 @@
 					kp = 3;
 					ki = 0;
 					kd = 0;
-				}}>P only</button
+				}}>{t('P only')}</button
 			>
 			<button
 				class="btn"
@@ -329,7 +339,7 @@
 					kp = 3;
 					ki = 15;
 					kd = 0.1;
-				}}>Tuned PID</button
+				}}>{t('Tuned PID')}</button
 			>
 			<button
 				class="btn"
@@ -339,12 +349,12 @@
 					kp = 0.5;
 					ki = 20;
 					kd = 0;
-				}}>Too much integral</button
+				}}>{t('Too much integral')}</button
 			>
 		</div>
 	</div>
 	<div class="deck-group">
-		<FaultSwitch label="Tachometer feedback inverted" bind:active={inverted} />
+		<FaultSwitch label={t('Tachometer feedback inverted')} bind:active={inverted} />
 	</div>
 {/snippet}
 

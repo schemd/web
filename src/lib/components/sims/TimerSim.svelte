@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * 555 timer on the v2 bench.
 	 *
@@ -332,7 +335,7 @@
 	);
 </script>
 
-<Bench title="555 timer" tone="analog" {status} {stage} {dock} {deck} />
+<Bench title={t('555 timer')} tone="analog" status={t(status)} {stage} {dock} {deck} />
 
 {#snippet stage()}
 	<div class="bench-canvas" class:motion-paused={motion.paused || motion.animationBlocked}>
@@ -342,7 +345,9 @@
 			role="group"
 			data-model-stage={timeline.step}
 			data-model-value={timelineProjection}
-			aria-label="555 timer model. Drag the value tags on R A, R B and the timing capacitor; click a wire to clip a probe on."
+			aria-label={t(
+				'555 timer model. Drag the value tags on R A, R B and the timing capacitor; click a wire to clip a probe on.'
+			)}
 		>
 			{@html svg}
 		</div>
@@ -354,29 +359,29 @@
 {#snippet dock()}
 	<p class="visually-hidden" aria-live="polite" aria-atomic="true">
 		{faults.shortedThreshold
-			? 'Timer degraded: threshold input is shorted to ground.'
-			: `Timer ${mode} mode active.`}
-		{motion.status}
+			? t('Timer degraded: threshold input is shorted to ground.')
+			: t('Timer {0} mode active.', [mode])}
+		{t(motion.status)}
 	</p>
-	<section class="bench-block" aria-label="Oscilloscope">
-		<p class="microlabel">Oscilloscope</p>
+	<section class="bench-block" aria-label={t('Oscilloscope')}>
+		<p class="microlabel">{t('Oscilloscope')}</p>
 		<Scope {channels} running={!(motion.paused || motion.animationBlocked)} {timebase} {revision} />
 	</section>
-	<section class="bench-block" aria-label="Readouts">
-		<p class="microlabel">Readouts</p>
+	<section class="bench-block" aria-label={t('Readouts')}>
+		<p class="microlabel">{t('Readouts')}</p>
 		<div class="bench-readouts">
 			{#if mode === 'astable'}
 				<span
 					><LiveMath
 						id="timer.readout.f"
-						label={`frequency ${formatSi(frequency, 'Hz')}`}
+						label={t('frequency {0}', [formatSi(frequency, 'Hz')])}
 						values={{ value: formatSi(frequency, 'Hz') }}
 					/></span
 				>
 				<span
 					><LiveMath
 						id="timer.readout.duty"
-						label={`duty ${(duty * 100).toFixed(1)} percent`}
+						label={t('duty {0} percent', [(duty * 100).toFixed(1)])}
 						values={{ value: (duty * 100).toFixed(1) }}
 					/></span
 				>
@@ -384,33 +389,33 @@
 				<span
 					><LiveMath
 						id="timer.readout.pulse"
-						label={`pulse width ${formatSi(pulseWidth, 's')}`}
+						label={t('pulse width {0}', [formatSi(pulseWidth, 's')])}
 						values={{ value: formatSi(pulseWidth, 's') }}
 					/></span
 				>
-				<span class:on={oneShot}>{oneShot ? 'HIGH (timing)' : 'idle (LOW)'}</span>
+				<span class:on={oneShot}>{oneShot ? t('HIGH (timing)') : t('idle (LOW)')}</span>
 			{/if}
-			<span class:on={output}>pin 3 output: {output ? 'HIGH' : 'LOW'}</span>
+			<span class:on={output}>{t('pin 3 output:')} {output ? t('HIGH') : t('LOW')}</span>
 		</div>
 	</section>
 	<PartReadout
 		{host}
 		read={probe}
-		hint="Click the 555, the LED, or the timing capacitor to read it."
+		hint={t('Click the 555, the LED, or the timing capacitor to read it.')}
 	/>
 {/snippet}
 
 {#snippet deck()}
 	<div class="bench-group">
-		<span class="microlabel">Mode</span>
-		<div class="mode-row" role="radiogroup" aria-label="Timer mode">
+		<span class="microlabel">{t('Mode')}</span>
+		<div class="mode-row" role="radiogroup" aria-label={t('Timer mode')}>
 			<button
 				type="button"
 				data-timeline-input
 				role="radio"
 				aria-checked={mode === 'astable'}
 				class="mode"
-				onclick={() => (mode = 'astable')}>Astable</button
+				onclick={() => (mode = 'astable')}>{t('Astable')}</button
 			>
 			<button
 				type="button"
@@ -418,7 +423,7 @@
 				role="radio"
 				aria-checked={mode === 'monostable'}
 				class="mode"
-				onclick={() => (mode = 'monostable')}>Monostable</button
+				onclick={() => (mode = 'monostable')}>{t('Monostable')}</button
 			>
 		</div>
 		{#if mode === 'monostable'}
@@ -427,16 +432,16 @@
 				class="btn btn-solid"
 				data-timeline-input
 				onclick={trigger}
-				disabled={oneShot}>{oneShot ? 'pulse in flight…' : 'trigger one-shot'}</button
+				disabled={oneShot}>{oneShot ? t('pulse in flight…') : t('trigger one-shot')}</button
 			>
 		{/if}
 	</div>
 	<ProbeSelects {nets} bind:a={probeA} bind:b={probeB} />
 	<div class="bench-group">
-		<SimulationMotionControl {motion} label="555 timer state and waveform animation" />
+		<SimulationMotionControl {motion} label={t('555 timer state and waveform animation')} />
 	</div>
 	<div class="bench-group">
-		<FaultSwitch label="THRES shorted to ground" bind:active={faults.shortedThreshold} />
+		<FaultSwitch label={t('THRES shorted to ground')} bind:active={faults.shortedThreshold} />
 	</div>
 {/snippet}
 

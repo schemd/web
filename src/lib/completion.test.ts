@@ -119,3 +119,28 @@ describe('completion from the component schema', () => {
 		expect(completionInsertion('select', 'port')).toBe('select');
 	});
 });
+
+describe('completion regressions', () => {
+	it('ignores inherited keys while accepting real IDs', () => {
+		expect(atSchema('constructor.')).toBeUndefined();
+		expect(atSchema('toString.')).toBeUndefined();
+		expect(atSchema('constructor:C1 [')).toBeUndefined();
+		expect(atSchema('  R1.')?.items).toEqual(['in', 'out']);
+	});
+	it('continues after quoted option values, including escaped quotes', () => {
+		const vocab = {
+			...schema,
+			options: {
+				ic: [
+					{ name: 'left', values: [] },
+					{ name: 'right', values: [] }
+				]
+			}
+		};
+		const source = 'ic:U1 [left="IN1,IN2" ri';
+		expect(completionAt(source, source.length, vocab)?.items).toEqual(['right']);
+		const escaped = 'ic:U1 "label \\"quoted\\"" [left="IN1" ri';
+		expect(completionAt(escaped, escaped.length, vocab)?.items).toEqual(['right']);
+		expect(completionAt('ic:U1 [left="ri', 15, vocab)).toBeUndefined();
+	});
+});

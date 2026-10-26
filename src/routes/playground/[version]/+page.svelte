@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href } = useLanguage();
+
 	import type { PageProps } from './$types';
 	import Seo from '#lib/components/Seo.svelte';
 	import type { SchematicSourceMap } from '@schemd/core';
@@ -645,7 +648,7 @@
 
 	const shareUrl = $derived.by(() => {
 		if (!browser) return undefined;
-		return shareableWorkspaceUrl(new URL(`/playground/${data.version}`, location.origin), {
+		return shareableWorkspaceUrl(new URL(href(`/playground/${data.version}`), location.origin), {
 			source,
 			width: boundsWidth,
 			height: boundsHeight,
@@ -742,8 +745,8 @@
 		let number = 1;
 		while (new RegExp(`\\b${prefix}${number}\\b`).test(source)) number += 1;
 		const next = (result.metrics?.components ?? 0) + 1;
-		const x = 90 + (next % 5) * 130;
-		const y = 90 + (Math.floor(next / 5) % 4) * 110;
+		const x = Math.max(entry.inset.x, 90 + (next % 5) * 130);
+		const y = Math.max(entry.inset.y, 90 + (Math.floor(next / 5) % 4) * 110);
 		const declaration = entry.template
 			.replace(/^([a-z-]+):[A-Z]+\d+/, `$1:${prefix}${number}`)
 			.replace('at (X, Y)', `at (${x}, ${y})`);
@@ -777,7 +780,11 @@
 		const namespaced = svg.includes('xmlns=')
 			? svg
 			: svg.replace('<svg', `<svg xmlns="http://www.w3.org/2000/svg"`);
-		return namespaced.replace(/(<svg[^>]*>)/, `$1<style>${rootRule}${tokenRules}</style>`);
+		return namespaced.replace(
+			/(<svg[^>]*>)/,
+			`$1<style>
+	.template-link { display: block; padding: var(--space-3); border-block-end: 1px solid var(--line); }${rootRule}${tokenRules}</style>`
+		);
 	}
 
 	function triggerDownload(href: string, filename: string): void {
@@ -1090,15 +1097,17 @@
 <svelte:window onkeydown={onWindowKeydown} />
 
 <Seo
-	title={`Playground · schemd v${data.version}`}
-	description="Compile schemd source to SVG live: three output modes, a raw markup view, and shareable workspace links."
+	title={t('Playground · schemd v{0}', [data.version])}
+	description={t(
+		'Compile schemd source to SVG live: three output modes, a raw markup view, and shareable workspace links.'
+	)}
 	canonicalPath={`/playground/${data.latest}`}
 	noindex
 />
 
 <WorkspaceShell
-	leftLabel="Reference"
-	rightLabel="Preview"
+	leftLabel={t('Reference')}
+	rightLabel={t('Preview')}
 	leftInitial={230}
 	rightInitial={Math.min(560, browser ? window.innerWidth * 0.45 : 560)}
 	bind:leftOpen
@@ -1106,13 +1115,14 @@
 	{titleBlock}
 >
 	{#snippet left()}
-		<aside class="ref" aria-label="Parts">
+		<aside class="ref" aria-label={t('Parts')}>
+			<a class="template-link" href={href('/templates')}>{t('Browse templates')}</a>
 			<div class="ref-search">
-				<label for="part-search">Parts</label>
+				<label for="part-search">{t('Parts')}</label>
 				<input
 					id="part-search"
 					type="search"
-					placeholder={`Search ${data.reference.length} kinds`}
+					placeholder={t('Search {0} kinds', [data.reference.length])}
 					bind:value={partQuery}
 					oninput={() => (selectedKind = undefined)}
 				/>
@@ -1121,47 +1131,47 @@
 			{#if selectedPart}
 				<section class="part" aria-labelledby="part-title">
 					<button type="button" class="part-back" onclick={() => (selectedKind = undefined)}
-						>All parts</button
+						>{t('All parts')}</button
 					>
 					<h2 id="part-title"><code>{selectedPart.kind}</code></h2>
 					<div class="part-actions">
 						<button
 							type="button"
 							class="btn btn-solid"
-							onclick={() => insertKind(selectedPart.kind)}>Insert</button
+							onclick={() => insertKind(selectedPart.kind)}>{t('Insert')}</button
 						>
-						<a href={`/components/${selectedPart.kind}`}>Datasheet</a>
+						<a href={href(`/components/${selectedPart.kind}`)}>{t('Datasheet')}</a>
 					</div>
-					<p class="part-heading">Pins</p>
+					<p class="part-heading">{t('Pins')}</p>
 					{#if selectedPart.pins.length > 0}
 						<p class="pins">
 							{#each selectedPart.pins as pin (pin)}<code>{pin}</code>
 							{/each}
 						</p>
 					{:else}
-						<p class="part-note">No pins; this part is drawn but not wired.</p>
+						<p class="part-note">{t('No pins; this part is drawn but not wired.')}</p>
 					{/if}
 					{#if selectedPart.options.length > 0}
-						<p class="part-heading">Options</p>
+						<p class="part-heading">{t('Options')}</p>
 						<dl class="options">
 							{#each selectedPart.options as option (option.name)}
 								<div>
 									<dt><code>{option.name}</code></dt>
 									<dd>
-										{option.accepts}{#if option.values.length > 1}:{/if}
+										{t(option.accepts)}{#if option.values.length > 1}:{/if}
 										{#if option.values.length > 0}
 											<span class="values"
 												>{#each option.values as value, index (value)}<code>{value}</code>{index <
 													option.values.length - 1
-														? ', '
-														: ''}{/each}</span
+														? t(', ')
+														: t('')}{/each}</span
 											>
 										{/if}
 										{#if option.defaultValue !== undefined}
-											<span class="default">Default <code>{option.defaultValue}</code></span>
+											<span class="default">{t('Default')} <code>{option.defaultValue}</code></span>
 										{/if}
 										{#each option.defaultsByType as extra (extra)}
-											<span class="default">{extra}</span>
+											<span class="default">{t(extra)}</span>
 										{/each}
 									</dd>
 								</div>
@@ -1171,8 +1181,8 @@
 				</section>
 			{:else}
 				{#each partGroups as group (group.family)}
-					<section class="part-group" aria-label={group.label}>
-						<h2>{group.label}</h2>
+					<section class="part-group" aria-label={t(group.label)}>
+						<h2>{t(group.label)}</h2>
 						<ul>
 							{#each group.kinds as entry (entry.kind)}
 								<li>
@@ -1184,15 +1194,15 @@
 						</ul>
 					</section>
 				{:else}
-					<p class="part-note">No kind matches “{partQuery}”.</p>
+					<p class="part-note">{t('No kind matches “')}{t(partQuery)}”.</p>
 				{/each}
 			{/if}
 
-			<section class="sheet-settings" aria-label="Sheet">
-				<h2>Sheet</h2>
+			<section class="sheet-settings" aria-label={t('Sheet')}>
+				<h2>{t('Sheet')}</h2>
 				<div class="fence-controls">
 					<label>
-						<span>Width</span>
+						<span>{t('Width')}</span>
 						<input
 							type="number"
 							min="64"
@@ -1203,7 +1213,7 @@
 						/>
 					</label>
 					<label>
-						<span>Height</span>
+						<span>{t('Height')}</span>
 						<input
 							type="number"
 							min="64"
@@ -1214,11 +1224,11 @@
 						/>
 					</label>
 					<label class="fence-title">
-						<span>Title</span>
+						<span>{t('Title')}</span>
 						<input type="text" maxlength="512" bind:value={title} />
 					</label>
 				</div>
-				<h2>Colours</h2>
+				<h2>{t('Colours')}</h2>
 				<p class="colors">
 					{#each data.colors as color (color)}
 						<span class="color-chip"
@@ -1227,7 +1237,11 @@
 						>
 					{/each}
 				</p>
-				<p class="part-note">Any hex, <code>rgb()</code> or <code>hsl()</code> colour works too.</p>
+				<p class="part-note">
+					{t('Any hex,')} <code>rgb()</code>
+					{t('or')} <code>hsl()</code>
+					{t('colour works too.')}
+				</p>
 			</section>
 		</aside>
 	{/snippet}
@@ -1236,35 +1250,39 @@
 		<div class="editor-pane">
 			<div class="editor-toolbar">
 				<span class="engine-id">
-					<span class="microlabel">Source, compiled by release {data.engineVersion}</span>
+					<span class="microlabel">{t('Source, compiled by release')} {t(data.engineVersion)}</span>
 					{#if data.version !== data.engineVersion}
 						<span
 							class="engine-note"
-							title={`This playground compiles with the installed @schemd/core (v${data.engineVersion}). Historical releases are documented, not re-executed — so the preview below is v${data.engineVersion} output.`}
+							title={t(
+								'This playground compiles with the installed @schemd/core (v{0}). Historical releases are documented, not re-executed — so the preview below is v{1} output.',
+								[data.engineVersion, data.engineVersion]
+							)}
 						>
-							Docs for {data.version}
+							{t('Docs for')}
+							{t(data.version)}
 						</span>
 					{/if}
 				</span>
 				<div class="compile-summary">
 					<span class="microlabel">
 						{result.error
-							? `Error${result.error.line ? ` on line ${result.error.line}` : ''}`
+							? t('Error{0}', [result.error.line ? ` on line ${result.error.line}` : ''])
 							: compiling
-								? 'Compiling'
+								? t('Compiling')
 								: result.metrics
-									? 'Compiled'
-									: 'Ready'}
+									? t('Compiled')
+									: t('Ready')}
 					</span>
 					<button
 						type="button"
 						class="command-trigger"
 						onclick={() => paletteApi?.open()}
 						aria-keyshortcuts="F1 Meta+Shift+P Control+Shift+P"
-						title="Playground commands (F1 or Command/Control Shift P)"
+						title={t('Playground commands (F1 or Command/Control Shift P)')}
 					>
-						Commands <kbd>F1</kbd>
-						<span class="visually-hidden">, opens the playground command palette</span>
+						{t('Commands')} <kbd>{t('F1')}</kbd>
+						<span class="visually-hidden">{t(', opens the playground command palette')}</span>
 					</button>
 				</div>
 			</div>
@@ -1288,13 +1306,14 @@
 				<section
 					id="compiler-diagnostic"
 					class="diagnostic-panel"
-					aria-label="Compiler diagnostics"
+					aria-label={t('Compiler diagnostics')}
 				>
-					<span class="diagnostic-severity">error</span>
-					<p>{result.error.message}</p>
+					<span class="diagnostic-severity">{t('error')}</span>
+					<p>{t(result.error.message)}</p>
 					{#if result.error.line !== undefined}
 						<button type="button" onclick={() => editorApi?.focusLine(result.error!.line! - 1)}>
-							Go to line {result.error.line} <kbd>F8</kbd>
+							{t('Go to line')}
+							{t(result.error.line)} <kbd>{t('F8')}</kbd>
 						</button>
 					{/if}
 				</section>
@@ -1305,7 +1324,7 @@
 	{#snippet right()}
 		<div class="preview-pane">
 			<div class="preview-toolbar">
-				<div class="seg" role="radiogroup" aria-label="Compiler mode">
+				<div class="seg" role="radiogroup" aria-label={t('Compiler mode')}>
 					{#each MODES as candidate (candidate)}
 						<button
 							type="button"
@@ -1313,18 +1332,18 @@
 							aria-checked={mode === candidate}
 							onclick={() => (mode = candidate)}
 						>
-							{candidate}
+							{t(candidate)}
 						</button>
 					{/each}
 				</div>
-				<div class="seg" role="radiogroup" aria-label="Preview channel">
+				<div class="seg" role="radiogroup" aria-label={t('Preview channel')}>
 					<button
 						type="button"
 						role="radio"
 						aria-checked={view === 'render'}
 						onclick={() => (view = 'render')}
 					>
-						Drawing
+						{t('Drawing')}
 					</button>
 					<button
 						type="button"
@@ -1332,7 +1351,7 @@
 						aria-checked={view === 'raw'}
 						onclick={() => (view = 'raw')}
 					>
-						SVG source
+						{t('SVG source')}
 					</button>
 					<button
 						type="button"
@@ -1340,21 +1359,21 @@
 						aria-checked={view === 'fence'}
 						onclick={() => (view = 'fence')}
 					>
-						Fence
+						{t('Fence')}
 					</button>
 				</div>
 			</div>
 
 			{#if view === 'render'}
 				<div class="sheet-host">
-					<SheetFrame label="Drawing sheet">
+					<SheetFrame label={t('Drawing sheet')}>
 						{#key traceKey}
 							<div
 								bind:this={previewHost}
 								class="schemd-frame preview-stage trace-on"
 								class:stale={result.error !== undefined}
 								role="region"
-								aria-label="Compiled schematic preview"
+								aria-label={t('Compiled schematic preview')}
 								class:is-dragging={drag !== undefined}
 								onpointerover={onPreviewOver}
 								onpointerleave={onPreviewLeave}
@@ -1369,7 +1388,7 @@
 					</SheetFrame>
 				</div>
 				{#if dragNote}
-					<p class="drag-note" aria-live="polite">{dragNote}</p>
+					<p class="drag-note" aria-live="polite">{t(dragNote)}</p>
 				{/if}
 			{:else if view === 'raw'}
 				<!-- Keyboard focus exposes overflowing source to Safari users. -->
@@ -1378,13 +1397,13 @@
 					class="codeblock raw-view"
 					tabindex="0"
 					role="region"
-					aria-label="Scrollable raw SVG"><code>{rawSvg}</code></pre>
+					aria-label={t('Scrollable raw SVG')}><code>{rawSvg}</code></pre>
 			{:else}
 				<div class="fence-view">
 					<div class="fence-bar">
-						<span class="microlabel">Paste this into any Markdown pipeline</span>
+						<span class="microlabel">{t('Paste this into any Markdown pipeline')}</span>
 						<button type="button" class="fence-copy" onclick={copyFence}>
-							{fenceCopied ? 'Copied' : 'Copy fence'}
+							{fenceCopied ? t('Copied') : t('Copy fence')}
 						</button>
 					</div>
 					<!-- Keyboard focus exposes overflowing source to Safari users. -->
@@ -1393,7 +1412,7 @@
 						class="codeblock fence-block"
 						tabindex="0"
 						role="region"
-						aria-label="Scrollable Markdown fence"><code>{fenceMarkdown}</code></pre>
+						aria-label={t('Scrollable Markdown fence')}><code>{fenceMarkdown}</code></pre>
 				</div>
 			{/if}
 		</div>
@@ -1402,24 +1421,26 @@
 	{#snippet statusExtra()}
 		<span class="draft-status" data-state={draftState}>
 			{draftState === 'dirty'
-				? 'Unsaved changes'
+				? t('Unsaved changes')
 				: draftState === 'unavailable'
-					? 'Local saving unavailable'
+					? t('Local saving unavailable')
 					: draftState === 'shared'
-						? 'Shared document; save it yourself'
+						? t('Shared document; save it yourself')
 						: draftState === 'recovered'
-							? 'Recovered draft'
-							: 'Saved in this browser'}
+							? t('Recovered draft')
+							: t('Saved in this browser')}
 		</span>
 		<button type="button" class="status-action" onclick={copySource}>
-			{sourceCopied ? 'Source copied' : 'Copy source'}
+			{sourceCopied ? t('Source copied') : t('Copy source')}
 		</button>
 		<button type="button" class="status-action" onclick={copyFence}>
-			{fenceCopied ? 'Fence copied' : 'Copy fence'}
+			{fenceCopied ? t('Fence copied') : t('Copy fence')}
 		</button>
-		<button type="button" class="status-action" onclick={downloadSvg}>Download SVG</button>
-		<button type="button" class="status-action" onclick={downloadPng}>Download PNG</button>
-		<button type="button" class="status-action" onclick={downloadSource}>Download source</button>
+		<button type="button" class="status-action" onclick={downloadSvg}>{t('Download SVG')}</button>
+		<button type="button" class="status-action" onclick={downloadPng}>{t('Download PNG')}</button>
+		<button type="button" class="status-action" onclick={downloadSource}
+			>{t('Download source')}</button
+		>
 		<button
 			type="button"
 			class="status-action"
@@ -1427,10 +1448,10 @@
 			aria-live="polite"
 			disabled={embedUrl === undefined}
 			title={embedUrl === undefined
-				? 'This document is too large for a reliable embed address'
-				: 'Copies an iframe you can paste into a page'}
+				? t('This document is too large for a reliable embed address')
+				: t('Copies an iframe you can paste into a page')}
 		>
-			{embedCopied ? 'Embed code copied' : 'Copy embed code'}
+			{embedCopied ? t('Embed code copied') : t('Copy embed code')}
 		</button>
 		<button
 			type="button"
@@ -1439,21 +1460,26 @@
 			aria-live="polite"
 			disabled={shareUrl === undefined}
 			title={shareUrl === undefined
-				? 'This document is too large for a reliable share link'
-				: 'Copies a link that opens this document'}
+				? t('This document is too large for a reliable share link')
+				: t('Copies a link that opens this document')}
 		>
-			{copied ? 'Link copied' : 'Copy link'}
+			{copied ? t('Link copied') : t('Copy link')}
 		</button>
 	{/snippet}
 </WorkspaceShell>
 
 <IdeCommandPalette commands={ideCommands} onready={(api) => (paletteApi = api)} />
 <p class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
-	{compileAnnouncement}
+	{t(compileAnnouncement)}
 </p>
-<div class="workspace-notice" aria-live="polite" aria-atomic="true">{notice}</div>
+<div class="workspace-notice" aria-live="polite" aria-atomic="true">{t(notice)}</div>
 
 <style>
+	.template-link {
+		display: block;
+		padding: var(--space-3);
+		border-block-end: 1px solid var(--line);
+	}
 	/* ---------- Parts panel ---------- */
 	.ref {
 		display: grid;

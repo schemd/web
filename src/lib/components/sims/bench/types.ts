@@ -7,13 +7,13 @@ import type { MathReading } from '#lib/simulation-math.ts';
  * control elsewhere to keep in step.
  */
 export interface PartControl {
-	/** Stable input id, also the label's `for`. */
+	/** Stable input id, also the label's `for` and guided-action hook. */
 	readonly id: string;
 	/** The compiler's `data-node-id` the tag sits on. */
 	readonly node: string;
 	/** Short visible label, such as `R`. */
 	readonly label: string;
-	/** Accessible name; tests and screen readers find the slider by it. */
+	/** Localized accessible name; guided actions use the stable id instead. */
 	readonly ariaLabel: string;
 	readonly min: number;
 	readonly max: number;

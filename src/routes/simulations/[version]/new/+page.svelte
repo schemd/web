@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href } = useLanguage();
+
 	/**
 	 * The laboratory builder.
 	 *
@@ -46,10 +49,13 @@
 
 	const shareUrl = $derived.by(() => {
 		const token = encodeWorkspaceState(draft);
-		const url = new URL(`/simulations/${data.version}/new`, 'https://schemd.johnowolabiidogun.dev');
+		const url = new URL(
+			href(`/simulations/${data.version}/new`),
+			'https://schemd.johnowolabiidogun.dev'
+		);
 		url.searchParams.set('lab', token);
-		const href = url.toString();
-		return href.length > MAX_WORKSPACE_URL_CHARACTERS ? undefined : href;
+		const share = url.toString();
+		return share.length > MAX_WORKSPACE_URL_CHARACTERS ? undefined : share;
 	});
 
 	async function apply(): Promise<void> {
@@ -77,60 +83,65 @@
 </script>
 
 <Seo
-	title="Build a simulation lab · schemd"
-	description="Compose a schemd simulation laboratory as a manifest: a compiled diagram, a whitelisted model, and declarative bindings from signals onto nodes and wires."
+	title={t('Build a simulation lab · schemd')}
+	description={t(
+		'Compose a schemd simulation laboratory as a manifest: a compiled diagram, a whitelisted model, and declarative bindings from signals onto nodes and wires.'
+	)}
 	canonicalPath={`/simulations/${data.version}/new`}
 />
 
 <article class="builder grid-backdrop">
 	<header class="builder-head">
-		<p class="microlabel">Lab builder, revision {data.version}</p>
-		<h1>Describe a laboratory</h1>
+		<p class="microlabel">{t('Lab builder, revision')} {t(data.version)}</p>
+		<h1>{t('Describe a laboratory')}</h1>
 		<p class="lede">
-			A laboratory is a compiled diagram, a model, and a set of bindings from the model's signals
-			onto the drawing's nodes and wires. Everything below is data — the
-			<code>model</code> field names one of the {data.models.length} models this application ships, and
-			cannot name anything else.
+			{t(
+				"A laboratory is a compiled diagram, a model, and a set of bindings from the model's signals onto the drawing's nodes and wires. Everything below is data — the"
+			)}
+			<code>model</code>
+			{t('field names one of the')}
+			{t(data.models.length)}
+			{t('models this application ships, and cannot name anything else.')}
 		</p>
 	</header>
 
 	<div class="builder-grid">
-		<section class="editor plate" aria-label="Manifest editor">
+		<section class="editor plate" aria-label={t('Manifest editor')}>
 			<header class="panel-head">
-				<p class="microlabel">Manifest</p>
-				<span class="microlabel">Models: {data.models.join(', ')}</span>
+				<p class="microlabel">{t('Manifest')}</p>
+				<span class="microlabel">{t('Models:')} {t(data.models.join(', '))}</span>
 			</header>
 
 			<textarea
 				value={draft}
 				oninput={(event) => (edited = event.currentTarget.value)}
 				spellcheck="false"
-				aria-label="Laboratory manifest, as JSON"></textarea>
+				aria-label={t('Laboratory manifest, as JSON')}></textarea>
 
 			<div class="editor-actions">
 				<button type="button" class="btn btn-solid" onclick={apply} disabled={!dirty}>
-					{dirty ? 'Apply changes' : 'Applied'}
+					{dirty ? t('Apply changes') : t('Applied')}
 				</button>
 				<button type="button" class="btn" onclick={copyLink} disabled={!shareUrl}>
-					{copied ? 'Copied' : 'Copy shareable link'}
+					{copied ? t('Copied') : t('Copy shareable link')}
 				</button>
 				{#if !shareUrl}
-					<span class="microlabel too-long">Too long to share as a link.</span>
+					<span class="microlabel too-long">{t('Too long to share as a link.')}</span>
 				{/if}
 			</div>
 
 			{#if data.problems.length > 0}
-				<ul class="problems" aria-label="Manifest problems">
+				<ul class="problems" aria-label={t('Manifest problems')}>
 					{#each data.problems as problem (problem)}
-						<li>{problem}</li>
+						<li>{t(problem)}</li>
 					{/each}
 				</ul>
 			{:else}
-				<p class="microlabel ok">Manifest is valid and its diagram compiles.</p>
+				<p class="microlabel ok">{t('Manifest is valid and its diagram compiles.')}</p>
 			{/if}
 		</section>
 
-		<section class="preview" aria-label="Live preview">
+		<section class="preview" aria-label={t('Live preview')}>
 			{#if data.manifest && data.svg}
 				{#if previewStages.length > 0}
 					<SimulationTimeline
@@ -151,7 +162,7 @@
 				</div>
 			{:else}
 				<p class="empty plate">
-					The preview appears once the manifest is valid and its diagram compiles.
+					{t('The preview appears once the manifest is valid and its diagram compiles.')}
 				</p>
 			{/if}
 		</section>

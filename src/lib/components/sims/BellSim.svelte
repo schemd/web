@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/** Bell-state visualizer with compiler-root operator delegation and native SVG metrics. */
 	import { bellAmplitudesAtStage, bellChsh, type Basis2 } from '#lib/simulation-models.ts';
 	import { delegatedNodeId, setNodeActive, setWiresFrom } from '#lib/sim-dom.ts';
@@ -103,13 +106,17 @@
 			if (!node) continue;
 			node.setAttribute(
 				'aria-label',
-				`${operators[id]!.title}. Focus or hover a port for transformation details.`
+				t('{0}. Focus or hover a port for transformation details.', [t(operators[id]!.title)])
 			);
 			for (const port of node.querySelectorAll('[data-port-id]')) {
 				const portId = port.getAttribute('data-port-id') ?? 'operator';
 				port.setAttribute(
 					'aria-label',
-					`${operators[id]!.title} ${portId} port. Focus or hover for transformation details${id.startsWith('M') ? '; activate to measure' : ''}.`
+					t('{0} {1} port. Focus or hover for transformation details{2}.', [
+						t(operators[id]!.title),
+						portId,
+						id.startsWith('M') ? t('; activate to measure') : ''
+					])
 				);
 			}
 		}
@@ -175,10 +182,10 @@
 </script>
 
 <Bench
-	title="Bell-state entanglement"
+	title={t('Bell-state entanglement')}
 	tone="quantum"
-	status={stageName}
-	hint="Step through execution, hover a gate for its operator, then measure."
+	status={t(stageName)}
+	hint={t('Step through execution, hover a gate for its operator, then measure.')}
 	stage={canvas}
 	dock={readouts}
 	deck={controls}
@@ -190,41 +197,43 @@
 			class="sim-stage quantum-stage schemd-frame net-optics"
 			bind:this={host}
 			role="group"
-			aria-label="Bell-state quantum circuit. Hover or focus an operator for its transformation."
+			aria-label={t(
+				'Bell-state quantum circuit. Hover or focus an operator for its transformation.'
+			)}
 			data-model-stage={timeline.step}
 		>
 			{@html svg}
 			{#if hud}
 				<aside class="operator-hud" aria-live="polite">
-					<span>{hud.eyebrow}</span>
-					<strong>{hud.title}</strong>
+					<span>{t(hud.eyebrow)}</span>
+					<strong>{t(hud.title)}</strong>
 					<div class="transformation">
 						<code>{hud.input}</code><i>→</i><code>{hud.output}</code>
 					</div>
-					<p>{hud.matrix}</p>
+					<p>{t(hud.matrix)}</p>
 				</aside>
 			{:else}
-				<p class="hover-prompt">Hover an active operator to inspect its transform</p>
+				<p class="hover-prompt">{t('Hover an active operator to inspect its transform')}</p>
 			{/if}
 		</div>
 
-		<section class="probability-panel" aria-label="Live basis-state probability distribution">
+		<section class="probability-panel" aria-label={t('Live basis-state probability distribution')}>
 			<div class="probability-heading">
-				<span>state vector, Z basis</span>
+				<span>{t('state vector, Z basis')}</span>
 				<strong
 					>{brokenEntangler
-						? 'separable'
+						? t('separable')
 						: stage >= 2
-							? '|Φ⁺⟩'
+							? t('|Φ⁺⟩')
 							: stage === 1
-								? '|+0⟩'
-								: '|00⟩'}</strong
+								? t('|+0⟩')
+								: t('|00⟩')}</strong
 				>
 			</div>
 			<svg
 				viewBox="0 0 260 238"
 				role="img"
-				aria-label="Probability bar graph for basis states 00, 01, 10, and 11"
+				aria-label={t('Probability bar graph for basis states 00, 01, 10, and 11')}
 			>
 				<defs>
 					<linearGradient id="bell-probability-fill" x1="0" y1="1" x2="0" y2="0">
@@ -246,17 +255,20 @@
 						rx="3"
 					/>
 					<text class="value" x={26 + index * 58} y={Math.max(29, 181 - barHeight)}
-						>{Math.round(probability * 100)}%</text
+						>{t(Math.round(probability * 100))}%</text
 					>
-					<text class="basis" x={26 + index * 58} y="211">|{basis}⟩</text>
+					<text class="basis" x={26 + index * 58} y="211">|{t(basis)}⟩</text>
 				{/each}
 			</svg>
 			<div class="probability-footer">
-				<span><i></i>theoretical amplitude²</span>
+				<span><i></i>{t('theoretical amplitude²')}</span>
 				<span
-					>ΣP = {Object.values(probabilities)
-						.reduce((sum, value) => sum + value, 0)
-						.toFixed(2)}</span
+					>{t('ΣP =')}
+					{t(
+						Object.values(probabilities)
+							.reduce((sum, value) => sum + value, 0)
+							.toFixed(2)
+					)}</span
 				>
 			</div>
 		</section>
@@ -265,26 +277,28 @@
 
 {#snippet controls()}
 	<div class="execution-deck">
-		<div class="stage-track" aria-label="Execution progress">
+		<div class="stage-track" aria-label={t('Execution progress')}>
 			{#each ['Init', 'H', 'CNOT', 'Measure'] as label, index (label)}
 				<span class:active={index <= stage} class:current={index === stage}>
-					<i>{String(index + 1).padStart(2, '0')}</i>{label}
+					<i>{t(String(index + 1).padStart(2, '0'))}</i>{t(label)}
 				</span>
 			{/each}
 		</div>
 		<div class="quantum-actions">
 			<button type="button" class="btn-ghost" onclick={stepThrough}>
-				{stage >= 2 ? 'Reset execution' : 'Step through execution'}
+				{stage >= 2 ? t('Reset execution') : t('Step through execution')}
 			</button>
-			<button type="button" class="btn-solid" onclick={sampleMeasurement}> Measure state </button>
+			<button type="button" class="btn-solid" onclick={sampleMeasurement}>
+				{t('Measure state')}
+			</button>
 		</div>
 	</div>
 	<div class="fault-row">
-		<FaultSwitch label="Detune the two-qubit gate" bind:active={brokenEntangler} />
+		<FaultSwitch label={t('Detune the two-qubit gate')} bind:active={brokenEntangler} />
 		<p>
 			{brokenEntangler
-				? 'CNOT coupling offline, cross states permitted'
-				: 'coherent coupling, nominal'}
+				? t('CNOT coupling offline, cross states permitted')
+				: t('coherent coupling, nominal')}
 		</p>
 	</div>
 {/snippet}
@@ -292,25 +306,25 @@
 {#snippet readouts()}
 	<div class="quantum-metrics">
 		<div>
-			<span>CHSH witness</span>
-			<strong>{chsh.toFixed(3)}</strong>
-			<small>{chsh > 2 ? 'non-classical' : 'classical bound'}</small>
+			<span>{t('CHSH witness')}</span>
+			<strong>{t(chsh.toFixed(3))}</strong>
+			<small>{chsh > 2 ? t('non-classical') : t('classical bound')}</small>
 		</div>
 		<div>
-			<span>Correlation</span>
-			<strong>{(correlation * 100).toFixed(1)}%</strong>
-			<small>Same-bit outcomes</small>
+			<span>{t('Correlation')}</span>
+			<strong>{t((correlation * 100).toFixed(1))}%</strong>
+			<small>{t('Same-bit outcomes')}</small>
 		</div>
 		<div>
-			<span>Measurements</span>
-			<strong>{totalShots}</strong>
-			<small>{lastMeasurement ? `last, |${lastMeasurement}⟩` : 'awaiting sample'}</small>
+			<span>{t('Measurements')}</span>
+			<strong>{t(totalShots)}</strong>
+			<small>{lastMeasurement ? t('last, |{0}⟩', [lastMeasurement]) : t('awaiting sample')}</small>
 		</div>
 	</div>
 	<p class="measurement-note" aria-live="polite">
 		{lastMeasurement
-			? `Projection complete: the register collapsed to |${lastMeasurement}⟩.`
-			: 'Measurement leaves the 50/50 theoretical distribution intact until sampled.'}
+			? t('Projection complete: the register collapsed to |{0}⟩.', [lastMeasurement])
+			: t('Measurement leaves the 50/50 theoretical distribution intact until sampled.')}
 	</p>
 {/snippet}
 

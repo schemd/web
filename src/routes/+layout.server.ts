@@ -1,3 +1,5 @@
+import { messagesFor } from '#lib/server/message-catalog.ts';
+import { localeOf } from '#lib/i18n/index.ts';
 import type { LayoutServerLoad } from './$types';
 import { getRegistry } from '#lib/server/registry.ts';
 import { DOC_SLUGS_BY_LINE, docSearchIndex } from '#lib/server/docs.ts';
@@ -7,7 +9,8 @@ import {
 	resolveDocVersion
 } from '#lib/server/versions.ts';
 
-export const load: LayoutServerLoad = async ({ params }) => {
+export const load: LayoutServerLoad = async ({ params, url }) => {
+	const locale = localeOf(url.pathname);
 	const registry = await getRegistry();
 	const versions = registry.releases.map((release) => release.version);
 	const latest = registry.latest;
@@ -16,6 +19,8 @@ export const load: LayoutServerLoad = async ({ params }) => {
 		(params.version !== undefined ? resolveDocVersion(params.version) : undefined) ??
 		LATEST_DOCUMENTED_VERSION;
 	return {
+		locale,
+		messages: messagesFor(url.pathname, locale),
 		versions,
 		latest,
 		/* The header band prints the revision's date, as a datasheet does. */
@@ -31,7 +36,7 @@ export const load: LayoutServerLoad = async ({ params }) => {
 			{ title: 'Simulation Lab', hint: `route · v${latest}`, href: `/simulations/${latest}` },
 			{ title: 'Changelog', hint: 'route', href: '/changelog' },
 			{ title: 'Install telemetry', hint: 'route · live npm', href: '/downloads' },
-			...docSearchIndex(activeVersion)
+			...docSearchIndex(activeVersion, locale)
 		]
 	};
 };

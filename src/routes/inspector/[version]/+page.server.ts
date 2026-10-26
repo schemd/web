@@ -1,3 +1,4 @@
+import { localized, localeOf } from '#lib/i18n/index.ts';
 /**
  * The compiler, made visible.
  *
@@ -65,7 +66,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		error(404, `No inspector release named ${params.version}.`);
 	}
 	if (params.version !== version) {
-		redirect(307, `/inspector/${version}${url.search}`);
+		redirect(307, localized(`/inspector/${version}${url.search}`, localeOf(url.pathname)));
 	}
 
 	const shared = url.searchParams.get('code');

@@ -86,7 +86,7 @@ PT3.out -> PB3.out #rose [ortho net=SENSE]
 
 Every field above bounds a size, and none of them bounds time. A small document can still be expensive to route. Each net is a lattice search, and the work of that search comes from congestion, where nets compete for the same channels. The count of declarations has little to do with it.
 
-A budget should therefore be paired with a time limit that the host enforces: a worker with a deadline, an `AbortSignal` around the call site, or a queue with a ceiling per job. `wireCrossings` bounds the crossing pass in particular. It is the closest thing to a work limit the compiler offers, though it does not replace a timeout.
+A budget should therefore be paired with a deadline enforced outside the compilation worker. Run the synchronous compiler in a worker that the host can terminate when time expires. An `AbortSignal` or `Promise.race` around a call on the same thread cannot interrupt it. A queue can limit waiting time, but running work still needs a terminable worker. `wireCrossings` bounds the crossing pass in particular. It is the closest thing to a work limit the compiler offers, though it does not replace a timeout.
 
 ```schemd bounds="740x330" title="Few lines, real routing work"
 port:MI "M" at (80, 120) #blue

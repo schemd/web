@@ -938,3 +938,15 @@ pre.codeblock span[style*='--shiki-'] {
 	clip-path: inset(50%);
 	white-space: nowrap;
 }
+
+@media (max-width: 760px) {
+	:root {
+		--header-h: 148px;
+	}
+}
+
+/* Inline links remain identifiable against muted text in both print modes. */
+p a:not(.btn) {
+	text-decoration: underline;
+	text-underline-offset: 0.16em;
+}

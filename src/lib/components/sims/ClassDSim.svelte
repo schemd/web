@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Class-D amplifier on the v2 bench, and one you can hear.
 	 *
@@ -281,7 +284,7 @@
 	);
 </script>
 
-<Bench title="Class-D amplifier" tone="analog" {status} {stage} {dock} {deck} />
+<Bench title={t('Class-D amplifier')} tone="analog" status={t(status)} {stage} {dock} {deck} />
 
 {#snippet stage()}
 	<div class="classd-canvas">
@@ -289,7 +292,9 @@
 			class="sim-stage classd-stage schemd-frame"
 			bind:this={host}
 			role="group"
-			aria-label="Class-D amplifier: audio and triangle carrier into a PWM comparator, a half-bridge, an L C filter, and a speaker. Drag the value tags; click a wire to probe it."
+			aria-label={t(
+				'Class-D amplifier: audio and triangle carrier into a PWM comparator, a half-bridge, an L C filter, and a speaker. Drag the value tags; click a wire to probe it.'
+			)}
 			data-model-stage={timeline.step}
 		>
 			{@html svg}
@@ -300,8 +305,8 @@
 {/snippet}
 
 {#snippet dock()}
-	<section class="dock-block" aria-label="Oscilloscope">
-		<p class="microlabel">Oscilloscope</p>
+	<section class="dock-block" aria-label={t('Oscilloscope')}>
+		<p class="microlabel">{t('Oscilloscope')}</p>
 		<Scope
 			{channels}
 			running={false}
@@ -309,45 +314,45 @@
 			{revision}
 		/>
 	</section>
-	<section class="dock-block" aria-label="Readouts">
-		<p class="microlabel">Readouts</p>
+	<section class="dock-block" aria-label={t('Readouts')}>
+		<p class="microlabel">{t('Readouts')}</p>
 		<div class="metrics">
 			<div>
-				<span>Cutoff</span>
+				<span>{t('Cutoff')}</span>
 				<strong
 					><LiveMath
 						id="classd.readout.fc"
-						label={`filter cutoff ${formatSi(cutoff, 'Hz')}`}
+						label={t('filter cutoff {0}', [formatSi(cutoff, 'Hz')])}
 						values={{ value: formatSi(cutoff, 'Hz') }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>Audio gain</span>
+				<span>{t('Audio gain')}</span>
 				<strong
 					><LiveMath
 						id="classd.readout.audio"
-						label={`audio gain ${metrics.audioGain.toFixed(3)}`}
+						label={t('audio gain {0}', [metrics.audioGain.toFixed(3)])}
 						values={{ value: metrics.audioGain.toFixed(3) }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>Carrier</span>
+				<span>{t('Carrier')}</span>
 				<strong
 					><LiveMath
 						id="classd.readout.residual"
-						label={`carrier residual ${residualDb.toFixed(1)} decibels`}
+						label={t('carrier residual {0} decibels', [residualDb.toFixed(1)])}
 						values={{ value: residualDb.toFixed(1) }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>Cleanliness</span>
+				<span>{t('Cleanliness')}</span>
 				<strong
 					><LiveMath
 						id="classd.readout.clean"
-						label={`audio to carrier ratio ${metrics.cleanliness.toFixed(1)} decibels`}
+						label={t('audio to carrier ratio {0} decibels', [metrics.cleanliness.toFixed(1)])}
 						values={{ value: metrics.cleanliness.toFixed(1) }}
 					/></strong
 				>
@@ -355,7 +360,11 @@
 		</div>
 	</section>
 	<Plot
-		label={`Filter response: audio at ${formatSi(audio, 'Hz', 0)}, carrier at ${formatSi(carrier, 'Hz', 1)}, cutoff ${formatSi(cutoff, 'Hz')}`}
+		label={t('Filter response: audio at {0}, carrier at {1}, cutoff {2}', [
+			formatSi(audio, 'Hz', 0),
+			formatSi(carrier, 'Hz', 1),
+			formatSi(cutoff, 'Hz')
+		])}
 		series={[{ id: 'response', values: response, tone: 'cyan' }]}
 		min={-80}
 		max={6}
@@ -366,14 +375,14 @@
 		]}
 		xStart="100 Hz"
 		xEnd="100 kHz"
-		caption="|H(f)| in dB, 40 dB per decade above the cutoff"
+		caption={t('|H(f)| in dB, 40 dB per decade above the cutoff')}
 	/>
 {/snippet}
 
 {#snippet deck()}
 	<ProbeSelects {nets} bind:a={probeA} bind:b={probeB} />
 	<div class="deck-group">
-		<span class="microlabel">Listen (plays sound)</span>
+		<span class="microlabel">{t('Listen (plays sound)')}</span>
 		<div class="presets">
 			<button
 				class="btn"
@@ -381,7 +390,7 @@
 				data-listen="speaker"
 				aria-pressed={playing === 'speaker'}
 				onclick={() => listen('speaker')}
-				>{playing === 'speaker' ? 'Stop' : 'Listen at the speaker'}</button
+				>{playing === 'speaker' ? t('Stop') : t('Listen at the speaker')}</button
 			>
 			<button
 				class="btn"
@@ -389,15 +398,15 @@
 				data-listen="raw"
 				aria-pressed={playing === 'raw'}
 				onclick={() => listen('raw')}
-				>{playing === 'raw' ? 'Stop' : 'Listen before the filter'}</button
+				>{playing === 'raw' ? t('Stop') : t('Listen before the filter')}</button
 			>
 		</div>
 		<p class="note">
-			The carrier is slowed into earshot; real amplifiers switch at hundreds of kilohertz.
+			{t('The carrier is slowed into earshot; real amplifiers switch at hundreds of kilohertz.')}
 		</p>
 	</div>
 	<div class="deck-group">
-		<FaultSwitch label="Output filter capacitor open" bind:active={filterOpen} />
+		<FaultSwitch label={t('Output filter capacitor open')} bind:active={filterOpen} />
 	</div>
 {/snippet}
 

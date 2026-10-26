@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href, locale } = useLanguage();
+
 	import type { PageProps } from './$types';
 	import Seo from '#lib/components/Seo.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
@@ -88,8 +91,8 @@
 			headline: `${data.meta.title} — schemd v${data.version}`,
 			description: data.meta.summary,
 			version: data.version,
-			inLanguage: 'en-US',
-			url: `${page.url.origin}/docs/${data.version}/${data.meta.slug}`,
+			inLanguage: data.contentLocale === 'es' ? 'es' : 'en',
+			url: `${page.url.origin}${href(`/docs/${data.version}/${data.meta.slug}`)}`,
 			author: { '@type': 'Person', name: 'John Owolabi Idogun' },
 			about: { '@type': 'SoftwareApplication', name: '@schemd/core' }
 		})
@@ -97,29 +100,38 @@
 </script>
 
 <Seo
-	title={`${data.meta.title} · schemd v${data.version} docs`}
-	description={data.meta.summary}
+	title={t('{0} · schemd v{1} docs', [data.meta.title, data.version])}
+	description={t(data.meta.summary)}
 	canonicalPath={`/docs/${data.version}/${data.meta.slug}`}
 	type="article"
 	{jsonLd}
 />
+{#if locale() === 'es' && data.contentLocale === 'en'}
+	<p class="page historical-notice">
+		{t('This documentation is available in English. Spanish documentation starts at version 1.2.')}
+	</p>
+{/if}
 
 <div class="docs-shell" class:nav-collapsed={ui.docsNavCollapsed}>
 	<!-- LEFT: the contents -->
-	<aside class="doc-nav" class:mobile-open={mobileIndexOpen} aria-label="Documentation index">
+	<aside class="doc-nav" class:mobile-open={mobileIndexOpen} aria-label={t('Documentation index')}>
 		<div class="doc-nav-head">
 			<div class="nav-heading">
-				<p class="nav-title">Contents</p>
-				<p class="nav-meta">Documentation {data.version}, {data.manifest.length} pages</p>
+				<p class="nav-title">{t('Contents')}</p>
+				<p class="nav-meta">
+					{t('Documentation')}
+					{t(data.version)}, {t(data.manifest.length)}
+					{t('pages')}
+				</p>
 			</div>
 			<button
 				type="button"
 				class="collapse-toggle"
 				onclick={() => setDocsNavCollapsed(true)}
 				aria-expanded="true"
-				aria-label="Hide contents"
+				aria-label={t('Hide contents')}
 			>
-				Hide
+				{t('Hide')}
 			</button>
 			<button
 				type="button"
@@ -127,36 +139,36 @@
 				onclick={() => (mobileIndexOpen = !mobileIndexOpen)}
 				aria-expanded={mobileIndexOpen}
 			>
-				<span>Contents: {data.meta.label}</span>
-				<span aria-hidden="true">{mobileIndexOpen ? '−' : '+'}</span>
+				<span>{t('Contents:')} {t(data.meta.label)}</span>
+				<span aria-hidden="true">{mobileIndexOpen ? t('−') : t('+')}</span>
 			</button>
 		</div>
 
 		<nav class="doc-nav-tree">
 			{#each groups as { group, pages } (group)}
 				<details open>
-					<summary>{group}</summary>
+					<summary>{t(group)}</summary>
 					<ul>
 						{#each pages as pageMeta (pageMeta.slug)}
 							<li>
 								<a
-									href={`/docs/${data.version}/${pageMeta.slug}`}
+									href={href(`/docs/${data.version}/${pageMeta.slug}`)}
 									aria-current={pageMeta.slug === data.meta.slug ? 'page' : undefined}
 									onclick={() => (mobileIndexOpen = false)}
 								>
-									{pageMeta.label}
+									{t(pageMeta.label)}
 								</a>
 								{#if pageMeta.slug === data.meta.slug && data.doc.sections.length > 0}
 									<ol class="section-tree">
 										{#each data.doc.sections as section, index (section.id)}
 											<li>
 												<a
-													href={`#${section.id}`}
+													href={href(`#${section.id}`)}
 													class:active={section.id === activeSectionId}
 													onclick={() => (mobileIndexOpen = false)}
 												>
-													<span class="snum">{index + 1}</span>
-													{section.title}
+													<span class="snum">{t(index + 1)}</span>
+													{t(section.title)}
 												</a>
 											</li>
 										{/each}
@@ -171,41 +183,41 @@
 	</aside>
 
 	<!-- CENTER: the reading column -->
-	<article class="doc-article" bind:this={prose}>
+	<article lang={data.contentLocale} class="doc-article" bind:this={prose}>
 		{#if ui.docsNavCollapsed}
 			<button
 				type="button"
 				class="show-contents"
 				onclick={() => setDocsNavCollapsed(false)}
-				aria-expanded="false">Show contents</button
+				aria-expanded="false">{t('Show contents')}</button
 			>
 		{/if}
 		<header class="doc-header">
-			<p class="doc-group">{data.meta.group}</p>
-			<h1>{data.meta.title}</h1>
+			<p class="doc-group">{t(data.meta.group)}</p>
+			<h1>{t(data.meta.title)}</h1>
 			{#if data.meta.slug === 'overview'}
 				<Pronounce />
 			{/if}
-			<p class="doc-summary">{data.meta.summary}</p>
+			<p class="doc-summary">{t(data.meta.summary)}</p>
 		</header>
 		<div class="prose">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -- rendered from the docs corpus -->
 			{@html data.doc.html}
 		</div>
 
-		<nav class="doc-pager" aria-label="Adjacent documentation">
+		<nav class="doc-pager" aria-label={t('Adjacent documentation')}>
 			{#if prevDoc}
-				<a class="pager-link prev" href={`/docs/${data.version}/${prevDoc.slug}`}>
-					<span class="pager-dir">Previous</span>
-					<span class="pager-title">{prevDoc.title}</span>
+				<a class="pager-link prev" href={href(`/docs/${data.version}/${prevDoc.slug}`)}>
+					<span class="pager-dir">{t('Previous')}</span>
+					<span class="pager-title">{t(prevDoc.title)}</span>
 				</a>
 			{:else}
 				<span></span>
 			{/if}
 			{#if nextDoc}
-				<a class="pager-link next" href={`/docs/${data.version}/${nextDoc.slug}`}>
-					<span class="pager-dir">Next</span>
-					<span class="pager-title">{nextDoc.title}</span>
+				<a class="pager-link next" href={href(`/docs/${data.version}/${nextDoc.slug}`)}>
+					<span class="pager-dir">{t('Next')}</span>
+					<span class="pager-title">{t(nextDoc.title)}</span>
 				</a>
 			{/if}
 		</nav>
@@ -215,7 +227,7 @@
 	<aside
 		class="doc-rail"
 		class:open={railOpenMobile}
-		aria-label="Compiled example for the active section"
+		aria-label={t('Compiled example for the active section')}
 	>
 		{#if activeExample}
 			{#key activeExample.id}
@@ -226,8 +238,8 @@
 							{@html activeExample.svg}
 						</div>
 						<figcaption class="rail-caption">
-							<b>Figure {figureNumber}.</b>
-							{activeExample.title}
+							<b>{t('Figure')} {t(figureNumber)}.</b>
+							{t(activeExample.title)}
 						</figcaption>
 					</figure>
 					<!-- Keyboard focus exposes overflowing source to Safari users. -->
@@ -236,19 +248,21 @@
 						class="codeblock rail-src"
 						tabindex="0"
 						role="region"
-						aria-label="Scrollable active example source"><code
+						aria-label={t('Scrollable active example source')}><code
 							><!-- eslint-disable-next-line svelte/no-at-html-tags -- tokenizer output -->{@html activeExample.sourceHtml}</code
 						></pre>
 					<a
 						class="btn rail-open"
-						href={`/playground/${data.version}?code=${encodeWorkspaceState(activeExample.source)}`}
+						href={href(
+							`/playground/${data.version}?code=${encodeWorkspaceState(activeExample.source)}`
+						)}
 					>
-						Open in playground
+						{t('Open in playground')}
 					</a>
 				</div>
 			{/key}
 		{:else}
-			<p class="rail-empty">This page has no figures.</p>
+			<p class="rail-empty">{t('This page has no figures.')}</p>
 		{/if}
 	</aside>
 
@@ -259,7 +273,7 @@
 		aria-expanded={railOpenMobile}
 		onclick={() => (railOpenMobile = !railOpenMobile)}
 	>
-		{railOpenMobile ? 'Hide compiled example' : 'Show compiled example'}
+		{railOpenMobile ? t('Hide compiled example') : t('Show compiled example')}
 	</button>
 </div>
 

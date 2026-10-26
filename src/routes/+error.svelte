@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href } = useLanguage();
+
 	/**
 	 * Ultra-premium error surface, rendered as a compiler diagnostic.
 	 *
@@ -60,7 +63,7 @@
 		const match = links.find((link) => link.key === event.key.toLowerCase());
 		if (match) {
 			event.preventDefault();
-			void goto(match.href);
+			void goto(href(match.href));
 		}
 	}
 </script>
@@ -68,7 +71,7 @@
 <svelte:window onkeydown={onKey} />
 
 <svelte:head>
-	<title>{status} · {band.headline} · schemd</title>
+	<title>{t(status)} · {t(band.headline)} {t('· schemd')}</title>
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
@@ -80,7 +83,7 @@
 			class="motif"
 			viewBox="0 0 320 120"
 			role="img"
-			aria-label="A schematic trace ending at an open, unconnected terminal"
+			aria-label={t('A schematic trace ending at an open, unconnected terminal')}
 		>
 			<defs>
 				<pattern id="fault-grid" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -104,15 +107,15 @@
 			<path class="motif-stub" d="M233 60 H300" stroke-dasharray="4 6" />
 		</svg>
 
-		<p class="microlabel">Error {status}: {band.code}</p>
+		<p class="microlabel">{t('Error')} {t(status)}: {t(band.code)}</p>
 		<h1 id="fault-title">
-			<span class="status-code">{status}</span>
-			<span class="headline">{band.headline}</span>
+			<span class="status-code">{t(status)}</span>
+			<span class="headline">{t(band.headline)}</span>
 		</h1>
-		<p class="note">{band.note}</p>
+		<p class="note">{t(band.note)}</p>
 
 		<!-- The compiler's own diagnostic idiom, applied to the failed request. -->
-		<figure class="diagnostic" aria-label="Compiler-style diagnostic">
+		<figure class="diagnostic" aria-label={t('Compiler-style diagnostic')}>
 			<pre><code
 					><span class="d-head">schemd: {band.code.toLowerCase()}: {detail}</span>
 <span class="d-gutter">  request │</span> <span class="d-verb">GET</span> {path}
@@ -122,11 +125,11 @@
 				></pre>
 		</figure>
 
-		<nav class="actions" aria-label="Recover">
+		<nav class="actions" aria-label={t('Recover')}>
 			{#each links as link, index (link.href)}
-				<a class="action" class:primary={index === 0} href={link.href}>
-					<span>{link.label}</span>
-					<kbd>{link.kbd}</kbd>
+				<a class="action" class:primary={index === 0} href={href(link.href)}>
+					<span>{t(link.label)}</span>
+					<kbd>{t(link.kbd)}</kbd>
 				</a>
 			{/each}
 		</nav>

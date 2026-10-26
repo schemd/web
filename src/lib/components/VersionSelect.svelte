@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href } = useLanguage();
+
 	/**
 	 * Global version switcher.
 	 *
@@ -17,6 +20,7 @@
 	 * place with the query and hash preserved, and a docs line switch keeps the
 	 * current page when the target line publishes it.
 	 */
+	import { unlocalized } from '#lib/i18n/index.ts';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { browser } from '$app/env';
@@ -35,7 +39,7 @@
 	let { versions, latest, docLines, docSlugs }: Props = $props();
 
 	/** True while the reader is inside the line-versioned documentation. */
-	const inDocs = $derived(page.url.pathname.startsWith('/docs/'));
+	const inDocs = $derived(unlocalized(page.url.pathname).startsWith('/docs/'));
 
 	const options = $derived(inDocs ? docLines : versions);
 
@@ -86,21 +90,21 @@
 	});
 
 	function onChange(event: Event & { currentTarget: HTMLSelectElement }): void {
-		void goto(pathFor(event.currentTarget.value));
+		void goto(href(pathFor(event.currentTarget.value)));
 	}
 </script>
 
 <label class="version-select">
-	<span>{inDocs ? 'Docs' : 'Release'}</span>
+	<span>{inDocs ? t('Docs') : t('Release')}</span>
 	<select
 		bind:this={control}
 		value={current}
 		onchange={onChange}
-		aria-label="Documentation version"
+		aria-label={t('Documentation version')}
 	>
 		{#each options as version (version)}
 			<option value={version}>
-				{version}{!inDocs && version === latest ? ' (latest)' : ''}
+				{t(version)}{!inDocs && version === latest ? t(' (latest)') : t('')}
 			</option>
 		{/each}
 	</select>

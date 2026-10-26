@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Values tuned on the parts themselves.
 	 *
@@ -83,18 +86,19 @@
 			onpointerenter={() => tune(control, true)}
 			onpointerleave={() => tune(control, false)}
 		>
-			<span class="tag-label">{control.label}</span>
-			<span class="tag-value">{control.display}</span>
+			<span class="tag-label">{t(control.label)}</span>
+			<span class="tag-value">{t(control.display)}</span>
 			<span class="tag-track" aria-hidden="true"><i style={`width:${percent(control)}%`}></i></span>
 			<input
 				id={control.id}
+				data-lab-control={control.id}
 				type="range"
 				min={control.min}
 				max={control.max}
 				step={control.step}
 				value={control.value}
-				aria-label={control.ariaLabel}
-				aria-valuetext={control.display}
+				aria-label={t(control.ariaLabel)}
+				aria-valuetext={t(control.display)}
 				oninput={(event) => control.set(Number(event.currentTarget.value))}
 				onchange={control.change}
 				onfocus={() => tune(control, true)}

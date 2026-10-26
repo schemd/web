@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href } = useLanguage();
+
 	import type { PageProps } from './$types';
 	import Seo from '#lib/components/Seo.svelte';
 	import { encodeWorkspaceState } from '#lib/state-uri.ts';
@@ -27,23 +30,29 @@
 </script>
 
 <Seo
-	title={`${sheet.kind}: schemd component datasheet`}
-	description={`The schemd ${sheet.kind} (${sheet.familyLabel.toLowerCase()}): ${sheet.options.length} options with their ranges and defaults, ${sheet.pins.length} pins, and every variant drawn by the compiler.`}
+	title={t('{0}: schemd component datasheet', [sheet.kind])}
+	description={t(
+		'The schemd {0} ({1}): {2} options with their ranges and defaults, {3} pins, and every variant drawn by the compiler.',
+		[sheet.kind, t(sheet.familyLabel.toLowerCase()), sheet.options.length, sheet.pins.length]
+	)}
 	canonicalPath={`/components/${sheet.kind}`}
 />
 
 <article class="page sheet">
 	<header class="sheet-title">
-		<p class="crumb"><a href="/components">Components</a>, {sheet.familyLabel.toLowerCase()}</p>
+		<p class="crumb">
+			<a href={href('/components')}>{t('Components')}</a>, {t(sheet.familyLabel.toLowerCase())}
+		</p>
 		<h1><code>{sheet.kind}</code></h1>
 		<p class="summary">
-			Every option, pin and variant of <code>{sheet.kind}</code>, as release {data.latest} of the compiler
-			states them.
+			{t('Every option, pin and variant of')} <code>{sheet.kind}</code>{t(', as release')}
+			{t(data.latest)}
+			{t('of the compiler states them.')}
 		</p>
 	</header>
 
 	<section aria-labelledby="pins">
-		<h2 id="pins"><span class="num">{number('pins')}</span> Pins</h2>
+		<h2 id="pins"><span class="num">{t(number('pins'))}</span> {t('Pins')}</h2>
 		<div class="pins">
 			<figure class="figure">
 				<div class="figure-body specimen">
@@ -51,34 +60,36 @@
 					{@html sheet.specimen.svg}
 				</div>
 				<figcaption>
-					<b>Figure 1.</b> <code>{sheet.kind}</code> with its default options, pins named.
+					<b>{t('Figure 1.')}</b> <code>{sheet.kind}</code>
+					{t('with its default options, pins named.')}
 				</figcaption>
 			</figure>
 			<div>
-				<p class="table-caption">Table 1. Pin functions</p>
+				<p class="table-caption">{t('Table 1. Pin functions')}</p>
 				{#if hasPins}
 					<table class="spec">
 						<thead>
 							<tr>
-								<th scope="col">Pin</th>
-								<th scope="col">Side</th>
+								<th scope="col">{t('Pin')}</th>
+								<th scope="col">{t('Side')}</th>
 							</tr>
 						</thead>
 						<tbody>
 							{#each sheet.pins as pin (pin.name)}
 								<tr>
 									<td><code>{pin.name}</code></td>
-									<td>{pin.side}</td>
+									<td>{t(pin.side)}</td>
 								</tr>
 							{/each}
 						</tbody>
 					</table>
 					<p class="note">
-						A wire names a pin as <code>ID.pin</code>. Rotating the part moves the pins with it;
-						their names stay the same.
+						{t('A wire names a pin as')} <code>ID.pin</code>{t(
+							'. Rotating the part moves the pins with it; their names stay the same.'
+						)}
 					</p>
 				{:else}
-					<p class="note">This kind has no pins; it is drawn but not wired.</p>
+					<p class="note">{t('This kind has no pins; it is drawn but not wired.')}</p>
 				{/if}
 			</div>
 		</div>
@@ -86,18 +97,19 @@
 
 	{#if hasOptions}
 		<section aria-labelledby="options">
-			<h2 id="options"><span class="num">{number('options')}</span> Options</h2>
+			<h2 id="options"><span class="num">{t(number('options'))}</span> {t('Options')}</h2>
 			<p>
-				Options go in square brackets after the colour, as <code>name=value</code>. Any option not
-				listed here is an error.
+				{t('Options go in square brackets after the colour, as')} <code>name=value</code>{t(
+					'. Any option not listed here is an error.'
+				)}
 			</p>
-			<p class="table-caption">Table 2. Options</p>
+			<p class="table-caption">{t('Table 2. Options')}</p>
 			<table class="spec options">
 				<thead>
 					<tr>
-						<th scope="col">Option</th>
-						<th scope="col">Accepts</th>
-						<th scope="col">Default</th>
+						<th scope="col">{t('Option')}</th>
+						<th scope="col">{t('Accepts')}</th>
+						<th scope="col">{t('Default')}</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -105,21 +117,22 @@
 						<tr>
 							<td><code>{option.name}</code></td>
 							<td>
-								{option.accepts}{#if option.values.length > 1}:{/if}
+								{t(option.accepts)}{#if option.values.length > 1}:{/if}
 								{#if option.values.length > 0}
 									<span class:values={option.values.length > 1}>
 										{#each option.values as value, index (value)}<code>{value}</code>{index <
 											option.values.length - 1
-												? ', '
-												: ''}{/each}
+												? t(', ')
+												: t('')}{/each}
 									</span>
 								{/if}
 							</td>
 							<td>
-								{#if option.defaultValue !== undefined}<code>{option.defaultValue}</code
-									>{:else}None{/if}
+								{#if option.defaultValue !== undefined}<code>{option.defaultValue}</code>{:else}{t(
+										'None'
+									)}{/if}
 								{#each option.defaultsByType as extra (extra)}
-									<span class="extra">{extra}</span>
+									<span class="extra">{t(extra)}</span>
 								{/each}
 							</td>
 						</tr>
@@ -128,16 +141,19 @@
 			</table>
 			{#if sheet.requiresOneOf.length > 0}
 				<p class="note">
-					At least one of
+					{t('At least one of')}
 					{#each sheet.requiresOneOf as name, index (name)}<code>{name}</code>{index <
 						sheet.requiresOneOf.length - 1
-							? ', '
-							: ''}{/each} must be written.
+							? t(', ')
+							: t('')}{/each}
+					{t('must be written.')}
 				</p>
 			{/if}
 			{#each sheet.conflicts as [first, second] (first + second)}
 				<p class="note">
-					<code>{first}</code> and <code>{second}</code> cannot be written together.
+					<code>{first}</code>
+					{t('and')} <code>{second}</code>
+					{t('cannot be written together.')}
 				</p>
 			{/each}
 		</section>
@@ -145,10 +161,9 @@
 
 	{#if variantFigures.length > 0}
 		<section aria-labelledby="variants">
-			<h2 id="variants"><span class="num">{number('variants')}</span> Variants</h2>
+			<h2 id="variants"><span class="num">{t(number('variants'))}</span> {t('Variants')}</h2>
 			<p>
-				<code>{sheet.variants?.option}</code> changes the symbol and keeps the pins. Each value is drawn
-				below.
+				{t('Pin names depend on the selected variant. Each drawing labels its own pins.')}
 			</p>
 			<div class="variants">
 				{#each variantFigures as variant, index (variant.value)}
@@ -158,8 +173,13 @@
 							{@html variant.svg}
 						</div>
 						<figcaption>
-							<b>Figure {index + 2}.</b>
+							<b>{t('Figure')} {t(index + 2)}.</b>
 							<code>{sheet.variants?.option}={variant.value}</code>
+							<p class="variant-pins">
+								{#each variant.pins as pin, pinIndex (pin.name)}<code>{pin.name}</code> ({t(
+										pin.side
+									)}){pinIndex < variant.pins.length - 1 ? t(', ') : t('')}{/each}
+							</p>
 						</figcaption>
 					</figure>
 				{/each}
@@ -168,23 +188,24 @@
 	{/if}
 
 	<section aria-labelledby="writing">
-		<h2 id="writing"><span class="num">{number('writing')}</span> Writing one</h2>
+		<h2 id="writing"><span class="num">{t(number('writing'))}</span> {t('Writing one')}</h2>
 		<pre class="codeblock"><code>{sheet.specimen.source}</code></pre>
 		<div class="actions">
-			<a class="btn btn-solid" href={playground}>Open in playground</a>
+			<a class="btn btn-solid" href={href(playground)}>{t('Open in playground')}</a>
 		</div>
 	</section>
 
-	<nav class="pager" aria-label="Adjacent components">
+	<nav class="pager" aria-label={t('Adjacent components')}>
 		{#if data.previous}
-			<a href={`/components/${data.previous}`}><span>Previous</span> <code>{data.previous}</code></a
+			<a href={href(`/components/${data.previous}`)}
+				><span>{t('Previous')}</span> <code>{data.previous}</code></a
 			>
 		{:else}
 			<span></span>
 		{/if}
 		{#if data.next}
-			<a class="next" href={`/components/${data.next}`}
-				><span>Next</span> <code>{data.next}</code></a
+			<a class="next" href={href(`/components/${data.next}`)}
+				><span>{t('Next')}</span> <code>{data.next}</code></a
 			>
 		{/if}
 	</nav>

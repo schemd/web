@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Sigma-delta converter on the v2 bench.
 	 *
@@ -189,7 +192,7 @@
 	const revision = $derived(`${amplitude}:${logOsr}:${order}:${leaky}:${probeA}:${probeB}`);
 </script>
 
-<Bench title="Sigma-delta converter" tone="analog" {status} {stage} {dock} {deck} />
+<Bench title={t('Sigma-delta converter')} tone="analog" status={t(status)} {stage} {dock} {deck} />
 
 {#snippet stage()}
 	<div class="sd-canvas">
@@ -197,7 +200,9 @@
 			class="sim-stage sd-stage schemd-frame"
 			bind:this={host}
 			role="group"
-			aria-label="Sigma-delta modulator: summing node, integrator, clocked one-bit quantizer, feedback DAC, and decimator. Drag the tags on the input and the decimator; click a wire to probe it."
+			aria-label={t(
+				'Sigma-delta modulator: summing node, integrator, clocked one-bit quantizer, feedback DAC, and decimator. Drag the tags on the input and the decimator; click a wire to probe it.'
+			)}
 			data-model-stage={timeline.step}
 		>
 			{@html svg}
@@ -208,12 +213,15 @@
 {/snippet}
 
 {#snippet dock()}
-	<section class="dock-block" aria-label="Oscilloscope">
-		<p class="microlabel">Oscilloscope</p>
+	<section class="dock-block" aria-label={t('Oscilloscope')}>
+		<p class="microlabel">{t('Oscilloscope')}</p>
 		<Scope {channels} running={false} timebase={`one input period, ${PERIOD} samples`} {revision} />
 	</section>
 	<Plot
-		label={`Bitstream spectrum: in-band SNR ${snr.toFixed(1)} decibels over ${Math.floor(bandEdge)} bins`}
+		label={t('Bitstream spectrum: in-band SNR {0} decibels over {1} bins', [
+			snr.toFixed(1),
+			Math.floor(bandEdge)
+		])}
 		series={[{ id: 'spectrum', values: shaped, tone: 'cyan' }]}
 		min={-140}
 		max={5}
@@ -222,47 +230,47 @@
 		xStart="f_s / N"
 		xEnd="f_s / 2"
 		height={140}
-		caption="bitstream spectrum, dB, log frequency"
+		caption={t('bitstream spectrum, dB, log frequency')}
 	/>
-	<section class="dock-block" aria-label="Readouts">
-		<p class="microlabel">Readouts</p>
+	<section class="dock-block" aria-label={t('Readouts')}>
+		<p class="microlabel">{t('Readouts')}</p>
 		<div class="metrics">
 			<div>
-				<span>in-band SNR</span>
+				<span>{t('in-band SNR')}</span>
 				<strong
 					><LiveMath
 						id="sd.readout.snr"
-						label={`in-band signal to noise ${snr.toFixed(1)} decibels`}
+						label={t('in-band signal to noise {0} decibels', [snr.toFixed(1)])}
 						values={{ value: snr.toFixed(1) }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>Resolution</span>
+				<span>{t('Resolution')}</span>
 				<strong
 					><LiveMath
 						id="sd.readout.enob"
-						label={`${enob.toFixed(1)} effective bits`}
+						label={t('{0} effective bits', [enob.toFixed(1)])}
 						values={{ value: enob.toFixed(1) }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>Signal band</span>
+				<span>{t('Signal band')}</span>
 				<strong
 					><LiveMath
 						id="sd.readout.band"
-						label={`signal band up to f s over ${2 * osr}`}
+						label={t('signal band up to f s over {0}', [2 * osr])}
 						values={{ value: String(2 * osr) }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>Density</span>
+				<span>{t('Density')}</span>
 				<strong
 					><LiveMath
 						id="sd.readout.density"
-						label={`${(density * 100).toFixed(0)} percent ones`}
+						label={t('{0} percent ones', [(density * 100).toFixed(0)])}
 						values={{ value: (density * 100).toFixed(0) }}
 					/></strong
 				>
@@ -274,21 +282,22 @@
 {#snippet deck()}
 	<ProbeSelects {nets} bind:a={probeA} bind:b={probeB} />
 	<div class="deck-group">
-		<span class="microlabel">Loop order</span>
-		<div class="presets" role="group" aria-label="Modulator order">
+		<span class="microlabel">{t('Loop order')}</span>
+		<div class="presets" role="group" aria-label={t('Modulator order')}>
 			{#each [1, 2] as const as value (value)}
 				<button
 					class="btn"
 					type="button"
 					data-order={value}
 					aria-pressed={order === value}
-					onclick={() => (order = value)}>{value === 1 ? 'First order' : 'Second order'}</button
+					onclick={() => (order = value)}
+					>{value === 1 ? t('First order') : t('Second order')}</button
 				>
 			{/each}
 		</div>
 	</div>
 	<div class="deck-group">
-		<FaultSwitch label="Integrator leaks charge" bind:active={leaky} />
+		<FaultSwitch label={t('Integrator leaks charge')} bind:active={leaky} />
 	</div>
 {/snippet}
 

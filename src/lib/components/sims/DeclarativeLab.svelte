@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * The manifest interpreter — one component that runs any declarative lab.
 	 *
@@ -163,20 +166,21 @@
 
 {#if !model}
 	<p class="lab-error" role="alert">
-		This laboratory names the model <code>{manifest.model}</code>, which is not registered. A
-		manifest can only select a model the application already ships.
+		{t('This laboratory names the model')} <code>{manifest.model}</code>{t(
+			', which is not registered. A manifest can only select a model the application already ships.'
+		)}
 	</p>
 {:else}
 	<Bench
-		title={manifest.title}
+		title={t(manifest.title)}
 		tone="digital"
-		status={benchStatus}
-		hint="Change an input; step the timeline to watch the logic settle."
+		status={t(benchStatus)}
+		hint={t('Change an input; step the timeline to watch the logic settle.')}
 	>
 		{#snippet deck()}
 			{#each manifest.inputs as input (input.key)}
 				<label class="control">
-					<span class="microlabel">{sentenceCase(input.label)}</span>
+					<span class="microlabel">{t(sentenceCase(input.label))}</span>
 					{#if input.kind === 'toggle'}
 						<input
 							type="checkbox"
@@ -194,7 +198,7 @@
 							value={inputs[input.key]}
 							oninput={(event) => (inputs[input.key] = event.currentTarget.valueAsNumber)}
 						/>
-						<span class="readout">{present(inputs[input.key] ?? 0, 'fixed2', input.unit)}</span>
+						<span class="readout">{t(present(inputs[input.key] ?? 0, 'fixed2', input.unit))}</span>
 					{:else}
 						<input
 							type="number"
@@ -210,9 +214,9 @@
 
 			{#each manifest.faults as fault (fault.key)}
 				<div class="fault">
-					<FaultSwitch label={fault.label} bind:active={faults[fault.key]} />
+					<FaultSwitch label={t(fault.label)} bind:active={faults[fault.key]} />
 					{#if revealed[fault.key]}
-						<p class="reveal">{fault.reveal}</p>
+						<p class="reveal">{t(fault.reveal)}</p>
 					{/if}
 				</div>
 			{/each}
@@ -223,7 +227,7 @@
 				class="sim-stage schemd-frame net-optics"
 				bind:this={host}
 				role="group"
-				aria-label={`Interactive ${manifest.title} schematic`}
+				aria-label={t('Interactive {0} schematic', [manifest.title])}
 				data-model-stage={timeline.step}
 			>
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
@@ -234,15 +238,18 @@
 		{#snippet dock()}
 			{#each manifest.instruments as instrument (instrument.label)}
 				<section class="instrument">
-					<p class="microlabel">{sentenceCase(instrument.label)}</p>
+					<p class="microlabel">{t(sentenceCase(instrument.label))}</p>
 					{#if instrument.kind === 'readout'}
 						{@const value = readoutValue(instrument)}
 						<span
 							class="readout big"
 							data-lab-signal={instrument.signal}
-							aria-label={`${instrument.label} equals ${present(value, instrument.format, instrument.unit)}`}
+							aria-label={t('{0} equals {1}', [
+								instrument.label,
+								present(value, instrument.format, instrument.unit)
+							])}
 						>
-							{present(value, instrument.format, instrument.unit)}
+							{t(present(value, instrument.format, instrument.unit))}
 						</span>
 					{:else if instrument.kind === 'bits'}
 						<ol class="bits">
@@ -276,7 +283,7 @@
 			{/each}
 
 			{#each frame.notes ?? [] as note (note)}
-				<p class="note">{note}</p>
+				<p class="note">{t(note)}</p>
 			{/each}
 		{/snippet}
 	</Bench>

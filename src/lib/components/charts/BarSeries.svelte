@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href } = useLanguage();
+
 	/**
 	 * A horizontal magnitude chart, built from ordinary HTML rather than SVG.
 	 *
@@ -55,7 +58,7 @@
 	}
 </script>
 
-<div class="barseries" role="group" aria-label={summary}>
+<div class="barseries" role="group" aria-label={t(summary)}>
 	<ul class="bars">
 		{#each items as item (item.label)}
 			{@const width = share(item.value)}
@@ -71,13 +74,13 @@
 			>
 				<svelte:element
 					this={item.href ? 'a' : 'div'}
-					href={item.href}
+					href={item.href ? href(item.href) : undefined}
 					class="bar-hit"
 					tabindex={item.href ? undefined : 0}
 				>
 					<span class="bar-label">
-						<span class="bar-name">{item.label}</span>
-						{#if item.note}<span class="bar-note">{item.note}</span>{/if}
+						<span class="bar-name">{t(item.label)}</span>
+						{#if item.note}<span class="bar-note">{t(item.note)}</span>{/if}
 					</span>
 
 					<span class="bar-track" aria-hidden="true">
@@ -85,9 +88,9 @@
 					</span>
 
 					<span class="bar-value">
-						{format(item.value)}
+						{t(format(item.value))}
 						{#if tone !== 'default'}
-							<span class="bar-tone microlabel">{tone === 'danger' ? 'error' : tone}</span>
+							<span class="bar-tone microlabel">{tone === 'danger' ? t('error') : t(tone)}</span>
 						{/if}
 					</span>
 				</svelte:element>
@@ -96,23 +99,23 @@
 	</ul>
 
 	<details class="table-view">
-		<summary class="microlabel">View as table</summary>
+		<summary class="microlabel">{t('View as table')}</summary>
 		<div class="table-scroll">
 			<table>
-				<caption class="visually-hidden">{summary}</caption>
+				<caption class="visually-hidden">{t(summary)}</caption>
 				<thead>
 					<tr>
-						<th scope="col">Category</th>
-						<th scope="col">{unit}</th>
-						<th scope="col">Share</th>
+						<th scope="col">{t('Category')}</th>
+						<th scope="col">{t(unit)}</th>
+						<th scope="col">{t('Share')}</th>
 					</tr>
 				</thead>
 				<tbody>
 					{#each items as item (item.label)}
 						<tr>
-							<th scope="row">{item.label}</th>
-							<td>{format(item.value)}</td>
-							<td>{total === 0 ? '—' : `${((item.value / total) * 100).toFixed(1)}%`}</td>
+							<th scope="row">{t(item.label)}</th>
+							<td>{t(format(item.value))}</td>
+							<td>{total === 0 ? t('—') : t(`${((item.value / total) * 100).toFixed(1)}%`)}</td>
 						</tr>
 					{/each}
 				</tbody>

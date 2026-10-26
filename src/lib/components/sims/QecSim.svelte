@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * 3-qubit bit-flip quantum error-correction code.
 	 *
@@ -122,10 +125,12 @@
 </script>
 
 <Bench
-	title="Quantum error correction"
+	title={t('Quantum error correction')}
 	tone="quantum"
-	status={`syndrome ${syndromeLabel}, fidelity ${fidelity}`}
-	hint="Inject a bit flip, then step the timeline through syndrome, decode, and correct. Click a qubit or gate to read it."
+	status={t('syndrome {0}, fidelity {1}', [syndromeLabel, fidelity])}
+	hint={t(
+		'Inject a bit flip, then step the timeline through syndrome, decode, and correct. Click a qubit or gate to read it.'
+	)}
 	stage={canvas}
 	dock={instruments}
 	deck={controls}
@@ -134,10 +139,11 @@
 {#snippet controls()}
 	<div class="stack">
 		<p class="control-note">
-			Inject a bit-flip on any physical qubit. The two <strong>Parity</strong> checks name the
-			culprit without ever reading
-			<strong><LiveMath id="qec.amplitudes" label="alpha or beta" /></strong>. Then correct and read
-			the fidelity.
+			{t('Inject a bit-flip on any physical qubit. The two')} <strong>{t('Parity')}</strong>
+			{t('checks name the culprit without ever reading')}
+			<strong><LiveMath id="qec.amplitudes" label={t('alpha or beta')} /></strong>{t(
+				'. Then correct and read the fidelity.'
+			)}
 		</p>
 		<div class="inject-row">
 			{#each [0, 1, 2] as qubit (qubit)}
@@ -148,18 +154,23 @@
 					class:flipped={error[qubit] === 1}
 					onclick={() => inject(qubit)}
 				>
-					<LiveMath id="qec.error" label={`X on qubit ${qubit}`} values={{ qubit, state: '' }} />
+					<LiveMath
+						id="qec.error"
+						label={t('X on qubit {0}', [qubit])}
+						values={{ qubit, state: '' }}
+					/>
 				</button>
 			{/each}
 		</div>
 		<div class="button-row">
-			<button type="button" class="btn btn-solid" onclick={correct}>extract & correct</button>
-			<button type="button" class="btn" onclick={reset}>reset</button>
+			<button type="button" class="btn btn-solid" onclick={correct}>{t('extract & correct')}</button
+			>
+			<button type="button" class="btn" onclick={reset}>{t('reset')}</button>
 		</div>
 	</div>
 	<div class="switchboard">
-		<p class="microlabel">Fault injection</p>
-		<FaultSwitch label="Syndrome decoder miswired" bind:active={faults.miswiredDecoder} />
+		<p class="microlabel">{t('Fault injection')}</p>
+		<FaultSwitch label={t('Syndrome decoder miswired')} bind:active={faults.miswiredDecoder} />
 	</div>
 {/snippet}
 
@@ -169,7 +180,7 @@
 		bind:this={host}
 		role="group"
 		data-model-stage={timeline.step}
-		aria-label="Quantum error-correction model"
+		aria-label={t('Quantum error-correction model')}
 	>
 		{@html svg}
 	</div>
@@ -177,37 +188,45 @@
 
 {#snippet instruments()}
 	<p class="visually-hidden" aria-live="polite" aria-atomic="true">
-		Error-correction decoder {faults.miswiredDecoder ? 'degraded: wiring fault active' : 'nominal'};
-		syndrome {syndromeLabel}; {corrected
-			? `correction applied, residual pattern ${residual.join('')}, logical fidelity ${fidelity}`
+		{t('Error-correction decoder')}
+		{faults.miswiredDecoder ? t('degraded: wiring fault active') : t('nominal')}{t('; syndrome')}
+		{t(syndromeLabel)}; {corrected
+			? t('correction applied, residual pattern {0}, logical fidelity {1}', [
+					residual.join(''),
+					fidelity
+				])
 			: accused === undefined
-				? 'no correction requested'
-				: `decoder accuses qubit ${accused}`}.
+				? t('no correction requested')
+				: t('decoder accuses qubit {0}', [accused])}.
 	</p>
-	<div class="qubits" aria-label="Physical qubit states">
+	<div class="qubits" aria-label={t('Physical qubit states')}>
 		{#each visibleError as bit, index (index)}
 			<div class="qwire" class:flipped={bit === 1 && !corrected}>
 				<span class="microlabel"
-					><LiveMath id="qec.qubit" label={`qubit ${index}`} values={{ value: index }} /></span
+					><LiveMath
+						id="qec.qubit"
+						label={t('qubit {0}', [index])}
+						values={{ value: index }}
+					/></span
 				>
-				<span class="qstate">{bit === 1 && !corrected ? 'X' : '·'}</span>
+				<span class="qstate">{bit === 1 && !corrected ? t('X') : t('·')}</span>
 			</div>
 		{/each}
 	</div>
 	<div class="syndrome">
-		<span class="microlabel">Syndrome</span>
+		<span class="microlabel">{t('Syndrome')}</span>
 		<div class="syn-bits">
 			<span class="syn" class:hot={syndrome[0] === 1}
 				><LiveMath
 					id="qec.syndrome.bit"
-					label={`syndrome bit zero ${syndrome[0]}`}
+					label={t('syndrome bit zero {0}', [syndrome[0]])}
 					values={{ index: 0, value: syndrome[0] }}
 				/></span
 			>
 			<span class="syn" class:hot={syndrome[1] === 1}
 				><LiveMath
 					id="qec.syndrome.bit"
-					label={`syndrome bit one ${syndrome[1]}`}
+					label={t('syndrome bit one {0}', [syndrome[1]])}
 					values={{ index: 1, value: syndrome[1] }}
 				/></span
 			>
@@ -215,7 +234,7 @@
 		<span class="decode"
 			><LiveMath
 				id="qec.decode"
-				label={accused === undefined ? 'no error detected' : `flip qubit ${accused}`}
+				label={accused === undefined ? t('no error detected') : t('flip qubit {0}', [accused])}
 				values={{
 					state: accused === undefined ? 'no error detected' : 'correction',
 					qubit: accused ?? '—'
@@ -228,12 +247,14 @@
 		class:ok={corrected && fidelity === 1}
 		class:bad={corrected && fidelity === 0}
 	>
-		<span class="microlabel">Logical fidelity</span>
+		<span class="microlabel">{t('Logical fidelity')}</span>
 		<div class="fid-bar"><span style={`width: ${fidelity * 100}%`}></span></div>
 		<strong
 			><LiveMath
 				id="qec.fidelity"
-				label={corrected ? `logical fidelity ${fidelity}` : 'logical fidelity unavailable'}
+				label={corrected
+					? t('logical fidelity {0}', [fidelity])
+					: t('logical fidelity unavailable')}
 				values={{ value: corrected ? fidelity.toFixed(0) : '—' }}
 			/></strong
 		>

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * UART link with a logic analyzer, on the v2 bench.
 	 *
@@ -131,13 +134,15 @@
 </script>
 
 <Bench
-	title="UART logic analyzer"
+	title={t('UART logic analyzer')}
 	tone="digital"
-	{status}
+	status={t(status)}
 	{stage}
 	{dock}
 	{deck}
-	hint="Drag the byte and the receiver-clock tags. The analyzer shows the line and every instant the receiver samples it."
+	hint={t(
+		'Drag the byte and the receiver-clock tags. The analyzer shows the line and every instant the receiver samples it.'
+	)}
 />
 
 {#snippet stage()}
@@ -146,7 +151,9 @@
 			class="sim-stage uart-stage schemd-frame"
 			bind:this={host}
 			role="group"
-			aria-label="UART link: a byte and transmit clock into the transmitter, one serial line, and a receiver with its own baud clock. Drag the tags on the byte and the receiver clock."
+			aria-label={t(
+				'UART link: a byte and transmit clock into the transmitter, one serial line, and a receiver with its own baud clock. Drag the tags on the byte and the receiver clock.'
+			)}
 			data-model-stage={timeline.step}
 		>
 			{@html svg}
@@ -157,11 +164,20 @@
 
 {#snippet dock()}
 	<figure class="analyzer">
-		<p class="microlabel">Logic analyzer</p>
+		<p class="microlabel">{t('Logic analyzer')}</p>
 		<svg
 			viewBox={`0 0 ${WIDTH} 104`}
 			role="img"
-			aria-label={`Serial line for byte 0x${hex(byte)}: ${line.join('')} between idle ${idle}s. Receiver read ${decode.bits.join('')}; ${ticks.filter((tick) => !tick.good).length} samples landed in the wrong bit.`}
+			aria-label={t(
+				'Serial line for byte 0x{0}: {1} between idle {2}s. Receiver read {3}; {4} samples landed in the wrong bit.',
+				[
+					hex(byte),
+					line.join(''),
+					idle,
+					decode.bits.join(''),
+					ticks.filter((tick) => !tick.good).length
+				]
+			)}
 		>
 			{#each names as name, index (index)}
 				<rect
@@ -172,61 +188,66 @@
 					width={cell}
 					height="48"
 				/>
-				<text class="cell-name" x={cellX(index) + cell / 2} y="16">{name}</text>
+				<text class="cell-name" x={cellX(index) + cell / 2} y="16">{t(name)}</text>
 			{/each}
 			<path class="line" d={wave} />
 			{#each ticks as tick, index (index)}
 				<line class="tick" class:bad={!tick.good} x1={tick.x} x2={tick.x} y1="24" y2="70" />
 				<circle class="sample" class:bad={!tick.good} cx={tick.x} cy={levelY(tick.bit)} r="2.4" />
-				<text class="read" class:bad={!tick.good} x={tick.x} y="86">{tick.bit}</text>
+				<text class="read" class:bad={!tick.good} x={tick.x} y="86">{t(tick.bit)}</text>
 			{/each}
-			<text class="axis" x={LEFT} y="100">idle</text>
-			<text class="axis end" x={RIGHT} y="100">idle</text>
+			<text class="axis" x={LEFT} y="100">{t('idle')}</text>
+			<text class="axis end" x={RIGHT} y="100">{t('idle')}</text>
 		</svg>
 		<figcaption>
-			line level, <span class="good-key">●</span> sample inside its bit ·
-			<span class="bad-key">●</span> sample in a neighbour
+			{t('line level,')} <span class="good-key">●</span>
+			{t('sample inside its bit ·')}
+			<span class="bad-key">●</span>
+			{t('sample in a neighbour')}
 		</figcaption>
 	</figure>
-	<section class="dock-block" aria-label="Readouts">
-		<p class="microlabel">Readouts</p>
+	<section class="dock-block" aria-label={t('Readouts')}>
+		<p class="microlabel">{t('Readouts')}</p>
 		<div class="metrics">
 			<div>
-				<span>sent</span>
+				<span>{t('sent')}</span>
 				<strong
 					><LiveMath
 						id="uart.readout.tx"
-						label={`sent ${binary(byte)}, hex ${hex(byte)}`}
+						label={t('sent {0}, hex {1}', [binary(byte), hex(byte)])}
 						values={{ bits: binary(byte), hex: hex(byte) }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>Received</span>
+				<span>{t('Received')}</span>
 				<strong
 					><LiveMath
 						id="uart.readout.rx"
-						label={`received ${binary(decode.byte)}, hex ${hex(decode.byte)}`}
+						label={t('received {0}, hex {1}', [binary(decode.byte), hex(decode.byte)])}
 						values={{ bits: binary(decode.byte), hex: hex(decode.byte) }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>Stop-bit drift</span>
+				<span>{t('Stop-bit drift')}</span>
 				<strong
 					><LiveMath
 						id="uart.readout.drift"
-						label={`last sample off by ${signed(drift)} bit`}
+						label={t('last sample off by {0} bit', [signed(drift)])}
 						values={{ value: signed(drift) }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>flags</span>
+				<span>{t('flags')}</span>
 				<strong
 					><LiveMath
 						id="uart.readout.flags"
-						label={`framing ${decode.framingError ? 'error' : 'ok'}, parity ${parity === 'none' ? 'off' : decode.parityError ? 'error' : 'ok'}`}
+						label={t('framing {0}, parity {1}', [
+							decode.framingError ? 'error' : 'ok',
+							parity === 'none' ? 'off' : decode.parityError ? 'error' : 'ok'
+						])}
 						values={{
 							framing: decode.framingError ? 'error' : 'ok',
 							parity: parity === 'none' ? 'off' : decode.parityError ? 'error' : 'ok'
@@ -240,32 +261,32 @@
 
 {#snippet deck()}
 	<div class="deck-group">
-		<span class="microlabel">Parity</span>
-		<div class="presets" role="group" aria-label="Parity">
+		<span class="microlabel">{t('Parity')}</span>
+		<div class="presets" role="group" aria-label={t('Parity')}>
 			{#each ['none', 'even', 'odd'] as const as value (value)}
 				<button
 					class="btn"
 					type="button"
 					data-parity={value}
 					aria-pressed={parity === value}
-					onclick={() => (parity = value)}>{value}</button
+					onclick={() => (parity = value)}>{t(value)}</button
 				>
 			{/each}
 		</div>
 	</div>
 	<div class="deck-group">
-		<span class="microlabel">Try</span>
+		<span class="microlabel">{t('Try')}</span>
 		<div class="presets">
 			<button class="btn" type="button" data-preset="crystal" onclick={() => (skew = 0.5)}
-				>Crystal-grade clock (+0.5 %)</button
+				>{t('Crystal-grade clock (+0.5 %)')}</button
 			>
 			<button class="btn" type="button" data-preset="rc-clock" onclick={() => (skew = 6)}
-				>Cheap RC clock (+6 %)</button
+				>{t('Cheap RC clock (+6 %)')}</button
 			>
 		</div>
 	</div>
 	<div class="deck-group">
-		<FaultSwitch label="TX line polarity inverted" bind:active={inverted} />
+		<FaultSwitch label={t('TX line polarity inverted')} bind:active={inverted} />
 	</div>
 {/snippet}
 

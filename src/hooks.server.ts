@@ -6,6 +6,7 @@
  * previously indexed URLs keep resolving.
  */
 import { redirect } from '@sveltejs/kit';
+import { localeOf, localized, unlocalized } from '#lib/i18n/index.ts';
 import type { Handle } from '@sveltejs/kit/hooks';
 import { getRegistry, HISTORICAL_CORE_VERSION } from '#lib/server/registry.ts';
 import {
@@ -67,26 +68,37 @@ export function applySecurityHeaders(response: Response, secure: boolean): Respo
 const VERSIONED_SECTIONS = ['/docs', '/playground', '/simulations'] as const;
 
 export const handle: Handle = async ({ event, resolve }) => {
-	const { pathname, search } = event.url;
+	const { search } = event.url;
+	const locale = localeOf(event.url.pathname);
+	const pathname = unlocalized(event.url.pathname);
+	if (event.url.pathname === '/' && event.cookies.get('schemd-language') === 'es')
+		redirect(307, `/es${search}`);
 
 	const legacy = legacyTarget(pathname);
-	if (legacy !== undefined) redirect(308, `${legacy}${search}`);
+	if (legacy !== undefined) redirect(308, `${localized(legacy, locale)}${search}`);
 
 	const canonical = canonicalDocsTarget(pathname);
-	if (canonical !== undefined) redirect(308, `${canonical}${search}`);
+	if (canonical !== undefined) redirect(308, `${localized(canonical, locale)}${search}`);
 
 	for (const section of VERSIONED_SECTIONS) {
 		if (pathname === section || pathname === `${section}/`) {
 			/* Docs follow the latest documented folder; playground and simulations
 			 * follow the newest published release the running engine can execute. */
 			if (section === '/docs') {
-				redirect(307, `/docs/${LATEST_DOCUMENTED_VERSION}/overview${search}`);
+				redirect(
+					307,
+					`${localized(`/docs/${LATEST_DOCUMENTED_VERSION}/overview`, locale)}${search}`
+				);
 			}
 			const registry = await getRegistry();
-			redirect(307, `${section}/${registry.latest}${search}`);
+			redirect(307, `${localized(`${section}/${registry.latest}`, locale)}${search}`);
 		}
 	}
 
-	const response = await resolve(event);
+	const response = await resolve(event, {
+		transformPageChunk: ({ html }) => html.replace('%schemd.lang%', locale)
+	});
+	response.headers.set('content-language', locale);
+	if (event.url.pathname === '/') response.headers.append('vary', 'Cookie');
 	return applySecurityHeaders(response, event.url.protocol === 'https:');
 };

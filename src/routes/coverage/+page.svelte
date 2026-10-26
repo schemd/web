@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href } = useLanguage();
+
 	import SheetFrame from '#lib/components/SheetFrame.svelte';
 	import type { PageProps } from './$types';
 	import Seo from '#lib/components/Seo.svelte';
@@ -35,61 +38,70 @@
 </script>
 
 <Seo
-	title="Language coverage · schemd"
-	description="Which @schemd/core primitives the documentation exercises, derived from the compiler's own exported vocabulary and every schemd fence in the docs corpus."
+	title={t('Language coverage · schemd')}
+	description={t(
+		"Which @schemd/core primitives the documentation exercises, derived from the compiler's own exported vocabulary and every schemd fence in the docs corpus."
+	)}
 />
 
 <article class="coverage grid-backdrop">
-	<SheetFrame label="Language coverage">
+	<SheetFrame label={t('Language coverage')}>
 		<header class="coverage-head sheet-head">
-			<p class="microlabel">Compiler vocabulary, revision {data.latest}</p>
-			<h1>Language coverage</h1>
+			<p class="microlabel">{t('Compiler vocabulary, revision')} {t(data.latest)}</p>
+			<h1>{t('Language coverage')}</h1>
 			<p class="lede">
-				This page is generated from the compiler's own <code>COMPONENT_KINDS</code> registry. Every
-				primitive carries a canonical, compiling example, so coverage is a genuine 100% — and the
-				documentation's <code>schemd</code> fences add real-world usages on top. Open any primitive to
-				take it apart in the playground.
+				{t("This page is generated from the compiler's own")} <code>COMPONENT_KINDS</code>
+				{t(
+					"registry. Every primitive carries a canonical, compiling example, so coverage is a genuine 100% — and the documentation's"
+				)} <code>schemd</code>
+				{t(
+					'fences add real-world usages on top. Open any primitive to take it apart in the playground.'
+				)}
 			</p>
 			<div class="summary plate">
 				<div class="summary-figures">
-					<span class="readout big">{data.coverage.covered} / {data.coverage.total}</span>
+					<span class="readout big">{t(data.coverage.covered)} / {t(data.coverage.total)}</span>
 					<span class="microlabel"
-						>Primitives exercised across {data.coverage.examples} examples</span
+						>{t('Primitives exercised across')} {t(data.coverage.examples)} {t('examples')}</span
 					>
 				</div>
-				<div class="meter" role="img" aria-label={`${percent}% of primitives covered`}>
+				<div class="meter" role="img" aria-label={t('{0}% of primitives covered', [percent])}>
 					<span class="meter-fill" style={`transform: scaleX(${ratio})`}></span>
 				</div>
-				<span class="meter-value readout">{percent}%</span>
+				<span class="meter-value readout">{t(percent)}%</span>
 			</div>
 		</header>
 	</SheetFrame>
 
-	<section class="usage plate" aria-label="Corpus usage by family">
-		<p class="microlabel group-label">Where the corpus spends its examples</p>
+	<section class="usage plate" aria-label={t('Corpus usage by family')}>
+		<p class="microlabel group-label">{t('Where the corpus spends its examples')}</p>
 		<BarSeries
 			items={familyUsage}
-			summary="Documented usages of each component family, across the docs corpus and the canonical catalog."
+			summary={t(
+				'Documented usages of each component family, across the docs corpus and the canonical catalog.'
+			)}
 			unit="usages"
 		/>
 	</section>
 
 	<div class="groups">
 		{#each data.coverage.groups as group (group.label)}
-			<section class="group plate" id={slug(group.label)} aria-label={group.label}>
-				<p class="microlabel group-label">{group.label}</p>
+			<section class="group plate" id={slug(group.label)} aria-label={t(group.label)}>
+				<p class="microlabel group-label">{t(group.label)}</p>
 				<ul class="kinds">
 					{#each group.kinds as entry (entry.kind)}
 						<li>
 							<a
 								class="kind"
 								class:covered={entry.count > 0}
-								href={`/playground/${data.latest}?code=${entry.code}&w=${entry.width}&h=${entry.height}&t=${entry.kind}`}
-								title={`Open the ${entry.kind} primitive in the playground`}
+								href={href(
+									`/playground/${data.latest}?code=${entry.code}&w=${entry.width}&h=${entry.height}&t=${entry.kind}`
+								)}
+								title={t('Open the {0} primitive in the playground', [entry.kind])}
 							>
 								<code class="kind-name">{entry.kind}</code>
 								<span class="kind-count microlabel">
-									{entry.count > 0 ? `${entry.count}×` : 'uncovered'}
+									{entry.count > 0 ? t(`${entry.count}×`) : t('uncovered')}
 								</span>
 							</a>
 						</li>
@@ -100,8 +112,10 @@
 	</div>
 
 	<aside class="coverage-foot hairline-x">
-		<span class="microlabel">Generated from the compiler; nothing here is listed by hand.</span>
-		<a href="/playground/{data.latest}">Try a part in the playground</a>
+		<span class="microlabel"
+			>{t('Generated from the compiler; nothing here is listed by hand.')}</span
+		>
+		<a href={href('/playground/' + data.latest)}>{t('Try a part in the playground')}</a>
 	</aside>
 </article>
 

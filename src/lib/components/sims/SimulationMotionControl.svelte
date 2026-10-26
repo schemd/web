@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	import type { SimulationMotion } from './simulation-motion.svelte';
 
 	interface Props {
@@ -18,14 +21,16 @@
 		type="button"
 		class="btn"
 		aria-pressed={motion.paused}
-		aria-label={`${motion.paused ? 'Resume' : 'Pause'} animation: ${subject}`}
+		aria-label={t('{0} animation: {1}', [motion.paused ? 'Resume' : 'Pause', subject])}
 		onclick={() => motion.toggle()}
 	>
-		{motion.paused ? 'resume animation' : 'pause animation'}
+		{motion.paused ? t('resume animation') : t('pause animation')}
 	</button>
-	<p class="visually-hidden" aria-live="polite">{motion.status}</p>
+	<p class="visually-hidden" aria-live="polite">{t(motion.status)}</p>
 	{#if motion.reducedMotion && motion.paused}
-		<p class="motion-note">Paused for your reduced-motion preference. Resume only if desired.</p>
+		<p class="motion-note">
+			{t('Paused for your reduced-motion preference. Resume only if desired.')}
+		</p>
 	{/if}
 </div>
 

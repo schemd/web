@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href } = useLanguage();
+
 	import SheetFrame from '#lib/components/SheetFrame.svelte';
 	import type { PageProps } from './$types';
 	import Seo from '#lib/components/Seo.svelte';
@@ -106,48 +109,52 @@
 </script>
 
 <Seo
-	title="Changelog · schemd"
-	description="Registry-synced release timeline for @schemd/core: install footprint, file counts, publication dates, and compiler benchmarks measured on this server."
+	title={t('Changelog · schemd')}
+	description={t(
+		'Registry-synced release timeline for @schemd/core: install footprint, file counts, publication dates, and compiler benchmarks measured on this server.'
+	)}
 	type="article"
 />
 
 <article class="changelog grid-backdrop">
-	<SheetFrame label="Changelog">
+	<SheetFrame label={t('Changelog')}>
 		<header class="changelog-head sheet-head">
 			<p class="microlabel sync" class:live={data.live}>
 				<span class="sync-dot" aria-hidden="true"></span>
 				{data.live
-					? `registry synced ${dateFormat.format(new Date(data.syncedAt))}`
-					: 'serving seed — registry refresh runs in the background'}
+					? t('registry synced {0}', [dateFormat.format(new Date(data.syncedAt))])
+					: t('serving seed — registry refresh runs in the background')}
 			</p>
-			<h1>Changelog</h1>
+			<h1>{t('Changelog')}</h1>
 			<p class="lede">
-				The server returns a deterministic snapshot immediately, then refreshes npm and GitHub in
-				the background. npm’s <code>latest</code> tag identifies the public release after a live refresh;
-				the installed engine version is read independently from its package manifest. Unpublished local
-				builds and cold-start seeds remain explicitly marked as publication-unconfirmed.
+				{t(
+					'The server returns a deterministic snapshot immediately, then refreshes npm and GitHub in the background. npm’s'
+				)} <code>latest</code>
+				{t(
+					'tag identifies the public release after a live refresh; the installed engine version is read independently from its package manifest. Unpublished local builds and cold-start seeds remain explicitly marked as publication-unconfirmed.'
+				)}
 			</p>
 		</header>
 	</SheetFrame>
 
-	<dl class="stat-band" aria-label="Compiler at a glance">
+	<dl class="stat-band" aria-label={t('Compiler at a glance')}>
 		{#each stats as stat (stat.label)}
 			<div class="stat">
-				<dd class="readout">{stat.value}</dd>
-				<dt class="microlabel">{stat.label}</dt>
+				<dd class="readout">{t(stat.value)}</dd>
+				<dt class="microlabel">{t(stat.label)}</dt>
 			</div>
 		{/each}
 	</dl>
 
-	<section class="metrics plate" aria-label="Compiler metrics">
+	<section class="metrics plate" aria-label={t('Compiler metrics')}>
 		<div class="metrics-grid">
 			<figure class="metric">
-				<figcaption class="microlabel">Unpacked install footprint by release</figcaption>
+				<figcaption class="microlabel">{t('Unpacked install footprint by release')}</figcaption>
 				{#if sizePoints.length > 0}
 					<svg
 						viewBox={`0 0 ${CHART_W} ${CHART_H}`}
 						role="img"
-						aria-label="Install footprint per release"
+						aria-label={t('Install footprint per release')}
 					>
 						<defs>
 							<linearGradient id="footprint-fill" x1="0" y1="0" x2="0" y2="1">
@@ -168,82 +175,90 @@
 						<path class="series" d={linePath} />
 						{#each sizePoints as point, index (point.version)}
 							<circle class="dot" cx={point.x} cy={point.y} r="4">
-								<title>v{point.version} — {formatBytes(point.bytes)}</title>
+								<title>{t('v')}{t(point.version)} — {t(formatBytes(point.bytes))}</title>
 							</circle>
 							{#if labelledTicks[index]}
-								<text class="tick" x={point.x} y={CHART_H - PAD + 16}>v{point.version}</text>
+								<text class="tick" x={point.x} y={CHART_H - PAD + 16}
+									>{t('v')}{t(point.version)}</text
+								>
 							{/if}
 						{/each}
 						<text class="peak" x={PAD} y={PAD - 10}
-							>{formatBytes(Math.max(...sizePoints.map((p) => p.bytes)))}</text
+							>{t(formatBytes(Math.max(...sizePoints.map((p) => p.bytes))))}</text
 						>
 					</svg>
 				{:else}
-					<p class="microlabel empty">Npm dist metadata unavailable in this snapshot.</p>
+					<p class="microlabel empty">{t('Npm dist metadata unavailable in this snapshot.')}</p>
 				{/if}
 			</figure>
 
 			<dl class="bench">
 				<div>
-					<dt class="microlabel">Engine processing speed</dt>
-					<dd class="readout big">{data.benchmark.medianMs} ms</dd>
+					<dt class="microlabel">{t('Engine processing speed')}</dt>
+					<dd class="readout big">{t(data.benchmark.medianMs)} {t('ms')}</dd>
 					<dd class="bench-note">
-						median of 9 passes over an 11-declaration workload, measured live on this server against
-						the installed compiler (v{data.benchmark.version})
+						{t(
+							'median of 9 passes over an 11-declaration workload, measured live on this server against the installed compiler (v'
+						)}{t(data.benchmark.version)})
 					</dd>
 				</div>
 				<div>
-					<dt class="microlabel">Workload output weight</dt>
-					<dd class="readout big">{data.benchmark.svgBytes.toLocaleString('en-US')} B</dd>
-					<dd class="bench-note">exact UTF-8 bytes reported by the compiler's own metrics</dd>
+					<dt class="microlabel">{t('Workload output weight')}</dt>
+					<dd class="readout big">{t(data.benchmark.svgBytes.toLocaleString('en-US'))} {t('B')}</dd>
+					<dd class="bench-note">
+						{t("exact UTF-8 bytes reported by the compiler's own metrics")}
+					</dd>
 				</div>
 			</dl>
 		</div>
 	</section>
 
-	<ol class="timeline" aria-label="Release history">
+	<ol class="timeline" aria-label={t('Release history')}>
 		{#each data.releases as release (release.version)}
 			<li class="milestone" class:is-latest={release.version === data.latest}>
 				<div class="milestone-marker" aria-hidden="true"></div>
 				<div class="milestone-body plate">
 					<header class="milestone-head">
 						<h2>
-							v{release.version}
+							{t('v')}{t(release.version)}
 							{#if release.version === data.latest}
-								<span class="latest-tag">{data.live ? 'npm latest' : 'seed default'}</span>
+								<span class="latest-tag">{data.live ? t('npm latest') : t('seed default')}</span>
 							{/if}
 							{#if !release.released}
-								<span class="latest-tag">Publication unconfirmed</span>
+								<span class="latest-tag">{t('Publication unconfirmed')}</span>
 							{/if}
 						</h2>
 						<span class="microlabel">
 							{release.publishedAt.startsWith('1970')
 								? release.released
-									? 'Publish date not in the seed'
-									: 'Publication not confirmed'
-								: dateFormat.format(new Date(release.publishedAt))}
+									? t('Publish date not in the seed')
+									: t('Publication not confirmed')
+								: t(dateFormat.format(new Date(release.publishedAt)))}
 							{#if release.gitHead}
-								, commit <code>{release.gitHead}</code>
+								{t(', commit')} <code>{release.gitHead}</code>
 							{/if}
 						</span>
 					</header>
 					<dl class="milestone-metrics">
 						<div>
-							<dt class="microlabel">Install</dt>
-							<dd class="readout">{formatBytes(release.unpackedSize)}</dd>
+							<dt class="microlabel">{t('Install')}</dt>
+							<dd class="readout">{t(formatBytes(release.unpackedSize))}</dd>
 						</div>
 						<div>
-							<dt class="microlabel">Files</dt>
-							<dd class="readout">{release.fileCount ?? '—'}</dd>
+							<dt class="microlabel">{t('Files')}</dt>
+							<dd class="readout">{t(release.fileCount ?? '—')}</dd>
 						</div>
 					</dl>
 					{#if release.notes}
-						<p class="notes">{release.notes.slice(0, 400)}</p>
+						<p class="notes">{t(release.notes.slice(0, 400))}</p>
 					{/if}
-					<nav class="milestone-links" aria-label={`Version ${release.version} destinations`}>
-						<a href={`/docs/${release.version}/overview`}>Docs</a>
-						<a href={`/playground/${release.version}`}>Playground</a>
-						<a href={`/simulations/${release.version}`}>Labs</a>
+					<nav
+						class="milestone-links"
+						aria-label={t('Version {0} destinations', [release.version])}
+					>
+						<a href={href(`/docs/${release.version}/overview`)}>{t('Docs')}</a>
+						<a href={href(`/playground/${release.version}`)}>{t('Playground')}</a>
+						<a href={href(`/simulations/${release.version}`)}>{t('Labs')}</a>
 					</nav>
 				</div>
 			</li>

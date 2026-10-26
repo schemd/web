@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/** Universal, causal playback rail shared by every simulation environment. */
 	import { untrack } from 'svelte';
 	import { clearPropagationFrame, setPropagationFrame } from '#lib/sim-dom.ts';
@@ -96,12 +99,16 @@
 </script>
 
 {#if stages.length > 0}
-	<section class="timeline plate" aria-label="Signal propagation timeline">
+	<section class="timeline plate" aria-label={t('Signal propagation timeline')}>
 		<div class="timeline-copy">
 			<div class="timeline-heading">
-				<span class="microlabel">Causal signal trace</span>
+				<span class="microlabel">{t('Causal signal trace')}</span>
 				<span class="status" class:running={model.playing}>
-					{model.playing ? 'propagating' : model.step === stages.length - 1 ? 'settled' : 'paused'}
+					{model.playing
+						? t('propagating')
+						: model.step === stages.length - 1
+							? t('settled')
+							: t('paused')}
 				</span>
 			</div>
 			<p class="explanation" aria-live="polite">
@@ -112,7 +119,7 @@
 				<span class="microlabel"
 					><LiveMath
 						id="timeline.delay"
-						label={`stage delay ${(delayMs / 1000).toFixed(2)} seconds`}
+						label={t('stage delay {0} seconds', [(delayMs / 1000).toFixed(2)])}
 						values={{ value: (delayMs / 1000).toFixed(2) }}
 					/></span
 				>
@@ -122,7 +129,7 @@
 					max="2500"
 					step="250"
 					bind:value={delayMs}
-					aria-label="Propagation stage delay"
+					aria-label={t('Propagation stage delay')}
 				/>
 			</label>
 		</div>

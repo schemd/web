@@ -72,13 +72,36 @@ export function completionAt(
 	const head = source.slice(lineStart, caret);
 	/* Comments and string labels are prose, not grammar. */
 	if (head.trimStart().startsWith('//')) return undefined;
-	if ((head.match(/"/g)?.length ?? 0) % 2 === 1) return undefined;
+	let quoted = false;
+	let escaped = false;
+	let bracketStart = -1;
+	for (let index = 0; index < head.length; index += 1) {
+		const character = head[index];
+		if (escaped) {
+			escaped = false;
+			continue;
+		}
+		if (character === '\\' && quoted) {
+			escaped = true;
+			continue;
+		}
+		if (character === '"') quoted = !quoted;
+		if (!quoted && character === '[') bracketStart = index;
+		if (!quoted && character === ']') bracketStart = -1;
+	}
+	if (quoted) return undefined;
 
 	/* A declaration's own kind decides which options and values its brackets accept. */
 	const declared = /^\s*([A-Za-z][A-Za-z-]*):/.exec(head)?.[1]?.toLowerCase();
-	const accepted = declared === undefined ? undefined : vocabulary.options?.[declared];
+	const accepted =
+		declared !== undefined &&
+		vocabulary.options !== undefined &&
+		Object.hasOwn(vocabulary.options, declared)
+			? vocabulary.options[declared]
+			: undefined;
 	/* Inside an unclosed bracket on a declaration line, outside any quotes. */
-	const bracket = accepted === undefined ? undefined : /\[([^\]"]*)$/.exec(head)?.[1];
+	const bracket =
+		!Array.isArray(accepted) || bracketStart < 0 ? undefined : head.slice(bracketStart + 1);
 	if (accepted !== undefined && bracket !== undefined) {
 		const value = /(?:^|\s)([a-z][a-z-]*)=([A-Za-z0-9_-]*)$/.exec(bracket);
 		if (value) {
@@ -102,10 +125,13 @@ export function completionAt(
 	}
 
 	/* `ID.` offers the part's real terminals, known from the last compile. */
-	const port = /(?:^|->\s*)([A-Za-z][A-Za-z0-9_-]*)\.([A-Za-z0-9_+-]*)$/.exec(head);
+	const port = /(?:^\s*|->\s*)([A-Za-z][A-Za-z0-9_-]*)\.([A-Za-z0-9_+-]*)$/.exec(head);
 	if (port && vocabulary.ports !== undefined) {
 		const prefix = port[2] ?? '';
-		const items = matches(vocabulary.ports[port[1]!] ?? [], prefix);
+		const items = matches(
+			Object.hasOwn(vocabulary.ports, port[1]!) ? vocabulary.ports[port[1]!]! : [],
+			prefix
+		);
 		return items.length
 			? { items, from: caret - prefix.length, to: caret, kind: 'port' }
 			: undefined;
@@ -130,7 +156,7 @@ export function completionAt(
 	}
 
 	/* A component declaration always opens its line: `resistor:R1 …`. */
-	const kind = /^([A-Za-z][A-Za-z-]*)?$/.exec(head);
+	const kind = /^\s*([A-Za-z][A-Za-z-]*)?$/.exec(head);
 	if (kind) {
 		const prefix = kind[1] ?? '';
 		if (prefix === '') return undefined;

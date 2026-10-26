@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Live install telemetry.
 	 *
@@ -68,76 +71,87 @@
 </script>
 
 <Seo
-	title="Install telemetry · schemd"
-	description="Live npm download counts for @schemd/core: daily, weekly, and monthly installs, a 30-day trend, and the share carried by each published release."
+	title={t('Install telemetry · schemd')}
+	description={t(
+		'Live npm download counts for @schemd/core: daily, weekly, and monthly installs, a 30-day trend, and the share carried by each published release.'
+	)}
 />
 
 <article class="downloads grid-backdrop">
-	<SheetFrame label="Install telemetry">
+	<SheetFrame label={t('Install telemetry')}>
 		<header class="downloads-head sheet-head">
 			<p class="microlabel stream" class:live={stream.connected}>
 				<span class="stream-dot" aria-hidden="true"></span>
 				{#if !stream.ready}
-					opening the stream…
+					{t('opening the stream…')}
 				{:else if snapshot?.live}
-					Live, checked {clock.format(new Date(snapshot.checkedAt))}
+					{t('Live, checked')} {t(clock.format(new Date(snapshot.checkedAt)))}
 				{:else}
-					The registry did not answer; this is the last good reading
+					{t('The registry did not answer; this is the last good reading')}
 				{/if}
 			</p>
-			<h1>Install telemetry</h1>
+			<h1>{t('Install telemetry')}</h1>
 			<p class="lede">
-				npm publishes counts, not a feed, so this page holds one streaming connection open and the
-				server polls the registry once a minute on behalf of every reader. The counts step rather
-				than tick — npm settles a day hours after it closes — so the header reports when it last
-				looked instead of animating a number that has not moved.
+				{t(
+					'npm publishes counts, not a feed, so this page holds one streaming connection open and the server polls the registry once a minute on behalf of every reader. The counts step rather than tick — npm settles a day hours after it closes — so the header reports when it last looked instead of animating a number that has not moved.'
+				)}
 			</p>
 		</header>
 	</SheetFrame>
 
 	{#if stream.error}
 		<p class="notice plate" role="alert">
-			The telemetry stream failed: {stream.error.message}
+			{t('The telemetry stream failed:')}
+			{t(stream.error.message)}
 		</p>
 	{:else if !stream.ready}
-		<p class="notice plate">Waiting for the first reading from the registry…</p>
+		<p class="notice plate">{t('Waiting for the first reading from the registry…')}</p>
 	{:else if snapshot}
-		<dl class="stat-band" aria-label="Downloads at a glance">
+		<dl class="stat-band" aria-label={t('Downloads at a glance')}>
 			{#each stats as stat (stat.label)}
 				<div class="stat">
-					<dd class="readout">{stat.value}</dd>
-					<dt class="microlabel">{stat.label}</dt>
+					<dd class="readout">{t(stat.value)}</dd>
+					<dt class="microlabel">{t(stat.label)}</dt>
 				</div>
 			{/each}
 		</dl>
 
-		<section class="trend plate" aria-label="Daily downloads">
+		<section class="trend plate" aria-label={t('Daily downloads')}>
 			<header class="panel-head">
-				<p class="table-caption">Daily installs over the last {snapshot.history.length} days</p>
-				<span class="microlabel peak-note">Peak {count(peak)} / day</span>
+				<p class="table-caption">
+					{t('Daily installs over the last')}
+					{t(snapshot.history.length)}
+					{t('days')}
+				</p>
+				<span class="microlabel peak-note">{t('Peak')} {t(count(peak))} {t('/ day')}</span>
 			</header>
 			<TimeSeries
 				points={seriesPoints}
-				summary={`Daily installs of @schemd/core over the last ${snapshot.history.length} days, peaking at ${count(peak)} per day.`}
+				summary={t(
+					'Daily installs of @schemd/core over the last {0} days, peaking at {1} per day.',
+					[snapshot.history.length, count(peak)]
+				)}
 				format={count}
 				unit="installs"
 			/>
 		</section>
 
-		<section class="versions plate" aria-label="Downloads by release">
+		<section class="versions plate" aria-label={t('Downloads by release')}>
 			<header class="panel-head">
-				<p class="table-caption">Installs last week, by release</p>
-				<span class="microlabel peak-note">{versionBars.length} releases with traffic</span>
+				<p class="table-caption">{t('Installs last week, by release')}</p>
+				<span class="microlabel peak-note"
+					>{t(versionBars.length)} {t('releases with traffic')}</span
+				>
 			</header>
 			{#if versionBars.length > 0}
 				<BarSeries
 					items={versionBars}
-					summary="Installs attributed to each published release over the last week."
+					summary={t('Installs attributed to each published release over the last week.')}
 					format={count}
 					unit="installs"
 				/>
 			{:else}
-				<p class="microlabel empty">No per-release breakdown in this snapshot.</p>
+				<p class="microlabel empty">{t('No per-release breakdown in this snapshot.')}</p>
 			{/if}
 		</section>
 	{/if}
