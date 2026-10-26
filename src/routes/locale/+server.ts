@@ -1,11 +1,12 @@
 import { redirect, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { localized } from '#lib/i18n/index.ts';
+import { isLocale } from '#lib/i18n/locales.ts';
 
 export const POST: RequestHandler = async ({ request, cookies, url }) => {
 	const fields = await request.formData();
 	const language = fields.get('language');
-	if (language !== 'en' && language !== 'es') error(400, 'Unknown language');
+	if (!isLocale(language)) error(400, 'Unknown language');
 	const target = fields.get('return');
 	if (
 		typeof target !== 'string' ||

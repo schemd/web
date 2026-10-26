@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { localeOf, localized, unlocalized, translator } from './index';
+import { isLocale } from './locales';
 
 describe('language routes', () => {
+	it('rejects unconfigured locale values', () => {
+		for (const value of [null, {}, '__proto__', 'constructor', 'en/us', 'not-a-language'])
+			expect(isLocale(value)).toBe(false);
+		expect(isLocale('en')).toBe(true);
+		expect(isLocale('es')).toBe(true);
+	});
 	it('preserves source queries and section hashes when changing languages', () => {
 		const path = '/playground/1.3.0?code=abc&w=600#preview';
 		expect(localized(path, 'es')).toBe('/es' + path);

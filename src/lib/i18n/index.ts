@@ -1,7 +1,8 @@
 import { getContext, setContext } from 'svelte';
 import { messageKey } from './message-key';
+import { DEFAULT_LOCALE, LANGUAGES, type Locale } from './locales';
 
-export type Locale = 'en' | 'es';
+export type { Locale } from './locales';
 export type Messages = Readonly<Record<string, string>>;
 export interface LanguageData {
 	locale: Locale;
@@ -10,10 +11,12 @@ export interface LanguageData {
 const CONTEXT = Symbol('schemd.language');
 
 export function localeOf(pathname: string): Locale {
-	return /^\/es(?:\/|$)/.test(pathname) ? 'es' : 'en';
+	const prefix = pathname.split(/[/?#]/)[1];
+	return LANGUAGES.find((language) => language.code === prefix)?.code ?? DEFAULT_LOCALE;
 }
 export function unlocalized(pathname: string): string {
-	const bare = pathname.replace(/^\/es(?=\/|[?#]|$)/, '') || '/';
+	const locale = localeOf(pathname);
+	const bare = (locale === DEFAULT_LOCALE ? pathname : pathname.slice(locale.length + 1)) || '/';
 	return /^[?#]/.test(bare) ? '/' + bare : bare;
 }
 export function localized(path: string, locale: Locale): string {
@@ -24,9 +27,9 @@ export function localized(path: string, locale: Locale): string {
 	)
 		return path;
 	const bare = unlocalized(path);
-	return locale === 'es'
-		? `/es${bare === '/' ? '' : bare.startsWith('/?') || bare.startsWith('/#') ? bare.slice(1) : bare}`
-		: bare;
+	return locale === DEFAULT_LOCALE
+		? bare
+		: `/${locale}${bare === '/' ? '' : bare.startsWith('/?') || bare.startsWith('/#') ? bare.slice(1) : bare}`;
 }
 
 /** Message formatting is shared by SSR and hydration; source code never enters it. */

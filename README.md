@@ -98,7 +98,10 @@ folders.
 
 `src/lib/server/messages.es.json` maps English source messages to formal Spanish. Components use
 `useLanguage()` for messages and links; the root layout provides a separate context per request.
-`/locale` stores an explicit language choice in a cookie and preserves the current query and hash.
+The native language selector lists the autonyms configured in `src/lib/i18n/locales.ts` and marks
+the current language. Add future languages to that registry once their translations are available.
+`/locale` validates choices against the same registry, stores the preference in a cookie and preserves
+the current query and hash. The form includes a submit fallback when JavaScript is disabled.
 
 The build collects English messages with `scripts/collect-messages.ts`, checks compact-key collisions,
 and replaces static message literals with compact references. Catalogs remain server data and are

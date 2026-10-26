@@ -7,6 +7,7 @@
 	import { page } from '$app/state';
 	import CommandPalette from '#lib/components/CommandPalette.svelte';
 	import VersionSelect from '#lib/components/VersionSelect.svelte';
+	import LanguageSelect from '#lib/components/LanguageSelect.svelte';
 	import Telemetry from '#lib/components/Telemetry.svelte';
 	import Footer from '#lib/components/Footer.svelte';
 	import {
@@ -141,20 +142,7 @@
 			>
 				<span>{ui.audio ? t('Sound on') : t('Sound off')}</span>
 			</button>
-			<form class="language-switch" method="POST" action="/locale">
-				<input
-					type="hidden"
-					name="return"
-					value={page.url.pathname + page.url.search + page.url.hash}
-				/>
-				<button
-					class="tool"
-					name="language"
-					value={locale() === 'en' ? 'es' : 'en'}
-					aria-label={locale() === 'en' ? 'Español: read in Spanish' : 'English: leer en inglés'}
-					lang={locale() === 'en' ? 'es' : 'en'}>{locale() === 'en' ? 'Español' : 'English'}</button
-				>
-			</form>
+			<LanguageSelect />
 			<VersionSelect
 				versions={data.versions}
 				latest={data.latest}
@@ -196,9 +184,6 @@
 <Telemetry />
 
 <style>
-	.language-switch {
-		display: contents;
-	}
 	.skip-link {
 		position: absolute;
 		inset-block-start: -100%;

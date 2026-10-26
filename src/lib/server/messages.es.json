@@ -2307,5 +2307,7 @@
 	"Two LC stages are declared as reusable subcircuits, so each stage can be placed and connected independently.": "Dos etapas LC se declaran como subcircuitos reutilizables, de modo que cada etapa puede colocarse y conectarse de forma independiente.",
 	"A capacitor and resistor form a high-pass signal path.": "Un condensador y una resistencia forman una ruta de señal paso alto.",
 	"A two-qubit CNOT gate is aligned with both input wires, which enter at different heights; the compiler computes the gate span from those connections.": "Una puerta CNOT de dos cúbits se alinea con ambos cables de entrada, que llegan a distintas alturas; el compilador calcula la extensión de la puerta a partir de esas conexiones.",
-	"Lifelines and messages for a documentation deployment.": "Líneas de vida y mensajes para un despliegue de documentación."
+	"Lifelines and messages for a documentation deployment.": "Líneas de vida y mensajes para un despliegue de documentación.",
+	"Selecting a language reloads this page.": "Al seleccionar un idioma se vuelve a cargar esta página.",
+	"Apply language": "Aplicar idioma"
 }

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { failOnClientErrors } from './support';
+import { LANGUAGES } from '../src/lib/i18n/locales.ts';
 
 test.beforeEach(async ({ page }) => {
 	failOnClientErrors(page);
@@ -13,6 +14,7 @@ test('language changes preserve a template workspace and remember the preference
 	await page.goto('/templates');
 	await page.getByRole('link', { name: 'Open template', exact: true }).first().click();
 	await expect(page).toHaveURL(/\/playground\/[^?]+\?code=/);
+	await page.goto(page.url() + '#preview');
 	const before = new URL(page.url());
 	await expect(
 		page
@@ -21,9 +23,13 @@ test('language changes preserve a template workspace and remember the preference
 			})
 			.locator('svg')
 	).toBeVisible();
-	await page.getByRole('button', { name: 'Español: read in Spanish', exact: true }).click();
+	const language = page.getByRole('combobox', { name: 'Language', exact: true });
+	await expect(language).toHaveValue('en');
+	await expect(language.locator('option')).toHaveText(LANGUAGES.map((item) => item.name));
+	await language.selectOption('es');
 	await expect(page).toHaveURL(/\/es\/playground\//);
 	expect(new URL(page.url()).searchParams.get('code')).toBe(before.searchParams.get('code'));
+	expect(new URL(page.url()).hash).toBe('#preview');
 	await expect(page.locator('html')).toHaveAttribute('lang', 'es');
 	await expect(
 		page
@@ -37,7 +43,8 @@ test('language changes preserve a template workspace and remember the preference
 	);
 	await page.goto('/');
 	await expect(page).toHaveURL(/\/es$/);
-	await page.getByRole('button', { name: 'English: leer en inglés', exact: true }).click();
+	await expect(page.getByRole('combobox', { name: 'Idioma', exact: true })).toHaveValue('es');
+	await page.getByRole('combobox', { name: 'Idioma', exact: true }).selectOption('en');
 	await expect(page.locator('html')).toHaveAttribute('lang', 'en');
 	await expect(page).toHaveURL('http://127.0.0.1:4173/');
 });
@@ -118,7 +125,9 @@ test('mobile Negative mode keeps language and sound controls visible and accessi
 	await page.addInitScript(() => localStorage.setItem('schemd:blueprint', 'negative'));
 	await page.goto('/es/templates');
 	await expect(page.locator('html')).toHaveAttribute('data-blueprint', 'negative');
-	await expect(page.getByRole('button', { name: 'English: leer en inglés' })).toBeInViewport();
+	const language = page.getByRole('combobox', { name: 'Idioma', exact: true });
+	await expect(language).toBeInViewport();
+	await expect(language).toHaveValue('es');
 	const sound = page.getByRole('switch', { name: 'Sonido', exact: true });
 	await expect(sound).toBeInViewport();
 	await expect(sound).toHaveText('Sonido desactivado');
@@ -126,6 +135,12 @@ test('mobile Negative mode keeps language and sound controls visible and accessi
 		.withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
 		.analyze();
 	expect(audit.violations).toEqual([]);
+	const screenshot = 'artifacts/language-selector-negative-mobile.png';
+	await page.screenshot({ path: screenshot });
+	await test.info().attach('Mobile language selector in Negative mode', {
+		path: screenshot,
+		contentType: 'image/png'
+	});
 });
 
 test('language changes reject external return targets', async ({ request }) => {
@@ -144,5 +159,23 @@ test('language changes reject external return targets', async ({ request }) => {
 	}
 	for (const path of ['/components/constructor', '/es/components/toString']) {
 		expect((await request.get(path)).status()).toBe(404);
+	}
+});
+
+test('language selection remains usable without JavaScript', async ({ browser }) => {
+	const context = await browser.newContext({ javaScriptEnabled: false });
+	const page = await context.newPage();
+	try {
+		await page.goto('http://127.0.0.1:4173/templates');
+		const language = page.getByRole('combobox', { name: 'Language', exact: true });
+		await language.selectOption('es');
+		await page.getByRole('button', { name: 'Apply language', exact: true }).click();
+		await expect(page).toHaveURL(/\/es\/templates$/);
+		await expect(page.getByRole('combobox', { name: 'Idioma', exact: true })).toHaveValue('es');
+		expect(
+			(await context.cookies()).find((cookie) => cookie.name === 'schemd-language')?.value
+		).toBe('es');
+	} finally {
+		await context.close();
 	}
 });
