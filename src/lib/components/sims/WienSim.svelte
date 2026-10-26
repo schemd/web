@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Wien-bridge oscillator on the v2 bench.
 	 *
@@ -253,7 +256,7 @@
 			unit: 'V',
 			/* At the bridge's one frequency, it returns a third of the output, in phase. */
 			sample: fromHistory(1 / 3),
-			summary: () => `${(amplitude / 3).toFixed(2)} pk · ⅓ of v_o at ${formatSi(frequency, 'Hz')}`,
+			summary: () => `${(amplitude / 3).toFixed(2)} pk, ⅓ of v_o at ${formatSi(frequency, 'Hz')}`,
 			reading: () =>
 				reading('wien.probe.feedback', `positive feedback at ${formatSi(frequency, 'Hz')}`, {
 					value: formatSi(frequency, 'Hz')
@@ -275,9 +278,9 @@
 </script>
 
 <Bench
-	title="Wien-bridge oscillator"
+	title={t('Wien-bridge oscillator')}
 	tone="analog"
-	status={`${regime} · ${formatSi(frequency, 'Hz')}`}
+	status={t('{0}, {1}', [t(regime), formatSi(frequency, 'Hz')])}
 	{stage}
 	{dock}
 	{deck}
@@ -291,7 +294,9 @@
 			role="group"
 			data-model-stage={timeline.step}
 			data-model-value={timelineProjection}
-			aria-label="Wien oscillator model. Drag the gain tag on R f and the bridge R and C tags; click a wire to clip a probe on."
+			aria-label={t(
+				'Wien oscillator model. Drag the gain tag on R f and the bridge R and C tags; click a wire to clip a probe on.'
+			)}
 		>
 			{@html svg}
 		</div>
@@ -308,17 +313,17 @@
 		aria-live="polite"
 		aria-atomic="true"
 	>
-		<span class="microlabel">Barkhausen classifier</span>
-		<strong>{regime}</strong>
+		<span class="microlabel">{t('Barkhausen classifier')}</span>
+		<strong>{t(regime)}</strong>
 		<span class="visually-hidden"
 			>{faults.openGainResistor
-				? 'Amplifier feedback degraded: gain resistor open.'
-				: 'Amplifier feedback active.'}
-			{motion.status}</span
+				? t('Amplifier feedback degraded: gain resistor open.')
+				: t('Amplifier feedback active.')}
+			{t(motion.status)}</span
 		>
 	</div>
-	<section class="bench-block" aria-label="Oscilloscope">
-		<p class="microlabel">Oscilloscope · rolling</p>
+	<section class="bench-block" aria-label={t('Oscilloscope')}>
+		<p class="microlabel">{t('Oscilloscope, rolling trace')}</p>
 		<Scope
 			{channels}
 			running={!(motion.paused || motion.animationBlocked)}
@@ -326,71 +331,79 @@
 			{revision}
 		/>
 	</section>
-	<section class="bench-block" aria-label="Phase portrait">
+	<section class="bench-block" aria-label={t('Phase portrait')}>
 		<PhasePortrait
 			points={orbit}
-			label="birth of the limit cycle"
+			label={t('birth of the limit cycle')}
 			xLabel="output voltage"
 			yLabel="output voltage derivative"
 			xMath={reading('wien.scope.vo', 'output voltage')}
 			yMath={reading('wien.scope.dvo', 'output voltage derivative')}
 		/>
 	</section>
-	<section class="bench-block" aria-label="Readouts">
-		<p class="microlabel">Readouts</p>
+	<section class="bench-block" aria-label={t('Readouts')}>
+		<p class="microlabel">{t('Readouts')}</p>
 		<div class="bench-readouts">
 			<span
 				><LiveMath
 					id="wien.readout.f0"
-					label={`frequency ${formatSi(frequency, 'Hz')}`}
+					label={t('frequency {0}', [formatSi(frequency, 'Hz')])}
 					values={{ value: formatSi(frequency, 'Hz') }}
 				/></span
 			>
 			<span
 				><LiveMath
 					id="wien.readout.mu"
-					label={`loop margin ${mu.toFixed(2)}`}
+					label={t('loop margin {0}', [mu.toFixed(2)])}
 					values={{ value: mu.toFixed(2) }}
 				/></span
 			>
 			<span
 				><LiveMath
 					id="wien.readout.amplitude"
-					label={`amplitude approximately ${amplitude.toFixed(2)}`}
+					label={t('amplitude approximately {0}', [amplitude.toFixed(2)])}
 					values={{ value: amplitude.toFixed(2) }}
 				/></span
 			>
 		</div>
 	</section>
-	<PartReadout {host} read={probe} hint="Click the amplifier or the gain divider to read it." />
+	<PartReadout
+		{host}
+		read={probe}
+		hint={t('Click the amplifier or the gain divider to read it.')}
+	/>
 {/snippet}
 
 {#snippet deck()}
 	<div class="bench-group note">
-		<span class="microlabel">Why gain 3</span>
+		<span class="microlabel">{t('Why gain 3')}</span>
 		<p>
-			The Wien network passes exactly one frequency with zero phase shift and a
-			<LiveMath id="wien.control.loss" label="one-third magnitude" /> loss, so the amplifier must supply
-			a gain of <strong>3</strong> to close the loop and sing.
+			{t('The Wien network passes exactly one frequency with zero phase shift and a')}
+			<LiveMath id="wien.control.loss" label={t('one-third magnitude')} />
+			{t('loss, so the amplifier must supply a gain of')} <strong>3</strong>
+			{t('to close the loop and sing.')}
 		</p>
 	</div>
 	<ProbeSelects {nets} bind:a={probeA} bind:b={probeB} />
 	<div class="bench-group">
-		<span class="microlabel">Try</span>
+		<span class="microlabel">{t('Try')}</span>
 		<div class="bench-row">
 			<button type="button" class="btn" data-timeline-input onclick={reset}
-				>reset (seed noise)</button
+				>{t('Reset (seed noise)')}</button
 			>
 			<button type="button" class="btn" data-timeline-input onclick={() => (gain = 3)}
-				>set gain to 3</button
+				>{t('Set gain to 3')}</button
 			>
 		</div>
 	</div>
 	<div class="bench-group">
-		<SimulationMotionControl {motion} label="Wien oscillator and waveform animation" />
+		<SimulationMotionControl {motion} label={t('Wien oscillator and waveform animation')} />
 	</div>
 	<div class="bench-group">
-		<FaultSwitch label="gain-set resistor open (latch-up)" bind:active={faults.openGainResistor} />
+		<FaultSwitch
+			label={t('Gain-set resistor open (latch-up)')}
+			bind:active={faults.openGainResistor}
+		/>
 	</div>
 {/snippet}
 
@@ -433,7 +446,9 @@
 		background: var(--bg-inset);
 
 		& strong {
-			font-family: var(--font-mono);
+			font-family: var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			font-size: var(--text-md);
 			color: var(--accent-2);
 		}

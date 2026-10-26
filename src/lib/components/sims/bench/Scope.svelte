@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * A two-channel oscilloscope for whatever the probes are clipped to.
 	 *
@@ -172,11 +175,11 @@
 
 <figure class="scope">
 	<div class="screen">
-		<div class="trace" role="img" aria-label={description}>
+		<div class="trace" role="img" aria-label={t(description)}>
 			<canvas bind:this={canvas} aria-hidden="true"></canvas>
 		</div>
 		{#if !channels.length}
-			<p class="idle">Click a wire to clip a probe on.</p>
+			<p class="idle">{t('Click a wire to clip a probe on.')}</p>
 		{/if}
 	</div>
 	<figcaption>
@@ -184,16 +187,18 @@
 			{#each channels as channel, index (channel.letter)}
 				<li>
 					<i class="swatch" style={`background:${channel.color}`} bind:this={swatches[index]}></i>
-					<b>{channel.letter}{channel.ac ? '~' : ''}</b>
-					<span>{channel.label}</span>
-					<output>{channel.summary}</output>
+					<b>{t(channel.letter)}{channel.ac ? t('~') : t('')}</b>
+					<span>{t(channel.label)}</span>
+					<output>{t(channel.summary)}</output>
 					<span class="per-div"
-						>{scales[index] ? `${formatScale(scales[index]!, channel.unit)}/div` : ''}</span
+						>{scales[index]
+							? t('{0}/div', [formatScale(scales[index]!, channel.unit)])
+							: t('')}</span
 					>
 				</li>
 			{/each}
 		</ul>
-		<span class="divisions">{timebase}</span>
+		<span class="divisions">{t(timebase)}</span>
 	</figcaption>
 </figure>
 
@@ -232,14 +237,18 @@
 		display: grid;
 		place-items: center;
 		margin: 0;
-		font: var(--text-xs) / 1.4 var(--font-mono);
+		font: var(--text-xs) / 1.4 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 	}
 
 	figcaption {
 		display: grid;
 		gap: var(--space-1);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--ink-mute);
 	}

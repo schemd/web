@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/** Interactive 8-bit ripple-carry adder driven by compiler delegation hooks. */
 	import { rippleCarry } from '#lib/simulation-models.ts';
 	import { delegatedNodeId, setNodeActive, setWireSignalFrom } from '#lib/sim-dom.ts';
@@ -125,7 +128,7 @@
 			if (value === undefined) continue;
 			input.setAttribute(
 				'aria-label',
-				`${id} input node, current value ${value}. Activate either port to toggle.`
+				t('{0} input node, current value {1}. Activate either port to toggle.', [id, value])
 			);
 			input.setAttribute('data-logic-state', String(value));
 			for (const port of input.querySelectorAll('[data-port-id]')) {
@@ -136,10 +139,16 @@
 </script>
 
 <Bench
-	title="Ripple-carry adder"
+	title={t('Ripple-carry adder')}
 	tone="digital"
-	status={`${operandA} + ${operandB}${carryIn ? ' + 1' : ''} = ${total}${stuckCarry ? ' · carry stuck' : ''}`}
-	hint="Click an input port to flip its bit; the carry ripples through the chain."
+	status={t('{0} + {1}{2} = {3}{4}', [
+		operandA,
+		operandB,
+		t(carryIn ? ' + 1' : ''),
+		total,
+		t(stuckCarry ? ', carry stuck' : '')
+	])}
+	hint={t('Click an input port to flip its bit; the carry ripples through the chain.')}
 	stage={canvas}
 	dock={readouts}
 	deck={controls}
@@ -150,13 +159,15 @@
 		class="sim-stage adder-stage schemd-frame"
 		bind:this={host}
 		role="group"
-		aria-label="Interactive 8-Bit Digital Adder schematic. Activate A, B, or carry input ports to toggle them."
+		aria-label={t(
+			'Interactive 8-Bit Digital Adder schematic. Activate A, B, or carry input ports to toggle them.'
+		)}
 		data-model-stage={timeline.step}
 	>
 		{@html svg}
 		<div class="canvas-instruction">
-			<span>direct manipulation enabled</span>
-			<strong>Click any A, B, or C<sub>in</sub> port in the schematic</strong>
+			<span>{t('Direct manipulation enabled')}</span>
+			<strong>{t('Click any A, B, or C')}<sub>{t('in')}</sub> {t('port in the schematic')}</strong>
 		</div>
 	</div>
 {/snippet}
@@ -164,7 +175,7 @@
 {#snippet controls()}
 	<div class="register-console">
 		<label>
-			<span>A register</span>
+			<span>{t('A register')}</span>
 			<input
 				type="number"
 				data-lab-input="a"
@@ -172,17 +183,17 @@
 				max="255"
 				value={operandA}
 				oninput={(event) => (operandA = clampByte(event.currentTarget.valueAsNumber))}
-				aria-label="operand A"
+				aria-label={t('operand A')}
 			/>
 			<code>0x{operandA.toString(16).padStart(2, '0').toUpperCase()}</code>
 		</label>
-		<div class="bit-bank" aria-label="Operand A bits, most significant first">
+		<div class="bit-bank" aria-label={t('Operand A bits, most significant first')}>
 			{#each aBits.toReversed() as bit, index (index)}
-				<span class:high={bit === 1}>{bit}</span>
+				<span class:high={bit === 1}>{t(bit)}</span>
 			{/each}
 		</div>
 		<label>
-			<span>B register</span>
+			<span>{t('B register')}</span>
 			<input
 				type="number"
 				data-lab-input="b"
@@ -190,13 +201,13 @@
 				max="255"
 				value={operandB}
 				oninput={(event) => (operandB = clampByte(event.currentTarget.valueAsNumber))}
-				aria-label="operand B"
+				aria-label={t('operand B')}
 			/>
 			<code>0x{operandB.toString(16).padStart(2, '0').toUpperCase()}</code>
 		</label>
-		<div class="bit-bank" aria-label="Operand B bits, most significant first">
+		<div class="bit-bank" aria-label={t('Operand B bits, most significant first')}>
 			{#each bBits.toReversed() as bit, index (index)}
-				<span class:high={bit === 1}>{bit}</span>
+				<span class:high={bit === 1}>{t(bit)}</span>
 			{/each}
 		</div>
 	</div>
@@ -208,36 +219,37 @@
 				checked={carryIn === 1}
 				onchange={(event) => (carryIn = event.currentTarget.checked ? 1 : 0)}
 			/>
-			<span>carry in</span>
-			<strong>{carryIn}</strong>
+			<span>{t('Carry in')}</span>
+			<strong>{t(carryIn)}</strong>
 		</label>
-		<FaultSwitch label="interrupt the carry chain" bind:active={stuckCarry} />
+		<FaultSwitch label={t('Interrupt the carry chain')} bind:active={stuckCarry} />
 	</div>
 {/snippet}
 
 {#snippet readouts()}
 	<div class="result-readout">
 		<div>
-			<span>Σ decimal</span>
-			<output data-lab-signal="total" aria-label={`nine-bit result equals ${total}`}>{total}</output
+			<span>{t('Σ decimal')}</span>
+			<output data-lab-signal="total" aria-label={t('nine-bit result equals {0}', [total])}
+				>{t(total)}</output
 			>
 		</div>
 		<div>
-			<span>binary result</span>
+			<span>{t('Binary result')}</span>
 			<code>{binaryResult}</code>
 		</div>
 		<div>
-			<span>carry out</span>
-			<output data-lab-signal="carryOut" aria-label={`carry out equals ${result.carry}`}
-				>{result.carry}</output
+			<span>{t('Carry out')}</span>
+			<output data-lab-signal="carryOut" aria-label={t('carry out equals {0}', [result.carry])}
+				>{t(result.carry)}</output
 			>
 		</div>
 	</div>
 	<div class="signal-health">
-		<span><i class="high"></i>{highNetCount} high paths</span>
-		<span><i></i>low paths muted</span>
+		<span><i class="high"></i>{t(highNetCount)} {t('high paths')}</span>
+		<span><i></i>{t('Low paths muted')}</span>
 		<span class:warning={stuckCarry}
-			>{stuckCarry ? 'carry chain interrupted' : 'propagation nominal'}</span
+			>{stuckCarry ? t('carry chain interrupted') : t('propagation nominal')}</span
 		>
 	</div>
 {/snippet}
@@ -273,7 +285,7 @@
 	}
 
 	.adder-stage :global([data-wire-source] path) {
-		stroke: #64717d;
+		stroke: var(--line-strong);
 		stroke-width: 1.15;
 		transition:
 			stroke 100ms linear,
@@ -282,11 +294,12 @@
 
 	.adder-stage :global([data-wire-source].signal-high) {
 		opacity: 1;
-		filter: drop-shadow(0 0 4px rgb(98 246 207 / 0.95)) drop-shadow(0 0 12px rgb(98 246 207 / 0.5));
+		filter: drop-shadow(0 0 4px color-mix(in srgb, var(--live) 95%, transparent))
+			drop-shadow(0 0 12px color-mix(in srgb, var(--live) 50%, transparent));
 	}
 
 	.adder-stage :global([data-wire-source].signal-high path) {
-		stroke: #62f6cf;
+		stroke: var(--live);
 		stroke-width: 2.65;
 	}
 
@@ -299,7 +312,7 @@
 
 	.adder-stage :global([data-node-id].is-active) {
 		opacity: 1;
-		filter: drop-shadow(0 0 6px rgb(98 246 207 / 0.66));
+		filter: drop-shadow(0 0 6px color-mix(in srgb, var(--live) 66%, transparent));
 	}
 
 	.adder-stage :global([data-node-id^='A']),
@@ -310,7 +323,7 @@
 	}
 
 	.adder-stage :global([data-node-id]:focus-within) {
-		filter: drop-shadow(0 0 8px #fff) drop-shadow(0 0 16px #62f6cf);
+		filter: drop-shadow(0 0 16px var(--live));
 		opacity: 1;
 	}
 
@@ -323,27 +336,26 @@
 		display: grid;
 		gap: 2px;
 		padding: 0.55rem 0.75rem;
-		border: 1px solid rgb(98 246 207 / 0.25);
-		border-radius: 6px;
-		background: rgb(7 10 12 / 0.88);
-		backdrop-filter: blur(8px);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-sm);
+		background: var(--bg);
 		pointer-events: none;
 	}
 
 	.canvas-instruction span,
 	.register-console label span,
 	.result-readout span {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 0.625rem;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
 		color: var(--ink-faint);
 	}
 
 	.canvas-instruction strong {
 		font-size: var(--text-xs);
 		font-weight: 540;
-		color: #bfffee;
+		color: var(--live-text);
 	}
 
 	.register-console {
@@ -366,12 +378,14 @@
 		border-radius: 4px;
 		background: var(--bg-inset);
 		color: var(--ink);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 	}
 
 	.register-console code {
 		font-size: var(--text-xs);
-		color: #62f6cf;
+		color: var(--live);
 	}
 
 	.bit-bank {
@@ -386,16 +400,18 @@
 		border-radius: 3px;
 		background: var(--bg-inset);
 		text-align: center;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--ink-faint);
 	}
 
 	.bit-bank span.high {
-		border-color: rgb(98 246 207 / 0.42);
-		background: rgb(98 246 207 / 0.12);
-		color: #bfffee;
-		box-shadow: inset 0 -2px 0 #62f6cf;
+		border-color: color-mix(in srgb, var(--live) 42%, transparent);
+		background: color-mix(in srgb, var(--live) 12%, transparent);
+		color: var(--live-text);
+		box-shadow: inset 0 -2px 0 var(--live);
 	}
 
 	.aux-controls {
@@ -412,22 +428,24 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--ink-mute);
 	}
 
 	.carry-toggle input {
-		accent-color: #62f6cf;
+		accent-color: var(--live);
 	}
 
 	.carry-toggle strong {
-		color: #62f6cf;
+		color: var(--live);
 	}
 
 	.result-readout {
 		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
 		gap: var(--space-3);
 	}
 
@@ -441,7 +459,7 @@
 		font-family: var(--font-mono);
 		font-size: clamp(1rem, 2.2vw, 1.45rem);
 		font-variant-numeric: tabular-nums;
-		color: #bfffee;
+		color: var(--live-text);
 		white-space: nowrap;
 	}
 
@@ -452,10 +470,10 @@
 		margin-block-start: var(--space-4);
 		padding-block-start: var(--space-3);
 		border-block-start: 1px solid var(--line);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 0.625rem;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
 		color: var(--ink-faint);
 	}
 
@@ -468,12 +486,12 @@
 	.signal-health i {
 		inline-size: 16px;
 		block-size: 2px;
-		background: #64717d;
+		background: var(--line-strong);
 	}
 
 	.signal-health i.high {
-		background: #62f6cf;
-		box-shadow: 0 0 6px #62f6cf;
+		background: var(--live);
+		box-shadow: 0 0 6px var(--live);
 	}
 
 	.signal-health .warning {

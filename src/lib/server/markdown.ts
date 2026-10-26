@@ -228,7 +228,6 @@ export function renderMarkdownDoc(source: string, docSlug: string): RenderedDoc 
 		const attrs = parseAttrs(match[1]!);
 		const id = attrs.id ?? `section-${sections.length + 1}`;
 		const title = attrs.title ?? id;
-		const eyebrow = attrs.eyebrow ?? '';
 		sections.push({ id, title });
 
 		const {
@@ -239,7 +238,7 @@ export function renderMarkdownDoc(source: string, docSlug: string): RenderedDoc 
 		examples.push(...exs);
 
 		out.push(
-			`<h2 id="${id}">${eyebrow ? `<span class="doc-eyebrow">${escapeHtml(eyebrow)}</span>` : ''}${escapeHtml(title)}</h2>`
+			`<h2 id="${id}"><span class="doc-num">${sections.length}</span>${escapeHtml(title)}</h2>`
 		);
 		out.push(renderProse(markdown, figures));
 	}

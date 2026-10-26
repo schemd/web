@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href } = useLanguage();
+
 	import { onMount } from 'svelte';
 	import type { Pedagogy, SimulationCurriculum } from '#lib/server/simulations.ts';
 	import {
@@ -247,48 +250,50 @@
 
 <section class="learning-loop" aria-labelledby={`prediction-${id}`}>
 	<div class="curriculum-line">
-		<span class="microlabel">recommended lab {curriculum.order} of {total}</span>
-		<p>{curriculum.objective}</p>
+		<span class="microlabel">{t('Recommended lab')} {t(curriculum.order)} {t('of')} {t(total)}</span
+		>
+		<p>{t(curriculum.objective)}</p>
 		{#if prerequisites.length > 0}
 			<p class="prerequisites">
-				<span>Builds on:</span>
+				<span>{t('Builds on:')}</span>
 				{#each prerequisites as prerequisite, index (prerequisite.id)}
-					<a href={`/simulations/${version}/${prerequisite.id}`}>{prerequisite.title}</a>{index <
-					prerequisites.length - 1
-						? ', '
-						: ''}
+					<a href={href(`/simulations/${version}/${prerequisite.id}`)}>{t(prerequisite.title)}</a
+					>{index < prerequisites.length - 1 ? t(', ') : t('')}
 				{/each}
 			</p>
 		{:else}
-			<p class="prerequisites"><span>Prerequisite:</span> none — start here.</p>
+			<p class="prerequisites"><span>{t('Prerequisite:')}</span> {t('none — start here.')}</p>
 		{/if}
 	</div>
 
 	<div class="prediction" class:committed={committedChoice !== undefined}>
-		<span class="microlabel prediction-kicker">predict · then test</span>
+		<span class="microlabel prediction-kicker">{t('Predict, then test')}</span>
 		<h2 id={`prediction-${id}`}>{@html pedagogy.prediction.promptHtml}</h2>
 
 		{#if committedChoice}
 			<div class="commit-result" role="status">
 				<p class="commit-label">
 					<span aria-hidden="true">✓</span>
-					Prediction committed: {@html committedChoice.labelHtml}
+					{t('Prediction committed:')}
+					{@html committedChoice.labelHtml}
 				</p>
 				<div class="prediction-feedback prose">
 					{@html committedChoice.feedbackHtml}
 				</div>
 				<p class="epistemic-note">
 					{committedChoice.correct
-						? 'The model supports your prediction. Now make it earn that claim.'
-						: 'A useful miss: keep the prediction visible and use the trace to find the broken assumption.'}
+						? t('The model supports your prediction. Now make it earn that claim.')
+						: t(
+								'A useful miss: keep the prediction visible and use the trace to find the broken assumption.'
+							)}
 				</p>
-				<a class="run-link" href="#live-laboratory">Run the experiment ↓</a>
+				<a class="run-link" href="#live-laboratory">{t('Run the experiment')}</a>
 			</div>
 		{:else}
 			<p class="prediction-rule">
-				Commit before the explanation appears. This is a prediction, not a quiz score.
+				{t('Commit before the explanation appears. This is a prediction, not a quiz score.')}
 			</p>
-			<div class="choice-grid" role="group" aria-label="Prediction choices">
+			<div class="choice-grid" role="group" aria-label={t('Prediction choices')}>
 				{#each pedagogy.prediction.choices as choice (choice.id)}
 					<button type="button" onclick={() => commitPrediction(choice.id)}>
 						{@html choice.labelHtml}
@@ -300,22 +305,22 @@
 
 	{#if committedChoice}
 		<blockquote class="aha">
-			<span class="aha-mark microlabel">the result to explain</span>
+			<span class="aha-mark microlabel">{t('The result to explain')}</span>
 			<p>{@html pedagogy.ahaHtml}</p>
 		</blockquote>
 
 		<div class="principle">
-			<span class="microlabel">why the evidence behaves this way</span>
+			<span class="microlabel">{t('Why the evidence behaves this way')}</span>
 			<div class="prose">{@html pedagogy.principleHtml}</div>
 		</div>
 
 		<div class="walkthrough">
 			<div class="walkthrough-head">
 				<div>
-					<span class="microlabel">evidence loop</span>
-					<h2>Make the model answer you.</h2>
+					<span class="microlabel">{t('Evidence loop')}</span>
+					<h2>{t('Make the model answer you.')}</h2>
 				</div>
-				<span class="step-count" aria-hidden="true">{finishedSteps}/{requiredActions}</span>
+				<span class="step-count" aria-hidden="true">{t(finishedSteps)}/{t(requiredActions)}</span>
 			</div>
 
 			<p
@@ -325,34 +330,34 @@
 				aria-live="polite"
 			>
 				{#if mismatch}
-					{mismatch}
+					{t(mismatch)}
 				{:else if expectedAction}
-					Current action: {expectedAction.instruction}{expectedAction.occurrences > 1
-						? ` (${lab.actionEvents}/${expectedAction.occurrences} matching interactions)`
-						: ''}.
+					{t('Current action:')}
+					{t(expectedAction.instruction)}{expectedAction.occurrences > 1
+						? t(' ({0}/{1} matching interactions)', [lab.actionEvents, expectedAction.occurrences])
+						: t('')}.
 				{:else if !lab.faultObserved}
-					Evidence steps complete. Inject the hidden fault and inspect what changes before
-					diagnosing it.
+					{t(
+						'Evidence steps complete. Inject the hidden fault and inspect what changes before diagnosing it.'
+					)}
 				{:else if !lab.diagnosisAttempted}
-					Evidence steps complete. Commit a fault hypothesis below.
+					{t('Evidence steps complete. Commit a fault hypothesis below.')}
 				{:else}
-					Every interaction contract is complete.
+					{t('Every interaction contract is complete.')}
 				{/if}
 			</p>
 
 			{#if incompletePrerequisites.length > 0}
 				<p class="prerequisite-warning">
-					Recommended first:
+					{t('Recommended first:')}
 					{#each incompletePrerequisites as prerequisite, index (prerequisite.id)}
-						<a href={`/simulations/${version}/${prerequisite.id}`}>{prerequisite.title}</a>{index <
-						incompletePrerequisites.length - 1
-							? ', '
-							: ''}
-					{/each}. You may continue; this is guidance, not a lock.
+						<a href={href(`/simulations/${version}/${prerequisite.id}`)}>{t(prerequisite.title)}</a
+						>{index < incompletePrerequisites.length - 1 ? t(', ') : t('')}
+					{/each}{t('. You may continue; this is guidance, not a lock.')}
 				</p>
 			{/if}
 
-			<ol class="guided" aria-label="Interactive guided walk-through">
+			<ol class="guided" aria-label={t('Interactive guided walk-through')}>
 				{#each pedagogy.steps as step, index (step.label)}
 					<li
 						class="guided-step"
@@ -360,17 +365,17 @@
 						aria-current={lab.actions === index ? 'step' : undefined}
 					>
 						<span class="step-index" aria-hidden="true">
-							{lab.actions > index ? '✓' : index + 1}
+							{lab.actions > index ? t('✓') : t(index + 1)}
 						</span>
 						<div class="step-body">
 							<div class="step-heading">
 								<p class="step-label">{@html step.labelHtml}</p>
 								<span class="step-state">
 									{lab.actions > index
-										? 'evidence recorded'
+										? t('evidence recorded')
 										: lab.actions === index
-											? `expected: ${step.action.instruction}`
-											: 'follows the previous observation'}
+											? t('expected: {0}', [step.action.instruction])
+											: t('follows the previous observation')}
 								</span>
 							</div>
 							<div class="prose step-detail">{@html step.detailHtml}</div>
@@ -380,27 +385,29 @@
 			</ol>
 
 			<aside class="diagnosis" class:is-complete={lab.diagnosisAttempted}>
-				<span class="microlabel">transfer challenge · fault unknown</span>
+				<span class="microlabel">{t('Transfer challenge: the fault is unknown')}</span>
 				<p>{@html pedagogy.diagnosisPromptHtml}</p>
 				{#if lab.diagnosisAttempted}
 					<div class="diagnosis-reveal" role="status">
-						<span class="diagnosis-state">Diagnosis attempt recorded. Authored answer:</span>
-						<strong>{fault}</strong>
+						<span class="diagnosis-state">{t('Diagnosis attempt recorded. Authored answer:')}</span>
+						<strong>{t(fault)}</strong>
 						<span class="diagnosis-state"
-							>Compare the evidence—not your wording—to decide what you missed.</span
+							>{t('Compare the evidence—not your wording—to decide what you missed.')}</span
 						>
 					</div>
 				{:else if expectedAction}
 					<span class="diagnosis-state">
-						The answer remains sealed until every evidence action is complete.
+						{t('The answer remains sealed until every evidence action is complete.')}
 					</span>
 				{:else if !lab.faultObserved}
 					<span class="diagnosis-state">
-						The answer remains sealed until you activate the hidden fault and observe its evidence.
+						{t(
+							'The answer remains sealed until you activate the hidden fault and observe its evidence.'
+						)}
 					</span>
 				{:else}
 					<form class="diagnosis-form" onsubmit={submitDiagnosis} novalidate>
-						<label for={`diagnosis-${id}`}>Your fault hypothesis</label>
+						<label for={`diagnosis-${id}`}>{t('Your fault hypothesis')}</label>
 						<textarea
 							id={`diagnosis-${id}`}
 							name="diagnosis"
@@ -413,46 +420,55 @@
 								? `diagnosis-help-${id} diagnosis-error-${id}`
 								: `diagnosis-help-${id}`}></textarea>
 						<span id={`diagnosis-help-${id}`} class="diagnosis-state">
-							Name the suspected mechanism and the evidence that led you there. This text is not
-							saved.
+							{t(
+								'Name the suspected mechanism and the evidence that led you there. This text is not saved.'
+							)}
 						</span>
 						{#if diagnosisError}
 							<span id={`diagnosis-error-${id}`} class="diagnosis-error" role="alert">
-								{diagnosisError}
+								{t(diagnosisError)}
 							</span>
 						{/if}
-						<button type="submit">Commit hypothesis and reveal answer</button>
+						<button type="submit">{t('Commit hypothesis and reveal answer')}</button>
 					</form>
 				{/if}
 			</aside>
 
 			<p class="progress-announcement" role="status" aria-live="polite">
 				{#if complete}
-					Lab complete: prediction, {requiredActions} observations, and diagnosis recorded.
+					{t('Lab complete: prediction,')}
+					{t(requiredActions)}
+					{t('observations, and diagnosis recorded.')}
 				{:else if storageReady}
-					{persistenceAvailable ? 'Progress saved locally' : 'Progress held for this page only'}:
-					{finishedSteps} of {requiredActions} observations and {lab.diagnosisAttempted
-						? 'one diagnosis'
-						: 'no diagnosis yet'}; hidden-fault evidence {lab.faultObserved
-						? 'observed'
-						: 'not yet observed'}.
+					{persistenceAvailable
+						? t('Progress saved locally')
+						: t('Progress held for this page only')}:
+					{t(finishedSteps)}
+					{t('of')}
+					{t(requiredActions)}
+					{t('observations and')}
+					{lab.diagnosisAttempted ? t('one diagnosis') : t('no diagnosis yet')}{t(
+						'; hidden-fault evidence'
+					)}
+					{lab.faultObserved ? t('observed') : t('not yet observed')}.
 				{:else}
-					Loading local progress.
+					{t('Loading local progress.')}
 				{/if}
 			</p>
 
 			{#if complete}
 				<div class="completion">
 					<div>
-						<span class="microlabel">experiment complete</span>
-						<strong>{title}</strong>
+						<span class="microlabel">{t('Experiment complete')}</span>
+						<strong>{t(title)}</strong>
 					</div>
 					{#if next}
-						<a href={`/simulations/${version}/${next.id}`}>
-							Continue to {next.title} →
+						<a href={href(`/simulations/${version}/${next.id}`)}>
+							{t('Continue to')}
+							{t(next.title)}
 						</a>
 					{:else}
-						<a href={`/simulations/${version}`}>Review the completed curriculum →</a>
+						<a href={href(`/simulations/${version}`)}>{t('Review the completed curriculum')}</a>
 					{/if}
 				</div>
 			{/if}
@@ -493,11 +509,9 @@
 		display: grid;
 		gap: var(--space-3);
 		padding: clamp(var(--space-4), 3vw, var(--space-6));
-		border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--line));
-		border-inline-start: 4px solid var(--accent);
-		background:
-			linear-gradient(135deg, color-mix(in srgb, var(--accent) 9%, transparent), transparent 58%),
-			var(--bg-inset);
+		border: 1px solid var(--line);
+		border-inline-start: 4px solid var(--ink);
+		background: var(--wash);
 
 		& h2 {
 			max-inline-size: 45ch;
@@ -508,7 +522,7 @@
 	}
 
 	.prediction-kicker {
-		color: var(--accent);
+		color: var(--ink);
 	}
 
 	.prediction-rule,
@@ -534,8 +548,8 @@
 			line-height: 1.45;
 
 			&:hover {
-				border-color: var(--accent);
-				background: color-mix(in srgb, var(--accent) 8%, var(--bg-raised));
+				border-color: var(--ink);
+				background: var(--wash);
 			}
 		}
 	}
@@ -551,7 +565,7 @@
 		font-weight: 600;
 
 		& > span {
-			color: var(--accent);
+			color: var(--ink);
 			margin-inline-end: var(--space-1);
 		}
 	}
@@ -565,8 +579,8 @@
 	.aha {
 		margin: 0;
 		padding: var(--space-4) var(--space-5);
-		background: color-mix(in srgb, var(--accent) 8%, var(--bg-inset));
-		border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+		background: var(--wash);
+		border: 1px solid var(--line);
 		display: grid;
 		gap: var(--space-2);
 
@@ -574,14 +588,13 @@
 			margin: 0;
 			font-size: var(--text-lg);
 			line-height: 1.4;
-			letter-spacing: -0.01em;
 			color: var(--ink);
 			text-wrap: balance;
 		}
 	}
 
 	.aha-mark {
-		color: var(--accent);
+		color: var(--ink);
 	}
 
 	.principle {
@@ -632,9 +645,11 @@
 	}
 
 	.step-count {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-lg);
-		color: var(--accent);
+		color: var(--ink);
 	}
 
 	.action-feedback {
@@ -642,7 +657,9 @@
 		padding: var(--space-3);
 		border: 1px solid var(--line);
 		background: var(--bg-inset);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--ink-mute);
 
@@ -679,8 +696,8 @@
 		background: var(--bg-panel);
 
 		&[aria-current='step'] {
-			background: color-mix(in srgb, var(--accent) 6%, var(--bg-panel));
-			box-shadow: inset 3px 0 0 var(--accent);
+			background: var(--wash);
+			box-shadow: inset 3px 0 0 var(--ink);
 		}
 
 		&.is-complete {
@@ -693,10 +710,12 @@
 		place-items: center;
 		inline-size: 1.6rem;
 		block-size: 1.6rem;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
-		color: var(--accent-ink);
-		background: var(--accent);
+		color: var(--bg);
+		background: var(--ink);
 		border-radius: 999px;
 	}
 
@@ -726,7 +745,9 @@
 
 	.step-state,
 	.diagnosis-state {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-faint);
 	}
@@ -783,7 +804,7 @@
 			line-height: 1.5;
 
 			&:focus-visible {
-				outline: 2px solid var(--accent);
+				outline: 2px solid var(--ink);
 				outline-offset: 2px;
 			}
 		}
@@ -791,9 +812,9 @@
 		& button {
 			justify-self: start;
 			padding: var(--space-2) var(--space-3);
-			border: 1px solid var(--accent);
-			background: var(--accent);
-			color: var(--accent-ink);
+			border: 1px solid var(--ink);
+			background: var(--ink);
+			color: var(--bg);
 			font-weight: 600;
 		}
 	}

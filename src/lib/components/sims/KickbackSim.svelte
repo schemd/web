@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Phase kickback on the v2 bench.
 	 *
@@ -49,8 +52,8 @@
 	const targetLabel = $derived(TARGETS.find((entry) => entry.value === target)!.label);
 	const status = $derived(
 		purity > 0.99
-			? `clean kickback · P(1) = ${probabilityOne.toFixed(3)}`
-			: `entangled · control purity ${purity.toFixed(2)}`
+			? `clean kickback, P(1) = ${probabilityOne.toFixed(3)}`
+			: `entangled, control purity ${purity.toFixed(2)}`
 	);
 
 	/* The control's Bloch vector at each timeline stage. */
@@ -149,13 +152,15 @@
 </script>
 
 <Bench
-	title="Phase kickback"
+	title={t('Phase kickback')}
 	tone="quantum"
-	{status}
+	status={t(status)}
 	{stage}
 	{dock}
 	{deck}
-	hint="Drag φ on the controlled-phase gate and choose the target state. Step the timeline to follow the control; click a gate to read it."
+	hint={t(
+		'Drag φ on the controlled-phase gate and choose the target state. Step the timeline to follow the control; click a gate to read it.'
+	)}
 />
 
 {#snippet stage()}
@@ -164,7 +169,9 @@
 			class="sim-stage kick-stage schemd-frame net-optics"
 			bind:this={host}
 			role="group"
-			aria-label="Phase kickback circuit: control qubit through H, a controlled phase onto the target, H, and measurement. Drag the phase tag on the controlled-phase gate."
+			aria-label={t(
+				'Phase kickback circuit: control qubit through H, a controlled phase onto the target, H, and measurement. Drag the phase tag on the controlled-phase gate.'
+			)}
 			data-model-stage={timeline.step}
 		>
 			{@html svg}
@@ -175,11 +182,11 @@
 
 {#snippet dock()}
 	<figure class="bloch">
-		<p class="microlabel">Control qubit after CP(φ)</p>
+		<p class="microlabel">{t('Control qubit after CP(φ)')}</p>
 		<svg
 			viewBox="0 0 160 160"
 			role="img"
-			aria-label={`Bloch vector of the control ${vec(bloch)}, length ${purity.toFixed(2)}`}
+			aria-label={t('Bloch vector of the control {0}, length {1}', [vec(bloch), purity.toFixed(2)])}
 		>
 			<circle class="sphere" cx={C} cy={C} r={R} />
 			<path class="equator" d={equator} />
@@ -191,61 +198,61 @@
 				y2={project(0, 0, -1).y}
 			/>
 			{#each axes as axis (axis.label)}
-				<text x={axis.at.x} y={axis.at.y}>{axis.label}</text>
+				<text x={axis.at.x} y={axis.at.y}>{t(axis.label)}</text>
 			{/each}
 			<line class="drop" x1={tip.x} y1={tip.y} x2={shadow.x} y2={shadow.y} />
 			<line class="vector" class:mixed={purity < 0.99} x1={C} y1={C} x2={tip.x} y2={tip.y} />
 			<circle class="tip" class:mixed={purity < 0.99} cx={tip.x} cy={tip.y} r="3.4" />
 		</svg>
-		<figcaption>a shorter arrow means the control is entangled with the target</figcaption>
+		<figcaption>{t('a shorter arrow means the control is entangled with the target')}</figcaption>
 	</figure>
-	<ol class="stages" aria-label="Control Bloch vector at each stage">
+	<ol class="stages" aria-label={t('Control Bloch vector at each stage')}>
 		{#each stages as entry, index (index)}
 			<li class:current={index === timeline.step}>
-				<span>{entry.name}</span>
-				<output>{vec(entry.vector)}</output>
+				<span>{t(entry.name)}</span>
+				<output>{t(vec(entry.vector))}</output>
 			</li>
 		{/each}
 	</ol>
-	<section class="dock-block" aria-label="Readouts">
-		<p class="microlabel">Readouts</p>
+	<section class="dock-block" aria-label={t('Readouts')}>
+		<p class="microlabel">{t('Readouts')}</p>
 		<div class="metrics">
 			<div>
-				<span>outcome</span>
+				<span>{t('Outcome')}</span>
 				<strong
 					><LiveMath
 						id="kick.readout.p1"
-						label={`probability of measuring 1 is ${probabilityOne.toFixed(3)}`}
+						label={t('probability of measuring 1 is {0}', [probabilityOne.toFixed(3)])}
 						values={{ value: probabilityOne.toFixed(3) }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>purity</span>
+				<span>{t('Purity')}</span>
 				<strong
 					><LiveMath
 						id="kick.readout.purity"
-						label={`Bloch vector length ${purity.toFixed(3)}`}
+						label={t('Bloch vector length {0}', [purity.toFixed(3)])}
 						values={{ value: purity.toFixed(3) }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>ideal</span>
+				<span>{t('ideal')}</span>
 				<strong
 					><LiveMath
 						id="kick.readout.ideal"
-						label={`ideal kickback gives ${(Math.sin(phi / 2) ** 2).toFixed(3)}`}
+						label={t('ideal kickback gives {0}', [(Math.sin(phi / 2) ** 2).toFixed(3)])}
 						values={{ value: (Math.sin(phi / 2) ** 2).toFixed(3) }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>shots</span>
+				<span>{t('shots')}</span>
 				<strong
 					><LiveMath
 						id="kick.readout.shots"
-						label={`${shots.one} ones in ${total} shots`}
+						label={t('{0} ones in {1} shots', [shots.one, total])}
 						values={{ ones: String(shots.one), total: String(total) }}
 					/></strong
 				>
@@ -255,38 +262,42 @@
 	<div class="histogram" aria-hidden="true">
 		{#each [['0', shots.zero, 1 - probabilityOne], ['1', shots.one, probabilityOne]] as const as [label, count, expected] (label)}
 			<div class="bar-row">
-				<span>{label}</span>
+				<span>{t(label)}</span>
 				<i style={`inline-size:${total ? (100 * count) / total : 0}%`}></i>
 				<b style={`inset-inline-start:${100 * expected}%`}></b>
 			</div>
 		{/each}
 	</div>
-	<PartReadout {host} read={probe} hint="Click a gate or qubit in the drawing to read it here." />
+	<PartReadout
+		{host}
+		read={probe}
+		hint={t('Click a gate or qubit in the drawing to read it here.')}
+	/>
 {/snippet}
 
 {#snippet deck()}
 	<div class="deck-group">
-		<span class="microlabel">Target state</span>
-		<div class="presets" role="group" aria-label="Target state">
+		<span class="microlabel">{t('Target state')}</span>
+		<div class="presets" role="group" aria-label={t('Target state')}>
 			{#each TARGETS as entry (entry.id)}
 				<button
 					class="btn"
 					type="button"
 					data-target={entry.id}
 					aria-pressed={target === entry.value}
-					onclick={() => (target = entry.value)}>{entry.label}</button
+					onclick={() => (target = entry.value)}>{t(entry.label)}</button
 				>
 			{/each}
 		</div>
 	</div>
 	<div class="deck-group">
-		<span class="microlabel">Measure</span>
+		<span class="microlabel">{t('Measure')}</span>
 		<button class="btn btn-solid" type="button" data-measure onclick={measure}
-			>Measure 200 shots</button
+			>{t('Measure 200 shots')}</button
 		>
 	</div>
 	<div class="deck-group">
-		<FaultSwitch label="target prepared off its eigenstate" bind:active={offEigen} />
+		<FaultSwitch label={t('Target prepared off its eigenstate')} bind:active={offEigen} />
 	</div>
 {/snippet}
 
@@ -314,7 +325,9 @@
 		}
 
 		& figcaption {
-			font: var(--text-xs) / 1.4 var(--font-mono);
+			font: var(--text-xs) / 1.4 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 	}
@@ -354,7 +367,9 @@
 	}
 
 	.bloch text {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 8px;
 		fill: var(--ink-faint);
 		text-anchor: middle;
@@ -366,7 +381,9 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
-		font: var(--text-xs) / 1.5 var(--font-mono);
+		font: var(--text-xs) / 1.5 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 
 		& li {
@@ -398,7 +415,9 @@
 		grid-template-columns: 1.2em 1fr;
 		align-items: center;
 		gap: var(--space-2);
-		font: var(--text-xs) / 1 var(--font-mono);
+		font: var(--text-xs) / 1 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 
 		& i {
@@ -434,7 +453,9 @@
 		}
 
 		& span {
-			font: var(--text-xs) / 1.4 var(--font-mono);
+			font: var(--text-xs) / 1.4 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 

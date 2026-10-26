@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Executable UML state machine — a traffic-signal controller.
 	 *
@@ -157,10 +160,10 @@
 </script>
 
 <Bench
-	title="Executable state machine"
+	title={t('Executable state machine')}
 	tone="digital"
-	status={`state ${current}${deadlocked ? ' · deadlocked' : ''}`}
-	hint="Run the machine or fire events by hand. Click a state or transition to read it."
+	status={t('state {0}{1}', [current, t(deadlocked ? ', deadlocked' : '')])}
+	hint={t('Run the machine or fire events by hand. Click a state or transition to read it.')}
 	stage={canvas}
 	dock={instruments}
 	deck={controls}
@@ -169,8 +172,10 @@
 {#snippet controls()}
 	<div class="stack">
 		<p class="control-note">
-			The token sits on the <strong>active state</strong>. Let the guarded timers run, or fire the
-			next event by hand — the diagram <em>is</em> the machine.
+			{t('The token sits on the')} <strong>{t('Active state')}</strong>{t(
+				'. Let the guarded timers run, or fire the next event by hand — the diagram'
+			)} <em>{t('is')}</em>
+			{t('the machine.')}
 		</p>
 		<div class="button-row">
 			<button
@@ -178,35 +183,36 @@
 				class="btn"
 				aria-pressed={!autoRunning}
 				aria-label={autoRunning
-					? 'Pause auto-run of the state machine'
-					: 'Run state machine automatically'}
+					? t('Pause auto-run of the state machine')
+					: t('Run state machine automatically')}
 				onclick={toggleRunning}
 			>
-				{autoRunning ? 'pause auto-run' : 'run state machine'}
+				{autoRunning ? t('pause auto-run') : t('run state machine')}
 			</button>
 			<button type="button" class="btn btn-solid" onclick={fire} disabled={deadlocked}>
-				fire event
+				{t('Fire event')}
 			</button>
-			<button type="button" class="btn" onclick={reset}>reset</button>
+			<button type="button" class="btn" onclick={reset}>{t('reset')}</button>
 		</div>
 		{#if motion.reducedMotion && motion.paused}
 			<p class="control-note" role="status">
-				State-machine animation is paused for your reduced-motion preference. “Run state machine”
-				starts it explicitly.
+				{t(
+					'State-machine animation is paused for your reduced-motion preference. “Run state machine” starts it explicitly.'
+				)}
 			</p>
 		{/if}
 		<p class="control-note">
-			Auto-run uses the causal stage delay configured in the timeline above.
+			{t('Auto-run uses the causal stage delay configured in the timeline above.')}
 		</p>
 		<div class="next-event">
-			<span class="microlabel">enabled transition</span>
+			<span class="microlabel">{t('Enabled transition')}</span>
 			{#if deadlocked}
-				<span class="deadlock">⛔ deadlocked in YELLOW — no guard enabled</span>
+				<span class="deadlock">{t('⛔ deadlocked in YELLOW — no guard enabled')}</span>
 			{:else}
 				<span class="guard"
 					><LiveMath
 						id="statechart.guard"
-						label={`${active.from} to ${active.to} when ${active.event}`}
+						label={t('{0} to {1} when {2}', [active.from, active.to, active.event])}
 						values={{ from: active.from, guard: active.event, to: active.to }}
 					/></span
 				>
@@ -214,8 +220,11 @@
 		</div>
 	</div>
 	<div class="switchboard">
-		<p class="microlabel">switchboard · fault injection</p>
-		<FaultSwitch label="YELLOW exit guard inverted (deadlock)" bind:active={faults.invertedGuard} />
+		<p class="microlabel">{t('Fault injection')}</p>
+		<FaultSwitch
+			label={t('YELLOW exit guard inverted (deadlock)')}
+			bind:active={faults.invertedGuard}
+		/>
 	</div>
 {/snippet}
 
@@ -225,7 +234,7 @@
 		bind:this={host}
 		role="group"
 		data-model-stage={timeline.step}
-		aria-label="Executable UML traffic-signal state machine"
+		aria-label={t('Executable UML traffic-signal state machine')}
 	>
 		{@html svg}
 	</div>
@@ -233,30 +242,30 @@
 
 {#snippet instruments()}
 	<div class="current" class:deadlocked aria-live="polite" aria-atomic="true">
-		<span class="microlabel">active state</span>
-		<strong>{current}</strong>
+		<span class="microlabel">{t('Active state')}</span>
+		<strong>{t(current)}</strong>
 		<span class="visually-hidden"
-			>{deadlocked ? 'No exit guard is enabled; state machine deadlocked.' : ''}
-			{autoRunning ? 'Auto-run active.' : 'Auto-run paused.'}</span
+			>{deadlocked ? t('No exit guard is enabled; state machine deadlocked.') : t('')}
+			{autoRunning ? t('Auto-run active.') : t('Auto-run paused.')}</span
 		>
 	</div>
 	<div class="residency">
-		<span class="microlabel">state residency</span>
+		<span class="microlabel">{t('State residency')}</span>
 		{#each ['RED', 'GREEN', 'YELLOW'] as const as state (state)}
 			<div class="res-row">
-				<span class="res-name">{state}</span>
+				<span class="res-name">{t(state)}</span>
 				<div class="res-bar">
 					<span style={`width: ${Math.min(100, visits[state] * 12)}%`}></span>
 				</div>
-				<span class="res-count">{visits[state]}</span>
+				<span class="res-count">{t(visits[state])}</span>
 			</div>
 		{/each}
 	</div>
-	<div class="trace" aria-label="Event trace log">
-		<span class="microlabel">event trace</span>
+	<div class="trace" aria-label={t('Event trace log')}>
+		<span class="microlabel">{t('Event trace')}</span>
 		<ol>
 			{#each trace as entry, index (index)}
-				<li>{entry}</li>
+				<li>{t(entry)}</li>
 			{/each}
 		</ol>
 	</div>
@@ -301,13 +310,17 @@
 	}
 
 	.guard {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--accent-2);
 	}
 
 	.deadlock {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--danger);
 	}
@@ -332,7 +345,9 @@
 		background: var(--bg-inset);
 
 		& strong {
-			font-family: var(--font-mono);
+			font-family: var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			font-size: var(--text-lg);
 			color: var(--accent-2);
 		}
@@ -356,7 +371,9 @@
 		grid-template-columns: 3.4rem minmax(0, 1fr) 1.4rem;
 		align-items: center;
 		gap: var(--space-2);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-mute);
 	}
@@ -388,7 +405,9 @@
 			overflow-y: auto;
 			background: var(--bg-inset);
 			border: 1px solid var(--line);
-			font-family: var(--font-mono);
+			font-family: var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			font-size: var(--text-2xs);
 			color: var(--ink-mute);
 		}

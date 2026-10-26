@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Quantum teleportation protocol tracker.
 	 *
@@ -265,10 +268,15 @@
 </script>
 
 <Bench
-	title="Quantum teleportation"
+	title={t('Quantum teleportation')}
 	tone="quantum"
-	status={`step ${step + 1} of ${STEPS.length} · ${STEPS[step]?.label ?? ''}${corrupted ? ' · state degraded' : ''}`}
-	hint="Drag θ and φ on the input state. Hover a gate for its action; click one to read it."
+	status={t('step {0} of {1}, {2}{3}', [
+		step + 1,
+		STEPS.length,
+		t(STEPS[step]?.label ?? ''),
+		t(corrupted ? ', state degraded' : '')
+	])}
+	hint={t('Drag θ and φ on the input state. Hover a gate for its action; click one to read it.')}
 	stage={canvas}
 	dock={instruments}
 	deck={controls}
@@ -279,17 +287,24 @@
 		<p class="readout">
 			<LiveMath
 				id="teleport.state"
-				label="input quantum state"
+				label={t('input quantum state')}
 				values={{ alpha: alpha.toFixed(3), beta: betaText }}
 			/>
 		</p>
 	</div>
 
 	<div class="playback">
-		<p class="microlabel">protocol playback</p>
+		<p class="microlabel">{t('Protocol playback')}</p>
 		<div class="transport">
-			<button type="button" class="btn" onclick={advance} disabled={playing} title="Step forward">
-				step ⏭
+			<button
+				type="button"
+				class="btn"
+				data-action="teleport-step"
+				onclick={advance}
+				disabled={playing}
+				title={t('Step forward')}
+			>
+				{t('step ⏭')}
 			</button>
 			<button
 				type="button"
@@ -298,20 +313,22 @@
 				onclick={() => {
 					timeline.command(playing ? 'pause' : 'play');
 				}}
-				title={playing ? 'Pause' : 'Play'}
+				title={playing ? t('Pause') : t('Play')}
 			>
-				{playing ? 'pause ⏸' : 'play ⏵'}
+				{playing ? t('pause ⏸') : t('play ⏵')}
 			</button>
-			<button type="button" class="btn" onclick={reset} title="Reset state">reset ⭯</button>
+			<button type="button" class="btn" onclick={reset} title={t('Reset state')}
+				>{t('reset ⭯')}</button
+			>
 		</div>
 		<ol class="steps">
 			{#each STEPS as protocolStep (protocolStep.id)}
 				<li class:done={step >= protocolStep.id} class:now={step === protocolStep.id}>
-					{protocolStep.label}
+					{t(protocolStep.label)}
 					{#if protocolStep.id === 3 && step >= 3 && m1 !== undefined}
 						· <LiveMath
 							id="teleport.step.bits"
-							label={`measurement bits ${m1} and ${m2}`}
+							label={t('measurement bits {0} and {1}', [m1, m2])}
 							values={{ m1, m2: m2 ?? '—' }}
 						/>
 					{/if}
@@ -320,10 +337,10 @@
 		</ol>
 	</div>
 
-	<SimulationMotionControl {motion} label="quantum-state phasor animation" />
+	<SimulationMotionControl {motion} label={t('quantum-state phasor animation')} />
 	<div class="switchboard">
-		<p class="microlabel">switchboard · fault injection</p>
-		<FaultSwitch label="classical correction link cut" bind:active={faults.lostClassicalBit} />
+		<p class="microlabel">{t('Fault injection')}</p>
+		<FaultSwitch label={t('Classical correction link cut')} bind:active={faults.lostClassicalBit} />
 	</div>
 {/snippet}
 
@@ -335,7 +352,9 @@
 		onpointerleave={() => (hover = undefined)}
 		role="group"
 		data-model-stage={timeline.step}
-		aria-label="Quantum teleportation register. Drag theta and phi on the input state; hover gates for their Dirac-notation action."
+		aria-label={t(
+			'Quantum teleportation register. Drag theta and phi on the input state; hover gates for their Dirac-notation action.'
+		)}
 	>
 		{@html svg}
 	</div>
@@ -347,14 +366,14 @@
 		<span class="readout"
 			><LiveMath
 				id="teleport.probability"
-				label={`probability of zero ${p0.toFixed(3)}`}
+				label={t('probability of zero {0}', [p0.toFixed(3)])}
 				values={{ state: 0, value: p0.toFixed(3) }}
 			/></span
 		>
 		<span class="readout"
 			><LiveMath
 				id="teleport.probability"
-				label={`probability of one ${p1.toFixed(3)}`}
+				label={t('probability of one {0}', [p1.toFixed(3)])}
 				values={{ state: 1, value: p1.toFixed(3) }}
 			/></span
 		>
@@ -367,9 +386,10 @@
 		aria-atomic="true"
 	>
 		<span class="microlabel"
-			>teleportation fidelity · <LiveMath
+			>{t('Teleportation fidelity,')}
+			<LiveMath
 				id="teleport.fidelity.label"
-				label="fidelity is the squared overlap of input and output states"
+				label={t('fidelity is the squared overlap of input and output states')}
 			/></span
 		>
 		<div class="fid-bar">
@@ -380,25 +400,28 @@
 				><LiveMath
 					id="teleport.fidelity.value"
 					label={fidelity === undefined
-						? 'fidelity unavailable'
-						: `fidelity ${fidelity.toFixed(3)}`}
+						? t('fidelity unavailable')
+						: t('fidelity {0}', [fidelity.toFixed(3)])}
 					values={{ value: fidelity === undefined ? '—' : fidelity.toFixed(3) }}
 				/></strong
 			>
 			<span>
 				{fidelity === undefined
-					? 'run the protocol'
+					? t('run the protocol')
 					: corrupted
-						? 'correction lost — state degraded'
-						: 'state reconstructed exactly'}
+						? t('correction lost — state degraded')
+						: t('state reconstructed exactly')}
 			</span>
 			<span class="visually-hidden"
-				>Protocol stage {step + 1} of {STEPS.length}: {STEPS[step]?.label}. {motion.status}</span
+				>{t('Protocol stage')}
+				{t(step + 1)}
+				{t('of')}
+				{t(STEPS.length)}: {t(STEPS[step]?.label)}. {t(motion.status)}</span
 			>
 		</div>
 	</div>
-	<section class="bench-block" aria-label="State phasors">
-		<p class="microlabel">State phasors</p>
+	<section class="bench-block" aria-label={t('State phasors')}>
+		<p class="microlabel">{t('State phasors')}</p>
 		<Scope
 			{channels}
 			running={!(motion.paused || motion.animationBlocked)}
@@ -406,12 +429,16 @@
 			revision={`${theta}:${phi}`}
 		/>
 	</section>
-	<PartReadout {host} read={probe} hint="Click a gate or a qubit to read its action and state." />
+	<PartReadout
+		{host}
+		read={probe}
+		hint={t('Click a gate or a qubit to read its action and state.')}
+	/>
 {/snippet}
 
 {#if hover}
 	<output class="math-hud" style={`transform: translate(${hover.x + 16}px, ${hover.y + 12}px)`}>
-		<LiveMath id={hover.math.id} label={hover.math.label} values={hover.math.values} />
+		<LiveMath id={hover.math.id} label={t(hover.math.label)} values={hover.math.values} />
 	</output>
 {/if}
 
@@ -442,7 +469,9 @@
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-faint);
 
@@ -515,7 +544,9 @@
 		justify-content: space-between;
 		align-items: baseline;
 		gap: var(--space-2);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-mute);
 
@@ -541,7 +572,9 @@
 		padding: 0.35rem 0.65rem;
 		background: var(--bg-panel);
 		border: 1px solid var(--accent-2);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--accent-2);
 		white-space: nowrap;

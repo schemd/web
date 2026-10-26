@@ -1,3 +1,4 @@
+import { localized, localeOf } from '#lib/i18n/index.ts';
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getRegistry, resolveReleaseVersion } from '#lib/server/registry.ts';
@@ -13,10 +14,14 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	}
 	/* Canonicalize aliases (`latest`, `0.3`) to the concrete release URL. */
 	if (params.version !== version) {
-		redirect(307, `/simulations/${version}/${params.env}${url.search}`);
+		redirect(
+			307,
+			localized(`/simulations/${version}/${params.env}${url.search}`, localeOf(url.pathname))
+		);
 	}
 
-	const simulation = getSimulation(params.env);
+	const locale = localeOf(url.pathname);
+	const simulation = getSimulation(params.env, locale);
 	if (!simulation) {
 		error(404, `Unknown simulation environment: ${params.env}`);
 	}
@@ -25,8 +30,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		version,
 		simulation,
 		math: renderSimulationMath(simulation.id),
-		timeline: renderSimulationTimeline(timelineFor(simulation.id)),
-		environments: listSimulationEnvironments().map(({ id, index, title, curriculum }) => ({
+		timeline: renderSimulationTimeline(timelineFor(simulation.id), locale),
+		environments: listSimulationEnvironments(locale).map(({ id, index, title, curriculum }) => ({
 			id,
 			index,
 			title,

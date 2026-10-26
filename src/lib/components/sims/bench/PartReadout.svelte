@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Read any part or wire by clicking it.
 	 *
@@ -46,14 +49,14 @@
 	});
 </script>
 
-<section class="part-readout" aria-label="Part reading" aria-live="polite">
-	<p class="microlabel">Reading</p>
+<section class="part-readout" aria-label={t('Part reading')} aria-live="polite">
+	<p class="microlabel">{t('Reading')}</p>
 	{#if reading}
 		<output class="probe-tip"
-			><LiveMath id={reading.id} label={reading.label} values={reading.values} /></output
+			><LiveMath id={reading.id} label={t(reading.label)} values={reading.values} /></output
 		>
 	{:else}
-		<p class="hint">{hint}</p>
+		<p class="hint">{t(hint)}</p>
 	{/if}
 </section>
 
@@ -67,7 +70,7 @@
 		display: block;
 		padding: var(--space-2) var(--space-3);
 		border: 1px solid var(--line);
-		border-inline-start: 3px solid var(--accent);
+		border-inline-start: 3px solid var(--ink);
 		border-radius: var(--radius-sm);
 		font-size: var(--text-sm);
 		overflow-wrap: anywhere;
@@ -75,7 +78,9 @@
 
 	.hint {
 		margin: 0;
-		font: var(--text-xs) / 1.5 var(--font-mono);
+		font: var(--text-xs) / 1.5 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 	}
 </style>

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href } = useLanguage();
+
 	import type { PageProps } from './$types';
 	import Seo from '#lib/components/Seo.svelte';
 	import type { SchematicSourceMap } from '@schemd/core';
@@ -291,6 +294,14 @@
 						sourceMap: parseSourceMap(record['sourceMap']),
 						ms: Number(record['ms'] ?? 0)
 					};
+					if (isRecord(record['ports'])) {
+						lastPorts = Object.fromEntries(
+							Object.entries(record['ports']).map(([id, ports]) => [
+								id,
+								Array.isArray(ports) ? ports.filter((port) => typeof port === 'string') : []
+							])
+						);
+					}
 					if (manual) {
 						compileAnnouncement = `Compilation complete. ${metrics.components} components and ${metrics.connections} connections.`;
 					}
@@ -637,7 +648,7 @@
 
 	const shareUrl = $derived.by(() => {
 		if (!browser) return undefined;
-		return shareableWorkspaceUrl(new URL(`/playground/${data.version}`, location.origin), {
+		return shareableWorkspaceUrl(new URL(href(`/playground/${data.version}`), location.origin), {
 			source,
 			width: boundsWidth,
 			height: boundsHeight,
@@ -699,25 +710,48 @@
 		}
 	}
 
-	/* ---------- Insert a component template at the caret ---------- */
+	/* ---------- Parts: the compiler's schema, searchable ---------- */
+	let partQuery = $state('');
+	let selectedKind = $state<string | undefined>();
+	const selectedPart = $derived(data.reference.find((entry) => entry.kind === selectedKind));
+	const partGroups = $derived.by(() => {
+		const needle = partQuery.trim().toLowerCase();
+		return data.families
+			.map((group) => ({
+				...group,
+				kinds: data.reference.filter(
+					(entry) => entry.family === group.family && (needle === '' || entry.kind.includes(needle))
+				)
+			}))
+			.filter((group) => group.kinds.length > 0);
+	});
+	/* Option names and enum values per kind, for the editor's completion. */
+	const completionOptions = $derived(
+		Object.fromEntries(
+			data.reference.map((entry) => [
+				entry.kind,
+				entry.options.map((option) => ({ name: option.name, values: option.values }))
+			])
+		)
+	);
+	/* Ports come from the last drawing that compiled, so they survive a typo. */
+	let lastPorts = $state<Readonly<Record<string, readonly string[]>>>({});
+
+	/** Insert a part's template on a new line, with a designator no other part uses. */
 	function insertKind(kind: string): void {
-		const next = (result.metrics?.components ?? source.split('\n').length) + 1;
-		const id = `${kind[0]!.toUpperCase()}${next}`;
-		const x = 90 + (next % 5) * 130;
-		const y = 90 + (Math.floor(next / 5) % 4) * 110;
-		const declaration =
-			kind === 'ic'
-				? `${kind}:${id} "${id}" at (${x}, ${y}) [left="a,b" right="y"]`
-				: `${kind}:${id} "${kind}" at (${x}, ${y}) #cyan`;
+		const entry = data.reference.find((candidate) => candidate.kind === kind);
+		if (entry === undefined) return;
+		const prefix = /^[a-z-]+:([A-Z]+)\d/.exec(entry.template)?.[1] ?? 'U';
+		let number = 1;
+		while (new RegExp(`\\b${prefix}${number}\\b`).test(source)) number += 1;
+		const next = (result.metrics?.components ?? 0) + 1;
+		const x = Math.max(entry.inset.x, 90 + (next % 5) * 130);
+		const y = Math.max(entry.inset.y, 90 + (Math.floor(next / 5) % 4) * 110);
+		const declaration = entry.template
+			.replace(/^([a-z-]+):[A-Z]+\d+/, `$1:${prefix}${number}`)
+			.replace('at (X, Y)', `at (${x}, ${y})`);
 		source = `${source.replace(/\s*$/, '')}\n${declaration}\n`;
 		if (ui.audio) playSuccess();
-	}
-
-	/** Orientation controls always write visible source; there is no hidden model state. */
-	function insertOrientation(orientation: string): void {
-		const next = (result.metrics?.components ?? source.split('\n').length) + 1;
-		const declaration = `resistor:R${next} "rotated ${orientation}" at (360, 220) #amber [orientation=${orientation}]`;
-		source = `${source.replace(/\s*$/, '')}\n${declaration}\n`;
 	}
 
 	/* ---------- Standalone / downloadable artifact ---------- */
@@ -746,7 +780,11 @@
 		const namespaced = svg.includes('xmlns=')
 			? svg
 			: svg.replace('<svg', `<svg xmlns="http://www.w3.org/2000/svg"`);
-		return namespaced.replace(/(<svg[^>]*>)/, `$1<style>${rootRule}${tokenRules}</style>`);
+		return namespaced.replace(
+			/(<svg[^>]*>)/,
+			`$1<style>
+	.template-link { display: block; padding: var(--space-3); border-block-end: 1px solid var(--line); }${rootRule}${tokenRules}</style>`
+		);
 	}
 
 	function triggerDownload(href: string, filename: string): void {
@@ -848,7 +886,11 @@
 			return;
 		}
 		try {
-			await navigator.clipboard.writeText(embedUrl);
+			/* A ready iframe, sized to the drawing, is what a blog or wiki can paste. */
+			const escaped = title.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+			await navigator.clipboard.writeText(
+				`<iframe src="${embedUrl}" title="${escaped}" width="${boundsWidth}" height="${boundsHeight}" loading="lazy" style="border:0;max-inline-size:100%"></iframe>`
+			);
 			trackInteraction('copy_embed');
 			embedCopied = true;
 			setTimeout(() => (embedCopied = false), 1600);
@@ -1020,16 +1062,15 @@
 
 	/* The foot of the workspace is the drawing's title block. */
 	const titleBlock = $derived([
-		{ label: 'Sheet', value: title },
 		{
 			label: 'State',
 			value: result.error
-				? `error${result.error.line ? ` · line ${result.error.line}` : ''}`
+				? `Error${result.error.line ? ` on line ${result.error.line}` : ''}`
 				: compiling
-					? 'compiling'
+					? 'Compiling'
 					: result.metrics
-						? 'compiled'
-						: 'ready',
+						? 'Compiled'
+						: 'Ready',
 			tone: result.error ? ('danger' as const) : result.metrics ? ('ok' as const) : undefined
 		},
 		{ label: 'Parts', value: String(result.metrics?.components ?? '—') },
@@ -1040,10 +1081,8 @@
 		},
 		{
 			label: 'Compile',
-			value: result.ms === undefined ? '—' : `${result.ms} ms`,
-			tone: 'accent' as const
-		},
-		{ label: 'Rev', value: data.engineVersion }
+			value: result.ms === undefined ? '—' : `${result.ms} ms`
+		}
 	]);
 
 	/*
@@ -1058,15 +1097,17 @@
 <svelte:window onkeydown={onWindowKeydown} />
 
 <Seo
-	title={`Playground · schemd v${data.version}`}
-	description="Compile schemd source to SVG live: three output modes, a raw markup view, and shareable workspace links."
+	title={t('Playground · schemd v{0}', [data.version])}
+	description={t(
+		'Compile schemd source to SVG live: three output modes, a raw markup view, and shareable workspace links.'
+	)}
 	canonicalPath={`/playground/${data.latest}`}
 	noindex
 />
 
 <WorkspaceShell
-	leftLabel="Reference"
-	rightLabel="Preview"
+	leftLabel={t('Reference')}
+	rightLabel={t('Preview')}
 	leftInitial={230}
 	rightInitial={Math.min(560, browser ? window.innerWidth * 0.45 : 560)}
 	bind:leftOpen
@@ -1074,104 +1115,134 @@
 	{titleBlock}
 >
 	{#snippet left()}
-		<aside class="ref">
-			<p class="microlabel">grammar</p>
-			<div class="grammar">
-				<div class="grammar-row">
-					<span class="grammar-tag microlabel">node</span>
-					<code>kind:ID "label" at (x, y) #color [options]</code>
-				</div>
-				<div class="grammar-row">
-					<span class="grammar-tag microlabel">wire</span>
-					<code>A.port -&gt; B.port #color [line|bezier|ortho]</code>
-				</div>
-				<div class="grammar-row">
-					<span class="grammar-tag microlabel">tree</span>
-					<code>A.port -&gt; C.port #color [ortho trunk]</code>
-				</div>
-				<div class="grammar-row">
-					<span class="grammar-tag microlabel">block</span>
-					<code>subcircuit NAME [p="v"] &#123; … expose T = X.port &#125;</code>
-				</div>
-				<div class="grammar-row">
-					<span class="grammar-tag microlabel">place</span>
-					<code>NAME:ID at (x, y) [p="v"]</code>
-				</div>
-			</div>
-			<p class="microlabel">quarter-turn source controls</p>
-			<div class="orientation-controls" aria-label="Insert an oriented resistor declaration">
-				{#each data.orientations as orientation (orientation)}
-					<button type="button" class="kind-chip" onclick={() => insertOrientation(orientation)}>
-						{orientation}
-					</button>
-				{/each}
-			</div>
-			<div class="ref-head">
-				<span class="microlabel">primitives</span>
-				<span class="ref-count" title="component kinds in this compiler build"
-					>{data.kindCount}</span
-				>
-			</div>
-			<div class="kind-groups">
-				{#each data.kindGroups as group (group.label)}
-					<div class="kind-group">
-						<span class="kind-label microlabel">{group.label}</span>
-						<div class="kind-chips">
-							{#each group.kinds as kind (kind)}
-								<button
-									type="button"
-									class="kind-chip"
-									title={`Insert a ${kind} declaration`}
-									onclick={() => insertKind(kind)}>{kind}</button
-								>
-							{/each}
-						</div>
-					</div>
-				{/each}
+		<aside class="ref" aria-label={t('Parts')}>
+			<a class="template-link" href={href('/templates')}>{t('Browse templates')}</a>
+			<div class="ref-search">
+				<label for="part-search">{t('Parts')}</label>
+				<input
+					id="part-search"
+					type="search"
+					placeholder={t('Search {0} kinds', [data.reference.length])}
+					bind:value={partQuery}
+					oninput={() => (selectedKind = undefined)}
+				/>
 			</div>
 
-			<p class="microlabel">colors</p>
-			<div class="color-chips">
-				{#each data.colors as color (color)}
-					<span class="color-chip">
-						<span class="swatch" style={`background: var(--schematic-color-${color})`}
-						></span>{color}
-					</span>
+			{#if selectedPart}
+				<section class="part" aria-labelledby="part-title">
+					<button type="button" class="part-back" onclick={() => (selectedKind = undefined)}
+						>{t('All parts')}</button
+					>
+					<h2 id="part-title"><code>{selectedPart.kind}</code></h2>
+					<div class="part-actions">
+						<button
+							type="button"
+							class="btn btn-solid"
+							onclick={() => insertKind(selectedPart.kind)}>{t('Insert')}</button
+						>
+						<a href={href(`/components/${selectedPart.kind}`)}>{t('Datasheet')}</a>
+					</div>
+					<p class="part-heading">{t('Pins')}</p>
+					{#if selectedPart.pins.length > 0}
+						<p class="pins">
+							{#each selectedPart.pins as pin (pin)}<code>{pin}</code>
+							{/each}
+						</p>
+					{:else}
+						<p class="part-note">{t('No pins; this part is drawn but not wired.')}</p>
+					{/if}
+					{#if selectedPart.options.length > 0}
+						<p class="part-heading">{t('Options')}</p>
+						<dl class="options">
+							{#each selectedPart.options as option (option.name)}
+								<div>
+									<dt><code>{option.name}</code></dt>
+									<dd>
+										{t(option.accepts)}{#if option.values.length > 1}:{/if}
+										{#if option.values.length > 0}
+											<span class="values"
+												>{#each option.values as value, index (value)}<code>{value}</code>{index <
+													option.values.length - 1
+														? t(', ')
+														: t('')}{/each}</span
+											>
+										{/if}
+										{#if option.defaultValue !== undefined}
+											<span class="default">{t('Default')} <code>{option.defaultValue}</code></span>
+										{/if}
+										{#each option.defaultsByType as extra (extra)}
+											<span class="default">{t(extra)}</span>
+										{/each}
+									</dd>
+								</div>
+							{/each}
+						</dl>
+					{/if}
+				</section>
+			{:else}
+				{#each partGroups as group (group.family)}
+					<section class="part-group" aria-label={t(group.label)}>
+						<h2>{t(group.label)}</h2>
+						<ul>
+							{#each group.kinds as entry (entry.kind)}
+								<li>
+									<button type="button" onclick={() => (selectedKind = entry.kind)}
+										><code>{entry.kind}</code></button
+									>
+								</li>
+							{/each}
+						</ul>
+					</section>
+				{:else}
+					<p class="part-note">{t('No kind matches “')}{t(partQuery)}”.</p>
 				{/each}
-			</div>
-			<p class="color-note microlabel">+ hex · rgb()/hsl() · custom aliases</p>
-			<p class="microlabel">fence · bounds (px)</p>
-			<div class="fence-controls">
-				<label>
-					<span class="microlabel">width</span>
-					<input
-						type="number"
-						min="64"
-						max="4096"
-						step="10"
-						inputmode="numeric"
-						bind:value={boundsWidth}
-					/>
-				</label>
-				<label>
-					<span class="microlabel">height</span>
-					<input
-						type="number"
-						min="64"
-						max="4096"
-						step="10"
-						inputmode="numeric"
-						bind:value={boundsHeight}
-					/>
-				</label>
-				<label class="fence-title">
-					<span class="microlabel">title</span>
-					<input type="text" maxlength="512" bind:value={title} />
-				</label>
-			</div>
-			<a class="ref-docs" href={`/docs/${data.version}/component-reference`}
-				>Full component reference →</a
-			>
+			{/if}
+
+			<section class="sheet-settings" aria-label={t('Sheet')}>
+				<h2>{t('Sheet')}</h2>
+				<div class="fence-controls">
+					<label>
+						<span>{t('Width')}</span>
+						<input
+							type="number"
+							min="64"
+							max="4096"
+							step="10"
+							inputmode="numeric"
+							bind:value={boundsWidth}
+						/>
+					</label>
+					<label>
+						<span>{t('Height')}</span>
+						<input
+							type="number"
+							min="64"
+							max="4096"
+							step="10"
+							inputmode="numeric"
+							bind:value={boundsHeight}
+						/>
+					</label>
+					<label class="fence-title">
+						<span>{t('Title')}</span>
+						<input type="text" maxlength="512" bind:value={title} />
+					</label>
+				</div>
+				<h2>{t('Colours')}</h2>
+				<p class="colors">
+					{#each data.colors as color (color)}
+						<span class="color-chip"
+							><span class="swatch" style={`background: var(--schematic-color-${color})`}
+							></span><code>#{color}</code></span
+						>
+					{/each}
+				</p>
+				<p class="part-note">
+					{t('Any hex,')} <code>rgb()</code>
+					{t('or')} <code>hsl()</code>
+					{t('colour works too.')}
+				</p>
+			</section>
 		</aside>
 	{/snippet}
 
@@ -1179,35 +1250,39 @@
 		<div class="editor-pane">
 			<div class="editor-toolbar">
 				<span class="engine-id">
-					<span class="microlabel">source · engine v{data.engineVersion}</span>
+					<span class="microlabel">{t('Source, compiled by release')} {t(data.engineVersion)}</span>
 					{#if data.version !== data.engineVersion}
 						<span
 							class="engine-note"
-							title={`This playground compiles with the installed @schemd/core (v${data.engineVersion}). Historical releases are documented, not re-executed — so the preview below is v${data.engineVersion} output.`}
+							title={t(
+								'This playground compiles with the installed @schemd/core (v{0}). Historical releases are documented, not re-executed — so the preview below is v{1} output.',
+								[data.engineVersion, data.engineVersion]
+							)}
 						>
-							viewing {data.version} · compiled live
+							{t('Docs for')}
+							{t(data.version)}
 						</span>
 					{/if}
 				</span>
 				<div class="compile-summary">
 					<span class="microlabel">
 						{result.error
-							? `error${result.error.line ? ` · line ${result.error.line}` : ''}`
+							? t('Error{0}', [result.error.line ? ` on line ${result.error.line}` : ''])
 							: compiling
-								? 'compiling…'
+								? t('Compiling')
 								: result.metrics
-									? 'compiled'
-									: 'ready'}
+									? t('Compiled')
+									: t('Ready')}
 					</span>
 					<button
 						type="button"
 						class="command-trigger"
 						onclick={() => paletteApi?.open()}
 						aria-keyshortcuts="F1 Meta+Shift+P Control+Shift+P"
-						title="Playground commands (F1 or Command/Control Shift P)"
+						title={t('Playground commands (F1 or Command/Control Shift P)')}
 					>
-						commands <kbd>F1</kbd>
-						<span class="visually-hidden">, opens the playground command palette</span>
+						{t('Commands')} <kbd>{t('F1')}</kbd>
+						<span class="visually-hidden">{t(', opens the playground command palette')}</span>
 					</button>
 				</div>
 			</div>
@@ -1217,7 +1292,9 @@
 				vocabulary={{
 					kinds: data.kindGroups.flatMap((group) => group.kinds),
 					colors: data.colors,
-					orientations: data.orientations
+					orientations: data.orientations,
+					options: completionOptions,
+					ports: lastPorts
 				}}
 				{mappedLine}
 				errorLine={result.error?.line !== undefined ? result.error.line - 1 : undefined}
@@ -1229,13 +1306,14 @@
 				<section
 					id="compiler-diagnostic"
 					class="diagnostic-panel"
-					aria-label="Compiler diagnostics"
+					aria-label={t('Compiler diagnostics')}
 				>
-					<span class="diagnostic-severity">error</span>
-					<p>{result.error.message}</p>
+					<span class="diagnostic-severity">{t('error')}</span>
+					<p>{t(result.error.message)}</p>
 					{#if result.error.line !== undefined}
 						<button type="button" onclick={() => editorApi?.focusLine(result.error!.line! - 1)}>
-							Go to line {result.error.line} <kbd>F8</kbd>
+							{t('Go to line')}
+							{t(result.error.line)} <kbd>{t('F8')}</kbd>
 						</button>
 					{/if}
 				</section>
@@ -1246,7 +1324,7 @@
 	{#snippet right()}
 		<div class="preview-pane">
 			<div class="preview-toolbar">
-				<div class="seg" role="radiogroup" aria-label="Compiler mode">
+				<div class="seg" role="radiogroup" aria-label={t('Compiler mode')}>
 					{#each MODES as candidate (candidate)}
 						<button
 							type="button"
@@ -1254,18 +1332,18 @@
 							aria-checked={mode === candidate}
 							onclick={() => (mode = candidate)}
 						>
-							{candidate}
+							{t(candidate)}
 						</button>
 					{/each}
 				</div>
-				<div class="seg" role="radiogroup" aria-label="Preview channel">
+				<div class="seg" role="radiogroup" aria-label={t('Preview channel')}>
 					<button
 						type="button"
 						role="radio"
 						aria-checked={view === 'render'}
 						onclick={() => (view = 'render')}
 					>
-						render
+						{t('Drawing')}
 					</button>
 					<button
 						type="button"
@@ -1273,7 +1351,7 @@
 						aria-checked={view === 'raw'}
 						onclick={() => (view = 'raw')}
 					>
-						raw svg
+						{t('SVG source')}
 					</button>
 					<button
 						type="button"
@@ -1281,21 +1359,21 @@
 						aria-checked={view === 'fence'}
 						onclick={() => (view = 'fence')}
 					>
-						fence
+						{t('Fence')}
 					</button>
 				</div>
 			</div>
 
 			{#if view === 'render'}
 				<div class="sheet-host">
-					<SheetFrame label="Drawing sheet">
+					<SheetFrame label={t('Drawing sheet')}>
 						{#key traceKey}
 							<div
 								bind:this={previewHost}
 								class="schemd-frame preview-stage trace-on"
 								class:stale={result.error !== undefined}
 								role="region"
-								aria-label="Compiled schematic preview"
+								aria-label={t('Compiled schematic preview')}
 								class:is-dragging={drag !== undefined}
 								onpointerover={onPreviewOver}
 								onpointerleave={onPreviewLeave}
@@ -1310,7 +1388,7 @@
 					</SheetFrame>
 				</div>
 				{#if dragNote}
-					<p class="drag-note" aria-live="polite">{dragNote}</p>
+					<p class="drag-note" aria-live="polite">{t(dragNote)}</p>
 				{/if}
 			{:else if view === 'raw'}
 				<!-- Keyboard focus exposes overflowing source to Safari users. -->
@@ -1319,13 +1397,13 @@
 					class="codeblock raw-view"
 					tabindex="0"
 					role="region"
-					aria-label="Scrollable raw SVG"><code>{rawSvg}</code></pre>
+					aria-label={t('Scrollable raw SVG')}><code>{rawSvg}</code></pre>
 			{:else}
 				<div class="fence-view">
 					<div class="fence-bar">
-						<span class="microlabel">paste this into any Markdown pipeline</span>
+						<span class="microlabel">{t('Paste this into any Markdown pipeline')}</span>
 						<button type="button" class="fence-copy" onclick={copyFence}>
-							{fenceCopied ? '✓ copied' : '⧉ copy fence'}
+							{fenceCopied ? t('Copied') : t('Copy fence')}
 						</button>
 					</div>
 					<!-- Keyboard focus exposes overflowing source to Safari users. -->
@@ -1334,7 +1412,7 @@
 						class="codeblock fence-block"
 						tabindex="0"
 						role="region"
-						aria-label="Scrollable Markdown fence"><code>{fenceMarkdown}</code></pre>
+						aria-label={t('Scrollable Markdown fence')}><code>{fenceMarkdown}</code></pre>
 				</div>
 			{/if}
 		</div>
@@ -1343,26 +1421,25 @@
 	{#snippet statusExtra()}
 		<span class="draft-status" data-state={draftState}>
 			{draftState === 'dirty'
-				? '● unsaved'
+				? t('Unsaved changes')
 				: draftState === 'unavailable'
-					? 'local save unavailable'
+					? t('Local saving unavailable')
 					: draftState === 'shared'
-						? 'shared · save manually'
+						? t('Shared document; save it yourself')
 						: draftState === 'recovered'
-							? 'recovered'
-							: 'saved locally'}
+							? t('Recovered draft')
+							: t('Saved in this browser')}
 		</span>
 		<button type="button" class="status-action" onclick={copySource}>
-			{sourceCopied ? '✓ source copied' : '⧉ source'}
+			{sourceCopied ? t('Source copied') : t('Copy source')}
 		</button>
-		<button type="button" class="status-action" onclick={downloadSource} title="Download source"
-			>↓ source</button
-		>
-		<button type="button" class="status-action" onclick={downloadSvg} title="Download themed SVG"
-			>↓ svg</button
-		>
-		<button type="button" class="status-action" onclick={downloadPng} title="Download 2× PNG"
-			>↓ png</button
+		<button type="button" class="status-action" onclick={copyFence}>
+			{fenceCopied ? t('Fence copied') : t('Copy fence')}
+		</button>
+		<button type="button" class="status-action" onclick={downloadSvg}>{t('Download SVG')}</button>
+		<button type="button" class="status-action" onclick={downloadPng}>{t('Download PNG')}</button>
+		<button type="button" class="status-action" onclick={downloadSource}
+			>{t('Download source')}</button
 		>
 		<button
 			type="button"
@@ -1371,10 +1448,10 @@
 			aria-live="polite"
 			disabled={embedUrl === undefined}
 			title={embedUrl === undefined
-				? 'Document is too large for a reliable embed URL'
-				: 'Copy embed URL'}
+				? t('This document is too large for a reliable embed address')
+				: t('Copies an iframe you can paste into a page')}
 		>
-			{embedCopied ? '✓ embed copied' : '⧉ embed'}
+			{embedCopied ? t('Embed code copied') : t('Copy embed code')}
 		</button>
 		<button
 			type="button"
@@ -1383,54 +1460,219 @@
 			aria-live="polite"
 			disabled={shareUrl === undefined}
 			title={shareUrl === undefined
-				? 'Document is too large for a reliable share URL'
-				: 'Copy share URL'}
+				? t('This document is too large for a reliable share link')
+				: t('Copies a link that opens this document')}
 		>
-			{copied ? '✓ link copied' : '⧉ share'}
+			{copied ? t('Link copied') : t('Copy link')}
 		</button>
 	{/snippet}
 </WorkspaceShell>
 
 <IdeCommandPalette commands={ideCommands} onready={(api) => (paletteApi = api)} />
 <p class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
-	{compileAnnouncement}
+	{t(compileAnnouncement)}
 </p>
-<div class="workspace-notice" aria-live="polite" aria-atomic="true">{notice}</div>
+<div class="workspace-notice" aria-live="polite" aria-atomic="true">{t(notice)}</div>
 
 <style>
-	.ref {
-		padding: var(--space-4);
-		overflow-y: auto;
-		display: grid;
-		gap: var(--space-2);
-		align-content: start;
-	}
-
-	.grammar {
-		display: grid;
-		gap: var(--space-2);
-		background: var(--bg-inset);
-		border: 1px solid var(--line);
-		padding: var(--space-3);
-	}
-
-	.grammar-row {
-		display: grid;
-		gap: 2px;
-	}
-
-	.grammar-tag {
-		color: var(--ink-faint);
-	}
-
-	.grammar code {
+	.template-link {
 		display: block;
-		font-family: var(--font-mono);
-		font-size: var(--text-2xs);
-		line-height: 1.6;
-		color: var(--ink);
-		white-space: normal;
-		overflow-wrap: anywhere;
+		padding: var(--space-3);
+		border-block-end: 1px solid var(--line);
+	}
+	/* ---------- Parts panel ---------- */
+	.ref {
+		display: grid;
+		gap: var(--space-4);
+		align-content: start;
+		padding: var(--space-4);
+		font-stretch: var(--width-table);
+		font-size: var(--text-sm);
+		overflow-y: auto;
+		block-size: 100%;
+
+		& h2 {
+			font-size: var(--text-sm);
+			font-stretch: var(--width-table);
+			margin-block: 0 var(--space-1);
+		}
+	}
+
+	.ref-search {
+		display: grid;
+		gap: var(--space-1);
+
+		& label {
+			font-weight: 700;
+			font-size: var(--text-base);
+		}
+
+		& input {
+			padding: var(--space-1) var(--space-2);
+			border: 1px solid var(--line-strong);
+			border-radius: var(--radius-sm);
+			background: var(--bg);
+			color: var(--ink);
+		}
+	}
+
+	.part-group ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0 var(--space-3);
+
+		/* 24 px tall at least, the WCAG 2.2 minimum target size. */
+		& button {
+			min-block-size: 24px;
+			color: var(--ink);
+
+			&:hover code {
+				text-decoration: underline;
+				text-underline-offset: 0.2em;
+			}
+		}
+
+		& code {
+			font-size: 0.8125rem;
+		}
+	}
+
+	.part {
+		display: grid;
+		gap: var(--space-2);
+
+		& h2 {
+			font-size: var(--text-lg);
+			font-stretch: var(--width-condensed);
+
+			& code {
+				font-family: var(--font-sans);
+				font-size: inherit;
+			}
+		}
+	}
+
+	.part-back {
+		justify-self: start;
+		font-weight: 600;
+		color: var(--accent);
+	}
+
+	.part-actions {
+		display: flex;
+		align-items: center;
+		gap: var(--space-4);
+	}
+
+	.part-heading {
+		margin: var(--space-2) 0 0;
+		font-weight: 700;
+		border-block-end: 2px solid var(--ink);
+		padding-block-end: 2px;
+	}
+
+	.pins {
+		margin: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1) var(--space-2);
+
+		& code {
+			font-size: 0.8125rem;
+		}
+	}
+
+	.options {
+		margin: 0;
+
+		& div {
+			padding-block: var(--space-2);
+			border-block-end: 1px solid var(--line);
+		}
+
+		& dt code {
+			font-weight: 700;
+			font-size: 0.8125rem;
+		}
+
+		& dd {
+			margin: var(--space-1) 0 0;
+			color: var(--ink-mute);
+		}
+
+		& .values,
+		& .default {
+			display: block;
+			color: var(--ink);
+		}
+
+		& .values code,
+		& .default code {
+			font-size: 0.8125rem;
+		}
+	}
+
+	.part-note {
+		margin: 0;
+		color: var(--ink-mute);
+	}
+
+	.sheet-settings {
+		display: grid;
+		gap: var(--space-2);
+		padding-block-start: var(--space-3);
+		border-block-start: 2px solid var(--ink);
+	}
+
+	.fence-controls {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--space-2);
+
+		& label {
+			display: grid;
+			gap: 2px;
+			color: var(--ink-mute);
+		}
+
+		& input {
+			inline-size: 100%;
+			padding: var(--space-1) var(--space-2);
+			border: 1px solid var(--line-strong);
+			border-radius: var(--radius-sm);
+			background: var(--bg);
+			color: var(--ink);
+			font-variant-numeric: tabular-nums;
+		}
+
+		& .fence-title {
+			grid-column: 1 / -1;
+		}
+	}
+
+	.colors {
+		margin: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1) var(--space-3);
+	}
+
+	.color-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+
+		& code {
+			font-size: 0.8125rem;
+		}
+	}
+
+	.swatch {
+		inline-size: 10px;
+		block-size: 10px;
 	}
 
 	.fence-view {
@@ -1450,10 +1692,11 @@
 	}
 
 	.fence-copy {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--accent);
-		letter-spacing: 0.04em;
 
 		&:hover {
 			color: var(--ink);
@@ -1471,127 +1714,6 @@
 		overflow: auto;
 		white-space: pre;
 		font-size: var(--text-xs);
-	}
-
-	.ref-head {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
-		margin-block-start: var(--space-2);
-	}
-
-	.ref-count {
-		font-family: var(--font-mono);
-		font-size: var(--text-xs);
-		color: var(--accent);
-		border: 1px solid var(--line-strong);
-		padding: 0.05em 0.5em;
-		border-radius: 999px;
-	}
-
-	.kind-groups {
-		display: grid;
-		gap: var(--space-3);
-		margin-block-end: var(--space-3);
-	}
-
-	.kind-group {
-		display: grid;
-		gap: var(--space-1);
-	}
-
-	.kind-label {
-		color: var(--ink-faint);
-	}
-
-	.kind-chips {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 4px;
-	}
-
-	.kind-chip {
-		font-family: var(--font-mono);
-		font-size: var(--text-2xs);
-		color: var(--ink-mute);
-		background: var(--bg-inset);
-		border: 1px solid var(--line);
-		padding: 0.1em 0.45em;
-		transition:
-			color var(--dur-fast) var(--ease-precise),
-			border-color var(--dur-fast) var(--ease-precise);
-
-		&:hover {
-			color: var(--accent);
-			border-color: var(--line-strong);
-		}
-	}
-
-	.color-chips {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-1) var(--space-3);
-		margin-block-end: var(--space-1);
-	}
-
-	.color-chip {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4em;
-		font-family: var(--font-mono);
-		font-size: var(--text-2xs);
-		color: var(--ink-mute);
-
-		& .swatch {
-			inline-size: 11px;
-			block-size: 11px;
-			border: 1px solid var(--line-strong);
-		}
-	}
-
-	.color-note {
-		margin-block: 0 var(--space-3);
-		color: var(--ink-faint);
-	}
-
-	.fence-controls {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: var(--space-2);
-
-		& label {
-			display: grid;
-			gap: 2px;
-			min-inline-size: 0;
-		}
-
-		& input {
-			inline-size: 100%;
-			min-inline-size: 0;
-			box-sizing: border-box;
-			background: var(--bg-inset);
-			border: 1px solid var(--line-strong);
-			color: var(--ink);
-			font-family: var(--font-mono);
-			font-size: var(--text-sm);
-			padding: 0.4rem 0.55rem;
-			transition: border-color var(--dur-fast) var(--ease-precise);
-		}
-
-		& input:focus-visible {
-			outline: none;
-			border-color: var(--accent);
-		}
-
-		& .fence-title {
-			grid-column: 1 / -1;
-		}
-	}
-
-	.ref-docs {
-		font-size: var(--text-xs);
-		margin-block-start: var(--space-2);
 	}
 
 	.editor-pane,
@@ -1644,7 +1766,9 @@
 		padding: 0.2rem 0.45rem;
 		color: var(--ink-mute);
 		border: 1px solid var(--line);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 
 		&:hover {
@@ -1656,9 +1780,10 @@
 	/* Truth-in-labelling: the preview is always the installed engine's output,
 	   even when the visitor navigates to a historical version in the header. */
 	.engine-note {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
-		letter-spacing: 0.04em;
 		color: var(--accent);
 		border: 1px solid var(--line-strong);
 		padding: 0.05em 0.5em;
@@ -1695,10 +1820,8 @@
 		padding: 0.05rem 0.4rem;
 		color: var(--accent-ink);
 		background: var(--danger);
-		text-transform: uppercase;
 		font-size: var(--text-2xs);
 		font-weight: 700;
-		letter-spacing: 0.08em;
 	}
 
 	.preview-stage :global([data-node-id]) {
@@ -1710,10 +1833,10 @@
 	}
 	.drag-note {
 		margin: var(--space-2) 0 0;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
-		letter-spacing: var(--tracking-wide);
-		text-transform: uppercase;
 		color: var(--ink-faint);
 	}
 	/* The drawing sits on a ruled sheet with zone rulers; its own surface and
@@ -1754,10 +1877,11 @@
 	}
 
 	.status-action {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--accent);
-		letter-spacing: 0.06em;
 
 		&:hover {
 			color: var(--ink);
@@ -1766,7 +1890,9 @@
 
 	.draft-status {
 		color: var(--ink-faint);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 
 		&[data-state='dirty'] {
@@ -1790,7 +1916,9 @@
 		background: var(--bg-raised);
 		border: 1px solid var(--line-strong);
 		box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 
 		&:empty {

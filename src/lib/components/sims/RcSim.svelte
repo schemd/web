@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * RC low-pass laboratory on the v2 bench.
 	 *
@@ -182,7 +185,7 @@
 			label: 'Vout',
 			unit: 'V',
 			sample: wave(0.5 * magnitude, phaseShift),
-			summary: () => `${magnitude.toFixed(3)} V p-p · ${(phaseShift * 57.2958).toFixed(1)}°`,
+			summary: () => `${magnitude.toFixed(3)} V p-p, ${(phaseShift * 57.2958).toFixed(1)}°`,
 			reading: () =>
 				reading('rc.probe.output', `output is ${magnitude.toFixed(3)} volts peak-to-peak`, {
 					voltage: magnitude.toFixed(3),
@@ -251,7 +254,14 @@
 	const revision = $derived(`${logR}:${logC}:${logF}:${openCapacitor}:${probeA}:${probeB}`);
 </script>
 
-<Bench title="RC frequency response analyzer" tone="analog" {status} {stage} {dock} {deck} />
+<Bench
+	title={t('RC frequency response analyzer')}
+	tone="analog"
+	status={t(status)}
+	{stage}
+	{dock}
+	{deck}
+/>
 
 {#snippet stage()}
 	<div class="rc-canvas" class:motion-paused={motion.paused || motion.animationBlocked}>
@@ -259,7 +269,9 @@
 			class="sim-stage rc-stage schemd-frame"
 			bind:this={host}
 			role="group"
-			aria-label="RC low-pass filter. Drag the value tags on the source, resistor, and capacitor; click a wire to clip a probe on."
+			aria-label={t(
+				'RC low-pass filter. Drag the value tags on the source, resistor, and capacitor; click a wire to clip a probe on.'
+			)}
 			data-model-stage={timeline.step}
 		>
 			{@html svg}
@@ -270,8 +282,8 @@
 {/snippet}
 
 {#snippet dock()}
-	<section class="dock-block" aria-label="Oscilloscope">
-		<p class="microlabel">Oscilloscope</p>
+	<section class="dock-block" aria-label={t('Oscilloscope')}>
+		<p class="microlabel">{t('Oscilloscope')}</p>
 		<Scope
 			{channels}
 			running={!(motion.paused || motion.animationBlocked)}
@@ -279,64 +291,70 @@
 			{revision}
 		/>
 	</section>
-	<section class="dock-block" aria-label="Readouts">
-		<p class="microlabel">Readouts</p>
+	<section class="dock-block" aria-label={t('Readouts')}>
+		<p class="microlabel">{t('Readouts')}</p>
 		<div class="rc-metrics">
 			<div>
-				<span>cutoff</span>
+				<span>{t('Cutoff')}</span>
 				<strong
 					><LiveMath
 						id="rc.readout.fc"
-						label={`cutoff frequency ${formatSi(cutoff, 'Hz')}`}
+						label={t('cutoff frequency {0}', [formatSi(cutoff, 'Hz')])}
 						values={{ value: formatSi(cutoff, 'Hz') }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>gain</span>
+				<span>{t('gain')}</span>
 				<strong
 					><LiveMath
 						id="rc.readout.h"
-						label={`magnitude ${magnitude.toFixed(3)}, ${attenuationDb.toFixed(1)} decibels`}
+						label={t('magnitude {0}, {1} decibels', [
+							magnitude.toFixed(3),
+							attenuationDb.toFixed(1)
+						])}
 						values={{ magnitude: magnitude.toFixed(3), db: attenuationDb.toFixed(1) }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>phase</span>
+				<span>{t('phase')}</span>
 				<strong
 					><LiveMath
 						id="rc.readout.phase"
-						label={`phase ${(phaseShift * 57.2958).toFixed(1)} degrees`}
+						label={t('phase {0} degrees', [(phaseShift * 57.2958).toFixed(1)])}
 						values={{ value: (phaseShift * 57.2958).toFixed(1) }}
 					/></strong
 				>
 			</div>
 		</div>
 	</section>
-	<figure class="response-plot" aria-label="Live low-pass frequency response">
-		<p class="microlabel">Frequency response</p>
+	<figure class="response-plot" aria-label={t('Live low-pass frequency response')}>
+		<p class="microlabel">{t('Frequency response')}</p>
 		<svg
 			viewBox="0 0 260 128"
 			role="img"
-			aria-label={`First-order low-pass response; operating point at ${formatSi(frequency, 'Hz')}, gain ${magnitude.toFixed(3)}`}
+			aria-label={t('First-order low-pass response; operating point at {0}, gain {1}', [
+				formatSi(frequency, 'Hz'),
+				magnitude.toFixed(3)
+			])}
 		>
 			<line class="plot-grid" x1="18" x2="242" y1="108" y2="108" />
 			<line class="plot-grid half" x1="18" x2="242" y1="43" y2="43" />
 			<line class="cutoff" x1={cutoffX} x2={cutoffX} y1="12" y2="108" />
 			<path class="response-curve" d={responsePath} />
 			<circle class="operating-point" cx={operatingX} cy={operatingY} r="4" />
-			<text x="18" y="123">10 Hz</text>
-			<text class="end" x="242" y="123">100 kHz</text>
+			<text x="18" y="123">{t('10 Hz')}</text>
+			<text class="end" x="242" y="123">{t('100 kHz')}</text>
 		</svg>
-		<figcaption>|H(jω)| · dashed line at the −3 dB cutoff</figcaption>
+		<figcaption>{t('|H(jω)|, dashed line at the −3 dB cutoff')}</figcaption>
 	</figure>
 {/snippet}
 
 {#snippet deck()}
 	<ProbeSelects {nets} bind:a={probeA} bind:b={probeB} />
 	<div class="deck-group">
-		<span class="microlabel">Try</span>
+		<span class="microlabel">{t('Try')}</span>
 		<button
 			class="btn"
 			type="button"
@@ -346,14 +364,14 @@
 			}}
 			disabled={!Number.isFinite(cutoff)}
 		>
-			Set f to the cutoff
+			{t('Set f to the cutoff')}
 		</button>
 	</div>
 	<div class="deck-group">
-		<SimulationMotionControl {motion} label="RC waveform and frequency-response animation" />
+		<SimulationMotionControl {motion} label={t('RC waveform and frequency-response animation')} />
 	</div>
 	<div class="deck-group">
-		<FaultSwitch label="capacitor branch open" bind:active={openCapacitor} />
+		<FaultSwitch label={t('Capacitor branch open')} bind:active={openCapacitor} />
 	</div>
 {/snippet}
 
@@ -392,7 +410,9 @@
 		}
 
 		& span {
-			font: var(--text-xs) / 1.4 var(--font-mono);
+			font: var(--text-xs) / 1.4 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 
@@ -419,7 +439,9 @@
 		}
 
 		& figcaption {
-			font: var(--text-xs) / 1.4 var(--font-mono);
+			font: var(--text-xs) / 1.4 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 	}
@@ -455,7 +477,9 @@
 
 	.response-plot text {
 		fill: var(--ink-faint);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 7px;
 	}
 

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * A single-series time chart with a crosshair readout.
 	 *
@@ -120,7 +123,7 @@
 		<svg
 			viewBox={`0 0 ${WIDTH} ${height}`}
 			role="img"
-			aria-label={summary}
+			aria-label={t(summary)}
 			tabindex="0"
 			style={`--plot-height:${height}px`}
 			onpointermove={locate}
@@ -131,7 +134,7 @@
 			{#each ticks as tick (tick)}
 				{@const y = PAD_TOP + plotHeight - (tick / peak) * plotHeight}
 				<line class="grid" x1={PAD_X} x2={WIDTH - PAD_X} y1={y} y2={y} />
-				<text class="axis" x={PAD_X - 8} y={y + 4} text-anchor="end">{format(tick)}</text>
+				<text class="axis" x={PAD_X - 8} y={y + 4} text-anchor="end">{t(format(tick))}</text>
 			{/each}
 
 			<path class="area" d={areaPath} />
@@ -156,36 +159,37 @@
 					y={end.y - 8}
 					text-anchor={end.x > WIDTH - 90 ? 'end' : 'start'}
 				>
-					{format(end.value)}
+					{t(format(end.value))}
 				</text>
-				<text class="axis" x={PAD_X} y={height - 8}>{laid[0]!.label}</text>
-				<text class="axis" x={WIDTH - PAD_X} y={height - 8} text-anchor="end">{end.label}</text>
+				<text class="axis" x={PAD_X} y={height - 8}>{t(laid[0]!.label)}</text>
+				<text class="axis" x={WIDTH - PAD_X} y={height - 8} text-anchor="end">{t(end.label)}</text>
 			{/if}
 		</svg>
 
 		<p class="readout" aria-live="polite">
 			{#if current}
-				<strong>{format(current.value)}</strong>
-				<span>{unit} · {current.label}</span>
+				<strong>{t(format(current.value))}</strong>
+				<span>{t(unit)}, {t(current.label)}</span>
 			{:else}
-				<span class="hint">Hover or focus the chart, then use ← → to step through days.</span>
+				<span class="hint">{t('Hover or focus the chart, then use ← → to step through days.')}</span
+				>
 			{/if}
 		</p>
 	{:else}
-		<p class="microlabel empty">Not enough observations to plot a series.</p>
+		<p class="microlabel empty">{t('Not enough observations to plot a series.')}</p>
 	{/if}
 
 	<details class="table-view">
-		<summary class="microlabel">View as table</summary>
+		<summary class="microlabel">{t('View as table')}</summary>
 		<div class="table-scroll">
 			<table>
-				<caption class="visually-hidden">{summary}</caption>
+				<caption class="visually-hidden">{t(summary)}</caption>
 				<thead>
-					<tr><th scope="col">Day</th><th scope="col">{unit}</th></tr>
+					<tr><th scope="col">{t('Day')}</th><th scope="col">{t(unit)}</th></tr>
 				</thead>
 				<tbody>
 					{#each points as point (point.label)}
-						<tr><th scope="row">{point.label}</th><td>{format(point.value)}</td></tr>
+						<tr><th scope="row">{t(point.label)}</th><td>{t(format(point.value))}</td></tr>
 					{/each}
 				</tbody>
 			</table>
@@ -213,13 +217,13 @@
 	}
 
 	.area {
-		fill: var(--accent);
+		fill: var(--ink);
 		opacity: 0.1;
 	}
 
 	.series {
 		fill: none;
-		stroke: var(--accent);
+		stroke: var(--ink);
 		stroke-width: 2;
 		stroke-linejoin: round;
 		stroke-linecap: round;
@@ -231,22 +235,26 @@
 	}
 
 	.marker {
-		fill: var(--accent);
+		fill: var(--ink);
 		/* The surface ring keeps the marker legible where it sits on the line. */
 		stroke: var(--bg-panel);
 		stroke-width: 2;
 	}
 
-	/* Text wears text tokens; the accent belongs to the marks. */
+	/* Axis text is muted so the marks carry the full ink. */
 	.axis {
 		fill: var(--ink-faint);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 11px;
 	}
 
 	.endpoint {
 		fill: var(--ink);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 12px;
 	}
 
@@ -260,7 +268,9 @@
 		color: var(--ink-mute);
 
 		& strong {
-			font-family: var(--font-mono);
+			font-family: var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			font-size: var(--text-base);
 			color: var(--ink);
 		}
@@ -301,7 +311,9 @@
 	}
 
 	td {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		color: var(--ink);
 	}
 

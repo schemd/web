@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * A small instrument plot for the dock: a step response, a spectrum, the
 	 * voltage along a line. Series are sampled evenly from left to right; the
@@ -74,7 +77,7 @@
 </script>
 
 <figure class="plot">
-	<svg viewBox={`0 0 ${WIDTH} ${height}`} role="img" aria-label={label}>
+	<svg viewBox={`0 0 ${WIDTH} ${height}`} role="img" aria-label={t(label)}>
 		{#each bands as band, index (index)}
 			<rect
 				class="band"
@@ -83,13 +86,15 @@
 				width={Math.max(1, x(band.to) - x(band.from))}
 				height={bottom - TOP}
 			/>
-			{#if band.label}<text class="band-label" x={x(band.from) + 3} y={TOP + 9}>{band.label}</text
+			{#if band.label}<text class="band-label" x={x(band.from) + 3} y={TOP + 9}
+					>{t(band.label)}</text
 				>{/if}
 		{/each}
 		<line class="frame" x1={LEFT} x2={RIGHT} y1={bottom} y2={bottom} />
 		{#each levels as level, index (index)}
 			<line class="level" x1={LEFT} x2={RIGHT} y1={y(level.at)} y2={y(level.at)} />
-			{#if level.label}<text class="level-label" x={RIGHT} y={y(level.at) - 3}>{level.label}</text
+			{#if level.label}<text class="level-label" x={RIGHT} y={y(level.at) - 3}
+					>{t(level.label)}</text
 				>{/if}
 		{/each}
 		{#each series as line (line.id)}
@@ -104,13 +109,13 @@
 				y2={bottom}
 			/>
 			{#if marker.label}<text class="marker-label" x={x(marker.at) + 3} y={bottom - 4}
-					>{marker.label}</text
+					>{t(marker.label)}</text
 				>{/if}
 		{/each}
-		{#if xStart}<text x={LEFT} y={height - 4}>{xStart}</text>{/if}
-		{#if xEnd}<text class="end" x={RIGHT} y={height - 4}>{xEnd}</text>{/if}
+		{#if xStart}<text x={LEFT} y={height - 4}>{t(xStart)}</text>{/if}
+		{#if xEnd}<text class="end" x={RIGHT} y={height - 4}>{t(xEnd)}</text>{/if}
 	</svg>
-	{#if caption}<figcaption>{caption}</figcaption>{/if}
+	{#if caption}<figcaption>{t(caption)}</figcaption>{/if}
 </figure>
 
 <style>
@@ -130,7 +135,9 @@
 		}
 
 		& figcaption {
-			font: var(--text-xs) / 1.4 var(--font-mono);
+			font: var(--text-xs) / 1.4 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 	}
@@ -185,7 +192,9 @@
 
 	text {
 		fill: var(--ink-faint);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 7px;
 
 		&.end,

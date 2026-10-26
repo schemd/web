@@ -130,6 +130,7 @@ parentPort.on('message', ({ operation, request, limits }) => {
         metrics: { ...compiled.metrics },
         sourceMap: compiled.sourceMap,
         placements: compiled.placements,
+        ports: Object.fromEntries(api.buildNetlist(compiled.document).nodes.map((node) => [node.id, node.ports])),
         ms: Math.round((performance.now() - startedAt) * 100) / 100
       }
     });

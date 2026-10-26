@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href, locale } = useLanguage();
+
 	import type { PageProps } from './$types';
 	import Seo from '#lib/components/Seo.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
@@ -15,12 +18,6 @@
 	let prose = $state<HTMLElement | undefined>();
 	let railOpenMobile = $state(false);
 	let mobileIndexOpen = $state(false);
-
-	/** Compact 2-char stub for the collapsed index rail. */
-	function stub(label: string): string {
-		const letters = label.replace(/[^A-Za-z0-9]/g, '');
-		return (letters.slice(0, 2) || '··').toUpperCase();
-	}
 
 	/**
 	 * Resolve which compiled example the rail should show for a section:
@@ -80,58 +77,12 @@
 		docIndex >= 0 && docIndex < data.manifest.length - 1 ? data.manifest[docIndex + 1] : undefined
 	);
 
-	/* ---------- Reading progress through the article ---------- */
-	let readProgress = $state(0);
-	$effect(() => {
-		void data.doc;
-		const el = prose;
-		if (!el) return;
-		let frame = 0;
-		const measure = (): void => {
-			frame = 0;
-			const distance = el.offsetHeight - window.innerHeight;
-			const scrolled = -el.getBoundingClientRect().top;
-			readProgress =
-				distance > 0 ? Math.min(1, Math.max(0, scrolled / distance)) : scrolled >= 0 ? 1 : 0;
-		};
-		const schedule = (): void => {
-			if (frame === 0) frame = requestAnimationFrame(measure);
-		};
-		measure();
-		window.addEventListener('scroll', schedule, { passive: true });
-		window.addEventListener('resize', schedule);
-		return () => {
-			if (frame !== 0) cancelAnimationFrame(frame);
-			window.removeEventListener('scroll', schedule);
-			window.removeEventListener('resize', schedule);
-		};
-	});
-
-	/**
-	 * Title-block fields.
-	 *
-	 * A drafting sheet identifies itself in a title block rather than a
-	 * headline, and this corpus already carries every field one needs: which
-	 * sheet of how many, which revision line, and what the sheet contains.
-	 */
-	/*
-	 * Drawing references. Each page is a sheet with a letter, in manifest
-	 * order, and each of its sections a numbered zone on it — "C2" — so the
-	 * index, the headings and the live figure name the same place.
-	 */
-	const sheetLetter = $derived(String.fromCharCode(65 + (Math.max(0, docIndex) % 26)));
-	function zoneOf(sectionId: string): string {
-		const index = data.doc.sections.findIndex((section) => section.id === sectionId);
-		return index < 0 ? sheetLetter : `${sheetLetter}${index + 1}`;
-	}
-	const activeZone = $derived(zoneOf(activeSectionId));
-
-	const titleBlock = $derived([
-		{ field: 'sheet', value: `${docIndex + 1} / ${data.manifest.length}` },
-		{ field: 'rev', value: `v${data.version}` },
-		{ field: 'sections', value: String(data.doc.sections.length) },
-		{ field: 'compiled', value: String(data.doc.examples.length) }
-	]);
+	/* Figures are numbered in page order, as a datasheet numbers them. */
+	const figureNumber = $derived(
+		activeExample === undefined
+			? 0
+			: data.doc.examples.findIndex((example) => example.id === activeExample.id) + 1
+	);
 
 	const jsonLd = $derived(
 		JSON.stringify({
@@ -140,8 +91,8 @@
 			headline: `${data.meta.title} — schemd v${data.version}`,
 			description: data.meta.summary,
 			version: data.version,
-			inLanguage: 'en-US',
-			url: `${page.url.origin}/docs/${data.version}/${data.meta.slug}`,
+			inLanguage: data.contentLocale === 'es' ? 'es' : 'en',
+			url: `${page.url.origin}${href(`/docs/${data.version}/${data.meta.slug}`)}`,
 			author: { '@type': 'Person', name: 'John Owolabi Idogun' },
 			about: { '@type': 'SoftwareApplication', name: '@schemd/core' }
 		})
@@ -149,31 +100,38 @@
 </script>
 
 <Seo
-	title={`${data.meta.title} · schemd v${data.version} docs`}
-	description={data.meta.summary}
+	title={t('{0} · schemd v{1} docs', [data.meta.title, data.version])}
+	description={t(data.meta.summary)}
 	canonicalPath={`/docs/${data.version}/${data.meta.slug}`}
 	type="article"
 	{jsonLd}
 />
+{#if locale() === 'es' && data.contentLocale === 'en'}
+	<p class="page historical-notice">
+		{t('This documentation is available in English. Spanish documentation starts at version 1.2.')}
+	</p>
+{/if}
 
 <div class="docs-shell" class:nav-collapsed={ui.docsNavCollapsed}>
-	<!-- LEFT: collapsible index tree -->
-	<aside class="doc-nav" class:mobile-open={mobileIndexOpen} aria-label="Documentation index">
+	<!-- LEFT: the contents -->
+	<aside class="doc-nav" class:mobile-open={mobileIndexOpen} aria-label={t('Documentation index')}>
 		<div class="doc-nav-head">
-			<div class="doc-nav-brandwrap">
-				<span class="doc-nav-brand">schemd docs</span>
-				<span class="doc-nav-meta microlabel">
-					v{data.version} · {data.manifest.length} sheets
-				</span>
+			<div class="nav-heading">
+				<p class="nav-title">{t('Contents')}</p>
+				<p class="nav-meta">
+					{t('Documentation')}
+					{t(data.version)}, {t(data.manifest.length)}
+					{t('pages')}
+				</p>
 			</div>
 			<button
 				type="button"
 				class="collapse-toggle"
-				onclick={() => setDocsNavCollapsed(!ui.docsNavCollapsed)}
-				aria-expanded={!ui.docsNavCollapsed}
-				aria-label={ui.docsNavCollapsed ? 'Expand index' : 'Collapse index'}
+				onclick={() => setDocsNavCollapsed(true)}
+				aria-expanded="true"
+				aria-label={t('Hide contents')}
 			>
-				{ui.docsNavCollapsed ? '⟩' : '⟨'}
+				{t('Hide')}
 			</button>
 			<button
 				type="button"
@@ -181,62 +139,40 @@
 				onclick={() => (mobileIndexOpen = !mobileIndexOpen)}
 				aria-expanded={mobileIndexOpen}
 			>
-				<span class="microlabel">index · {data.meta.label}</span>
-				<span aria-hidden="true">{mobileIndexOpen ? '▲' : '▼'}</span>
+				<span>{t('Contents:')} {t(data.meta.label)}</span>
+				<span aria-hidden="true">{mobileIndexOpen ? t('−') : t('+')}</span>
 			</button>
 		</div>
 
-		<!-- Collapsed desktop: data-driven icon stubs, one per doc, grouped -->
-		<nav class="doc-nav-rail" aria-label="Documentation index (compact)">
-			{#each groups as { group, pages } (group)}
-				<div class="rail-group" role="group" aria-label={group}>
-					{#each pages as pageMeta (pageMeta.slug)}
-						<a
-							class="rail-stub"
-							href={`/docs/${data.version}/${pageMeta.slug}`}
-							title={pageMeta.label}
-							aria-label={pageMeta.label}
-							aria-current={pageMeta.slug === data.meta.slug ? 'page' : undefined}
-						>
-							{stub(pageMeta.label)}
-						</a>
-					{/each}
-				</div>
-			{/each}
-		</nav>
-
-		<!-- Expanded desktop / opened mobile: full tree -->
 		<nav class="doc-nav-tree">
 			{#each groups as { group, pages } (group)}
 				<details open>
-					<summary class="microlabel">{group}</summary>
+					<summary>{t(group)}</summary>
 					<ul>
 						{#each pages as pageMeta (pageMeta.slug)}
 							<li>
 								<a
-									href={`/docs/${data.version}/${pageMeta.slug}`}
+									href={href(`/docs/${data.version}/${pageMeta.slug}`)}
 									aria-current={pageMeta.slug === data.meta.slug ? 'page' : undefined}
 									onclick={() => (mobileIndexOpen = false)}
 								>
-									{pageMeta.label}
+									{t(pageMeta.label)}
 								</a>
 								{#if pageMeta.slug === data.meta.slug && data.doc.sections.length > 0}
-									<ul class="section-tree">
-										{#each data.doc.sections as section (section.id)}
+									<ol class="section-tree">
+										{#each data.doc.sections as section, index (section.id)}
 											<li>
 												<a
-													href={`#${section.id}`}
+													href={href(`#${section.id}`)}
 													class:active={section.id === activeSectionId}
 													onclick={() => (mobileIndexOpen = false)}
 												>
-													<span class="zone" class:is-current={section.id === activeSectionId}
-														>{zoneOf(section.id)}</span
-													>
-													{section.title}
+													<span class="snum">{t(index + 1)}</span>
+													{t(section.title)}
 												</a>
 											</li>
 										{/each}
-									</ul>
+									</ol>
 								{/if}
 							</li>
 						{/each}
@@ -246,88 +182,87 @@
 		</nav>
 	</aside>
 
-	<!-- CENTER: long-form reading column -->
-	<article class="doc-article" bind:this={prose}>
-		<div class="read-progress" aria-hidden="true">
-			<span style={`transform: scaleX(${readProgress})`}></span>
-		</div>
-		<header class="doc-header plate">
-			<p class="eyebrow">{data.meta.group}</p>
-			<h1>{data.meta.title}</h1>
+	<!-- CENTER: the reading column -->
+	<article lang={data.contentLocale} class="doc-article" bind:this={prose}>
+		{#if ui.docsNavCollapsed}
+			<button
+				type="button"
+				class="show-contents"
+				onclick={() => setDocsNavCollapsed(false)}
+				aria-expanded="false">{t('Show contents')}</button
+			>
+		{/if}
+		<header class="doc-header">
+			<p class="doc-group">{t(data.meta.group)}</p>
+			<h1>{t(data.meta.title)}</h1>
 			{#if data.meta.slug === 'overview'}
 				<Pronounce />
 			{/if}
-			<p class="doc-summary">{data.meta.summary}</p>
-			<dl class="title-block">
-				{#each titleBlock as entry (entry.field)}
-					<div>
-						<dt class="microlabel">{entry.field}</dt>
-						<dd class="readout">{entry.value}</dd>
-					</div>
-				{/each}
-			</dl>
+			<p class="doc-summary">{t(data.meta.summary)}</p>
 		</header>
-		<div class="prose zoned" style={`--sheet: '${sheetLetter}'`}>
+		<div class="prose">
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -- rendered from the docs corpus -->
 			{@html data.doc.html}
 		</div>
 
-		<nav class="doc-pager" aria-label="Adjacent documentation">
+		<nav class="doc-pager" aria-label={t('Adjacent documentation')}>
 			{#if prevDoc}
-				<a class="pager-card prev" href={`/docs/${data.version}/${prevDoc.slug}`}>
-					<span class="microlabel">← previous</span>
-					<span class="pager-title">{prevDoc.title}</span>
-					<span class="pager-group microlabel">{prevDoc.group}</span>
+				<a class="pager-link prev" href={href(`/docs/${data.version}/${prevDoc.slug}`)}>
+					<span class="pager-dir">{t('Previous')}</span>
+					<span class="pager-title">{t(prevDoc.title)}</span>
 				</a>
 			{:else}
 				<span></span>
 			{/if}
 			{#if nextDoc}
-				<a class="pager-card next" href={`/docs/${data.version}/${nextDoc.slug}`}>
-					<span class="microlabel">next →</span>
-					<span class="pager-title">{nextDoc.title}</span>
-					<span class="pager-group microlabel">{nextDoc.group}</span>
+				<a class="pager-link next" href={href(`/docs/${data.version}/${nextDoc.slug}`)}>
+					<span class="pager-dir">{t('Next')}</span>
+					<span class="pager-title">{t(nextDoc.title)}</span>
 				</a>
 			{/if}
 		</nav>
 	</article>
 
-	<!-- RIGHT: pinned compiled-example rail -->
+	<!-- RIGHT: the figure for the section being read -->
 	<aside
 		class="doc-rail"
 		class:open={railOpenMobile}
-		aria-label="Compiled example for the active section"
+		aria-label={t('Compiled example for the active section')}
 	>
-		<div class="rail-head">
-			<span class="zone is-current">{activeZone}</span>
-			<span class="microlabel">live figure</span>
-			<span class="microlabel rail-mode">@schemd/core · mode=full</span>
-		</div>
 		{#if activeExample}
 			{#key activeExample.id}
 				<div class="rail-body">
-					<p class="microlabel rail-title">{activeExample.title}</p>
-					<div class="schemd-frame trace-on">
-						{@html activeExample.svg}
-					</div>
+					<figure class="rail-figure">
+						<div class="schemd-frame trace-on">
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
+							{@html activeExample.svg}
+						</div>
+						<figcaption class="rail-caption">
+							<b>{t('Figure')} {t(figureNumber)}.</b>
+							{t(activeExample.title)}
+						</figcaption>
+					</figure>
 					<!-- Keyboard focus exposes overflowing source to Safari users. -->
 					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 					<pre
 						class="codeblock rail-src"
 						tabindex="0"
 						role="region"
-						aria-label="Scrollable active example source"><code
-							>{@html activeExample.sourceHtml}</code
+						aria-label={t('Scrollable active example source')}><code
+							><!-- eslint-disable-next-line svelte/no-at-html-tags -- tokenizer output -->{@html activeExample.sourceHtml}</code
 						></pre>
 					<a
 						class="btn rail-open"
-						href={`/playground/${data.version}?code=${encodeWorkspaceState(activeExample.source)}`}
+						href={href(
+							`/playground/${data.version}?code=${encodeWorkspaceState(activeExample.source)}`
+						)}
 					>
-						Open in playground →
+						{t('Open in playground')}
 					</a>
 				</div>
 			{/key}
 		{:else}
-			<p class="microlabel rail-empty">This page has no compiled examples.</p>
+			<p class="rail-empty">{t('This page has no figures.')}</p>
 		{/if}
 	</aside>
 
@@ -338,519 +273,297 @@
 		aria-expanded={railOpenMobile}
 		onclick={() => (railOpenMobile = !railOpenMobile)}
 	>
-		{railOpenMobile ? 'Hide compiled example' : 'Show compiled example'}
+		{railOpenMobile ? t('Hide compiled example') : t('Show compiled example')}
 	</button>
 </div>
 
 <style>
 	.docs-shell {
 		display: grid;
-		grid-template-columns: 264px minmax(0, 1fr) minmax(300px, 380px);
+		grid-template-columns: 260px minmax(0, 1fr) minmax(300px, 400px);
+		inline-size: min(100% - 2 * var(--space-4), 1440px);
+		margin-inline: auto;
 		min-block-size: calc(100vh - var(--header-h));
 
 		&.nav-collapsed {
-			grid-template-columns: 64px minmax(0, 1fr) minmax(300px, 380px);
+			grid-template-columns: 0 minmax(0, 1fr) minmax(300px, 400px);
 		}
 	}
 
-	/* ----- left: the index card ----- */
+	/* ----- left: contents ----- */
 	.doc-nav {
 		position: sticky;
-		inset-block-start: var(--header-h);
-		block-size: calc(100vh - var(--header-h));
+		inset-block-start: 44px;
+		block-size: calc(100vh - 44px);
 		overflow-y: auto;
-		padding: var(--space-4);
+		padding: var(--space-6) var(--space-4) var(--space-6) 0;
 		border-inline-end: 1px solid var(--line);
-		background:
-			linear-gradient(
-				180deg,
-				color-mix(in srgb, var(--accent) 3.5%, transparent),
-				transparent 220px
-			),
-			var(--bg-raised);
-		scrollbar-gutter: stable;
+		font-stretch: var(--width-table);
+		font-size: var(--text-sm);
+	}
+
+	.docs-shell.nav-collapsed .doc-nav {
+		display: none;
 	}
 
 	.doc-nav-head {
-		position: sticky;
-		inset-block-start: calc(var(--space-4) * -1);
-		z-index: 2;
 		display: flex;
 		align-items: start;
 		justify-content: space-between;
 		gap: var(--space-2);
-		margin-block: calc(var(--space-4) * -1) var(--space-4);
-		padding-block: var(--space-4) var(--space-3);
-		background: linear-gradient(180deg, var(--bg-raised) 78%, transparent);
-
-		& .doc-nav-brand {
-			display: block;
-			font-family: var(--font-mono);
-			font-weight: 700;
-			letter-spacing: -0.01em;
-		}
-
-		& .doc-nav-meta {
-			display: block;
-			margin-block-start: 2px;
-		}
+		margin-block-end: var(--space-4);
 	}
 
-	.docs-shell.nav-collapsed .doc-nav-brandwrap {
-		display: none;
+	.nav-title {
+		margin: 0;
+		font-weight: 700;
+		font-size: var(--text-base);
 	}
 
-	.docs-shell.nav-collapsed .doc-nav {
-		padding-inline: var(--space-2);
+	.nav-meta {
+		margin: 0;
+		color: var(--ink-mute);
 	}
 
-	.collapse-toggle {
-		border: 1px solid var(--line);
-		padding: 0.1rem 0.45rem;
-		color: var(--ink-faint);
-
-		&:hover {
-			color: var(--accent);
-			border-color: var(--accent);
-		}
-	}
-
-	/* Mobile disclosure toggle — hidden on desktop. */
-	.mobile-index-toggle {
-		display: none;
-		align-items: center;
-		gap: var(--space-2);
-		inline-size: 100%;
-		justify-content: space-between;
-		padding: var(--space-2) var(--space-3);
-		border: 1px solid var(--line-strong);
-		background: var(--bg-inset);
+	.collapse-toggle,
+	.show-contents {
+		font-stretch: var(--width-table);
+		font-size: var(--text-sm);
+		font-weight: 600;
 		color: var(--accent);
 	}
 
-	/* ----- which nav shows: desktop default = tree, collapsed = stubs ----- */
-	.doc-nav-rail {
+	.show-contents {
+		margin-block-end: var(--space-4);
+	}
+
+	.mobile-index-toggle {
 		display: none;
-		gap: var(--space-3);
-		justify-items: center;
-	}
-
-	.doc-nav-tree {
-		display: block;
-	}
-
-	.docs-shell.nav-collapsed .doc-nav-rail {
-		display: grid;
-	}
-
-	.docs-shell.nav-collapsed .doc-nav-tree {
-		display: none;
-	}
-
-	.rail-group {
-		display: grid;
-		gap: var(--space-1);
-		justify-items: center;
-		padding-block-end: var(--space-2);
-		border-block-end: 1px solid var(--line);
-
-		&:last-child {
-			border-block-end: none;
-		}
-	}
-
-	.rail-stub {
-		display: grid;
-		place-items: center;
-		inline-size: 34px;
-		block-size: 34px;
-		font-family: var(--font-mono);
-		font-size: var(--text-2xs);
-		letter-spacing: 0.02em;
-		color: var(--ink-mute);
-		border: 1px solid var(--line);
-		background: var(--bg-inset);
-		transition:
-			border-color var(--dur-fast) var(--ease-precise),
-			color var(--dur-fast) var(--ease-precise),
-			transform var(--dur-fast) var(--ease-precise);
-
-		&:hover {
-			color: var(--ink);
-			border-color: var(--line-strong);
-			text-decoration: none;
-			transform: translateY(-1px);
-		}
-
-		&[aria-current='page'] {
-			color: var(--accent-ink);
-			background: var(--accent);
-			border-color: var(--accent);
-		}
+		inline-size: 100%;
+		justify-content: space-between;
+		font-weight: 600;
 	}
 
 	.doc-nav details {
 		margin-block-end: var(--space-4);
 
 		& summary {
-			display: flex;
-			align-items: center;
-			gap: var(--space-2);
-			cursor: pointer;
 			list-style: none;
-			padding-block: var(--space-1);
+			cursor: pointer;
+			font-weight: 700;
+			color: var(--ink);
+			margin-block-end: var(--space-1);
 
-			&::before {
-				content: '';
-				inline-size: 5px;
-				block-size: 5px;
-				background: var(--accent);
-				clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
-				transition: transform var(--dur-med) var(--ease-kinetic);
+			&::-webkit-details-marker {
+				display: none;
 			}
-
-			/* The group header's rule runs out to the rail edge. */
-			&::after {
-				content: '';
-				flex: 1;
-				block-size: 1px;
-				background: var(--line);
-			}
-		}
-
-		&[open] summary::before {
-			transform: rotate(90deg) scale(1.15);
 		}
 
 		& ul {
 			list-style: none;
 			margin: 0;
-			padding-inline-start: var(--space-3);
+			padding: 0;
 		}
 
-		/* Every index entry is a track; the active one lights its spine. */
-		& li > a {
-			position: relative;
+		& li a {
 			display: block;
-			padding: 0.26rem 0.5rem;
-			border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-			font-size: var(--text-sm);
-			color: var(--ink-mute);
-			border-inline-start: 1px solid var(--line);
-			transition:
-				color var(--dur-fast) var(--ease-precise),
-				background-color var(--dur-fast) var(--ease-precise);
-
-			&::before {
-				content: '';
-				position: absolute;
-				inset-block: 0;
-				inset-inline-start: -1px;
-				inline-size: 2px;
-				background: var(--accent-grad-v);
-				transform: scaleY(0);
-				transform-origin: top;
-				transition: transform var(--dur-med) var(--ease-kinetic);
-			}
+			padding: 0.2rem 0 0.2rem var(--space-3);
+			border-inline-start: 2px solid var(--line);
+			color: var(--ink);
 
 			&:hover {
-				color: var(--ink);
-				background: color-mix(in srgb, var(--ink) 5%, transparent);
 				text-decoration: none;
+				border-inline-start-color: var(--ink-mute);
 			}
 
 			&[aria-current='page'] {
-				color: var(--accent);
-				background: color-mix(in srgb, var(--accent) 9%, transparent);
-
-				&::before {
-					transform: scaleY(1);
-				}
+				font-weight: 700;
+				border-inline-start-color: var(--ink);
 			}
 		}
 	}
 
 	.section-tree {
-		margin-block: 2px var(--space-2);
+		list-style: none;
+		margin: 0 0 var(--space-2);
+		padding: 0;
 
 		& a {
 			display: flex;
-			align-items: center;
 			gap: var(--space-2);
-			font-size: var(--text-sm);
-			color: var(--ink-faint);
+			padding-inline-start: var(--space-5) !important;
+			color: var(--ink-mute) !important;
+			font-weight: 400 !important;
 
 			&.active {
-				color: var(--accent);
-				background: color-mix(in srgb, var(--accent) 7%, transparent);
-
-				&::before {
-					transform: scaleY(1);
-				}
+				color: var(--ink) !important;
+				border-inline-start-color: var(--accent) !important;
 			}
+		}
+
+		& .snum {
+			min-inline-size: 1.4em;
+			font-variant-numeric: tabular-nums;
 		}
 	}
 
-	/* ----- center ----- */
+	/* ----- center: the reading column ----- */
 	.doc-article {
-		padding: var(--space-8) clamp(1rem, 4vw, 3.5rem) var(--space-16);
+		padding: var(--space-8) var(--space-8) var(--space-16);
 		min-inline-size: 0;
 	}
 
-	/* Reading progress — sticks under the header, fills as you scroll. */
-	.read-progress {
-		position: sticky;
-		inset-block-start: var(--header-h);
-		z-index: 5;
-		block-size: 2px;
-		background: var(--line);
-		margin-block-end: var(--space-6);
-		overflow: hidden;
-		border-radius: 2px;
+	.doc-header {
+		max-inline-size: var(--measure);
+		margin-block-end: var(--space-8);
 
-		/* A copper trace drawing along the sheet as you read. */
-		& span {
-			display: block;
-			block-size: 100%;
-			background: var(--accent);
-			transform-origin: left;
-			transition: transform 90ms linear;
+		& h1 {
+			margin-block: var(--space-1) var(--space-3);
 		}
 	}
 
-	/* Smart previous / next pager. */
+	.doc-group {
+		margin: 0;
+		font-stretch: var(--width-table);
+		font-size: var(--text-sm);
+		color: var(--ink-mute);
+	}
+
+	.doc-summary {
+		margin: var(--space-3) 0 0;
+		font-size: var(--text-md);
+		line-height: 1.45;
+		color: var(--ink-mute);
+	}
+
+	/* The renderer prints each section's number beside its title. */
+	.prose :global(h2 .doc-num) {
+		display: inline-block;
+		min-inline-size: 2em;
+		font-variant-numeric: tabular-nums;
+	}
+
 	.doc-pager {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
-		gap: var(--space-3);
-		margin-block-start: var(--space-16);
-		padding-block-start: var(--space-6);
-		border-block-start: 1px solid var(--line);
+		gap: var(--space-6);
+		max-inline-size: var(--measure);
+		margin-block-start: var(--space-12);
+		padding-block-start: var(--space-4);
+		border-block-start: 2px solid var(--ink);
 	}
 
-	.pager-card {
+	.pager-link {
 		display: grid;
 		gap: var(--space-1);
-		padding: var(--space-4);
-		border: 1px solid var(--line-strong);
-		border-radius: var(--radius-md);
-		background-color: var(--bg-raised);
-		color: var(--ink-mute);
-		transition: border-color var(--dur-med) var(--ease-kinetic);
-
-		&:hover {
-			border-color: var(--accent);
-			text-decoration: none;
-		}
+		color: var(--ink);
 
 		&.next {
 			text-align: end;
 		}
 
-		& .pager-title {
-			font-size: var(--text-md);
-			font-weight: 600;
+		&:hover .pager-title {
+			text-decoration: underline;
+			text-underline-offset: 0.2em;
+		}
+
+		&:hover {
+			text-decoration: none;
+		}
+	}
+
+	.pager-dir {
+		font-stretch: var(--width-table);
+		font-size: var(--text-sm);
+		color: var(--ink-mute);
+	}
+
+	.pager-title {
+		font-stretch: var(--width-condensed);
+		font-weight: 700;
+		font-size: var(--text-md);
+		color: var(--accent);
+	}
+
+	/* ----- right: the figure ----- */
+	.doc-rail {
+		position: sticky;
+		inset-block-start: 44px;
+		block-size: calc(100vh - 44px);
+		overflow-y: auto;
+		padding: var(--space-8) 0 var(--space-8) var(--space-6);
+		border-inline-start: 1px solid var(--line);
+	}
+
+	.rail-figure {
+		margin: 0;
+	}
+
+	/* The compiler's own caption repeats the figure title; the numbered caption
+	   below the frame replaces it. */
+	.rail-figure :global(.schemd-frame figcaption) {
+		display: none;
+	}
+
+	.rail-caption {
+		margin-block: var(--space-2) var(--space-4);
+		font-stretch: var(--width-table);
+		font-size: var(--text-sm);
+		color: var(--ink-mute);
+
+		& b {
 			color: var(--ink);
 		}
-
-		& .pager-group {
-			color: var(--ink-faint);
-		}
-	}
-
-	@media (max-width: 620px) {
-		.doc-pager {
-			grid-template-columns: 1fr;
-		}
-	}
-
-	/* The document identifies itself the way a drawing does: a title block. */
-	.doc-header {
-		margin-block-end: var(--space-8);
-		padding: var(--space-6) var(--space-6) 0;
-		overflow: hidden;
-
-		& h1 {
-			font-size: var(--text-xl);
-			letter-spacing: -0.025em;
-			margin-block: var(--space-1) var(--space-3);
-			text-wrap: balance;
-		}
-	}
-
-	.doc-summary {
-		margin: 0 0 var(--space-6);
-		max-inline-size: 68ch;
-		color: var(--ink-mute);
-		font-size: var(--text-md);
-	}
-
-	.title-block {
-		display: grid;
-		/* Four fields, four tracks. `auto-fit` stranded the last one on a row
-		   of its own the moment the column narrowed. */
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		gap: 0;
-		margin: 0 calc(var(--space-6) * -1);
-		border-block-start: 1px solid var(--line);
-		background: color-mix(in srgb, var(--bg-inset) 55%, transparent);
-
-		& > div {
-			padding: var(--space-2) var(--space-4);
-			border-inline-end: 1px solid var(--line);
-
-			&:last-child {
-				border-inline-end: none;
-			}
-		}
-
-		& dd {
-			margin: 0;
-			font-size: var(--text-sm);
-		}
-	}
-
-	/* Section eyebrow injected before each h2 by the markdown pipeline. It
-	   leads with the section's zone on this sheet: the same "C2" the index and
-	   the live figure show. */
-	.zoned {
-		counter-reset: zone;
-	}
-
-	.zoned :global(h2[id]) {
-		counter-increment: zone;
-	}
-
-	.prose :global(h2 .doc-eyebrow) {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		font-family: var(--font-label);
-		font-size: 0.625rem;
-		font-weight: 400;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		color: var(--ink-faint);
-		margin-block-end: var(--space-2);
-	}
-
-	.zoned :global(h2 .doc-eyebrow)::before {
-		content: var(--sheet) counter(zone);
-		padding: 0.28em 0.5em;
-		border: 1px solid var(--accent);
-		border-radius: var(--radius-sm);
-		color: var(--accent);
-		line-height: 1;
-	}
-
-	/* ----- right rail: the scope ----- */
-	.doc-rail {
-		border-inline-start: 1px solid var(--line);
-		background: var(--bg-raised);
-		position: sticky;
-		inset-block-start: var(--header-h);
-		block-size: calc(100vh - var(--header-h));
-		overflow-y: auto;
-		padding: 0 var(--space-4) var(--space-4);
-	}
-
-	/* Bezel: the rail states what it is showing and that the view is live. */
-	.rail-head {
-		position: sticky;
-		inset-block-start: 0;
-		z-index: 2;
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		margin-inline: calc(var(--space-4) * -1);
-		padding: var(--space-3) var(--space-4);
-		border-block-end: 1px solid var(--line);
-		background: color-mix(in srgb, var(--bg-raised) 92%, transparent);
-		backdrop-filter: blur(6px);
-		margin-block-end: var(--space-4);
-
-		& .rail-mode {
-			margin-inline-start: auto;
-			color: var(--ink-faint);
-		}
-	}
-
-	.rail-body {
-		display: grid;
-		gap: var(--space-3);
-		animation: rail-align var(--dur-med) var(--ease-precise) both;
-	}
-
-	@keyframes rail-align {
-		from {
-			transform: translateY(4px);
-		}
-		to {
-			transform: translateY(0);
-		}
-	}
-
-	.rail-title {
-		color: var(--accent);
 	}
 
 	.rail-src {
-		font-size: var(--text-2xs);
-		max-block-size: 300px;
+		max-block-size: 40vh;
+		font-size: 0.8125rem;
 	}
 
 	.rail-open {
-		justify-self: start;
-		font-size: var(--text-xs);
+		margin-block-start: var(--space-4);
 	}
 
 	.rail-empty {
-		padding: var(--space-4);
+		color: var(--ink-mute);
 	}
 
 	.rail-toggle {
 		display: none;
 	}
 
-	/* ----- responsive: rail becomes a bottom sheet ----- */
+	/* ----- narrower screens: contents as a disclosure, figure as a sheet ----- */
 	@media (max-width: 1080px) {
 		.docs-shell,
 		.docs-shell.nav-collapsed {
-			grid-template-columns: 1fr;
-			/* Vertical space the floating rail toggle occupies at the foot of the
-			   viewport: its own height plus the offset above and below it. */
+			grid-template-columns: minmax(0, 1fr);
 			--rail-toggle-clearance: calc(var(--space-4) * 2 + 2.75rem);
 		}
 
 		.doc-nav,
 		.docs-shell.nav-collapsed .doc-nav {
+			display: block;
 			position: static;
 			block-size: auto;
 			border-inline-end: none;
 			border-block-end: 1px solid var(--line);
-			padding: var(--space-2) var(--space-3);
+			padding: var(--space-3) 0;
 			overflow: visible;
 		}
 
 		.doc-nav-head {
-			position: static;
-			margin-block: 0;
-			padding-block: 0;
-			background: none;
+			margin: 0;
 		}
 
-		/* On mobile the index is a compact disclosure, closed by default. */
-		.doc-nav-brandwrap,
-		.collapse-toggle {
+		.nav-heading,
+		.collapse-toggle,
+		.show-contents {
 			display: none;
 		}
 
 		.mobile-index-toggle {
 			display: flex;
-		}
-
-		.doc-nav-rail {
-			display: none !important;
 		}
 
 		.doc-nav-tree {
@@ -864,29 +577,26 @@
 			display: block;
 		}
 
+		.doc-article {
+			padding-inline: 0;
+		}
+
 		.doc-rail {
 			position: fixed;
 			inset-inline: 0;
-			inset-block-end: 0;
-			inset-block-start: auto;
+			inset-block: auto 0;
 			block-size: min(70vh, 560px);
 			z-index: 60;
-			border-block-start: 1px solid var(--line-strong);
+			padding: var(--space-4);
+			padding-block-end: var(--rail-toggle-clearance);
+			background: var(--bg);
+			border-inline-start: none;
+			border-block-start: 2px solid var(--ink);
 			transform: translateY(100%);
 			transition: transform var(--dur-med) var(--ease-precise);
-			/*
-			 * The sheet shares the foot of the viewport with the floating toggle,
-			 * which is fixed and therefore does not scroll with this content. Without
-			 * clearance the rail's last control — "Open in playground" — comes to rest
-			 * exactly underneath it once the rail is scrolled to the end, and at 390px
-			 * the two occupied identical space. This reserves the toggle's footprint
-			 * so anything at the end of the rail can always be scrolled clear.
-			 */
-			padding-block-end: var(--rail-toggle-clearance);
 
 			&.open {
 				transform: translateY(0);
-				box-shadow: 0 -12px 40px rgb(0 0 0 / 0.4);
 			}
 		}
 
@@ -901,54 +611,20 @@
 
 	@media (max-width: 620px) {
 		.doc-article {
-			padding: var(--space-5) var(--space-3) calc(var(--space-16) + 3rem);
+			padding-block: var(--space-5) calc(var(--space-16) + 3rem);
 			overflow: hidden;
 		}
 
-		/*
-		 * `overflow: hidden` above makes the article the sticky containing
-		 * block, which parked the progress bar 98px inside the column — a
-		 * hairline struck through the title. On a phone the bar belongs to the
-		 * viewport anyway, so pin it under the header instead of to a column.
-		 */
-		.read-progress {
-			position: fixed;
-			inset-inline: 0;
-			inset-block-start: var(--header-h);
-			margin-block-end: 0;
-			z-index: 40;
-		}
-
-		.doc-header {
-			padding: var(--space-5) var(--space-4) 0;
-		}
-
 		.doc-header h1 {
-			font-size: clamp(1.55rem, 9vw, var(--text-xl));
+			font-size: clamp(1.75rem, 9vw, var(--text-2xl));
 		}
 
 		.doc-summary {
 			font-size: var(--text-base);
 		}
 
-		/* Four fields; two tracks keep the block a rectangle rather than
-		   stranding one label on a row of its own. */
-		.title-block {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			margin-inline: calc(var(--space-4) * -1);
-
-			& > div:nth-child(2n) {
-				border-inline-end: none;
-			}
-
-			& > div:nth-child(-n + 2) {
-				border-block-end: 1px solid var(--line);
-			}
-		}
-
 		.docs-shell,
 		.docs-shell.nav-collapsed {
-			/* The toggle spans the full width here and sits closer to the edge. */
 			--rail-toggle-clearance: calc(var(--space-3) * 2 + 2.75rem);
 		}
 

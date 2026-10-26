@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href } = useLanguage();
+
 	/**
 	 * Ultra-premium error surface, rendered as a compiler diagnostic.
 	 *
@@ -60,7 +63,7 @@
 		const match = links.find((link) => link.key === event.key.toLowerCase());
 		if (match) {
 			event.preventDefault();
-			void goto(match.href);
+			void goto(href(match.href));
 		}
 	}
 </script>
@@ -68,7 +71,7 @@
 <svelte:window onkeydown={onKey} />
 
 <svelte:head>
-	<title>{status} · {band.headline} · schemd</title>
+	<title>{t(status)} · {t(band.headline)} {t('· schemd')}</title>
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
@@ -80,7 +83,7 @@
 			class="motif"
 			viewBox="0 0 320 120"
 			role="img"
-			aria-label="A schematic trace ending at an open, unconnected terminal"
+			aria-label={t('A schematic trace ending at an open, unconnected terminal')}
 		>
 			<defs>
 				<pattern id="fault-grid" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -104,15 +107,15 @@
 			<path class="motif-stub" d="M233 60 H300" stroke-dasharray="4 6" />
 		</svg>
 
-		<p class="eyebrow microlabel">{band.code} · status {status}</p>
+		<p class="microlabel">{t('Error')} {t(status)}: {t(band.code)}</p>
 		<h1 id="fault-title">
-			<span class="status-code">{status}</span>
-			<span class="headline">{band.headline}</span>
+			<span class="status-code">{t(status)}</span>
+			<span class="headline">{t(band.headline)}</span>
 		</h1>
-		<p class="note">{band.note}</p>
+		<p class="note">{t(band.note)}</p>
 
 		<!-- The compiler's own diagnostic idiom, applied to the failed request. -->
-		<figure class="diagnostic" aria-label="Compiler-style diagnostic">
+		<figure class="diagnostic" aria-label={t('Compiler-style diagnostic')}>
 			<pre><code
 					><span class="d-head">schemd: {band.code.toLowerCase()}: {detail}</span>
 <span class="d-gutter">  request │</span> <span class="d-verb">GET</span> {path}
@@ -122,11 +125,11 @@
 				></pre>
 		</figure>
 
-		<nav class="actions" aria-label="Recover">
+		<nav class="actions" aria-label={t('Recover')}>
 			{#each links as link, index (link.href)}
-				<a class="action" class:primary={index === 0} href={link.href}>
-					<span>{link.label}</span>
-					<kbd>{link.kbd}</kbd>
+				<a class="action" class:primary={index === 0} href={href(link.href)}>
+					<span>{t(link.label)}</span>
+					<kbd>{t(link.kbd)}</kbd>
 				</a>
 			{/each}
 		</nav>
@@ -135,19 +138,16 @@
 
 <style>
 	.fault {
-		min-block-size: calc(100vh - var(--header-h));
-		display: grid;
-		place-items: center;
-		padding: clamp(1.5rem, 5vw, 4rem);
+		inline-size: min(100% - 2 * var(--space-4), var(--page-max));
+		margin-inline: auto;
+		padding-block: var(--space-12) var(--space-16);
 	}
 
 	.fault-inner {
 		inline-size: min(100%, 620px);
 		display: grid;
-		justify-items: center;
-		text-align: center;
+		justify-items: start;
 		gap: var(--space-4);
-		animation: sweep-in var(--dur-kinetic) var(--ease-kinetic) both;
 	}
 
 	/* ---------- Schematic motif ---------- */
@@ -179,14 +179,13 @@
 	}
 
 	.motif-node {
-		fill: var(--accent);
+		fill: var(--ink);
 	}
 
 	.motif-open {
 		fill: var(--bg);
 		stroke: var(--danger);
 		stroke-width: 2;
-		animation: fault-breathe 2.6s var(--ease-precise) infinite;
 	}
 
 	.motif-slash {
@@ -198,11 +197,10 @@
 	/* A signal pulse that races the live trace and stops dead at the break. */
 	.motif-pulse {
 		fill: none;
-		stroke: var(--accent);
+		stroke: var(--ink);
 		stroke-width: 2.5;
 		stroke-linecap: round;
 		stroke-dasharray: 26 999;
-		filter: drop-shadow(0 0 5px var(--glow));
 		animation: fault-signal 2.6s var(--ease-precise) infinite;
 	}
 
@@ -221,46 +219,27 @@
 		}
 	}
 
-	@keyframes fault-breathe {
-		0%,
-		100% {
-			filter: drop-shadow(0 0 1px transparent);
-		}
-		50% {
-			filter: drop-shadow(0 0 7px var(--danger));
-		}
-	}
-
 	/* ---------- Headline ---------- */
-	.eyebrow {
-		color: var(--danger);
-		letter-spacing: 0.14em;
-	}
-
 	h1 {
 		display: grid;
 		gap: var(--space-2);
-		justify-items: center;
+		justify-items: start;
 		margin: 0;
 	}
 
 	.status-code {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: clamp(3.5rem, 14vw, 6rem);
 		line-height: 0.9;
 		font-weight: 700;
-		letter-spacing: -0.04em;
 		color: var(--ink);
-		background: linear-gradient(180deg, var(--ink) 0%, var(--ink-mute) 100%);
-		-webkit-background-clip: text;
-		background-clip: text;
-		-webkit-text-fill-color: transparent;
 	}
 
 	.headline {
 		font-size: clamp(var(--text-lg), 4vw, var(--text-2xl));
 		font-weight: 600;
-		letter-spacing: -0.01em;
 		color: var(--ink);
 	}
 
@@ -301,7 +280,7 @@
 	}
 
 	.d-verb {
-		color: var(--accent-2);
+		color: var(--ink);
 	}
 
 	.d-caret {
@@ -317,7 +296,6 @@
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
-		justify-content: center;
 		gap: var(--space-2);
 		margin-block-start: var(--space-2);
 	}
@@ -340,13 +318,13 @@
 		&:hover {
 			text-decoration: none;
 			transform: translateY(-2px);
-			border-color: var(--accent);
+			border-color: var(--ink);
 		}
 
 		&.primary {
-			color: var(--accent-ink);
-			background: var(--accent);
-			border-color: var(--accent);
+			color: var(--bg);
+			background: var(--ink);
+			border-color: var(--ink);
 		}
 
 		& kbd {
@@ -360,8 +338,8 @@
 		}
 
 		&.primary kbd {
-			color: var(--accent-ink);
-			background: color-mix(in srgb, var(--accent-ink) 16%, transparent);
+			color: var(--bg);
+			background: transparent;
 			border-color: transparent;
 		}
 	}

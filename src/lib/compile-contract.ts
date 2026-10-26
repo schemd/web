@@ -89,6 +89,8 @@ export interface CompileSuccess {
 	readonly sourceMap: SchematicSourceMap;
 	/** What each relative declaration resolved to; empty without relations. */
 	readonly placements: SchematicCompilation['placements'];
+	/** Each part's canonical terminals, by ID, so the editor can offer real ports. */
+	readonly ports: Readonly<Record<string, readonly string[]>>;
 	readonly ms: number;
 }
 

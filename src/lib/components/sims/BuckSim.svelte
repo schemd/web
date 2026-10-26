@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Closed-loop buck converter on the v2 bench.
 	 *
@@ -320,7 +323,7 @@
 			unit: 'A',
 			sample: (x, phase) =>
 				Math.max(0, inductorCurrent + (triangleAt(carrierAt(x, phase)) - 0.5) * rippleCurrent),
-			summary: () => `${inductorCurrent.toFixed(2)} A avg · ${rippleCurrent.toFixed(2)} A p-p`,
+			summary: () => `${inductorCurrent.toFixed(2)} A avg, ${rippleCurrent.toFixed(2)} A p-p`,
 			reading: () =>
 				reading(
 					'buck.probe.inductor',
@@ -342,8 +345,7 @@
 			sample: (x, phase) =>
 				outputVoltage +
 				Math.sin(Math.PI * 2 * (carrierAt(x, phase) - effectiveDuty / 2)) * (rippleVoltage / 2),
-			summary: () =>
-				`${outputVoltage.toFixed(3)} V · ${(rippleVoltage * 1e3).toFixed(1)} mV ripple`,
+			summary: () => `${outputVoltage.toFixed(3)} V, ${(rippleVoltage * 1e3).toFixed(1)} mV ripple`,
 			reading: () =>
 				reading('buck.probe.output', `output ${outputVoltage.toFixed(3)} volts`, {
 					voltage: outputVoltage.toFixed(3),
@@ -358,9 +360,9 @@
 </script>
 
 <Bench
-	title="Closed-loop buck converter"
+	title={t('Closed-loop buck converter')}
 	tone="analog"
-	status={`${regime} · ${outputVoltage.toFixed(2)} V out`}
+	status={t('{0}, {1} V out', [t(regime), outputVoltage.toFixed(2)])}
 	{stage}
 	{dock}
 	{deck}
@@ -374,7 +376,9 @@
 			role="group"
 			data-model-stage={timeline.step}
 			data-model-value={timelineProjection}
-			aria-label="Buck converter. Drag the value tags on the source, controller, switch, inductor, capacitor, and load; click a wire to clip a probe on."
+			aria-label={t(
+				'Buck converter. Drag the value tags on the source, controller, switch, inductor, capacitor, and load; click a wire to clip a probe on.'
+			)}
 		>
 			{@html svg}
 		</div>
@@ -384,67 +388,77 @@
 {/snippet}
 
 {#snippet dock()}
-	<section class="dock-block" aria-label="Oscilloscope">
-		<p class="microlabel">Oscilloscope</p>
+	<section class="dock-block" aria-label={t('Oscilloscope')}>
+		<p class="microlabel">{t('Oscilloscope')}</p>
 		<Scope
 			{channels}
 			running={!(motion.paused || motion.animationBlocked)}
-			timebase={`${((PERIODS * 100) / frequencyKilo).toPrecision(2)} µs/div · three switching periods`}
+			timebase={`${((PERIODS * 100) / frequencyKilo).toPrecision(2)} µs/div, three switching periods`}
 			{revision}
 		/>
 	</section>
 	<div class="mode-card" class:faulted={faults.gateLost} aria-live="polite" aria-atomic="true">
-		<span class="microlabel">conduction regime</span>
-		<strong>{conduction}</strong>
+		<span class="microlabel">{t('Conduction regime')}</span>
+		<strong>{t(conduction)}</strong>
 		<span>
 			{conduction === 'CCM'
-				? 'inductor current stays above zero'
+				? t('inductor current stays above zero')
 				: conduction === 'BCM'
-					? 'at the conduction boundary'
+					? t('at the conduction boundary')
 					: conduction === 'DCM'
-						? 'inductor fully demagnetizes'
-						: 'power stage disabled'}
+						? t('inductor fully demagnetizes')
+						: t('power stage disabled')}
 		</span>
 		<span class="visually-hidden">
-			{faults.gateLost ? 'High-side switch degraded: gate drive lost.' : 'High-side switch active.'}
-			{motion.status}
+			{faults.gateLost
+				? t('High-side switch degraded: gate drive lost.')
+				: t('High-side switch active.')}
+			{t(motion.status)}
 		</span>
 	</div>
-	<section class="dock-block" aria-label="Readouts">
-		<p class="microlabel">Readouts</p>
+	<section class="dock-block" aria-label={t('Readouts')}>
+		<p class="microlabel">{t('Readouts')}</p>
 		<div class="readouts">
 			<span class="readout"
 				><LiveMath
 					id="buck.readout.vout"
-					label={`output ${outputVoltage.toFixed(3)} volts; ideal ${idealOutput.toFixed(2)} volts`}
+					label={t('output {0} volts; ideal {1} volts', [
+						outputVoltage.toFixed(3),
+						idealOutput.toFixed(2)
+					])}
 					values={{ output: outputVoltage.toFixed(3), ideal: idealOutput.toFixed(2) }}
 				/></span
 			>
 			<span class="readout"
 				><LiveMath
 					id="buck.readout.current"
-					label={`load current ${loadCurrent.toFixed(3)} amperes; inductor current ${inductorCurrent.toFixed(3)} amperes`}
+					label={t('load current {0} amperes; inductor current {1} amperes', [
+						loadCurrent.toFixed(3),
+						inductorCurrent.toFixed(3)
+					])}
 					values={{ load: loadCurrent.toFixed(3), inductor: inductorCurrent.toFixed(3) }}
 				/></span
 			>
 			<span class="readout"
 				><LiveMath
 					id="buck.readout.ripple.i"
-					label={`inductor ripple ${rippleCurrent.toFixed(3)} amperes peak-to-peak`}
+					label={t('inductor ripple {0} amperes peak-to-peak', [rippleCurrent.toFixed(3)])}
 					values={{ value: rippleCurrent.toFixed(3) }}
 				/></span
 			>
 			<span class="readout"
 				><LiveMath
 					id="buck.readout.ripple.v"
-					label={`voltage ripple ${(rippleVoltage * 1e3).toFixed(1)} millivolts peak-to-peak`}
+					label={t('voltage ripple {0} millivolts peak-to-peak', [
+						(rippleVoltage * 1e3).toFixed(1)
+					])}
 					values={{ value: (rippleVoltage * 1e3).toFixed(1) }}
 				/></span
 			>
 			<span class="readout"
 				><LiveMath
 					id="buck.readout.efficiency"
-					label={`estimated efficiency ${(efficiency * 100).toFixed(1)} percent`}
+					label={t('estimated efficiency {0} percent', [(efficiency * 100).toFixed(1)])}
 					values={{ value: (efficiency * 100).toFixed(1) }}
 				/></span
 			>
@@ -455,19 +469,19 @@
 {#snippet deck()}
 	<ProbeSelects {nets} bind:a={probeA} bind:b={probeB} />
 	<div class="deck-group">
-		<span class="microlabel">Operating points</span>
+		<span class="microlabel">{t('Operating points')}</span>
 		<div class="button-row">
 			<button type="button" class="btn" data-timeline-input onclick={() => applyPreset(12, 0.42, 5)}
 				><LiveMath
 					id="buck.preset"
-					label="12 volts to 5 volts"
+					label={t('12 volts to 5 volts')}
 					values={{ input: 12, output: 5 }}
 				/></button
 			>
 			<button type="button" class="btn" data-timeline-input onclick={() => applyPreset(24, 0.5, 8)}
 				><LiveMath
 					id="buck.preset"
-					label="24 volts to 12 volts"
+					label={t('24 volts to 12 volts')}
 					values={{ input: 24, output: 12 }}
 				/></button
 			>
@@ -478,17 +492,20 @@
 				onclick={() => applyPreset(5, 0.24, 1.2)}
 				><LiveMath
 					id="buck.preset"
-					label="5 volts to 1.2 volts"
+					label={t('5 volts to 1.2 volts')}
 					values={{ input: 5, output: 1.2 }}
 				/></button
 			>
 		</div>
 	</div>
 	<div class="deck-group">
-		<SimulationMotionControl {motion} label="buck-converter waveform and switching animation" />
+		<SimulationMotionControl
+			{motion}
+			label={t('buck-converter waveform and switching animation')}
+		/>
 	</div>
 	<div class="deck-group">
-		<FaultSwitch label="high-side gate drive lost" bind:active={faults.gateLost} />
+		<FaultSwitch label={t('High-side gate drive lost')} bind:active={faults.gateLost} />
 	</div>
 {/snippet}
 
@@ -526,7 +543,9 @@
 		color: var(--ink-mute);
 
 		& strong {
-			font: 600 var(--text-lg) / 1.1 var(--font-mono);
+			font: 600 var(--text-lg) / 1.1 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink);
 		}
 

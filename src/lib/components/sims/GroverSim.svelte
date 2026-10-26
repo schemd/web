@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Grover's algorithm over N = 8 basis states (3 qubits), as a step-by-step
 	 * transformation inspector.
@@ -56,7 +59,7 @@
 					? 'Superposition'
 					: kind === 'measure'
 						? 'Measurement'
-						: `Round ${round} · ${kind === 'oracle' ? 'Oracle U_f' : kind === 'mean' ? 'Mean ⟨a⟩' : 'Diffuser'}`;
+						: `Round ${round}, ${kind === 'oracle' ? 'Oracle U_f' : kind === 'mean' ? 'Mean ⟨a⟩' : 'Diffuser'}`;
 			return { kind, round, label };
 		});
 	})();
@@ -197,10 +200,12 @@
 </script>
 
 <Bench
-	title="Grover search"
+	title={t('Grover search')}
 	tone="quantum"
-	status={`${currentPhase.label} · P(target) = ${(pTarget * 100).toFixed(0)} %`}
-	hint="Toggle the qubits to choose the marked item; step the timeline to watch amplitudes rotate. Click a gate to read it."
+	status={t('{0}, P(target) = {1} %', [t(currentPhase.label), (pTarget * 100).toFixed(0)])}
+	hint={t(
+		'Toggle the qubits to choose the marked item; step the timeline to watch amplitudes rotate. Click a gate to read it.'
+	)}
 	stage={canvas}
 	dock={instruments}
 	deck={controls}
@@ -209,15 +214,18 @@
 {#snippet controls()}
 	<div class="stack">
 		<p class="control-note">
-			Mark one of the eight states, then <strong>step</strong> the register toward it. Each round is
-			an oracle phase-flip, a mean reflection, and a diffuser rebound. The first {OPTIMAL_ROUNDS}
-			rounds amplify the target; the final demonstration round deliberately rotates past it.
+			{t('Mark one of the eight states, then')} <strong>{t('step')}</strong>
+			{t(
+				'the register toward it. Each round is an oracle phase-flip, a mean reflection, and a diffuser rebound. The first'
+			)}
+			{t(OPTIMAL_ROUNDS)}
+			{t('rounds amplify the target; the final demonstration round deliberately rotates past it.')}
 		</p>
 		<div class="target-picker">
 			<span class="microlabel"
 				><LiveMath
 					id="grover.control.target"
-					label={`marked state ${label(target)}`}
+					label={t('marked state {0}', [label(target)])}
 					values={{ value: label(target) }}
 				/></span
 			>
@@ -231,13 +239,13 @@
 						onclick={() => toggleTargetBit(bit)}
 						aria-pressed={((target >> bit) & 1) === 1}
 					>
-						{(target >> bit) & 1}
+						{t((target >> bit) & 1)}
 					</button>
 				{/each}
 				<span class="target-ket"
 					><LiveMath
 						id="grover.control.target"
-						label={`marked state ${label(target)}`}
+						label={t('marked state {0}', [label(target)])}
 						values={{ value: label(target) }}
 					/></span
 				>
@@ -245,8 +253,8 @@
 		</div>
 	</div>
 	<div class="switchboard">
-		<p class="microlabel">switchboard · fault injection</p>
-		<FaultSwitch label="oracle marks the wrong state" bind:active={faults.wrongOracle} />
+		<p class="microlabel">{t('Fault injection')}</p>
+		<FaultSwitch label={t('Oracle marks the wrong state')} bind:active={faults.wrongOracle} />
 	</div>
 {/snippet}
 
@@ -256,7 +264,7 @@
 		bind:this={host}
 		role="group"
 		data-model-stage={timeline.step}
-		aria-label="Grover 3-qubit search circuit"
+		aria-label={t('Grover 3-qubit search circuit')}
 	>
 		{@html svg}
 	</div>
@@ -264,16 +272,16 @@
 
 {#snippet instruments()}
 	<div class="hud" aria-live="polite">
-		<span class="microlabel">{currentPhase.label}</span>
+		<span class="microlabel">{t(currentPhase.label)}</span>
 		<p class="hud-math">
-			<LiveMath id={hudMath.id} label={hudMath.label} values={hudMath.values} />
+			<LiveMath id={hudMath.id} label={t(hudMath.label)} values={hudMath.values} />
 		</p>
 	</div>
 	<svg
 		class="bars"
 		viewBox={`0 0 ${CHART_W} ${CHART_H}`}
 		role="img"
-		aria-label="Signed amplitude bars"
+		aria-label={t('Signed amplitude bars')}
 	>
 		<!-- resting plane (amplitude 0) -->
 		<line class="zero-line" x1="4" x2={CHART_W - 4} y1={ZERO_Y} y2={ZERO_Y} />
@@ -295,21 +303,21 @@
 				width="20"
 				height={barHeight(amplitude)}
 			/>
-			<text class="bar-label" x={barX(index) + 10} y={CHART_H - 4}>{label(index)}</text>
+			<text class="bar-label" x={barX(index) + 10} y={CHART_H - 4}>{t(label(index))}</text>
 		{/each}
 		<!-- mean reflection axis (shown at the mean step) -->
 		{#if meanValue !== undefined}
 			<line class="mean-line" x1="4" x2={CHART_W - 4} y1={meanY} y2={meanY} />
-			<text class="mean-label" x={CHART_W - 6} y={meanY - 3}>mean</text>
+			<text class="mean-label" x={CHART_W - 6} y={meanY - 3}>{t('Mean')}</text>
 		{/if}
 	</svg>
 	<div class="legend microlabel">
-		<span><i class="sw target"></i> target</span>
-		<span><i class="sw"></i> others</span>
+		<span><i class="sw target"></i> {t('Target')}</span>
+		<span><i class="sw"></i> {t('Others')}</span>
 		<span class="peak" class:hit={pTarget > 0.9}
 			><LiveMath
 				id="grover.readout.peak"
-				label={`probability ${(pTarget * 100).toFixed(1)} percent`}
+				label={t('probability {0} percent', [(pTarget * 100).toFixed(1)])}
 				values={{ value: (pTarget * 100).toFixed(1) }}
 			/></span
 		>
@@ -349,7 +357,9 @@
 	.qubit {
 		inline-size: 2.2rem;
 		block-size: 2.2rem;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-md);
 		border: 1px solid var(--line-strong);
 		background: var(--bg-inset);
@@ -383,7 +393,9 @@
 
 	.hud-math {
 		margin: 0;
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		line-height: 1.5;
 		color: var(--ink);
@@ -417,7 +429,9 @@
 
 	.mean-label {
 		fill: var(--warn, var(--accent-2));
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 8px;
 		text-anchor: end;
 	}
@@ -448,7 +462,9 @@
 
 	.bar-label {
 		fill: var(--ink-faint);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: 7px;
 		text-anchor: middle;
 	}
@@ -473,7 +489,9 @@
 
 		& .peak {
 			margin-inline-start: auto;
-			font-family: var(--font-mono);
+			font-family: var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 

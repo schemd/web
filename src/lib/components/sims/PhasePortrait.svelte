@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	import type { MathReading } from '#lib/simulation-math.ts';
 	import LiveMath from './LiveMath.svelte';
 	interface Point {
@@ -43,11 +46,11 @@
 	});
 </script>
 
-<figure class="portrait" aria-label={label}>
+<figure class="portrait" aria-label={t(label)}>
 	<svg
 		viewBox={`0 0 ${SIZE} ${SIZE}`}
 		role="img"
-		aria-label={`${label}: ${yLabel} against ${xLabel}`}
+		aria-label={t('{0}: {1} against {2}', [label, yLabel, xLabel])}
 	>
 		<rect class="bezel" x="0.5" y="0.5" width={SIZE - 1} height={SIZE - 1} />
 		<line class="axis" x1={PAD} x2={SIZE - PAD} y1={SIZE / 2} y2={SIZE / 2} />
@@ -57,21 +60,19 @@
 	</svg>
 	<div class="axis-legend">
 		<span
-			>x: {#if xMath}<LiveMath
-					id={xMath.id}
-					label={xMath.label}
-					values={xMath.values}
-				/>{:else}{xLabel}{/if}</span
+			>{t('x:')}
+			{#if xMath}<LiveMath id={xMath.id} label={t(xMath.label)} values={xMath.values} />{:else}{t(
+					xLabel
+				)}{/if}</span
 		>
 		<span
-			>y: {#if yMath}<LiveMath
-					id={yMath.id}
-					label={yMath.label}
-					values={yMath.values}
-				/>{:else}{yLabel}{/if}</span
+			>{t('y:')}
+			{#if yMath}<LiveMath id={yMath.id} label={t(yMath.label)} values={yMath.values} />{:else}{t(
+					yLabel
+				)}{/if}</span
 		>
 	</div>
-	<figcaption class="microlabel">{label}</figcaption>
+	<figcaption class="microlabel">{t(label)}</figcaption>
 </figure>
 
 <style>
@@ -120,7 +121,9 @@
 		display: flex;
 		gap: var(--space-3);
 		color: var(--ink-faint);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 	}
 </style>

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t, href } = useLanguage();
+
 	/**
 	 * Universal command palette (Cmd+K / Ctrl+K).
 	 *
@@ -99,7 +102,7 @@
 
 	function activate(entry: PaletteEntry): void {
 		ui.paletteOpen = false;
-		void goto(entry.href);
+		void goto(href(entry.href));
 	}
 </script>
 
@@ -122,15 +125,15 @@
 			onkeydown={trapFocus}
 		>
 			<div class="palette-head">
-				<span id="palette-title" class="microlabel">⌘K · command palette</span>
+				<span id="palette-title" class="microlabel">{t('Command palette')}</span>
 				<input
 					bind:this={input}
 					bind:value={query}
 					onkeydown={onInputKeydown}
 					type="text"
-					placeholder="Search documentation, playground, simulations…"
+					placeholder={t('Search documentation, playground, simulations…')}
 					role="combobox"
-					aria-label="Search commands and documentation"
+					aria-label={t('Search commands and documentation')}
 					aria-expanded="true"
 					aria-controls="palette-results"
 					aria-activedescendant={results.length > 0 ? `palette-option-${activeIndex}` : undefined}
@@ -142,10 +145,10 @@
 					type="button"
 					class="palette-close"
 					onclick={() => (ui.paletteOpen = false)}
-					aria-label="Close command palette">×</button
+					aria-label={t('Close command palette')}>×</button
 				>
 			</div>
-			<ul id="palette-results" role="listbox" aria-label="Search results">
+			<ul id="palette-results" role="listbox" aria-label={t('Search results')}>
 				{#each results as entry, index (entry.href)}
 					<li role="presentation">
 						<button
@@ -161,20 +164,20 @@
 							onclick={() => activate(entry)}
 							onpointerenter={() => (activeIndex = index)}
 						>
-							<span class="entry-title">{entry.title}</span>
-							<span class="entry-hint">{entry.hint}</span>
+							<span class="entry-title">{t(entry.title)}</span>
+							<span class="entry-hint">{t(entry.hint)}</span>
 						</button>
 					</li>
 				{:else}
 					<li class="palette-empty" role="option" aria-selected="false">
-						No matches. Try “ports”.
+						{t('No matches. Try “ports”.')}
 					</li>
 				{/each}
 			</ul>
 			<footer class="palette-foot microlabel">
-				<span><kbd>↑</kbd> <kbd>↓</kbd> navigate</span>
-				<span><kbd>Enter</kbd> open</span>
-				<span><kbd>Esc</kbd> dismiss</span>
+				<span><kbd>↑</kbd> <kbd>↓</kbd> {t('navigate')}</span>
+				<span><kbd>{t('Enter')}</kbd> {t('open')}</span>
+				<span><kbd>{t('Esc')}</kbd> {t('dismiss')}</span>
 			</footer>
 		</div>
 	</div>
@@ -253,7 +256,9 @@
 	}
 
 	.entry-hint {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-faint);
 		white-space: nowrap;

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Probe clips on the drawing.
 	 *
@@ -118,14 +121,18 @@
 		{#if net && at}
 			{@const reading = net.reading()}
 			<div class="clip channel-{letter}" style={`left:${at.x}px;top:${at.y}px`}>
-				<span class="jaw" aria-hidden="true">{letter}</span>
+				<span class="jaw" aria-hidden="true">{t(letter)}</span>
 				{#if open === net.id}
-					<div class="probe-tip" role="note" aria-label={`Probe ${letter} on ${net.label}`}>
-						<span class="microlabel">{letter} · {net.label}</span>
+					<div
+						class="probe-tip"
+						role="note"
+						aria-label={t('Probe {0} on {1}', [letter, net.label])}
+					>
+						<span class="microlabel">{t(letter)}, {t(net.label)}</span>
 						{#if reading}
-							<LiveMath id={reading.id} label={reading.label} values={reading.values} />
+							<LiveMath id={reading.id} label={t(reading.label)} values={reading.values} />
 						{:else}
-							<span>{net.summary()}</span>
+							<span>{t(net.summary())}</span>
 						{/if}
 					</div>
 				{/if}
@@ -156,7 +163,9 @@
 		border: 2px solid var(--clip);
 		background: var(--bg-panel);
 		color: var(--clip);
-		font: 600 0.625rem / 1 var(--font-mono);
+		font: 600 0.625rem / 1 var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		box-shadow: 0 0 0 4px color-mix(in srgb, var(--clip) 22%, transparent);
 	}
 

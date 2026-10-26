@@ -21,7 +21,7 @@ describe('SimulationPedagogy SSR', () => {
 			}
 		});
 
-		expect(body).toContain('predict · then test');
+		expect(body).toContain('Predict, then test');
 		expect(body).toContain('Prediction choices');
 		expect(body).toContain('Keep');
 		expect(body).not.toContain('A capacitor is a bucket');

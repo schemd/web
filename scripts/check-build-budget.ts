@@ -149,7 +149,12 @@ const MAX_COMPILER_JS_GZIP = 50 * 1024;
  * module per lab, re-exported from `simulation-models.ts`, so opening an
  * existing lab downloads none of the new physics.
  */
-const MAX_DOCUMENT_JS_GZIP = 210 * 1024;
+/* English/Spanish UI, locale routing and the template gallery add 8.8 KiB
+ * to the 209.4 KiB English-only redesign. Static message references are
+ * compacted and catalogs are scoped by locale and section, reducing the first
+ * localization build from 224.8 to 218.2 KiB. The compiler stays in its worker
+ * under its separate, unchanged 50 KiB ceiling. */
+const MAX_DOCUMENT_JS_GZIP = 220 * 1024;
 /* Exactly the sum of the two ceilings above, as the compiler note says. */
 const MAX_ALL_JS_GZIP = MAX_DOCUMENT_JS_GZIP + MAX_COMPILER_JS_GZIP;
 /*
@@ -219,7 +224,14 @@ const MAX_MODERN_MATH_FONTS = 320 * 1024;
    loaded only with their own lab. */
 /* Raised to 1,386 for `@schemd/core` 1.1, measured 1,382.3 KiB: the worker's
    compiler grew about 5 KiB unminified for fitting and terminal alignment. */
-const MAX_CLIENT_OUTPUT = 1_386 * 1024;
+/* Raised to 1,470 for the datasheet redesign, measured 1,466.5 KiB. The
+   typefaces account for more than all of it: Archivo's width axis and Commit
+   Mono in two weights are 185.5 KB, replacing 82.9 KB of the sheet's three
+   faces, a net 100.3 KiB. Everything else came out 16.1 KiB smaller, mostly
+   the zone rulers, glow styles and front-page prose the datasheet dropped. */
+/* Bilingual message calls, locale hooks and the gallery increase emitted files
+   from 1,466.5 to 1,493.2 KiB; the catalogs themselves remain server data. */
+const MAX_CLIENT_OUTPUT = 1_500 * 1024;
 /*
  * Eleven laboratories, each downloaded only when it is opened. Two of them are
  * manifests rather than components, so the shell's lazy registry spans both

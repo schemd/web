@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Reusable VS Code-style workspace shell.
 	 *
@@ -136,13 +139,13 @@
 
 <div class="workspace" class:dragging style={`grid-template-columns: ${gridTemplate}`}>
 	{#if left}
-		<section class="pane pane-left" aria-label={leftLabel} data-open={leftOpen}>
+		<section class="pane pane-left" aria-label={t(leftLabel)} data-open={leftOpen}>
 			{@render left()}
 		</section>
 		<button
 			type="button"
 			class="handle"
-			aria-label={`Resize ${leftLabel}. Arrow keys resize, Enter toggles.`}
+			aria-label={t('Resize {0}. Arrow keys resize, Enter toggles.', [leftLabel])}
 			aria-pressed={leftOpen}
 			onpointerdown={(event) => startDrag('left', event)}
 			onkeydown={(event) => keyResize('left', event)}
@@ -157,34 +160,34 @@
 		<button
 			type="button"
 			class="handle"
-			aria-label={`Resize ${rightLabel}. Arrow keys resize, Enter toggles.`}
+			aria-label={t('Resize {0}. Arrow keys resize, Enter toggles.', [rightLabel])}
 			aria-pressed={rightOpen}
 			onpointerdown={(event) => startDrag('right', event)}
 			onkeydown={(event) => keyResize('right', event)}
 		></button>
-		<section class="pane pane-right" aria-label={rightLabel} data-open={rightOpen}>
+		<section class="pane pane-right" aria-label={t(rightLabel)} data-open={rightOpen}>
 			{@render right()}
 		</section>
 	{/if}
 </div>
 
-<footer class="statusbar" aria-label="Title block">
+<footer class="statusbar" aria-label={t('Status')}>
 	{#if left}
 		<button type="button" aria-pressed={leftOpen} onclick={() => (leftOpen = !leftOpen)}>
-			⧉ {leftLabel}
+			{t(leftLabel)}
 		</button>
 	{/if}
 	{#if right}
 		<button type="button" aria-pressed={rightOpen} onclick={() => (rightOpen = !rightOpen)}>
-			⧉ {rightLabel}
+			{t(rightLabel)}
 		</button>
 	{/if}
 	{#if titleBlock.length > 0}
 		<dl class="title-cells">
 			{#each titleBlock as cell (cell.label)}
 				<div data-tone={cell.tone}>
-					<dt>{cell.label}</dt>
-					<dd>{cell.value}</dd>
+					<dt>{t(cell.label)}</dt>
+					<dd>{t(cell.value)}</dd>
 				</div>
 			{/each}
 		</dl>
@@ -265,30 +268,27 @@
 		}
 	}
 
-	/* The foot of the sheet is its title block: ruled cells that name the
-	   instrument's state, then the pane toggles and the host's actions. */
+	/* The foot of the workspace: pane toggles, the state of the drawing as
+	   label and value pairs, then the host's actions. */
 	.statusbar {
 		display: flex;
-		align-items: stretch;
-		gap: 0;
+		align-items: center;
+		gap: var(--space-4);
 		block-size: var(--statusbar-h);
-		padding-inline: 0 var(--space-2);
-		background: var(--bg-raised);
-		border-block-start: 1px solid var(--line-strong);
-		font-family: var(--font-mono);
-		font-size: var(--text-xs);
+		padding-inline: var(--space-4);
+		background: var(--bg);
+		border-block-start: 2px solid var(--ink);
+		font-stretch: var(--width-table);
+		font-size: var(--text-sm);
 
 		& > button {
-			padding: 0 var(--space-4);
-			border-inline-end: 1px solid var(--line);
-			font-family: var(--font-label);
-			font-size: 0.625rem;
-			letter-spacing: 0.06em;
-			text-transform: uppercase;
-			color: var(--ink-faint);
+			font-weight: 600;
+			color: var(--ink-mute);
+			border-block-end: 2px solid transparent;
 
 			&[aria-pressed='true'] {
-				color: var(--accent);
+				color: var(--ink);
+				border-block-end-color: var(--ink);
 			}
 
 			&:hover {
@@ -301,50 +301,41 @@
 	   need its own tab stop, and the full values are in the panes above. */
 	.title-cells {
 		display: flex;
+		gap: var(--space-4);
 		margin: 0;
 		min-inline-size: 0;
 		overflow: hidden;
+		padding-inline-start: var(--space-4);
+		border-inline-start: 1px solid var(--line);
 
 		& div {
 			display: flex;
-			flex-direction: column;
-			justify-content: center;
-			gap: 2px;
+			align-items: baseline;
+			gap: var(--space-1);
 			min-inline-size: 0;
-			padding: 0 var(--space-4);
-			border-inline-end: 1px solid var(--line);
 			white-space: nowrap;
 		}
 
-		& dd {
-			overflow: hidden;
-			text-overflow: ellipsis;
-		}
-
 		& dt {
-			font-family: var(--font-label);
-			font-size: 0.5625rem;
-			letter-spacing: 0.08em;
-			text-transform: uppercase;
-			color: var(--ink-faint);
+			color: var(--ink-mute);
 		}
 
 		& dd {
 			margin: 0;
-			font-size: var(--text-xs);
+			font-weight: 600;
+			font-variant-numeric: tabular-nums;
 			color: var(--ink);
+			overflow: hidden;
+			text-overflow: ellipsis;
 		}
 
-		& [data-tone='accent'] dd {
+		& [data-tone='accent'] dd,
+		& [data-tone='danger'] dd {
 			color: var(--accent);
 		}
 
-		& [data-tone='danger'] dd {
-			color: var(--danger);
-		}
-
 		& [data-tone='ok'] dd {
-			color: var(--ok);
+			color: var(--ink);
 		}
 	}
 
@@ -401,6 +392,16 @@
 			block-size: auto;
 			flex-wrap: wrap;
 			padding-block: var(--space-1);
+		}
+
+		/* A phone has the height to spare, so the cells wrap instead of being
+		   cut short. */
+		.title-cells {
+			flex: 1 1 100%;
+			flex-wrap: wrap;
+			gap: var(--space-1) var(--space-4);
+			padding-inline-start: 0;
+			border-inline-start: 0;
 		}
 
 		.status-extra {

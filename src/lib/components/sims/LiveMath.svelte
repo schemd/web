@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	import { getContext } from 'svelte';
 	import {
 		SIMULATION_MATH_CONTEXT,
@@ -101,14 +104,14 @@
 	bind:this={host}
 	class={['live-math', className]}
 	role="math"
-	aria-label={accessibleLabel}
+	aria-label={t(accessibleLabel)}
 	data-math-id={id}
 	data-math-missing={html === undefined ? id : undefined}
 >
 	{#if html !== undefined}
 		{@html html}
 	{:else}
-		<span class="math-fallback">{label}</span>
+		<span class="math-fallback">{t(label)}</span>
 	{/if}
 </span>
 

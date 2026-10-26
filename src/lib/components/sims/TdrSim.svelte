@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Transmission-line reflections on the v2 bench.
 	 *
@@ -53,12 +56,12 @@
 	const gammaSource = $derived(reflectionCoefficient(source, z0));
 	const status = $derived(
 		Math.abs(gammaLoad) < 0.02
-			? 'matched load · no echo'
+			? 'matched load, no echo'
 			: Math.abs(gammaSource) < 0.02
-				? 'matched source · one echo, then quiet'
+				? 'matched source, one echo, then quiet'
 				: gammaLoad > 0
-					? 'high load · positive echo'
-					: 'low load · negative echo'
+					? 'high load, positive echo'
+					: 'low load, negative echo'
 	);
 
 	/* The playhead loops while running and holds the settled end while paused. */
@@ -213,13 +216,15 @@
 </script>
 
 <Bench
-	title="Time-domain reflectometer"
+	title={t('Time-domain reflectometer')}
 	tone="analog"
-	{status}
+	status={t(status)}
 	{stage}
 	{dock}
 	{deck}
-	hint="Drag a value tag to change that part. Click a node on the line to clip a probe on; the scope shows ten one-way delays."
+	hint={t(
+		'Drag a value tag to change that part. Click a node on the line to clip a probe on; the scope shows ten one-way delays.'
+	)}
 />
 
 {#snippet stage()}
@@ -228,7 +233,9 @@
 			class="sim-stage tdr-stage schemd-frame"
 			bind:this={host}
 			role="group"
-			aria-label="Transmission line drawn as an L C ladder between a step source and a load. Drag the tags on R_s, the line, and Z_L; click a line node to probe it."
+			aria-label={t(
+				'Transmission line drawn as an L C ladder between a step source and a load. Drag the tags on R_s, the line, and Z_L; click a line node to probe it.'
+			)}
 			data-model-stage={timeline.step}
 		>
 			{@html svg}
@@ -239,49 +246,49 @@
 {/snippet}
 
 {#snippet dock()}
-	<section class="dock-block" aria-label="Reflectometer">
-		<p class="microlabel">Reflectometer</p>
-		<Scope {channels} running={false} timebase="1 t_d/div · 0 – 10 one-way delays" {revision} />
+	<section class="dock-block" aria-label={t('Reflectometer')}>
+		<p class="microlabel">{t('Reflectometer')}</p>
+		<Scope {channels} running={false} timebase="1 t_d/div, 0 – 10 one-way delays" {revision} />
 	</section>
-	<section class="dock-block" aria-label="Readouts">
-		<p class="microlabel">Readouts</p>
+	<section class="dock-block" aria-label={t('Readouts')}>
+		<p class="microlabel">{t('Readouts')}</p>
 		<div class="metrics">
 			<div>
-				<span>load</span>
+				<span>{t('load')}</span>
 				<strong
 					><LiveMath
 						id="tdr.readout.gamma"
-						label={`load reflection coefficient ${signed(gammaLoad)}`}
+						label={t('load reflection coefficient {0}', [signed(gammaLoad)])}
 						values={{ value: signed(gammaLoad) }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>source</span>
+				<span>{t('Source')}</span>
 				<strong
 					><LiveMath
 						id="tdr.readout.source"
-						label={`source reflection coefficient ${signed(gammaSource)}`}
+						label={t('source reflection coefficient {0}', [signed(gammaSource)])}
 						values={{ value: signed(gammaSource) }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>launched</span>
+				<span>{t('Launched')}</span>
 				<strong
 					><LiveMath
 						id="tdr.readout.launch"
-						label={`launched step ${response.launched.toFixed(3)} volts`}
+						label={t('launched step {0} volts', [response.launched.toFixed(3)])}
 						values={{ value: response.launched.toFixed(3) }}
 					/></strong
 				>
 			</div>
 			<div>
-				<span>settles</span>
+				<span>{t('Settles')}</span>
 				<strong
 					><LiveMath
 						id="tdr.readout.settle"
-						label={`settles at ${response.settled.toFixed(3)} volts`}
+						label={t('settles at {0} volts', [response.settled.toFixed(3)])}
 						values={{ value: response.settled.toFixed(3) }}
 					/></strong
 				>
@@ -289,7 +296,7 @@
 		</div>
 	</section>
 	<Plot
-		label={`Voltage along the line at ${time.toFixed(1)} one-way delays`}
+		label={t('Voltage along the line at {0} one-way delays', [time.toFixed(1)])}
 		series={[{ id: 'line', values: snapshot, tone: 'cyan' }]}
 		min={plotMin}
 		max={plotMax}
@@ -306,22 +313,22 @@
 {#snippet deck()}
 	<ProbeSelects {nets} bind:a={probeA} bind:b={probeB} />
 	<div class="deck-group">
-		<span class="microlabel">Try</span>
+		<span class="microlabel">{t('Try')}</span>
 		<div class="presets">
 			<button
 				class="btn"
 				type="button"
 				data-preset="match-load"
-				onclick={() => (logLoad = Math.log10(z0))}>Match the load</button
+				onclick={() => (logLoad = Math.log10(z0))}>{t('Match the load')}</button
 			>
 			<button
 				class="btn"
 				type="button"
 				data-preset="match-source"
-				onclick={() => (logSource = Math.log10(z0))}>Match the source</button
+				onclick={() => (logSource = Math.log10(z0))}>{t('Match the source')}</button
 			>
 			<button class="btn" type="button" data-preset="short-load" onclick={() => (logLoad = 0.7)}
-				>Near-short the load</button
+				>{t('Near-short the load')}</button
 			>
 		</div>
 	</div>
@@ -329,7 +336,7 @@
 		<label class="microlabel" for="tdr-time"
 			><LiveMath
 				id="tdr.readout.time"
-				label={`time ${time.toFixed(1)} one-way delays`}
+				label={t('time {0} one-way delays', [time.toFixed(1)])}
 				values={{ value: time.toFixed(1) }}
 			/></label
 		>
@@ -340,13 +347,13 @@
 			max={SPAN}
 			step="0.1"
 			value={time}
-			aria-label="Time along the run, in one-way delays"
+			aria-label={t('Time along the run, in one-way delays')}
 			oninput={(event) => (time = Number(event.currentTarget.value))}
 		/>
-		<SimulationMotionControl {motion} label="Transmission-line step animation" />
+		<SimulationMotionControl {motion} label={t('Transmission-line step animation')} />
 	</div>
 	<div class="deck-group">
-		<FaultSwitch label="load connector open" bind:active={openLoad} />
+		<FaultSwitch label={t('Load connector open')} bind:active={openLoad} />
 	</div>
 {/snippet}
 
@@ -385,7 +392,9 @@
 		}
 
 		& span {
-			font: var(--text-xs) / 1.4 var(--font-mono);
+			font: var(--text-xs) / 1.4 var(--font-sans);
+			font-stretch: var(--width-table);
+			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
 

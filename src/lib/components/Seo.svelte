@@ -15,6 +15,8 @@
 	 * dropped unless a route says otherwise (a playground URL carries an entire
 	 * document in `?code=`, which must never become an indexable page).
 	 */
+	import { useLanguage, localized, unlocalized } from '#lib/i18n/index.ts';
+	const { t, href, locale } = useLanguage();
 	import { page } from '$app/state';
 
 	interface Props {
@@ -48,7 +50,15 @@
 	}: Props = $props();
 
 	const origin = $derived(page.url.origin);
-	const canonical = $derived(`${origin}${canonicalPath ?? page.url.pathname}`);
+	const english = $derived(`${origin}${localized(canonicalPath ?? page.url.pathname, 'en')}`);
+	const spanish = $derived(`${origin}${localized(canonicalPath ?? page.url.pathname, 'es')}`);
+	const translatedDocs = $derived(
+		!unlocalized(canonicalPath ?? page.url.pathname).startsWith('/docs/') ||
+			/^\/docs\/(?:1\.2|1\.3)\//.test(unlocalized(canonicalPath ?? page.url.pathname))
+	);
+	const canonical = $derived(
+		`${origin}${translatedDocs ? href(canonicalPath ?? page.url.pathname) : localized(canonicalPath ?? page.url.pathname, 'en')}`
+	);
 	const imageUrl = $derived(`${origin}${image}`);
 
 	/*
@@ -69,8 +79,8 @@
 				'@type': 'WebSite',
 				name: 'schemd',
 				alternateName: 'schemd — the vector schematic compiler',
-				url: origin,
-				inLanguage: 'en-US',
+				url: `${origin}${href('/')}`,
+				inLanguage: locale(),
 				publisher: {
 					'@type': 'Person',
 					name: 'John Owolabi Idogun',
@@ -82,9 +92,14 @@
 </script>
 
 <svelte:head>
-	<title>{title}</title>
-	<meta name="description" content={description} />
+	<title>{t(title)}</title>
+	<meta name="description" content={t(description)} />
 	<link rel="canonical" href={canonical} />
+	{#if translatedDocs}
+		<link rel="alternate" hreflang="en" href={english} />
+		<link rel="alternate" hreflang="es" href={spanish} />
+		<link rel="alternate" hreflang="x-default" href={english} />
+	{/if}
 
 	{#if noindex}
 		<meta name="robots" content="noindex, follow" />
@@ -95,19 +110,19 @@
 	{/if}
 
 	<meta property="og:site_name" content="schemd" />
-	<meta property="og:locale" content="en_US" />
+	<meta property="og:locale" content={locale() === 'es' ? 'es_ES' : 'en_US'} />
 	<meta property="og:type" content={type} />
-	<meta property="og:title" content={title} />
-	<meta property="og:description" content={description} />
+	<meta property="og:title" content={t(title)} />
+	<meta property="og:description" content={t(description)} />
 	<meta property="og:url" content={canonical} />
 	<meta property="og:image" content={imageUrl} />
 	<meta property="og:image:width" content="1200" />
 	<meta property="og:image:height" content="630" />
-	<meta property="og:image:alt" content="schemd — schematics compiled from plain text" />
+	<meta property="og:image:alt" content={t('schemd — schematics compiled from plain text')} />
 
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content={title} />
-	<meta name="twitter:description" content={description} />
+	<meta name="twitter:title" content={t(title)} />
+	<meta name="twitter:description" content={t(description)} />
 	<meta name="twitter:image" content={imageUrl} />
 	<meta name="twitter:creator" content="@Sirneij" />
 

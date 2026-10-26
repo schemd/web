@@ -13,7 +13,7 @@ import { failOnClientErrors } from './support';
  * installed package are the same facts those modules derive from anyway.
  */
 const CURRENT_LINE = readdirSync('src/lib/content/schemd', { withFileTypes: true })
-	.filter((entry) => entry.isDirectory())
+	.filter((entry) => entry.isDirectory() && /^\d+\.\d+$/.test(entry.name))
 	.map((entry) => entry.name)
 	.sort((left, right) =>
 		right.localeCompare(left, undefined, { numeric: true, sensitivity: 'base' })
@@ -43,7 +43,9 @@ test('landing page is SSR-valid, stable, and proves rotated native geometry', as
 	const response = await page.goto('/');
 	expect(response?.status()).toBe(200);
 	await expect(
-		page.getByRole('heading', { name: 'Write the circuit. Get the drawing.' })
+		page.getByRole('heading', {
+			name: 'Schematics from plain text'
+		})
 	).toBeVisible();
 	await expect(page.getByLabel('schemd is pronounced skemd').first()).toContainText('skemd');
 	await expect(page.locator('[data-node-id="C1"]')).toHaveAttribute('data-orientation', 'down');
@@ -142,7 +144,7 @@ test('command palette traps focus and keyboard-navigates the versioned search in
 }) => {
 	await page.goto('/docs/0.4.0/overview');
 	await expect(
-		page.getByRole('button', { name: /^search .*opens the command palette$/ })
+		page.getByRole('button', { name: /^Search .*opens the command palette$/ })
 	).toBeEnabled();
 	await page.keyboard.press('Control+K');
 	const dialog = page.getByRole('dialog');
@@ -173,10 +175,10 @@ test('playground opens valid, maps source to vector, preserves URI state, and ex
 
 	await capacitor.locator('[data-port-id="in"]').hover();
 	await expect(page.locator('.gutter-line').nth(4)).toHaveClass(/mapped/);
-	await page.getByRole('radio', { name: 'raw svg' }).click();
+	await page.getByRole('radio', { name: 'SVG source' }).click();
 	await expect(page.locator('.raw-view')).toContainText('<svg');
 	await expect(page.locator('.raw-view')).toContainText('data-orientation="down"');
-	await page.getByRole('radio', { name: 'render' }).click();
+	await page.getByRole('radio', { name: 'Drawing' }).click();
 	await expect.poll(() => new URL(page.url()).searchParams.get('m')).toBe('full');
 	const workspaceUrl = new URL(page.url());
 	const sharedCode = workspaceUrl.searchParams.get('code');
@@ -324,7 +326,8 @@ test('every indexable page states a canonical, and duplicates consolidate onto i
 			.filter((url) => url.includes('/simulations/'))
 			.every((url) => url.includes(`/${CURRENT_ENGINE}/`) || url.endsWith(`/${CURRENT_ENGINE}`))
 	).toBe(true);
-	expect(locations.filter((url) => url.includes('/playground/'))).toHaveLength(1);
+	expect(locations.filter((url) => url.includes('/playground/'))).toHaveLength(2);
+	expect(locations.filter((url) => /\/es\/playground\//.test(url))).toHaveLength(1);
 	expect(xml).toContain('<lastmod>');
 	expect(xml).toContain('/docs/0.2/component-reference');
 	expect(xml).toContain('/docs/0.4/component-reference');
@@ -344,7 +347,7 @@ test('mobile docs expose an accessible index and compiled-example bottom sheet',
 }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto('/docs/0.4.0/overview');
-	const indexToggle = page.getByRole('button', { name: /index · Quickstart/i });
+	const indexToggle = page.getByRole('button', { name: /Contents: Quickstart/i });
 	await expect(indexToggle).toBeVisible();
 	await indexToggle.click();
 	await expect(indexToggle).toHaveAttribute('aria-expanded', 'true');

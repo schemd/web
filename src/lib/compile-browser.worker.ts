@@ -84,6 +84,9 @@ async function execute(message: WorkerRequest): Promise<WorkerResponse> {
 				metrics: { ...compiled.metrics },
 				sourceMap: compiled.sourceMap,
 				placements: compiled.placements,
+				ports: Object.fromEntries(
+					core.buildNetlist(compiled.document).nodes.map((node) => [node.id, node.ports])
+				),
 				ms: Math.round((performance.now() - startedAt) * 100) / 100
 			}
 		};

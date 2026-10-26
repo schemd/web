@@ -1,3 +1,5 @@
+import { translator, type Locale } from '#lib/i18n/index.ts';
+import { messagesFor } from './message-catalog';
 /**
  * Simulation-lab schematic sources, compiled once per process in `full` mode
  * so every node, port, and wire carries the compiler's delegation attributes.
@@ -1542,7 +1544,7 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 		},
 		actions: [
 			action(
-				'input[aria-label^="Stimulus frequency"]',
+				'input[data-lab-control="rc-frequency"]',
 				'change',
 				'sweep the stimulus-frequency control across the cutoff',
 				1,
@@ -1550,7 +1552,7 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 				'frequency-above-cutoff'
 			),
 			action(
-				'input[aria-label="Capacitance"]',
+				'input[data-lab-control="rc-capacitance"]',
 				'change',
 				'change the capacitance control and compare the cutoff'
 			),
@@ -1632,8 +1634,16 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 			objective: 'Relate RC charge thresholds to oscillator frequency and duty cycle.'
 		},
 		actions: [
-			action('input[aria-label="R A"]', 'change', 'change R_A and inspect the capacitor trace'),
-			action('input[aria-label="R B"]', 'change', 'change R_B and inspect the duty cycle'),
+			action(
+				'input[data-lab-control="timer-ra"]',
+				'change',
+				'change R_A and inspect the capacitor trace'
+			),
+			action(
+				'input[data-lab-control="timer-rb"]',
+				'change',
+				'change R_B and inspect the duty cycle'
+			),
 			action(
 				'.mode-row [role="radio"]:last-child',
 				'click',
@@ -1671,12 +1681,12 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 		},
 		actions: [
 			sequenceAction(
-				['input[aria-label="Theta"]', 'input[aria-label="Phi"]'],
+				['input[data-lab-control="teleport-theta"]', 'input[data-lab-control="teleport-phi"]'],
 				'change',
 				'set θ, then set φ on the Bloch sphere'
 			),
 			action(
-				'button[title="Step forward"]',
+				'button[data-action="teleport-step"]',
 				'click',
 				'advance through all five remaining protocol stages',
 				5
@@ -1864,9 +1874,13 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 			objective: 'Use loop gain and phase to predict oscillator startup or decay.'
 		},
 		actions: [
-			action('input[aria-label="Gain"]', 'change', 'set gain below three and inspect decay'),
 			action(
-				'input[aria-label="Gain"]',
+				'input[data-lab-control="wien-gain"]',
+				'change',
+				'set gain below three and inspect decay'
+			),
+			action(
+				'input[data-lab-control="wien-gain"]',
 				'change',
 				'move gain across three and inspect the phase portrait'
 			),
@@ -1958,13 +1972,13 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 		actions: [
 			action('.qubits button', 'click', 'choose a marked target state'),
 			action(
-				'.timeline button[aria-label="Next step"]',
+				'.timeline button[data-action="next-step"]',
 				'click',
 				'advance through two complete oracle-and-diffusion rounds',
 				6
 			),
 			action(
-				'.timeline button[aria-label="Next step"]',
+				'.timeline button[data-action="next-step"]',
 				'click',
 				'advance one more round and inspect over-rotation',
 				3
@@ -2001,7 +2015,7 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 		},
 		actions: [
 			action(
-				'input[aria-label^="Load impedance"]',
+				'input[data-lab-control="tdr-load"]',
 				'change',
 				'sweep the load impedance and compare the near-end echo'
 			),
@@ -2052,7 +2066,7 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 		},
 		actions: [
 			action(
-				'input[aria-label^="Reference frequency"]',
+				'input[data-lab-control="pll-reference"]',
 				'change',
 				'retune the reference frequency and watch the loop reacquire'
 			),
@@ -2096,12 +2110,12 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 		},
 		actions: [
 			action(
-				'input[aria-label^="Filter capacitance"]',
+				'input[data-lab-control="classd-capacitance"]',
 				'change',
 				'change the filter capacitance and compare the carrier residual'
 			),
 			action(
-				'input[aria-label^="Carrier frequency"]',
+				'input[data-lab-control="classd-carrier"]',
 				'change',
 				'move the carrier frequency and compare the cleanliness'
 			),
@@ -2145,12 +2159,12 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 		},
 		actions: [
 			action(
-				'input[aria-label^="Proportional gain"]',
+				'input[data-lab-control="pid-kp"]',
 				'change',
 				'raise the proportional gain and read the steady-state offset'
 			),
 			action(
-				'input[aria-label^="Integral gain"]',
+				'input[data-lab-control="pid-ki"]',
 				'change',
 				'add integral gain and confirm the offset disappears'
 			),
@@ -2194,7 +2208,7 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 		actions: [
 			action('button[data-order="2"]', 'click', 'switch the modulator to a second-order loop'),
 			action(
-				'input[aria-label^="Oversampling ratio"]',
+				'input[data-lab-control="sd-osr"]',
 				'change',
 				'raise the oversampling ratio and compare the in-band SNR'
 			),
@@ -2237,7 +2251,7 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 		},
 		actions: [
 			action(
-				'input[aria-label^="Receiver clock error"]',
+				'input[data-lab-control="uart-skew"]',
 				'change',
 				'detune the receiver clock until the samples slip'
 			),
@@ -2280,7 +2294,7 @@ const LEARNING_DESIGN: Readonly<Record<string, LearningDesignRaw>> = {
 		},
 		actions: [
 			action(
-				'input[aria-label^="Controlled phase angle"]',
+				'input[data-lab-control="kick-phi"]',
 				'change',
 				'sweep the controlled phase angle and read the control'
 			),
@@ -2580,8 +2594,9 @@ const DETAIL_MATH_COPY: Readonly<Record<string, DetailMathCopy>> = {
 };
 
 /** Public environment registry with server-rendered, accessible mathematical notation. */
-export const SIM_ENVIRONMENTS: readonly SimEnvironment[] = SIM_ENVIRONMENTS_RAW.map(
-	(environment): SimEnvironment => {
+function localizedEnvironments(locale: Locale): readonly SimEnvironment[] {
+	const t = translator(messagesFor('/simulations', locale));
+	return SIM_ENVIRONMENTS_RAW.map((environment): SimEnvironment => {
 		const learning = LEARNING_DESIGN[environment.id];
 		if (!learning) throw new Error(`Missing learning design for simulation "${environment.id}".`);
 		if (learning.actions.length !== environment.pedagogy.steps.length) {
@@ -2595,37 +2610,39 @@ export const SIM_ENVIRONMENTS: readonly SimEnvironment[] = SIM_ENVIRONMENTS_RAW.
 			formulaHtml: renderFormula(environment.formula),
 			pedagogy: {
 				aha: environment.pedagogy.aha,
-				ahaHtml: renderProse(environment.pedagogy.aha),
-				principleHtml: renderProse(environment.pedagogy.principle),
+				ahaHtml: renderProse(t(environment.pedagogy.aha)),
+				principleHtml: renderProse(t(environment.pedagogy.principle)),
 				prediction: {
 					prompt: learning.prediction.prompt,
-					promptHtml: renderProse(learning.prediction.prompt),
+					promptHtml: renderProse(t(learning.prediction.prompt)),
 					choices: learning.prediction.choices.map((choice) => ({
 						id: choice.id,
 						label: choice.label,
-						labelHtml: renderProse(choice.label),
+						labelHtml: renderProse(t(choice.label)),
 						correct: choice.correct,
-						feedbackHtml: renderProse(choice.feedback)
+						feedbackHtml: renderProse(t(choice.feedback))
 					}))
 				},
 				steps: environment.pedagogy.steps.map((step, index) => ({
 					label: step.label,
-					labelHtml: renderProse(step.label),
-					detailHtml: renderProse(step.detail),
+					labelHtml: renderProse(t(step.label)),
+					detailHtml: renderProse(t(step.detail)),
 					action: learning.actions[index]!
 				})),
 				diagnosisPrompt: learning.diagnosisPrompt,
-				diagnosisPromptHtml: renderProse(learning.diagnosisPrompt)
+				diagnosisPromptHtml: renderProse(t(learning.diagnosisPrompt))
 			}
 		};
-	}
-);
-
+	});
+}
+export const SIM_ENVIRONMENTS: readonly SimEnvironment[] = localizedEnvironments('en');
+let spanishEnvironments: readonly SimEnvironment[] | undefined;
 const META_BY_ID = new Map(SIM_ENVIRONMENTS.map((environment) => [environment.id, environment]));
 const compiledCache = new Map<string, CompiledSimulation>();
 
 /** List the environment descriptors for the selector — no compilation cost. */
-export function listSimulationEnvironments(): readonly SimEnvironment[] {
+export function listSimulationEnvironments(locale: Locale = 'en'): readonly SimEnvironment[] {
+	if (locale === 'es') return (spanishEnvironments ??= localizedEnvironments('es'));
 	return SIM_ENVIRONMENTS;
 }
 
@@ -2640,11 +2657,16 @@ export function getSimulationSource(id: string): string | undefined {
 }
 
 /** Compile (once, cached) and return the full document for one environment. */
-export function getSimulation(id: string): CompiledSimulation | undefined {
-	const cached = compiledCache.get(id);
+export function getSimulation(id: string, locale: Locale = 'en'): CompiledSimulation | undefined {
+	const cacheKey = `${locale}:${id}`;
+	const t = translator(messagesFor('/simulations', locale));
+	const cached = compiledCache.get(cacheKey);
 	if (cached) return cached;
 
-	const meta = META_BY_ID.get(id);
+	const meta =
+		locale === 'en'
+			? META_BY_ID.get(id)
+			: listSimulationEnvironments(locale).find((item) => item.id === id);
 	const spec = SOURCES[id];
 	if (!meta || !spec) return undefined;
 
@@ -2665,12 +2687,14 @@ export function getSimulation(id: string): CompiledSimulation | undefined {
 		svg: compilation.svg,
 		components: compilation.metrics.components,
 		connections: compilation.metrics.connections,
-		summaryHtml: renderProse(detailCopy?.summary ?? meta.summary),
-		modelHtml: renderProse(meta.model),
-		inventoryHtml: (detailCopy?.inventory ?? meta.inventory).map(renderProse),
-		boundariesHtml: (detailCopy?.boundaries ?? meta.boundaries).map(renderProse),
-		faultHtml: renderProse(meta.fault)
+		summaryHtml: renderProse(t(detailCopy?.summary ?? meta.summary)),
+		modelHtml: renderProse(t(meta.model)),
+		inventoryHtml: (detailCopy?.inventory ?? meta.inventory).map((value) => renderProse(t(value))),
+		boundariesHtml: (detailCopy?.boundaries ?? meta.boundaries).map((value) =>
+			renderProse(t(value))
+		),
+		faultHtml: renderProse(t(meta.fault))
 	};
-	compiledCache.set(id, result);
+	compiledCache.set(cacheKey, result);
 	return result;
 }

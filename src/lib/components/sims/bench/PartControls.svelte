@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useLanguage } from '#lib/i18n/index.ts';
+	const { t } = useLanguage();
+
 	/**
 	 * Values tuned on the parts themselves.
 	 *
@@ -83,18 +86,19 @@
 			onpointerenter={() => tune(control, true)}
 			onpointerleave={() => tune(control, false)}
 		>
-			<span class="tag-label">{control.label}</span>
-			<span class="tag-value">{control.display}</span>
+			<span class="tag-label">{t(control.label)}</span>
+			<span class="tag-value">{t(control.display)}</span>
 			<span class="tag-track" aria-hidden="true"><i style={`width:${percent(control)}%`}></i></span>
 			<input
 				id={control.id}
+				data-lab-control={control.id}
 				type="range"
 				min={control.min}
 				max={control.max}
 				step={control.step}
 				value={control.value}
-				aria-label={control.ariaLabel}
-				aria-valuetext={control.display}
+				aria-label={t(control.ariaLabel)}
+				aria-valuetext={t(control.display)}
 				oninput={(event) => control.set(Number(event.currentTarget.value))}
 				onchange={control.change}
 				onfocus={() => tune(control, true)}
@@ -123,7 +127,9 @@
 		border-radius: var(--radius-sm);
 		background: color-mix(in srgb, var(--bg-raised) 92%, transparent);
 		box-shadow: 0 6px 18px -10px rgb(0 0 0 / 0.55);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-stretch: var(--width-table);
+		font-variant-numeric: tabular-nums;
 		white-space: nowrap;
 		pointer-events: auto;
 		cursor: ew-resize;
@@ -157,8 +163,6 @@
 
 	.tag-label {
 		font-size: var(--text-2xs);
-		letter-spacing: var(--tracking-wide);
-		text-transform: uppercase;
 		color: var(--ink-mute);
 	}
 
@@ -177,7 +181,7 @@
 		& i {
 			display: block;
 			block-size: 100%;
-			background: var(--accent);
+			background: var(--ink);
 		}
 	}
 
