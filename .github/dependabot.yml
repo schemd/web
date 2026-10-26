@@ -15,9 +15,6 @@ updates:
       interval: weekly
     labels: [dependencies, automated]
     open-pull-requests-limit: 5
-    # Compiler releases have a dedicated, fully verified sync workflow.
-    ignore:
-      - dependency-name: '@schemd/core'
     groups:
       development:
         dependency-type: development

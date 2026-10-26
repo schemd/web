@@ -30,6 +30,11 @@ budget effects. Include screenshots for a visible change when they help review. 
 API or curriculum changes in an issue first. Add a regression assertion for a defect, and inspect
 generated snapshots before committing them. CI and review requirements apply to automation too.
 
+Compiler dependency updates must also refresh `src/lib/server/release-snapshot.json` with
+`bun scripts/sync-release-snapshot.ts`. The scheduled compiler workflow prepares both changes;
+if Dependabot opens a compiler update first, refresh its snapshot before merging. Compiler security
+updates remain enabled in Dependabot.
+
 Use [SUPPORT.md](./SUPPORT.md) for questions, [SECURITY.md](./SECURITY.md) for vulnerabilities,
 and [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) for conduct reports.
 
