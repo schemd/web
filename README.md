@@ -116,3 +116,8 @@ to the same translated pages.
 `/templates` contains eight compiler-verified starting points. Each opens the playground with source,
 canvas bounds, title and output mode encoded in its URL. The component index and every datasheet
 are also included in the bilingual sitemap.
+
+## Community
+
+[Contributing](./CONTRIBUTING.md) · [Support](./SUPPORT.md) · [Security](./SECURITY.md) ·
+[Code of Conduct](./CODE_OF_CONDUCT.md) · [Maintainers](./MAINTAINERS.md)

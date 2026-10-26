@@ -28,6 +28,7 @@
 		"vitest": "^5.0.5"
 	},
 	"private": true,
+	"license": "MIT",
 	"scripts": {
 		"dev": "vite dev --port 3000",
 		"dev:exposed": "vite dev --host --port 3000",

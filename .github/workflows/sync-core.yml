@@ -35,32 +35,24 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.4.3
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
 
       - name: Resolve the target release
         id: target
-        run: |
-          if [ -n "${{ inputs.version }}" ]; then
-            target="${{ inputs.version }}"
-          else
-            target=$(npm view @schemd/core version)
-          fi
-          installed=$(node -p "require('./node_modules/@schemd/core/package.json').version" 2>/dev/null || echo "none")
-          declared=$(node -p "require('./package.json').dependencies['@schemd/core']")
-          echo "target=$target" >> "$GITHUB_OUTPUT"
-          echo "branch=chore/core-$target" >> "$GITHUB_OUTPUT"
-          echo "Target v$target · declared $declared · installed $installed"
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: node scripts/resolve-core-release.mjs
 
       - name: Cache bun install
-        uses: actions/cache@v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
           path: ~/.bun/install/cache
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
@@ -69,7 +61,9 @@ jobs:
       # `bun add` writes the dependency range and the lockfile in one step,
       # which is exactly the pair that drifted apart before.
       - name: Adopt the release
-        run: bun add @schemd/core@${{ steps.target.outputs.target }}
+        env:
+          TARGET_VERSION: ${{ steps.target.outputs.target }}
+        run: bun add "@schemd/core@$TARGET_VERSION"
 
       - name: Refresh the release snapshot
         env:
@@ -97,6 +91,7 @@ jobs:
           bun run lint
           bun run check
           bun run test:unit
+          bun run test:docs
           bun run build
           bun scripts/check-build-budget.ts
 
@@ -110,7 +105,7 @@ jobs:
 
       - name: Open the sync pull request
         if: steps.diff.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
         with:
           branch: ${{ steps.target.outputs.branch }}
           base: main
@@ -122,7 +117,7 @@ jobs:
             - `@schemd/core` moved to **v${{ steps.target.outputs.target }}**, with `bun.lock` regenerated alongside it.
             - `src/lib/server/release-snapshot.json` regenerated from npm's packument and the compiler's `CHANGELOG.md`.
 
-            The full verification suite (format, lint, types, unit, build, budgets, end-to-end) passed against this
+            The full verification suite (format, lint, types, unit, documentation, build, budgets, end-to-end) passed against this
             compiler before the pull request was opened. Review the rendered output before merging — a compiler
             release is allowed to change geometry, and that is the part CI cannot judge.
           labels: dependencies, automated
@@ -130,7 +125,7 @@ jobs:
 
       - name: Upload Playwright report
         if: failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: sync-playwright-report
           path: playwright-report
