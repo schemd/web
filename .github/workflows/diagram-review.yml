@@ -1,73 +1,76 @@
 name: Diagram review
 
-# Comments the *topological* delta of every schemd diagram a pull request
-# touches: which components appeared, which nets gained terminals, which
-# connections were rerouted. Pixels move for a hundred uninteresting reasons and
-# a reviewer cannot tell those apart by eye; topology is the reviewable part.
-#
-# This reports, it never gates. A fence that fails to compile already fails the
-# documentation build, and a diagram is allowed to change.
-
 on:
   pull_request:
     paths:
       - '**/*.md'
 
-# One review per branch; a superseded run has nothing useful left to say.
 concurrency:
   group: diagram-review-${{ github.head_ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   review:
+    name: Diagram report
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          # The script diffs against the base, so it needs both sides.
           fetch-depth: 0
-
-      - uses: oven-sh/setup-bun@v2
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
-          bun-version: latest
-
-      - uses: actions/setup-node@v6
+          bun-version: 1.4.3
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
           package-manager-cache: false
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
+      - run: bun install --frozen-lockfile
       - name: Compare diagram topology
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          node scripts/diagram-review.mjs "origin/${{ github.base_ref }}" --out=diagram-review.md
+          node scripts/diagram-review.mjs "origin/$BASE_REF" --out=diagram-review.md
           cat diagram-review.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: diagram-review
+          path: diagram-review.md
+          retention-days: 7
 
-      - name: Comment the delta
-        uses: actions/github-script@v8
+  comment:
+    name: Comment diagram report
+    needs: review
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      pull-requests: write
+    steps:
+      # This job never checks out or executes pull-request code.
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: diagram-review
+          path: report
+      - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
             const { readFileSync } = require('node:fs');
-            const body = readFileSync('diagram-review.md', 'utf8');
+            const body = readFileSync('report/diagram-review.md', 'utf8');
             const marker = '## Diagram review';
+            if (!body.startsWith(marker) || body.length > 60000) {
+              throw new Error('Invalid or oversized diagram report.');
+            }
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
-            // Update the existing review in place rather than stacking a new
-            // comment on every push.
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              owner,
-              repo,
-              issue_number
-            });
-            const mine = comments.find(
-              (comment) => comment.user.type === 'Bot' && comment.body.startsWith(marker)
-            );
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const mine = comments.find((comment) =>
+              comment.user.login === 'github-actions[bot]' && comment.body?.startsWith(marker));
             if (mine) {
               await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
             } else {
