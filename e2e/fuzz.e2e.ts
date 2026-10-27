@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 /**
  * Interaction fuzzer.
@@ -179,6 +179,27 @@ async function pickTarget(page: Page, roll: number): Promise<Target | undefined>
 	}, roll);
 }
 
+/** Route-changing selects must finish before the walk touches the next page. */
+async function selectFuzzOption(page: Page, locator: Locator, index: number): Promise<void> {
+	const navigates = await locator.evaluate(
+		(element, index) =>
+			element instanceof HTMLSelectElement &&
+			element.selectedIndex !== index &&
+			Boolean(element.closest('.language-select, .version-select')),
+		index
+	);
+	const before = new URL(page.url()).pathname;
+	const navigation = navigates
+		? page
+				.waitForURL((url) => url.pathname !== before, { waitUntil: 'load', timeout: 10_000 })
+				.catch(() => {
+					/* Do not classify a failed navigation as an ignorable action timeout. */
+					throw new Error(`Navigation select did not leave ${before}`);
+				})
+		: Promise.resolve();
+	await Promise.all([navigation, locator.selectOption({ index }, { timeout: 800 })]);
+}
+
 async function walk(page: Page, path: string, seed: number): Promise<void> {
 	const random = rng(seed);
 	const trail: string[] = [];
@@ -238,7 +259,7 @@ async function walk(page: Page, path: string, seed: number): Promise<void> {
 				} else if (target.kind === 'select') {
 					const index = Math.floor(random() * Math.max(1, target.options!));
 					trail.push(`select option ${index} of ${target.label}`);
-					await locator.selectOption({ index }, { timeout: 800 });
+					await selectFuzzOption(page, locator, index);
 				} else if (target.kind === 'check') {
 					trail.push(`toggle ${target.label}`);
 					await locator.click({ timeout: 800 });
@@ -271,7 +292,7 @@ async function walk(page: Page, path: string, seed: number): Promise<void> {
 		/* A click that navigated is fine; bring the walk home and continue. */
 		if (new URL(page.url()).pathname !== origin) {
 			trail.push(`(navigated to ${new URL(page.url()).pathname}; returning)`);
-			await page.goto(path, { waitUntil: 'load' });
+			await page.goto(path, { waitUntil: 'load', timeout: 10_000 });
 		}
 	}
 	await page.waitForTimeout(150);
@@ -281,6 +302,26 @@ async function walk(page: Page, path: string, seed: number): Promise<void> {
 		`seed ${seed} on ${path}\n${trail.slice(-14).join('\n')}\n— ${failures.join('\n— ')}`
 	).toEqual([]);
 }
+
+test('fuzz language selections settle before another selection or return navigation', async ({
+	page
+}) => {
+	/* Reproduce the delayed form submissions in the CI trace without relying
+	 * on machine speed to overlap two document navigations. */
+	await page.route('**/locale', async (route) => {
+		await new Promise((resolve) => setTimeout(resolve, 100));
+		await route.continue();
+	});
+	await page.goto('/es/components/bus');
+	await selectFuzzOption(page, page.getByRole('combobox', { name: 'Idioma', exact: true }), 0);
+	await expect(page).toHaveURL(/\/components\/bus$/);
+	await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+	await selectFuzzOption(page, page.getByRole('combobox', { name: 'Language', exact: true }), 1);
+	await expect(page).toHaveURL(/\/es\/components\/bus$/);
+	await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+	await page.goto('/es/components/bus', { waitUntil: 'load', timeout: 10_000 });
+	await expect(page.getByRole('combobox', { name: 'Idioma', exact: true })).toHaveValue('es');
+});
 
 async function sitemapPaths(page: Page): Promise<string[]> {
 	const response = await page.request.get('/sitemap.xml');
