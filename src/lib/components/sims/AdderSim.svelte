@@ -346,7 +346,6 @@
 	.register-console label span,
 	.result-readout span {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: 0.625rem;
 		color: var(--ink-faint);
@@ -379,7 +378,6 @@
 		background: var(--bg-inset);
 		color: var(--ink);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 	}
 
@@ -401,7 +399,6 @@
 		background: var(--bg-inset);
 		text-align: center;
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--ink-faint);
@@ -429,7 +426,6 @@
 		align-items: center;
 		gap: var(--space-2);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--ink-mute);
@@ -471,7 +467,6 @@
 		padding-block-start: var(--space-3);
 		border-block-start: 1px solid var(--line);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: 0.625rem;
 		color: var(--ink-faint);

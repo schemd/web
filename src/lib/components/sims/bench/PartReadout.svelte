@@ -79,7 +79,6 @@
 	.hint {
 		margin: 0;
 		font: var(--text-xs) / 1.5 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 	}

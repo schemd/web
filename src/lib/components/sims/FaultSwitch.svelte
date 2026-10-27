@@ -53,7 +53,6 @@
 		gap: var(--space-2);
 		cursor: pointer;
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-mute);

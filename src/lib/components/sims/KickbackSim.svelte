@@ -326,7 +326,6 @@
 
 		& figcaption {
 			font: var(--text-xs) / 1.4 var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
@@ -368,7 +367,6 @@
 
 	.bloch text {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: 8px;
 		fill: var(--ink-faint);
@@ -382,7 +380,6 @@
 		padding: 0;
 		list-style: none;
 		font: var(--text-xs) / 1.5 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 
@@ -416,7 +413,6 @@
 		align-items: center;
 		gap: var(--space-2);
 		font: var(--text-xs) / 1 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 
@@ -454,7 +450,6 @@
 
 		& span {
 			font: var(--text-xs) / 1.4 var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}

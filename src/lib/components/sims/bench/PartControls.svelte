@@ -128,7 +128,6 @@
 		background: color-mix(in srgb, var(--bg-raised) 92%, transparent);
 		box-shadow: 0 6px 18px -10px rgb(0 0 0 / 0.55);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		white-space: nowrap;
 		pointer-events: auto;

@@ -297,7 +297,6 @@
 			background: var(--bg-raised);
 			color: var(--ink-mute);
 			font-family: var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			font-size: var(--text-2xs);
 
@@ -372,7 +371,6 @@
 
 		& h2 {
 			font-family: var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			font-size: var(--text-md);
 			transition: color var(--dur-fast) var(--ease-precise);
@@ -397,11 +395,10 @@
 		display: grid;
 		gap: 2px;
 		padding-inline-start: var(--space-3);
-		border-inline-start: 2px solid var(--ink);
+		border-inline-start: 2px solid var(--line-strong);
 
 		& span {
 			font-family: var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			font-size: var(--text-2xs);
 			color: var(--ink);
@@ -410,7 +407,6 @@
 
 	.curriculum-prerequisites {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-faint);
@@ -427,7 +423,6 @@
 			border: 1px solid var(--line-strong);
 			color: var(--ink-mute);
 			font-family: var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			font-size: var(--text-2xs);
 
@@ -468,7 +463,6 @@
 
 		& li {
 			font-family: var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			font-size: var(--text-2xs);
 			padding: 0.1em 0.5em;
@@ -494,7 +488,6 @@
 
 	.fault-note {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-faint);
@@ -502,7 +495,6 @@
 
 	.completion-state {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-faint);

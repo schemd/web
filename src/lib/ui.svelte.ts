@@ -9,22 +9,23 @@
 import { browser } from '$app/env';
 
 /**
- * The two print modes: black ink on white paper, and its negative. The storage
- * key keeps its old name, `schemd:blueprint`, so a returning visitor's choice
- * is read; the old mode names it may hold mean nothing now and fall through.
+ * The two modes: daylight on the drafting table, and the light table, where
+ * the same sheets are lit from below. The ids and the storage key keep their
+ * older names (`paper`, `negative`, `schemd:blueprint`) so a returning
+ * visitor's choice is still read.
  */
 export const BLUEPRINT_MODES = ['paper', 'negative'] as const;
 export type BlueprintMode = (typeof BLUEPRINT_MODES)[number];
 
 /** The one-word name a mode shows in the header. */
 export const BLUEPRINT_SHORT: Record<BlueprintMode, string> = {
-	paper: 'Paper',
-	negative: 'Negative'
+	paper: 'Day',
+	negative: 'Light table'
 };
 
 export const BLUEPRINT_LABELS: Record<BlueprintMode, string> = {
-	paper: 'Paper: black ink on white',
-	negative: 'Negative: white ink on black'
+	paper: 'Day: dark ink on light vellum',
+	negative: 'Light table: light ink on lit vellum'
 };
 
 /** A stored choice, or the system's colour scheme when there is none. */

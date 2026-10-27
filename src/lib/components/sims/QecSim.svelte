@@ -336,7 +336,6 @@
 
 	.syn {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-sm);
 		color: var(--ink-faint);
@@ -348,7 +347,6 @@
 
 	.decode {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--accent-2);
@@ -389,7 +387,6 @@
 
 	.fidelity strong {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		color: var(--ink);
 	}

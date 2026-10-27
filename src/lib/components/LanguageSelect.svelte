@@ -13,7 +13,7 @@
 <form class="language-select" method="POST" action="/locale">
 	<input type="hidden" name="return" value={page.url.pathname + page.url.search + page.url.hash} />
 	<label>
-		<span>{t('Language')}</span>
+		<span class="visually-hidden">{t('Language')}</span>
 		<select
 			name="language"
 			value={locale()}
@@ -49,11 +49,10 @@
 	select,
 	.apply-language {
 		font: inherit;
-		font-stretch: var(--width-table);
 		font-weight: 600;
 		color: var(--ink);
 		background: var(--bg);
-		border: 1px solid var(--line-strong);
+		border: 1px solid var(--line);
 		border-radius: var(--radius-sm);
 		min-block-size: 36px;
 		padding-inline: var(--space-2);

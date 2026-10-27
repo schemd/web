@@ -151,11 +151,15 @@ test('oversized local documents never become brittle mega share or embed URLs', 
 	await expect(page).not.toHaveURL(/[?&]code=/);
 	expect(page.url().length).toBeLessThan(16_000);
 	await expect(page.getByRole('button', { name: 'Copy link' })).toBeDisabled();
+	/* The embed action lives in the Export menu. */
+	await page.getByRole('button', { name: 'Export' }).click();
 	await expect(page.getByRole('button', { name: 'Copy embed code' })).toBeDisabled();
+	await page.keyboard.press('Escape');
 
 	await editor.fill('port:A "A" at (80, 80) #blue');
 	await expect(page).toHaveURL(/[?&]code=/);
 	await expect(page.getByRole('button', { name: 'Copy link' })).toBeEnabled();
+	await page.getByRole('button', { name: 'Export' }).click();
 	await expect(page.getByRole('button', { name: 'Copy embed code' })).toBeEnabled();
 });
 

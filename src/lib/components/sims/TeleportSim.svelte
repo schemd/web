@@ -470,7 +470,6 @@
 		margin: 0;
 		padding: 0;
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-faint);
@@ -545,7 +544,6 @@
 		align-items: baseline;
 		gap: var(--space-2);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-mute);
@@ -573,7 +571,6 @@
 		background: var(--bg-panel);
 		border: 1px solid var(--accent-2);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--accent-2);

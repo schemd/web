@@ -164,7 +164,6 @@
 		background: var(--bg-panel);
 		color: var(--clip);
 		font: 600 0.625rem / 1 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		box-shadow: 0 0 0 4px color-mix(in srgb, var(--clip) 22%, transparent);
 	}

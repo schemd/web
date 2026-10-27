@@ -110,11 +110,10 @@
 </footer>
 
 <style>
+	/* The footer lies on the table below the page sheet, not on a sheet. */
 	.end {
-		margin-block-start: var(--space-16);
+		margin-block-start: var(--space-8);
 		padding-block: var(--space-6) var(--space-12);
-		border-block-start: 4px solid var(--ink);
-		font-stretch: var(--width-table);
 		font-size: var(--text-sm);
 	}
 
@@ -126,9 +125,9 @@
 
 	.name {
 		margin: 0 0 var(--space-2);
-		font-stretch: var(--width-extended);
 		font-weight: 800;
 		font-size: var(--text-md);
+		letter-spacing: -0.035em;
 	}
 
 	.about p {
@@ -137,8 +136,8 @@
 
 	h2 {
 		font-size: var(--text-sm);
-		font-stretch: var(--width-table);
 		margin-block-end: var(--space-2);
+		color: var(--ink-mute);
 	}
 
 	ul {
@@ -167,7 +166,7 @@
 	.imprint {
 		margin: var(--space-8) 0 0;
 		padding-block-start: var(--space-3);
-		border-block-start: 1px solid var(--line);
+		border-block-start: 1px solid var(--edge);
 		color: var(--ink-mute);
 	}
 

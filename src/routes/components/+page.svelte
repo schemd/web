@@ -29,13 +29,12 @@
 		</p>
 	</header>
 
-	{#each data.families as group, groupIndex (group.family)}
+	{#each data.families as group (group.family)}
 		<section aria-labelledby={`family-${group.family}`}>
 			<h2 id={`family-${group.family}`}>
-				<span class="num">{t(groupIndex + 1)}</span>
 				{t(group.label)}
 			</h2>
-			<p class="table-caption">{t('Table')} {t(groupIndex + 1)}. {t(group.label)} {t('kinds')}</p>
+			<p class="table-caption">{t(group.label)} {t('kinds')}</p>
 			<table class="spec">
 				<thead>
 					<tr>
@@ -82,13 +81,6 @@
 
 	h2 {
 		font-size: var(--text-lg);
-		padding-block-start: var(--space-2);
-		border-block-start: 2px solid var(--ink);
-	}
-
-	.num {
-		display: inline-block;
-		min-inline-size: 2.2em;
 	}
 
 	table {

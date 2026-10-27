@@ -212,7 +212,6 @@
 		gap: var(--space-2);
 		justify-content: flex-end;
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-sm);
 		color: var(--ink);
@@ -254,7 +253,6 @@
 
 	td {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		color: var(--ink);
 	}

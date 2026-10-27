@@ -95,7 +95,7 @@
 </script>
 
 <label class="version-select">
-	<span>{inDocs ? t('Docs') : t('Release')}</span>
+	<span class="visually-hidden">{inDocs ? t('Docs') : t('Release')}</span>
 	<select
 		bind:this={control}
 		value={current}
@@ -120,9 +120,9 @@
 		& select {
 			appearance: none;
 			font: inherit;
-			font-stretch: var(--width-table);
 			font-weight: 600;
 			font-variant-numeric: tabular-nums;
+			min-block-size: 36px;
 			color: var(--ink);
 			background:
 				linear-gradient(45deg, transparent 50%, var(--ink) 50%) calc(100% - 11px) 55% / 5px 5px
@@ -130,9 +130,9 @@
 				linear-gradient(-45deg, transparent 50%, var(--ink) 50%) calc(100% - 7px) 55% / 5px 5px
 					no-repeat,
 				var(--bg);
-			border: 1px solid var(--line-strong);
+			border: 1px solid var(--line);
 			border-radius: var(--radius-sm);
-			padding: 0.15rem 1.5rem 0.15rem 0.5rem;
+			padding: 0.15rem 1.6rem 0.15rem 0.6rem;
 			cursor: pointer;
 
 			&:hover {

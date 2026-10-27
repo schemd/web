@@ -229,7 +229,6 @@
 
 	.status-code {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: clamp(3.5rem, 14vw, 6rem);
 		line-height: 0.9;

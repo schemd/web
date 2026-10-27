@@ -358,7 +358,6 @@
 		inline-size: 2.2rem;
 		block-size: 2.2rem;
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-md);
 		border: 1px solid var(--line-strong);
@@ -394,7 +393,6 @@
 	.hud-math {
 		margin: 0;
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		line-height: 1.5;
@@ -430,7 +428,6 @@
 	.mean-label {
 		fill: var(--warn, var(--accent-2));
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: 8px;
 		text-anchor: end;
@@ -463,7 +460,6 @@
 	.bar-label {
 		fill: var(--ink-faint);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: 7px;
 		text-anchor: middle;
@@ -490,7 +486,6 @@
 		& .peak {
 			margin-inline-start: auto;
 			font-family: var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}

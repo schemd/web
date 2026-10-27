@@ -9,20 +9,9 @@
 	let { data }: PageProps = $props();
 	const sheet = $derived(data.sheet);
 
-	/* Figures and tables are numbered in page order. */
 	const variantFigures = $derived(sheet.variants?.specimens ?? []);
 	const hasPins = $derived(sheet.pins.length > 0);
 	const hasOptions = $derived(sheet.options.length > 0);
-
-	const sections = $derived(
-		[
-			{ id: 'pins', title: 'Pins', show: true },
-			{ id: 'options', title: 'Options', show: hasOptions },
-			{ id: 'variants', title: 'Variants', show: variantFigures.length > 0 },
-			{ id: 'writing', title: 'Writing one', show: true }
-		].filter((section) => section.show)
-	);
-	const number = (id: string): number => sections.findIndex((section) => section.id === id) + 1;
 
 	const playground = $derived(
 		`/playground/${data.latest}?code=${encodeWorkspaceState(sheet.specimen.source)}`
@@ -52,7 +41,7 @@
 	</header>
 
 	<section aria-labelledby="pins">
-		<h2 id="pins"><span class="num">{t(number('pins'))}</span> {t('Pins')}</h2>
+		<h2 id="pins">{t('Pins')}</h2>
 		<div class="pins">
 			<figure class="figure">
 				<div class="figure-body specimen">
@@ -60,12 +49,12 @@
 					{@html sheet.specimen.svg}
 				</div>
 				<figcaption>
-					<b>{t('Figure 1.')}</b> <code>{sheet.kind}</code>
+					<code>{sheet.kind}</code>
 					{t('with its default options, pins named.')}
 				</figcaption>
 			</figure>
 			<div>
-				<p class="table-caption">{t('Table 1. Pin functions')}</p>
+				<p class="table-caption">{t('Pin functions')}</p>
 				{#if hasPins}
 					<table class="spec">
 						<thead>
@@ -97,13 +86,13 @@
 
 	{#if hasOptions}
 		<section aria-labelledby="options">
-			<h2 id="options"><span class="num">{t(number('options'))}</span> {t('Options')}</h2>
+			<h2 id="options">{t('Options')}</h2>
 			<p>
 				{t('Options go in square brackets after the colour, as')} <code>name=value</code>{t(
 					'. Any option not listed here is an error.'
 				)}
 			</p>
-			<p class="table-caption">{t('Table 2. Options')}</p>
+			<p class="table-caption">{t('Options')}</p>
 			<table class="spec options">
 				<thead>
 					<tr>
@@ -161,19 +150,18 @@
 
 	{#if variantFigures.length > 0}
 		<section aria-labelledby="variants">
-			<h2 id="variants"><span class="num">{t(number('variants'))}</span> {t('Variants')}</h2>
+			<h2 id="variants">{t('Variants')}</h2>
 			<p>
 				{t('Pin names depend on the selected variant. Each drawing labels its own pins.')}
 			</p>
 			<div class="variants">
-				{#each variantFigures as variant, index (variant.value)}
+				{#each variantFigures as variant (variant.value)}
 					<figure class="figure">
 						<div class="figure-body specimen">
 							<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
 							{@html variant.svg}
 						</div>
 						<figcaption>
-							<b>{t('Figure')} {t(index + 2)}.</b>
 							<code>{sheet.variants?.option}={variant.value}</code>
 							<p class="variant-pins">
 								{#each variant.pins as pin, pinIndex (pin.name)}<code>{pin.name}</code> ({t(
@@ -188,7 +176,7 @@
 	{/if}
 
 	<section aria-labelledby="writing">
-		<h2 id="writing"><span class="num">{t(number('writing'))}</span> {t('Writing one')}</h2>
+		<h2 id="writing">{t('Writing one')}</h2>
 		<pre class="codeblock"><code>{sheet.specimen.source}</code></pre>
 		<div class="actions">
 			<a class="btn btn-solid" href={href(playground)}>{t('Open in playground')}</a>
@@ -227,7 +215,6 @@
 
 	.crumb {
 		margin: 0 0 var(--space-1);
-		font-stretch: var(--width-table);
 		font-size: var(--text-sm);
 		color: var(--ink-mute);
 	}
@@ -245,14 +232,7 @@
 
 	h2 {
 		font-size: var(--text-lg);
-		padding-block-start: var(--space-2);
-		border-block-start: 2px solid var(--ink);
 		margin-block-end: var(--space-3);
-	}
-
-	.num {
-		display: inline-block;
-		min-inline-size: 2.2em;
 	}
 
 	p {
@@ -342,8 +322,7 @@
 		gap: var(--space-6);
 		margin-block-start: var(--space-12);
 		padding-block-start: var(--space-4);
-		border-block-start: 2px solid var(--ink);
-		font-stretch: var(--width-table);
+		border-block-start: 1px solid var(--line);
 
 		& span {
 			color: var(--ink-mute);
