@@ -61,13 +61,15 @@
 	function pathFor(version: string): string {
 		if (inDocs) return docsTargetFor(version);
 		const parameter = page.params['version'];
-		if (parameter === undefined) return `/docs/${docLines[0]}/overview`;
+		/* A page without a version still needs to honour the chosen release;
+		   the server canonicalises its patch onto the matching docs line. */
+		if (parameter === undefined) return `/docs/${version}/overview`;
 		/* Shallow playground URI writes can lead the route snapshot by a tick. */
 		const { pathname, search, hash } = browser ? new URL(window.location.href) : page.url;
 		const swapped = pathname.replace(`/${parameter}`, `/${version}`);
 		const target =
 			swapped === pathname && !pathname.includes(`/${version}`)
-				? `/docs/${docLines[0]}/overview`
+				? `/docs/${version}/overview`
 				: swapped;
 		return `${target}${search}${hash}`;
 	}
@@ -95,7 +97,7 @@
 </script>
 
 <label class="version-select">
-	<span>{inDocs ? t('Docs') : t('Release')}</span>
+	<span class="visually-hidden">{inDocs ? t('Docs') : t('Release')}</span>
 	<select
 		bind:this={control}
 		value={current}
@@ -120,9 +122,9 @@
 		& select {
 			appearance: none;
 			font: inherit;
-			font-stretch: var(--width-table);
 			font-weight: 600;
 			font-variant-numeric: tabular-nums;
+			min-block-size: 36px;
 			color: var(--ink);
 			background:
 				linear-gradient(45deg, transparent 50%, var(--ink) 50%) calc(100% - 11px) 55% / 5px 5px
@@ -130,9 +132,9 @@
 				linear-gradient(-45deg, transparent 50%, var(--ink) 50%) calc(100% - 7px) 55% / 5px 5px
 					no-repeat,
 				var(--bg);
-			border: 1px solid var(--line-strong);
+			border: 1px solid var(--line);
 			border-radius: var(--radius-sm);
-			padding: 0.15rem 1.5rem 0.15rem 0.5rem;
+			padding: 0.15rem 1.6rem 0.15rem 0.6rem;
 			cursor: pointer;
 
 			&:hover {

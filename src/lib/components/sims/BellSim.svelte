@@ -406,7 +406,6 @@
 	.quantum-metrics span,
 	.quantum-metrics small {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: 0.625rem;
 		color: var(--ink-faint);
@@ -440,7 +439,6 @@
 		padding-block-start: var(--space-2);
 		border-block-start: 1px solid color-mix(in srgb, var(--qubit) 18%, transparent);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--ink-mute);
@@ -472,7 +470,6 @@
 
 	.probability-heading strong {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		color: var(--qubit-text);
 	}
@@ -505,7 +502,6 @@
 	.basis {
 		fill: var(--qubit-text);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: 9px;
 		text-anchor: middle;
@@ -555,7 +551,6 @@
 		padding: 0.55rem 0.65rem;
 		background: var(--bg-inset);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: 0.625rem;
 		color: var(--ink-faint);
@@ -599,7 +594,6 @@
 		border: 1px solid color-mix(in srgb, var(--qubit) 28%, transparent);
 		border-radius: 5px;
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 	}
@@ -633,7 +627,6 @@
 	.measurement-note {
 		margin: 0;
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: 0.625rem;
 		color: var(--ink-faint);
@@ -652,7 +645,6 @@
 
 	.quantum-metrics strong {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: 1.35rem;
 		color: var(--qubit-text);

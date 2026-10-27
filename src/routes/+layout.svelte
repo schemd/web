@@ -42,6 +42,10 @@
 	 */
 	const CHROME_FREE = ['/playground', '/simulations', '/inspector', '/embed'];
 	const showFooter = $derived(!CHROME_FREE.some((prefix) => pathname.startsWith(prefix)));
+	/* The playground's panes are sheets of their own, and an embed is someone
+	   else's page; every other route lies on one page sheet. */
+	const TABLE_ONLY = ['/playground', '/embed'];
+	const onSheet = $derived(!TABLE_ONLY.some((prefix) => pathname.startsWith(prefix)));
 
 	const nav = $derived([
 		{ href: `/docs/${version}/overview`, label: 'Docs', match: '/docs' },
@@ -53,18 +57,6 @@
 		{ href: '/changelog', label: 'Changelog', match: '/changelog' }
 	]);
 
-	/* A datasheet prints its revision date in words, not as a timestamp. */
-	const published = $derived(
-		data.latestPublishedAt === undefined
-			? undefined
-			: new Date(data.latestPublishedAt).toLocaleDateString(locale() === 'es' ? 'es-ES' : 'en-GB', {
-					day: 'numeric',
-					month: 'long',
-					year: 'numeric',
-					timeZone: 'UTC'
-				})
-	);
-
 	function cycleBlueprint(): void {
 		const index = BLUEPRINT_MODES.indexOf(ui.blueprint);
 		setBlueprint(BLUEPRINT_MODES[(index + 1) % BLUEPRINT_MODES.length]!);
@@ -74,101 +66,80 @@
 
 <a class="skip-link" href="#main">{t('Skip to content')}</a>
 
-<header class="band">
-	<div class="band-inner">
-		<a class="wordmark" href={href('/')} aria-label={t('schemd home')}>{t('schemd')}</a>
-		<p class="descriptor">{t('Text-to-schematic compiler')}</p>
-		<dl class="revision">
-			<div>
-				<dt>{t('Revision')}</dt>
-				<dd class="tabular">{t(data.latest)}</dd>
-			</div>
-			{#if published !== undefined}
-				<div>
-					<dt>{t('Published')}</dt>
-					<dd>{t(published)}</dd>
-				</div>
-			{/if}
-		</dl>
+<header class="nav-sheet vellum">
+	<a class="wordmark" href={href('/')} aria-label={t('schemd home')}>{t('schemd')}</a>
+	<nav class="nav-links" aria-label={t('Primary')}>
+		{#each nav as item (item.href)}
+			<a href={href(item.href)} aria-current={pathname.startsWith(item.match) ? 'page' : undefined}>
+				{t(item.label)}
+			</a>
+		{/each}
+	</nav>
+
+	<div class="nav-tools">
+		<button
+			type="button"
+			class="tool search"
+			disabled={!clientReady}
+			onclick={() => (ui.paletteOpen = true)}
+			aria-keyshortcuts="Meta+K Control+K"
+		>
+			<!-- Named by what it shows, so a voice command of "search" finds it. -->
+			<span>{t('Search')}</span>
+			<kbd>{t('⌘K')}</kbd>
+			<span class="visually-hidden">{t(', opens the command palette')}</span>
+		</button>
+		<button
+			type="button"
+			class="tool"
+			onclick={cycleBlueprint}
+			aria-label={t('Print mode: {0}. Activate to switch.', [t(BLUEPRINT_LABELS[ui.blueprint])])}
+		>
+			<span class="mode-swatch" data-mode={ui.blueprint} aria-hidden="true"></span>
+			<span class="tool-text">{t(BLUEPRINT_SHORT[ui.blueprint])}</span>
+		</button>
+		<button
+			type="button"
+			class="tool"
+			role="switch"
+			aria-checked={ui.audio}
+			onclick={() => {
+				setAudio(!ui.audio);
+				if (!ui.audio) return;
+				playTick(660);
+			}}
+			aria-label={t('Sound')}
+		>
+			<span>{ui.audio ? t('Sound on') : t('Sound off')}</span>
+		</button>
+		<LanguageSelect />
+		<VersionSelect
+			versions={data.versions}
+			latest={data.latest}
+			docLines={data.docLines}
+			docSlugs={data.docSlugs}
+		/>
+		<a
+			class="tool external"
+			href="https://github.com/schemd/core"
+			rel="noopener"
+			target="_blank"
+			aria-label={t('schemd on GitHub (opens in a new tab)')}>{t('GitHub')}</a
+		>
 	</div>
 </header>
 
-<nav class="site-nav" aria-label={t('Primary')}>
-	<div class="nav-inner">
-		<div class="nav-links">
-			{#each nav as item (item.href)}
-				<a
-					href={href(item.href)}
-					aria-current={pathname.startsWith(item.match) ? 'page' : undefined}
-				>
-					{t(item.label)}
-				</a>
-			{/each}
+<main id="main" class:has-footer={showFooter} class:on-table={!onSheet}>
+	{#if onSheet}
+		<!-- The page is a sheet of vellum with a second sheet beneath it. -->
+		<div class="sheet-stack">
+			<div class="vellum page-sheet">
+				{@render children()}
+			</div>
 		</div>
-
-		<div class="nav-tools">
-			<button
-				type="button"
-				class="tool"
-				disabled={!clientReady}
-				onclick={() => (ui.paletteOpen = true)}
-				aria-keyshortcuts="Meta+K Control+K"
-			>
-				<!-- Named by what it shows, so a voice command of "search" finds it. -->
-				<span>{t('Search')}</span>
-				<kbd>{t('⌘K')}</kbd>
-				<span class="visually-hidden">{t(', opens the command palette')}</span>
-			</button>
-			<button
-				type="button"
-				class="tool"
-				onclick={cycleBlueprint}
-				aria-label={t('Print mode: {0}. Activate to switch.', [t(BLUEPRINT_LABELS[ui.blueprint])])}
-			>
-				<span class="mode-swatch" data-mode={ui.blueprint} aria-hidden="true"></span>
-				<span class="tool-text">{t(BLUEPRINT_SHORT[ui.blueprint])}</span>
-			</button>
-			<button
-				type="button"
-				class="tool"
-				role="switch"
-				aria-checked={ui.audio}
-				onclick={() => {
-					setAudio(!ui.audio);
-					if (!ui.audio) return;
-					playTick(660);
-				}}
-				aria-label={t('Sound')}
-			>
-				<span>{ui.audio ? t('Sound on') : t('Sound off')}</span>
-			</button>
-			<LanguageSelect />
-			<VersionSelect
-				versions={data.versions}
-				latest={data.latest}
-				docLines={data.docLines}
-				docSlugs={data.docSlugs}
-			/>
-			<a
-				class="tool"
-				href="https://github.com/schemd/core"
-				rel="noopener"
-				target="_blank"
-				aria-label={t('schemd on GitHub (opens in a new tab)')}>{t('GitHub')}</a
-			>
-			<a
-				class="tool"
-				href="https://www.npmjs.com/package/@schemd/core"
-				rel="noopener"
-				target="_blank"
-				aria-label={t('@schemd/core on npm (opens in a new tab)')}>{t('npm')}</a
-			>
-		</div>
-	</div>
-</nav>
-
-<main id="main" class:has-footer={showFooter}>
-	{@render children()}
+	{:else}
+		{@render children()}
+	{/if}
 </main>
 
 {#if showFooter}
@@ -190,6 +161,7 @@
 		inset-inline-start: var(--space-4);
 		z-index: 100;
 		padding: var(--space-2) var(--space-4);
+		border-radius: var(--radius-sm);
 		background: var(--ink);
 		color: var(--bg);
 
@@ -198,27 +170,30 @@
 		}
 	}
 
-	/* The datasheet's header band: the one bold element on every page. It
-	   ends in a heavy ink rule, and it scrolls away with the page. */
-	.band {
-		block-size: 60px;
-		border-block-end: 4px solid var(--ink);
-	}
-
-	.band-inner {
+	/* The navigation is a sheet of its own that floats over the page as it
+	   scrolls, with a strip of table showing round it. */
+	.nav-sheet {
+		position: sticky;
+		inset-block-start: var(--space-3);
+		z-index: 50;
 		display: flex;
-		align-items: baseline;
+		align-items: center;
 		gap: var(--space-4);
-		block-size: 100%;
-		inline-size: min(100% - 2 * var(--space-4), var(--page-max));
-		margin-inline: auto;
-		padding-block-start: 14px;
+		inline-size: min(100% - 2 * var(--space-4) - var(--under-offset), var(--sheet-max));
+		block-size: 56px;
+		margin: var(--space-3) auto 0;
+		padding-inline: var(--space-5) var(--space-3);
+		/* Pages scroll beneath this sheet, so it diffuses them more than a page
+		   sheet diffuses the sheet under it. */
+		background: color-mix(in srgb, var(--vellum) 90%, transparent);
+		-webkit-backdrop-filter: blur(12px);
+		backdrop-filter: blur(12px);
 	}
 
 	.wordmark {
-		font-stretch: var(--width-extended);
 		font-weight: 800;
-		font-size: 1.875rem;
+		font-size: 1.375rem;
+		letter-spacing: -0.035em;
 		line-height: 1;
 		color: var(--ink);
 
@@ -227,79 +202,32 @@
 		}
 	}
 
-	.descriptor {
-		margin: 0;
-		font-stretch: var(--width-table);
-		font-size: var(--text-base);
-		font-weight: 500;
-		color: var(--ink);
-	}
-
-	.revision {
-		display: flex;
-		gap: var(--space-6);
-		margin: 0 0 0 auto;
-		font-stretch: var(--width-table);
-		font-size: var(--text-sm);
-
-		& div {
-			display: flex;
-			gap: var(--space-2);
-		}
-
-		& dt {
-			color: var(--ink-mute);
-		}
-
-		& dd {
-			margin: 0;
-			font-weight: 600;
-		}
-	}
-
-	/* The navigation row stays in reach while the band scrolls away. */
-	.site-nav {
-		position: sticky;
-		inset-block-start: 0;
-		z-index: 50;
-		block-size: 44px;
-		background: var(--bg);
-		border-block-end: 1px solid var(--line);
-	}
-
-	.nav-inner {
-		display: flex;
-		align-items: stretch;
-		gap: var(--space-6);
-		block-size: 100%;
-		inline-size: min(100% - 2 * var(--space-4), var(--page-max));
-		margin-inline: auto;
-	}
-
 	.nav-links {
 		display: flex;
-		gap: var(--space-6);
+		align-items: center;
+		gap: 0;
+		min-inline-size: 0;
 		overflow-x: auto;
 		scrollbar-width: none;
 
 		& a {
-			display: flex;
-			align-items: center;
-			font-stretch: var(--width-table);
-			font-size: var(--text-base);
-			font-weight: 600;
+			padding: 0.3rem 0.55rem;
+			border-radius: 6px;
+			font-size: 0.9375rem;
+			font-weight: 500;
 			color: var(--ink);
 			white-space: nowrap;
-			border-block-end: 3px solid transparent;
-			padding-block-start: 3px;
 
 			&:hover {
 				text-decoration: none;
-				border-block-end-color: var(--line-strong);
+				background: var(--wash);
 			}
 
+			/* The current page is marked with the checker's highlighter. */
 			&[aria-current='page'] {
-				border-block-end-color: var(--accent);
+				background: var(--mark);
+				color: var(--mark-ink);
+				font-weight: 600;
 			}
 		}
 	}
@@ -307,9 +235,8 @@
 	.nav-tools {
 		display: flex;
 		align-items: center;
-		gap: var(--space-4);
+		gap: var(--space-1);
 		margin-inline-start: auto;
-		font-stretch: var(--width-table);
 		font-size: var(--text-sm);
 	}
 
@@ -317,70 +244,97 @@
 		display: inline-flex;
 		align-items: center;
 		gap: var(--space-2);
+		min-block-size: 36px;
+		padding-inline: var(--space-2);
+		border-radius: var(--radius-sm);
 		color: var(--ink-mute);
 		font-weight: 500;
 		white-space: nowrap;
 
 		&:hover {
 			color: var(--ink);
+			background: var(--wash);
 			text-decoration: none;
 		}
 
 		&:disabled {
-			opacity: 0.5;
+			color: var(--ink-faint);
 			cursor: default;
 		}
 	}
 
-	/* The current print mode, shown as the paper it prints on. */
+	.search {
+		padding-inline: var(--space-3) var(--space-2);
+		border: 1px solid var(--line);
+		background: var(--bg);
+	}
+
+	/* The mode switch: a half-lit disc, the usual sign for light and dark. */
 	.mode-swatch {
-		inline-size: 12px;
-		block-size: 12px;
-		border: 1px solid var(--ink);
-		background: linear-gradient(135deg, var(--bg) 50%, var(--ink) 50%);
+		inline-size: 14px;
+		block-size: 14px;
+		border: 1.5px solid var(--ink);
+		border-radius: 50%;
+		background: linear-gradient(90deg, var(--ink) 50%, transparent 50%);
 	}
 
-	@media (max-width: 1040px) {
-		.revision div:last-child {
-			display: none;
-		}
+	.on-table {
+		padding-block-start: var(--space-3);
+	}
 
-		.nav-tools a.tool {
+	.page-sheet {
+		padding-block: var(--space-2);
+	}
+
+	/* The mode button keeps its disc and its spoken name when the visible
+	   word goes. */
+	@media (max-width: 1520px) {
+		.nav-tools .tool-text {
 			display: none;
 		}
 	}
 
-	@media (max-width: 760px) {
-		.descriptor,
-		.revision {
+	@media (max-width: 1360px) {
+		.nav-tools .external {
 			display: none;
 		}
+	}
 
-		.site-nav {
-			block-size: 88px;
+	@media (max-width: 1180px) {
+		.nav-tools kbd {
+			display: none;
 		}
-		.nav-inner {
+	}
+
+	/* On a phone the sheet holds two rows: the links, then the tools, each
+	   scrolling sideways so nothing is ever cut short. */
+	@media (max-width: 860px) {
+		.nav-sheet {
 			display: grid;
-			grid-template-rows: 44px 44px;
-			gap: 0;
+			grid-template-columns: auto minmax(0, 1fr);
+			grid-template-rows: 48px 48px;
+			column-gap: var(--space-3);
+			row-gap: 0;
+			block-size: auto;
+			padding-inline: var(--space-4) var(--space-2);
+			inset-block-start: var(--space-2);
+			margin-block-start: var(--space-2);
 		}
-		.nav-links {
-			min-inline-size: 0;
-			overflow-x: auto;
-		}
+
 		.nav-tools {
-			gap: var(--space-3);
+			grid-column: 1 / -1;
 			margin-inline-start: 0;
 			overflow-x: auto;
 			scrollbar-width: none;
-		}
-		.tool {
-			min-block-size: 40px;
+			border-block-start: 1px solid var(--line);
 		}
 
-		.nav-tools .tool-text,
 		.nav-tools kbd {
 			display: none;
+		}
+
+		.tool {
+			min-block-size: 40px;
 		}
 	}
 </style>

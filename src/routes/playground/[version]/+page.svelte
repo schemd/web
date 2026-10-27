@@ -1430,29 +1430,33 @@
 							? t('Recovered draft')
 							: t('Saved in this browser')}
 		</span>
-		<button type="button" class="status-action" onclick={copySource}>
-			{sourceCopied ? t('Source copied') : t('Copy source')}
+		<!-- Exports open as a small sheet above the strip; the native popover
+		     gives Escape, outside-click dismissal and focus return for free. -->
+		<button type="button" class="status-action" popovertarget="export-menu">
+			{t('Export')}
 		</button>
-		<button type="button" class="status-action" onclick={copyFence}>
-			{fenceCopied ? t('Fence copied') : t('Copy fence')}
-		</button>
-		<button type="button" class="status-action" onclick={downloadSvg}>{t('Download SVG')}</button>
-		<button type="button" class="status-action" onclick={downloadPng}>{t('Download PNG')}</button>
-		<button type="button" class="status-action" onclick={downloadSource}
-			>{t('Download source')}</button
-		>
-		<button
-			type="button"
-			class="status-action"
-			onclick={copyEmbed}
-			aria-live="polite"
-			disabled={embedUrl === undefined}
-			title={embedUrl === undefined
-				? t('This document is too large for a reliable embed address')
-				: t('Copies an iframe you can paste into a page')}
-		>
-			{embedCopied ? t('Embed code copied') : t('Copy embed code')}
-		</button>
+		<div id="export-menu" class="export-menu" popover>
+			<button type="button" onclick={copySource}>
+				{sourceCopied ? t('Source copied') : t('Copy source')}
+			</button>
+			<button type="button" onclick={copyFence}>
+				{fenceCopied ? t('Fence copied') : t('Copy fence')}
+			</button>
+			<button type="button" onclick={downloadSvg}>{t('Download SVG')}</button>
+			<button type="button" onclick={downloadPng}>{t('Download PNG')}</button>
+			<button type="button" onclick={downloadSource}>{t('Download source')}</button>
+			<button
+				type="button"
+				onclick={copyEmbed}
+				aria-live="polite"
+				disabled={embedUrl === undefined}
+				title={embedUrl === undefined
+					? t('This document is too large for a reliable embed address')
+					: t('Copies an iframe you can paste into a page')}
+			>
+				{embedCopied ? t('Embed code copied') : t('Copy embed code')}
+			</button>
+		</div>
 		<button
 			type="button"
 			class="status-action"
@@ -1486,14 +1490,12 @@
 		gap: var(--space-4);
 		align-content: start;
 		padding: var(--space-4);
-		font-stretch: var(--width-table);
 		font-size: var(--text-sm);
 		overflow-y: auto;
 		block-size: 100%;
 
 		& h2 {
 			font-size: var(--text-sm);
-			font-stretch: var(--width-table);
 			margin-block: 0 var(--space-1);
 		}
 	}
@@ -1546,7 +1548,6 @@
 
 		& h2 {
 			font-size: var(--text-lg);
-			font-stretch: var(--width-condensed);
 
 			& code {
 				font-family: var(--font-sans);
@@ -1570,7 +1571,7 @@
 	.part-heading {
 		margin: var(--space-2) 0 0;
 		font-weight: 700;
-		border-block-end: 2px solid var(--ink);
+		border-block-end: 1px solid var(--line);
 		padding-block-end: 2px;
 	}
 
@@ -1624,7 +1625,7 @@
 		display: grid;
 		gap: var(--space-2);
 		padding-block-start: var(--space-3);
-		border-block-start: 2px solid var(--ink);
+		border-block-start: 1px solid var(--line);
 	}
 
 	.fence-controls {
@@ -1693,7 +1694,6 @@
 
 	.fence-copy {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--accent);
@@ -1767,7 +1767,6 @@
 		color: var(--ink-mute);
 		border: 1px solid var(--line);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 
@@ -1781,7 +1780,6 @@
 	   even when the visitor navigates to a historical version in the header. */
 	.engine-note {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--accent);
@@ -1834,7 +1832,6 @@
 	.drag-note {
 		margin: var(--space-2) 0 0;
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-faint);
@@ -1877,21 +1874,63 @@
 	}
 
 	.status-action {
+		padding: 0.2rem 0.6rem;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		background: var(--bg);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
-		font-variant-numeric: tabular-nums;
-		font-size: var(--text-2xs);
-		color: var(--accent);
+		font-size: var(--text-sm);
+		font-weight: 600;
+		color: var(--ink);
 
 		&:hover {
-			color: var(--ink);
+			border-color: var(--ink);
+		}
+
+		&:disabled {
+			opacity: 0.5;
+			cursor: not-allowed;
+		}
+	}
+
+	/* An overlay sheet, level 3: it rises from the status strip. */
+	.export-menu {
+		inset: auto var(--space-4) calc(var(--statusbar-h) + var(--space-6)) auto;
+		margin: 0;
+		min-inline-size: 13rem;
+		padding: var(--space-2);
+		border: 1px solid var(--edge);
+		border-radius: var(--radius-lg);
+		background: var(--bg);
+		color: var(--ink);
+		box-shadow: var(--shadow-overlay);
+
+		&:popover-open {
+			display: grid;
+			animation: sheet-in var(--dur-kinetic) var(--ease-sheet);
+		}
+
+		& button {
+			padding: 0.45rem 0.75rem;
+			border-radius: var(--radius-sm);
+			text-align: start;
+			font-size: var(--text-sm);
+			font-weight: 500;
+
+			&:hover:not(:disabled) {
+				background: var(--wash);
+			}
+
+			&:disabled {
+				color: var(--ink-faint);
+				cursor: not-allowed;
+			}
 		}
 	}
 
 	.draft-status {
 		color: var(--ink-faint);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 
@@ -1917,7 +1956,6 @@
 		border: 1px solid var(--line-strong);
 		box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 

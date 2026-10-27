@@ -211,7 +211,6 @@
 		margin: 0 0 var(--space-1);
 		color: var(--ink);
 		font: 600 0.7rem/1 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 	}
 	h1 {
@@ -230,7 +229,6 @@
 	.pane h2 {
 		margin: 0 0 var(--space-2);
 		font: 600 0.72rem/1 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 	}
@@ -243,7 +241,6 @@
 		margin: var(--space-2) 0 0;
 		color: var(--danger);
 		font: 500 0.8rem/1.4 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 	}
 	.frames {
@@ -261,7 +258,6 @@
 		margin-block-end: var(--space-2);
 		color: var(--ink-mute);
 		font: 500 0.68rem/1 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 	}
 	.delta ul {
@@ -291,7 +287,6 @@
 	.tag {
 		color: var(--ink-faint);
 		font: 500 0.66rem/1.5 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 	}
 	.what {
@@ -301,14 +296,12 @@
 		grid-column: 2;
 		color: var(--ink-mute);
 		font: 400 0.82rem/1.5 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 	}
 	.summary {
 		margin: 0;
 		color: var(--ink-mute);
 		font: 500 0.72rem/1 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 	}
 	.clean {

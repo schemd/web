@@ -77,13 +77,6 @@
 		docIndex >= 0 && docIndex < data.manifest.length - 1 ? data.manifest[docIndex + 1] : undefined
 	);
 
-	/* Figures are numbered in page order, as a datasheet numbers them. */
-	const figureNumber = $derived(
-		activeExample === undefined
-			? 0
-			: data.doc.examples.findIndex((example) => example.id === activeExample.id) + 1
-	);
-
 	const jsonLd = $derived(
 		JSON.stringify({
 			'@context': 'https://schema.org',
@@ -160,14 +153,13 @@
 								</a>
 								{#if pageMeta.slug === data.meta.slug && data.doc.sections.length > 0}
 									<ol class="section-tree">
-										{#each data.doc.sections as section, index (section.id)}
+										{#each data.doc.sections as section (section.id)}
 											<li>
 												<a
 													href={href(`#${section.id}`)}
 													class:active={section.id === activeSectionId}
 													onclick={() => (mobileIndexOpen = false)}
 												>
-													<span class="snum">{t(index + 1)}</span>
 													{t(section.title)}
 												</a>
 											</li>
@@ -238,7 +230,6 @@
 							{@html activeExample.svg}
 						</div>
 						<figcaption class="rail-caption">
-							<b>{t('Figure')} {t(figureNumber)}.</b>
 							{t(activeExample.title)}
 						</figcaption>
 					</figure>
@@ -298,7 +289,6 @@
 		overflow-y: auto;
 		padding: var(--space-6) var(--space-4) var(--space-6) 0;
 		border-inline-end: 1px solid var(--line);
-		font-stretch: var(--width-table);
 		font-size: var(--text-sm);
 	}
 
@@ -327,7 +317,6 @@
 
 	.collapse-toggle,
 	.show-contents {
-		font-stretch: var(--width-table);
 		font-size: var(--text-sm);
 		font-weight: 600;
 		color: var(--accent);
@@ -367,18 +356,20 @@
 
 		& li a {
 			display: block;
-			padding: 0.2rem 0 0.2rem var(--space-3);
-			border-inline-start: 2px solid var(--line);
+			padding: 0.25rem var(--space-2);
+			border-radius: 6px;
 			color: var(--ink);
 
 			&:hover {
 				text-decoration: none;
-				border-inline-start-color: var(--ink-mute);
+				background: var(--wash);
 			}
 
+			/* The page being read carries the highlighter. */
 			&[aria-current='page'] {
-				font-weight: 700;
-				border-inline-start-color: var(--ink);
+				font-weight: 600;
+				background: var(--mark);
+				color: var(--mark-ink);
 			}
 		}
 	}
@@ -400,11 +391,6 @@
 				border-inline-start-color: var(--accent) !important;
 			}
 		}
-
-		& .snum {
-			min-inline-size: 1.4em;
-			font-variant-numeric: tabular-nums;
-		}
 	}
 
 	/* ----- center: the reading column ----- */
@@ -424,7 +410,6 @@
 
 	.doc-group {
 		margin: 0;
-		font-stretch: var(--width-table);
 		font-size: var(--text-sm);
 		color: var(--ink-mute);
 	}
@@ -436,13 +421,6 @@
 		color: var(--ink-mute);
 	}
 
-	/* The renderer prints each section's number beside its title. */
-	.prose :global(h2 .doc-num) {
-		display: inline-block;
-		min-inline-size: 2em;
-		font-variant-numeric: tabular-nums;
-	}
-
 	.doc-pager {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
@@ -450,7 +428,7 @@
 		max-inline-size: var(--measure);
 		margin-block-start: var(--space-12);
 		padding-block-start: var(--space-4);
-		border-block-start: 2px solid var(--ink);
+		border-block-start: 1px solid var(--line);
 	}
 
 	.pager-link {
@@ -473,13 +451,11 @@
 	}
 
 	.pager-dir {
-		font-stretch: var(--width-table);
 		font-size: var(--text-sm);
 		color: var(--ink-mute);
 	}
 
 	.pager-title {
-		font-stretch: var(--width-condensed);
 		font-weight: 700;
 		font-size: var(--text-md);
 		color: var(--accent);
@@ -507,13 +483,8 @@
 
 	.rail-caption {
 		margin-block: var(--space-2) var(--space-4);
-		font-stretch: var(--width-table);
 		font-size: var(--text-sm);
 		color: var(--ink-mute);
-
-		& b {
-			color: var(--ink);
-		}
 	}
 
 	.rail-src {
@@ -590,10 +561,11 @@
 			padding: var(--space-4);
 			padding-block-end: var(--rail-toggle-clearance);
 			background: var(--bg);
-			border-inline-start: none;
-			border-block-start: 2px solid var(--ink);
+			border: 1px solid var(--edge);
+			border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+			box-shadow: var(--shadow-overlay);
 			transform: translateY(100%);
-			transition: transform var(--dur-med) var(--ease-precise);
+			transition: transform var(--dur-sheet) var(--ease-sheet);
 
 			&.open {
 				transform: translateY(0);

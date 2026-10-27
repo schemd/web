@@ -323,7 +323,6 @@
 			text-align: center;
 			padding-block: var(--space-1);
 			font-family: var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			background: color-mix(in srgb, var(--ink) 7%, transparent);
 			color: var(--ink-faint);

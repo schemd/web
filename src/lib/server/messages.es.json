@@ -2309,5 +2309,12 @@
 	"A two-qubit CNOT gate is aligned with both input wires, which enter at different heights; the compiler computes the gate span from those connections.": "Una puerta CNOT de dos cúbits se alinea con ambos cables de entrada, que llegan a distintas alturas; el compilador calcula la extensión de la puerta a partir de esas conexiones.",
 	"Lifelines and messages for a documentation deployment.": "Líneas de vida y mensajes para un despliegue de documentación.",
 	"Selecting a language reloads this page.": "Al seleccionar un idioma se vuelve a cargar esta página.",
-	"Apply language": "Aplicar idioma"
+	"Apply language": "Aplicar idioma",
+	"Nets of the drawing, from": "Redes del dibujo, según",
+	"The same language draws four kinds of diagram. Each figure shows one line of its source.": "El mismo lenguaje dibuja cuatro tipos de diagrama. Cada figura muestra una línea de su código fuente.",
+	"Pin functions": "Funciones de los pines",
+	"Export": "Exportar",
+	"Light table": "Mesa de luz",
+	"Day: dark ink on light vellum": "Día: tinta oscura sobre papel vegetal claro",
+	"Light table: light ink on lit vellum": "Mesa de luz: tinta clara sobre papel vegetal iluminado"
 }

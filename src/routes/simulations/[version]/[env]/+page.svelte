@@ -274,7 +274,6 @@
 
 	.back {
 		font: var(--text-sm) / 1.3 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 		text-decoration: none;
@@ -289,7 +288,6 @@
 		border: 1px solid var(--line-strong);
 		border-radius: 999px;
 		font: var(--text-xs) / 1.4 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 	}
@@ -308,7 +306,6 @@
 			border: 1px solid var(--line-strong);
 			border-radius: var(--radius-sm);
 			font: var(--text-sm) / 1.3 var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			color: var(--ink);
 			text-decoration: none;
@@ -411,7 +408,6 @@
 		padding: 0;
 		list-style: none;
 		font: var(--text-sm) / 1.5 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 	}
@@ -466,7 +462,6 @@
 			border: 1px solid var(--line);
 			border-radius: var(--radius-sm);
 			font: var(--text-xs) / 1 var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 			text-decoration: none;

@@ -44,7 +44,12 @@
 			.join(',');
 		const host = '[data-hero-drawing]';
 		const dim = lit === '' ? '' : `:not(${lit})`;
-		const bold = lit === '' ? '' : `${host} :is(${lit}) .schematic-trace{stroke-width:2.6}`;
+		/* The traced wires get the checker's highlighter: a yellow halo round
+		   the copper, the way a net is yellow-lined on a paper drawing. */
+		const bold =
+			lit === ''
+				? ''
+				: `${host} :is(${lit}) .schematic-trace{stroke-width:2.6;filter:drop-shadow(0 0 2px var(--mark)) drop-shadow(0 0 3px var(--mark))}`;
 		return `<style>${host} [data-source-line]${dim}{opacity:.14}${bold}</style>`;
 	});
 
@@ -115,17 +120,49 @@
 </svelte:head>
 
 <article class="front page">
-	<header class="title">
+	<header class="hero">
 		<h1>{t('Schematics from plain text')}</h1>
-		<p class="lede">
-			{t(
-				'Write one part or one wire per line. schemd places the parts, routes the wires and draws the SVG.'
-			)}
-		</p>
-		<Pronounce />
+		<div class="hero-side">
+			<p class="lede">
+				{t(
+					'Write one part or one wire per line. schemd places the parts, routes the wires and draws the SVG.'
+				)}
+			</p>
+			<div class="install">
+				<div class="seg" role="tablist" aria-label={t('Package manager')}>
+					{#each MANAGERS as manager (manager)}
+						<button
+							type="button"
+							role="tab"
+							aria-selected={pm === manager}
+							onclick={() => (pm = manager)}>{t(manager)}</button
+						>
+					{/each}
+				</div>
+				<div class="command">
+					<code>{installCmd}</code>
+					<button
+						type="button"
+						class="copy"
+						onclick={copyInstall}
+						aria-label={t('Copy install command')}
+					>
+						{copied ? t('Copied') : t('Copy')}
+					</button>
+				</div>
+			</div>
+			<div class="actions">
+				<a class="btn btn-solid" href={href(`/playground/${data.latest}`)}
+					>{t('Open the playground')}</a
+				>
+				<a class="btn" href={href(`/docs/${data.latest}/overview`)}>{t('Read the documentation')}</a
+				>
+			</div>
+			<Pronounce />
+		</div>
 	</header>
 
-	<figure class="figure instrument" aria-label={t('One circuit, three views')}>
+	<figure class="traced" aria-label={t('One circuit, three views')}>
 		<div class="views" role="tablist" aria-label={t('Compiler views')}>
 			{#each VIEWS as option (option.id)}
 				<button
@@ -137,82 +174,82 @@
 			{/each}
 		</div>
 
-		<div class="figure-body">
-			{#if view === 'split'}
-				<div class="split">
-					<ol
-						class="source"
-						aria-label={t('Source; hover or focus a line to trace it')}
-						onmouseleave={() => (focusLine = undefined)}
-					>
-						{#each data.hero.lines as line (line.n)}
-							<li>
-								<button
-									type="button"
-									class="ln"
-									class:on={focusLine === line.n}
-									onmouseenter={() => ((focusNet = undefined), (focusLine = line.n))}
-									onfocus={() => ((focusNet = undefined), (focusLine = line.n))}
-									onblur={() => (focusLine = undefined)}
-								>
-									<span class="visually-hidden">{t('Trace line')}</span>
-									<span class="n">{t(line.n)}</span>
-									<!-- eslint-disable-next-line svelte/no-at-html-tags -- tokenizer output, escaped -->
-									<code>{@html line.html}</code>
-								</button>
-							</li>
-						{/each}
-					</ol>
-					<div class="drawing" data-hero-drawing data-schematic-host>
-						<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
-						{@html data.hero.svg}
-					</div>
+		{#if view === 'split'}
+			<!-- The source is a sheet of vellum laid over its own drawing. -->
+			<div class="overlay">
+				<div class="drawing" data-hero-drawing data-schematic-host>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
+					{@html data.hero.svg}
 				</div>
-			{:else if view === 'netlist'}
-				<div class="netlist">
-					<p class="table-caption">
-						{t('Table 2. Nets of the figure, from')} <code>buildNetlist</code>
-					</p>
-					<table class="spec">
-						<thead>
+				<ol
+					class="source"
+					aria-label={t('Source; hover or focus a line to trace it')}
+					onmouseleave={() => (focusLine = undefined)}
+				>
+					{#each data.hero.lines as line (line.n)}
+						<li>
+							<button
+								type="button"
+								class="ln"
+								class:on={focusLine === line.n}
+								onmouseenter={() => ((focusNet = undefined), (focusLine = line.n))}
+								onfocus={() => ((focusNet = undefined), (focusLine = line.n))}
+								onblur={() => (focusLine = undefined)}
+							>
+								<span class="visually-hidden">{t('Trace line')}</span>
+								<span class="n">{t(line.n)}</span>
+								<!-- eslint-disable-next-line svelte/no-at-html-tags -- tokenizer output, escaped -->
+								<code>{@html line.html}</code>
+							</button>
+						</li>
+					{/each}
+				</ol>
+			</div>
+		{:else if view === 'netlist'}
+			<div class="inset netlist">
+				<p class="table-caption">
+					{t('Nets of the drawing, from')} <code>buildNetlist</code>
+				</p>
+				<table class="spec">
+					<thead>
+						<tr>
+							<th scope="col">{t('Net')}</th>
+							<th scope="col">{t('Terminals')}</th>
+							<th scope="col">{t('Lines')}</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each data.hero.nets as net (net.id)}
 							<tr>
-								<th scope="col">{t('Net')}</th>
-								<th scope="col">{t('Terminals')}</th>
-								<th scope="col">{t('Lines')}</th>
+								<td>
+									<button
+										type="button"
+										class="net-id"
+										onclick={() => traceNet(net.id)}
+										aria-label={t('Trace net {0} on the drawing', [net.id])}>{t(net.id)}</button
+									>
+								</td>
+								<td><code>{net.terminals.join(', ')}</code></td>
+								<td class="tabular">{t(net.lines.join(', '))}</td>
 							</tr>
-						</thead>
-						<tbody>
-							{#each data.hero.nets as net (net.id)}
-								<tr>
-									<td>
-										<button
-											type="button"
-											class="net-id"
-											onclick={() => traceNet(net.id)}
-											aria-label={t('Trace net {0} on the drawing', [net.id])}>{t(net.id)}</button
-										>
-									</td>
-									<td><code>{net.terminals.join(', ')}</code></td>
-									<td class="tabular">{t(net.lines.join(', '))}</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-					<p class="note">
-						{data.hero.issues === 0
-							? t('verifyNetlist reports no problems with this circuit.')
-							: t('verifyNetlist reports {0} findings.', [data.hero.issues])}
-					</p>
-				</div>
-			{:else}
-				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-				<pre class="svg-out" tabindex="0" aria-label={t('The beginning of the compiled SVG')}>{data
-						.hero.svgHead}</pre>
-			{/if}
-		</div>
+						{/each}
+					</tbody>
+				</table>
+				<p class="note">
+					{data.hero.issues === 0
+						? t('verifyNetlist reports no problems with this circuit.')
+						: t('verifyNetlist reports {0} findings.', [data.hero.issues])}
+				</p>
+			</div>
+		{:else}
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+			<pre
+				class="inset svg-out"
+				tabindex="0"
+				aria-label={t('The beginning of the compiled SVG')}>{data.hero.svgHead}</pre>
+		{/if}
 
 		<figcaption>
-			<b>{t('Figure 1.')}</b>
 			{t(data.hero.title)}: {t(data.hero.components)}
 			{t('parts on')}
 			{t(data.hero.nets.length)}
@@ -222,51 +259,22 @@
 		</figcaption>
 	</figure>
 
-	<div class="start">
-		<div class="install">
-			<div class="seg" role="tablist" aria-label={t('Package manager')}>
-				{#each MANAGERS as manager (manager)}
-					<button
-						type="button"
-						role="tab"
-						aria-selected={pm === manager}
-						onclick={() => (pm = manager)}>{t(manager)}</button
-					>
-				{/each}
-			</div>
-			<div class="command">
-				<code>{installCmd}</code>
-				<button
-					type="button"
-					class="copy"
-					onclick={copyInstall}
-					aria-label={t('Copy install command')}
-				>
-					{copied ? t('Copied') : t('Copy')}
-				</button>
-			</div>
-		</div>
-		<div class="actions">
-			<a class="btn btn-solid" href={href(`/playground/${data.latest}`)}
-				>{t('Open the playground')}</a
-			>
-			<a class="btn" href={href(`/docs/${data.latest}/overview`)}>{t('Read the documentation')}</a>
-			<a class="btn" href={href('/templates')}>{t('Browse templates')}</a>
-		</div>
-	</div>
-
 	<section aria-labelledby="draws">
-		<h2 id="draws"><span class="num">1</span> {t('What it draws')}</h2>
+		<h2 id="draws">{t('What it draws')}</h2>
+		<p class="section-lede">
+			{t(
+				'The same language draws four kinds of diagram. Each figure shows one line of its source.'
+			)}
+		</p>
 		<div class="triple">
-			{#each data.families as family, index (family.id)}
+			{#each data.families as family (family.id)}
 				<figure class="figure">
 					<div class="figure-body">
 						<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
 						{@html family.svg}
 					</div>
 					<figcaption>
-						<b>{t('Figure')} {t(index + 2)}.</b>
-						{t(family.title)}.
+						<b>{t(family.title)}</b>
 						<code class="line">{family.line}</code>
 					</figcaption>
 				</figure>
@@ -286,26 +294,20 @@
 						{@html data.figures['junction']}
 					</div>
 				</div>
-				<figcaption>
-					<b>{t('Figure')} {t(data.families.length + 2)}.</b>
-					{t('Three wires to one junction, then and now.')}
-				</figcaption>
+				<figcaption>{t('Three wires to one junction, then and now.')}</figcaption>
 			</figure>
 			<figure class="figure">
 				<div class="figure-body">
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
 					{@html data.figures['crossing']}
 				</div>
-				<figcaption>
-					<b>{t('Figure')} {t(data.families.length + 3)}.</b>
-					{t('Separate nets bridge where they cross.')}
-				</figcaption>
+				<figcaption>{t('Separate nets bridge where they cross.')}</figcaption>
 			</figure>
 		</div>
 	</section>
 
 	<section aria-labelledby="glance">
-		<h2 id="glance"><span class="num">2</span> {t('At a glance')}</h2>
+		<h2 id="glance">{t('At a glance')}</h2>
 		<table class="spec glance">
 			<tbody>
 				<tr>
@@ -348,83 +350,168 @@
 
 <style>
 	.front {
-		padding-block: var(--space-8) var(--space-16);
+		padding-block: var(--space-8) var(--space-12);
 	}
 
-	.title {
-		margin-block-end: var(--space-8);
+	/* ---------- Hero: the title, and what to do next beside it ---------- */
+	.hero {
+		display: grid;
+		grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+		gap: var(--space-8) var(--space-12);
+		align-items: end;
+		margin-block-end: var(--space-12);
 
-		/* Measured in the heading's own characters, so it breaks as a title. */
 		& h1 {
-			max-inline-size: 24ch;
-			margin-block-end: var(--space-3);
-		}
-
-		& .lede {
-			margin: 0 0 var(--space-2);
-			font-size: var(--text-md);
-			line-height: 1.45;
-			color: var(--ink-mute);
+			font-size: var(--text-display);
+			font-weight: 800;
+			line-height: 1;
+			letter-spacing: var(--tracking-display);
+			max-inline-size: 11ch;
+			text-wrap: balance;
 		}
 	}
 
-	section {
-		margin-block-start: var(--space-12);
+	.hero-side {
+		display: grid;
+		gap: var(--space-4);
+		justify-items: start;
 	}
 
-	h2 {
-		font-size: var(--text-lg);
-		padding-block-start: var(--space-2);
-		border-block-start: 2px solid var(--ink);
-		margin-block-end: var(--space-3);
+	.lede {
+		margin: 0;
+		font-size: var(--text-md);
+		line-height: 1.45;
+		color: var(--ink-mute);
+		text-wrap: pretty;
 	}
 
-	/* Section numbers are the datasheet's own sequence. */
-	.num {
-		display: inline-block;
-		min-inline-size: 2.2em;
-		font-variant-numeric: tabular-nums;
+	.install {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-3);
 	}
 
-	p {
-		max-inline-size: var(--measure);
+	.command {
+		display: flex;
+		align-items: center;
+		gap: var(--space-4);
+		min-block-size: 38px;
+		padding: var(--space-1) var(--space-2) var(--space-1) var(--space-3);
+		border: 1px solid var(--edge);
+		border-radius: var(--radius-sm);
+		background: var(--wash);
+
+		& code {
+			font-size: 0.9375rem;
+		}
 	}
 
-	/* ---------- Figure 1 ---------- */
+	.copy {
+		padding: 0.15rem 0.5rem;
+		border-radius: 6px;
+		font-size: var(--text-sm);
+		font-weight: 600;
+		color: var(--accent);
+
+		&:hover {
+			background: var(--bg);
+		}
+	}
+
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-3);
+	}
+
+	/* ---------- The traced figure ---------- */
+	.traced {
+		margin: 0;
+	}
+
 	.views {
 		display: flex;
-		gap: var(--space-6);
-		margin-block-end: var(--space-2);
+		gap: var(--space-1);
+		margin-block-end: var(--space-3);
 
 		& button {
-			font-stretch: var(--width-table);
+			padding: 0.3rem 0.75rem;
+			border-radius: 6px;
+			font-size: var(--text-sm);
 			font-weight: 600;
 			color: var(--ink-mute);
-			padding-block-end: var(--space-1);
-			border-block-end: 3px solid transparent;
+
+			&:hover {
+				color: var(--ink);
+				background: var(--wash);
+			}
 
 			&[aria-selected='true'] {
 				color: var(--ink);
-				border-block-end-color: var(--ink);
+				background: var(--wash);
+				box-shadow: inset 0 0 0 1px var(--line);
 			}
 		}
 	}
 
-	.split {
+	/* The drawing lies on an inset; the source is a sheet of vellum over its
+	   left side, translucent enough that the wires beneath show through. */
+	.overlay {
+		position: relative;
 		display: grid;
-		grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-		gap: var(--space-4);
-		align-items: start;
+		min-block-size: 560px;
+	}
+
+	.drawing {
+		display: grid;
+		align-items: center;
+		/* Keep the complete drawing clear of the source sheet's 46% width. */
+		padding: var(--space-8) var(--space-8) var(--space-8) 48%;
+		background: var(--wash);
+		border: 1px solid var(--edge);
+		border-radius: var(--radius-md);
+
+		& :global(svg) {
+			display: block;
+			inline-size: 100%;
+			block-size: auto;
+		}
 	}
 
 	.source {
-		list-style: none;
+		position: absolute;
+		inset-block-start: var(--space-6);
+		inset-inline-start: calc(-1 * var(--space-4));
+		inline-size: 46%;
+		max-block-size: calc(100% - 2 * var(--space-6));
 		margin: 0;
-		padding: 0;
+		padding: var(--space-3) var(--space-2);
+		list-style: none;
+		overflow: auto;
+		background: color-mix(in srgb, var(--vellum) 84%, transparent);
+		-webkit-backdrop-filter: blur(3px);
+		backdrop-filter: blur(3px);
+		border: 1px solid var(--edge);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--shadow-overlay);
 		font-family: var(--font-mono);
 		font-size: 0.8125rem;
 		line-height: 1.55;
-		overflow-x: auto;
+		/* The one orchestrated moment: on load the source sheet slides into
+		   place over its drawing. Reduced motion skips it. */
+		animation: lay-sheet var(--dur-sheet) var(--ease-sheet) 120ms both;
+	}
+
+	@keyframes lay-sheet {
+		from {
+			opacity: 0;
+			transform: translate(-24px, 10px) rotate(-1deg);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
 	}
 
 	.ln {
@@ -432,31 +519,31 @@
 		min-block-size: 24px;
 		gap: var(--space-3);
 		inline-size: 100%;
+		padding-inline: var(--space-2);
+		border-radius: 5px;
 		text-align: start;
-		padding-inline: var(--space-1);
 		white-space: pre;
 
 		&.on,
 		&:focus-visible {
-			background: var(--bg);
+			background: var(--mark);
+			color: var(--mark-ink);
 		}
 
 		& .n {
 			min-inline-size: 2ch;
 			text-align: end;
-			color: var(--ink-mute);
+			color: var(--ink-faint);
 			font-variant-numeric: tabular-nums;
+		}
+
+		&.on .n {
+			color: var(--mark-ink);
 		}
 
 		& code {
 			font-size: inherit;
 		}
-	}
-
-	.drawing :global(svg) {
-		display: block;
-		inline-size: 100%;
-		block-size: auto;
 	}
 
 	.drawing :global(figure),
@@ -467,6 +554,14 @@
 	.drawing :global(figcaption),
 	.figure-body :global(figure > figcaption) {
 		display: none;
+	}
+
+	.inset {
+		margin: 0;
+		padding: var(--space-6);
+		background: var(--wash);
+		border: 1px solid var(--edge);
+		border-radius: var(--radius-md);
 	}
 
 	.netlist .table-caption {
@@ -481,25 +576,72 @@
 	}
 
 	.note {
+		margin-block-end: 0;
 		font-size: var(--text-sm);
 		color: var(--ink-mute);
 	}
 
 	.svg-out {
-		margin: 0;
-		max-block-size: 420px;
+		max-block-size: 520px;
 		overflow: auto;
 		font-size: 0.8125rem;
 		white-space: pre-wrap;
 		overflow-wrap: anywhere;
 	}
 
-	/* ---------- What it draws ---------- */
+	.traced figcaption {
+		margin-block-start: var(--space-3);
+		font-size: var(--text-sm);
+		color: var(--ink-mute);
+	}
+
+	/* ---------- Sections below the fold ---------- */
+	section {
+		margin-block-start: var(--space-16);
+	}
+
+	h2 {
+		font-size: var(--text-lg);
+		margin-block-end: var(--space-2);
+	}
+
+	.section-lede {
+		margin: 0 0 var(--space-6);
+		max-inline-size: var(--measure);
+		color: var(--ink-mute);
+	}
+
+	.triple {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: var(--space-6);
+
+		& .figure {
+			margin: 0;
+		}
+
+		& figcaption b {
+			display: block;
+		}
+
+		& .line {
+			display: block;
+			margin-block-start: var(--space-1);
+			font-size: 0.8125rem;
+			color: var(--ink);
+			overflow-wrap: anywhere;
+		}
+	}
+
 	.pair {
 		display: grid;
 		grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
 		gap: var(--space-6);
 		margin-block-start: var(--space-6);
+
+		& .figure {
+			margin: 0;
+		}
 	}
 
 	.compare {
@@ -508,8 +650,11 @@
 		gap: var(--space-4);
 
 		& .tag {
+			display: inline-block;
 			margin: 0 0 var(--space-1);
-			font-stretch: var(--width-table);
+			padding: 0 0.4em;
+			border-radius: var(--radius-tag);
+			background: var(--bg);
 			font-size: var(--text-sm);
 			font-weight: 700;
 		}
@@ -521,71 +666,45 @@
 		block-size: auto;
 	}
 
-	.triple {
-		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: var(--space-6);
-
-		& .line {
-			display: block;
-			margin-block-start: var(--space-1);
-			font-size: 0.8125rem;
-			color: var(--ink);
-			overflow-wrap: anywhere;
-		}
-	}
-
 	.glance {
 		max-inline-size: 760px;
 
 		& th {
 			inline-size: 12rem;
-			font-weight: 600;
 		}
 	}
 
-	/* ---------- Install, under Figure 1 ---------- */
-	.install {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-4);
-		margin-block: var(--space-4);
-	}
-
-	.command {
-		display: flex;
-		align-items: center;
-		gap: var(--space-4);
-		padding: var(--space-2) var(--space-4);
-		background: var(--wash);
-
-		& code {
-			font-size: 0.9375rem;
-		}
-	}
-
-	.copy {
-		font-stretch: var(--width-table);
-		font-weight: 600;
-		color: var(--accent);
-	}
-
-	.actions {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-3);
-		margin-block: var(--space-6) var(--space-4);
-	}
-
-	@media (max-width: 900px) {
-		.split,
-		.pair {
+	@media (max-width: 960px) {
+		.hero {
 			grid-template-columns: minmax(0, 1fr);
-			gap: var(--space-6);
+			align-items: start;
 		}
 
-		.triple {
+		/* On a narrow screen the source sheet lies across the top of the
+		   drawing instead of beside it. */
+		.overlay {
+			min-block-size: 0;
+		}
+
+		.drawing {
+			padding: var(--space-4);
+			margin-block-start: -2.5rem;
+			padding-block-start: var(--space-12);
+			order: 2;
+		}
+
+		.source {
+			position: relative;
+			inset: auto;
+			inline-size: auto;
+			max-block-size: 360px;
+			margin-inline: var(--space-2);
+			order: 1;
+			z-index: 1;
+		}
+
+		.triple,
+		.pair {
 			grid-template-columns: minmax(0, 1fr);
 		}
 	}

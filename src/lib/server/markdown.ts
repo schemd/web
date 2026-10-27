@@ -237,9 +237,7 @@ export function renderMarkdownDoc(source: string, docSlug: string): RenderedDoc 
 		} = extractSchemdFences(match[2]!, docSlug, id, attrs['example-title'] ?? title, counter);
 		examples.push(...exs);
 
-		out.push(
-			`<h2 id="${id}"><span class="doc-num">${sections.length}</span>${escapeHtml(title)}</h2>`
-		);
+		out.push(`<h2 id="${id}">${escapeHtml(title)}</h2>`);
 		out.push(renderProse(markdown, figures));
 	}
 

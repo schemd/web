@@ -207,7 +207,6 @@
 		margin: 0 0 var(--space-1);
 		color: var(--ink);
 		font: 600 0.7rem/1 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 	}
 	h1 {
@@ -236,13 +235,11 @@
 	.tally dt {
 		color: var(--ink-mute);
 		font: 500 0.66rem/1 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 	}
 	.tally dd {
 		margin: var(--space-2) 0 0;
 		font: 600 1.6rem/1 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 	}
 	.tally .ok {
@@ -284,7 +281,6 @@
 	}
 	.count {
 		font: 600 1rem/1 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 	}
 	.code {
@@ -293,7 +289,6 @@
 	}
 	.severity {
 		font: 500 0.66rem/1.4 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 	}
 	.severity.error {
@@ -328,7 +323,6 @@
 	.flagged h3 a {
 		color: var(--ink-mute);
 		font: 500 0.7rem/1 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 	}
 	.flagged ul {
@@ -348,12 +342,10 @@
 	.line {
 		color: var(--ink-faint);
 		font: 500 0.72rem/1.4 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 	}
 	.open {
 		font: 500 0.7rem/1 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 	}
 	.clean {

@@ -318,7 +318,6 @@
 
 		& figcaption {
 			font: var(--text-xs) / 1.4 var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
@@ -360,7 +359,6 @@
 
 	text {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: 7px;
 		fill: var(--ink-faint);
@@ -409,7 +407,6 @@
 
 		& span {
 			font: var(--text-xs) / 1.4 var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}

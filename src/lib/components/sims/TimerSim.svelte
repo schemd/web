@@ -474,7 +474,6 @@
 		padding: 0.35rem 0.75rem;
 		border: 0;
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--ink-mute);

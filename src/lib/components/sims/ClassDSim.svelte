@@ -440,7 +440,6 @@
 
 		& span {
 			font: var(--text-xs) / 1.4 var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
@@ -469,7 +468,6 @@
 		margin: 0;
 		max-inline-size: 34ch;
 		font: var(--text-xs) / 1.5 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 	}

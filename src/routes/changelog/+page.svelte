@@ -405,7 +405,6 @@
 	.tick {
 		fill: var(--ink-faint);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: 9px;
 		text-anchor: middle;
@@ -414,7 +413,6 @@
 	.peak {
 		fill: var(--ink-mute);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: 10px;
 	}
@@ -491,7 +489,6 @@
 
 		& h2 {
 			font-family: var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			font-size: var(--text-md);
 		}
@@ -500,7 +497,6 @@
 	.latest-tag {
 		font-size: var(--text-2xs);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		color: var(--bg);
 		background: var(--ink);
@@ -528,7 +524,6 @@
 		display: flex;
 		gap: var(--space-4);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		border-block-start: 1px solid var(--line);

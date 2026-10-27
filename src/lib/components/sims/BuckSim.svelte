@@ -544,7 +544,6 @@
 
 		& strong {
 			font: 600 var(--text-lg) / 1.1 var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			color: var(--ink);
 		}

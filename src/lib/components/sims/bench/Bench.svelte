@@ -104,7 +104,6 @@
 		align-items: center;
 		gap: var(--space-2);
 		font: var(--text-sm) / 1.3 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		color: var(--ink);
 
@@ -129,7 +128,6 @@
 		margin: 0;
 		padding: var(--space-2) var(--space-4) var(--space-3);
 		font: var(--text-xs) / 1.5 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		color: var(--ink-mute);
 	}

@@ -231,7 +231,10 @@ const MAX_MODERN_MATH_FONTS = 320 * 1024;
    the zone rulers, glow styles and front-page prose the datasheet dropped. */
 /* Bilingual message calls, locale hooks and the gallery increase emitted files
    from 1,466.5 to 1,493.2 KiB; the catalogs themselves remain server data. */
-const MAX_CLIENT_OUTPUT = 1_500 * 1024;
+/* Lowered to 1,365 for the vellum redesign, measured 1,361.0 KiB. Atkinson
+   Hyperlegible Next and Mono, both variable on weight, are 51.7 KB against the
+   datasheet's 185.5 KB of Archivo and Commit Mono. */
+const MAX_CLIENT_OUTPUT = 1_365 * 1024;
 /*
  * Eleven laboratories, each downloaded only when it is opened. Two of them are
  * manifests rather than components, so the shell's lazy registry spans both
