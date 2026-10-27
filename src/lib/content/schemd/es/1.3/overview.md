@@ -1,4 +1,4 @@
-<!-- schemd-doc: id=overview; label=Inicio rápido; title=Primeros pasos con schemd 1.3; summary=Compile diagramas de ingeniería de varios dominios en SVG con trazado de conexiones, determinista y accesible, e inspeccione el circuito que representan.; category=Primeros pasos; order=10 -->
+<!-- schemd-doc: id=overview; label=Inicio rápido; title=Primeros pasos con schemd 1.3.1; summary=Compile diagramas de ingeniería de varios dominios en SVG con trazado de conexiones, determinista y accesible, e inspeccione el circuito que representan.; category=Primeros pasos; order=10 -->
 
 `schemd` se pronuncia «skemd» (`/skɛmd/`). La versión 1.3 especifica los datos que acepta cada tipo de componente en una nueva entrada, `@schemd/core/schema`, y este sitio genera a partir de ella una [ficha técnica](/components) para cada tipo. Conserva las etiquetas opcionales de 1.2, de modo que una unión o un punto de prueba puede mostrar solo su designador, y todo lo que añadió 1.1: [`fit=wires`](/docs/1.3/fit) alinea las líneas de un CNOT con sus cúbits y los pines de un circuito integrado con los cables que los alimentan, y una alineación permite colocar un [terminal](/docs/1.3/placement#terminals) a la altura de otro componente. La base sigue siendo el compilador 1.0. Cada red se traza como un único árbol y los cables se unen en un componente de [unión](/docs/1.3/nets). El texto se mide a partir de los avances de la fuente y todos los problemas de un documento se notifican a la vez, con sus [columnas](/docs/1.3/diagnostics).
 
@@ -57,9 +57,9 @@ Las dos uniones, `NB` y `NF`, no llevan etiquetas, por lo que cada una muestra s
 
 <!-- /schemd-section -->
 
-<!-- schemd-section: id=migrate; eyebrow=02 / Migración; title=Pase a 1.3 sin volver a dibujar; example-title=Two-pole RC ladder; example-summary=Dos secciones RC en serie; las uniones y la tierra no llevan etiqueta. -->
+<!-- schemd-section: id=migrate; eyebrow=02 / Migración; title=Pase al esquema de 1.3; example-title=Two-pole RC ladder; example-summary=Dos secciones RC en serie; las uniones y la tierra no llevan etiqueta. -->
 
-1.3 no añade sintaxis ni cambia ningún dibujo. Todos los documentos de 1.2 se compilan con los mismos bytes: el corpus de 270 documentos del compilador es idéntico byte por byte al de 1.2.0 y la ruta de compilación conserva exactamente su tamaño.
+1.3.0 no añadió sintaxis ni cambió ningún dibujo. El parche 1.3.1 descrito más abajo corrige los símbolos de polaridad de las fuentes. En 1.3.0, todos los documentos de 1.2 se compilaban con los mismos bytes: el corpus de 270 documentos del compilador era idéntico byte por byte al de 1.2.0 y la ruta de compilación conservaba su tamaño.
 
 Lo que añade 1.3 es una descripción del lenguaje para las herramientas. `@schemd/core/schema` enumera todos los tipos de componentes con sus opciones, y para cada opción indica su tipo, los valores o el intervalo que acepta y su valor predeterminado:
 
@@ -100,6 +100,20 @@ C2.out -> G1.in #slate [ortho]
 ```
 
 Ambas uniones y la tierra se declaran sin etiquetas. Los valores que importan, las dos resistencias y las dos capacitancias, son las únicas etiquetas de la hoja.
+
+<!-- /schemd-section -->
+
+<!-- schemd-section: id=patch-1-3-1; title=1.3.1: interprete correctamente la polaridad de las fuentes -->
+
+La versión **1.3.1** corrige dibujos cuyas marcas de polaridad no coincidían con sus terminales. La gramática y el esquema de 1.3 no cambian, por lo que este parche comparte la documentación de 1.3.
+
+- La placa larga de una batería aparece ahora junto a `positive`; la corta, junto a `negative`. Las versiones anteriores dibujaban las placas al revés.
+- `voltage-dc`, `vcvs` y `ccvs` sitúan ahora `+` junto a `positive` y `−` junto a `negative`. Los signos permanecen verticales en todas las orientaciones.
+- `current-dc`, `vccs` y `cccs` dibujan ahora su flecha sobre el eje de los terminales, desde `positive` hacia `negative`. Así se sigue la convención de SPICE para la corriente positiva que atraviesa una fuente.
+
+Los puertos, los puertos de control de las fuentes dependientes, los límites y el trazado no se han movido. Los alias `in = negative` y `out = positive` no cambian. No hace falta editar el código ni las conexiones; vuelva a compilar los SVG guardados con **1.3.1 o posterior** para obtener los símbolos corregidos. Consulte las [convenciones de los terminales de las fuentes](/docs/1.3/component-reference#electrical) al interpretar dibujos anteriores.
+
+Las notas de migración anteriores describen el esquema añadido en 1.3.0; su comparación byte por byte se refiere a 1.3.0, antes de estas correcciones de dibujo.
 
 <!-- /schemd-section -->
 

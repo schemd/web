@@ -20,6 +20,8 @@ Every family that has a direction defaults to `orientation=right`. A node that l
 | `meter`                 | `voltmeter`, `ammeter`                                                                                             | `in`, `out`                                                                              |
 | `load`                  | `lamp`, `motor`, `speaker`, `buzzer`                                                                               | `in`, `out`                                                                              |
 
+In **1.3.1 and later**, a battery's long plate marks `positive`. Voltage sources (`voltage-dc`, `vcvs`, `ccvs`) place `+` at `positive` and `−` at `negative`; current-source arrows (`current-dc`, `vccs`, `cccs`) point from `positive` to `negative`, following SPICE's through-source convention. The source aliases are `in = negative` and `out = positive`. These drawings are corrected in every orientation; terminal coordinates and connections are unchanged. [Patch migration notes](/docs/1.3/overview#patch-1-3-1) explain how to update stored SVGs.
+
 ```schemd bounds="1040x430" title="Relay fan drive"
 connector:J7 "12 V" at (90, 150) #slate
 protection:FU7 "fuse" at (270, 150) #amber [type=fuse]

@@ -61,13 +61,15 @@
 	function pathFor(version: string): string {
 		if (inDocs) return docsTargetFor(version);
 		const parameter = page.params['version'];
-		if (parameter === undefined) return `/docs/${docLines[0]}/overview`;
+		/* A page without a version still needs to honour the chosen release;
+		   the server canonicalises its patch onto the matching docs line. */
+		if (parameter === undefined) return `/docs/${version}/overview`;
 		/* Shallow playground URI writes can lead the route snapshot by a tick. */
 		const { pathname, search, hash } = browser ? new URL(window.location.href) : page.url;
 		const swapped = pathname.replace(`/${parameter}`, `/${version}`);
 		const target =
 			swapped === pathname && !pathname.includes(`/${version}`)
-				? `/docs/${docLines[0]}/overview`
+				? `/docs/${version}/overview`
 				: swapped;
 		return `${target}${search}${hash}`;
 	}

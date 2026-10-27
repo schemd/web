@@ -258,7 +258,7 @@
 		}
 
 		&:disabled {
-			opacity: 0.5;
+			color: var(--ink-faint);
 			cursor: default;
 		}
 	}

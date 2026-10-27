@@ -466,7 +466,8 @@
 	.drawing {
 		display: grid;
 		align-items: center;
-		padding: var(--space-8) var(--space-8) var(--space-8) 40%;
+		/* Keep the complete drawing clear of the source sheet's 46% width. */
+		padding: var(--space-8) var(--space-8) var(--space-8) 48%;
 		background: var(--wash);
 		border: 1px solid var(--edge);
 		border-radius: var(--radius-md);

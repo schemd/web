@@ -17,10 +17,10 @@ The previous design, "Datasheet" (October 2026), read as distinctive but dated. 
 | Token             | Day       | Light table | Use                                                                    |
 | ----------------- | --------- | ----------- | ---------------------------------------------------------------------- |
 | `--table`         | `#DCE2E9` | `#1A2230`   | the drafting table behind every sheet                                  |
-| `--bg` vellum     | `#F7F9FB` | `#222C3B`   | the sheet; drawn at 86 % opacity with a light blur                     |
+| `--bg` vellum     | `#F6F8FB` | `#252F3D`   | the sheet; opaque inset matching the 88 % vellum sheet                 |
 | `--ink`           | `#14213D` | `#E6ECF4`   | drafting ink: text and the drawings' own fallback colour               |
 | `--ink-mute`      | `#55606F` | `#A9B4C3`   | graphite: secondary text, captions                                     |
-| `--line`          | `#CDD5DF` | `#364357`   | the edge of a sheet, rules inside it                                   |
+| `--line`          | `#CDD5DF` | `#3A4659`   | the edge of a sheet, rules inside it                                   |
 | `--accent` pencil | `#2348C8` | `#8FB0FF`   | links and the focus ring: the blue pencil a checker writes with        |
 | `--mark`          | `#FFE45C` | `#E8C93A`   | the checker's highlighter: the current page, a traced net, a selection |
 
@@ -78,7 +78,7 @@ Content is left aligned inside its sheet. The page sheet is 1,240 px at most wit
 ### Principles
 
 1. **One bold element: the traced figure.** On the front page the source is printed on a sheet of vellum laid over its own drawing. Hovering or focusing a line marks its wire beneath with the highlighter. On load, and only then, the source sheet slides into place once.
-2. **Layers mean something.** A new sheet appears only when the reader opens something (the palette, a menu, the docs contents on a phone) and slides on top of the page. The release diff is literally two sheets over each other.
+2. **Layers mean something.** A new sheet appears only when the reader opens something (the palette, a menu, the docs contents on a phone) and slides on top of the page. The release diff keeps its two revisions side by side so both remain readable.
 3. **Yellow means checked or current.** The current page in the navigation, a traced net, a search match and text selection. Nothing else is yellow.
 4. **Motion answers actions.** Sheets slide when opened, the drawing redraws when the source changes. No scroll-triggered entrances.
 5. **Words name what a user does.** "Open the playground", "Copy SVG". Errors say what to change.
@@ -91,13 +91,14 @@ Checked against the frontend-design skill's list:
 - _Near-black with one acid accent_: the Light table mode is a slate navy (#1A2230), not near-black, and its yellow is a highlighter with a single meaning.
 - _Broadsheet hairlines, zero radius, dense columns_: replaced by sheets with depth and generous padding. The datasheet's ruled tables become quiet tables inside a sheet.
 - _SaaS card kit_: the real risk for a layered design. Avoided by keeping sheets few and large (one page sheet, never a grid of identical cards), by giving each level its own radius and shadow, and by never chopping lists into cards. Lists stay lists and tables.
-- _Glassmorphism_: frosted glass is a 2021 trend. Vellum is matte: high opacity (86 %), a light 14 px blur, no white edge highlight, no gradient, no glow.
+- _Glassmorphism_: frosted glass is a 2021 trend. Vellum is matte: high opacity (88 %), a light 14 px blur, no white edge highlight, no gradient, no glow.
 - _Template chrome_: no all-caps eyebrows, no dot-joined meta strings, no monospace small labels (the mono is only for source), no arrows appended to links, no section numbers where the content is not a sequence.
 
 First draft changes after this review: the first plan used a frosted white glass with a 1 px white top highlight and 40 px blur; that is the glassmorphism default, so the sheet became a matte, mostly opaque vellum. It also numbered home-page sections; they are not a sequence, so the numbers were dropped.
 
 ## Notes for later passes
 
-- Not built yet: the release diff as two sheets laid over each other (principle 2). It still shows the two revisions side by side.
+- A superimposed release diff is an experiment for a later change, outside this PR. The existing side-by-side comparison remains available.
+- The source sheet may overlap the drawing inset, but must leave the full SVG unobstructed. Its horizontal layout is checked at 1,440 px and 1,024 px; phones stack source above drawing.
 
 - Tried and rejected: "The Sheet" (graphite, copper, zone rulers), 2026-10-17; "Datasheet" (white, black, red, Archivo), 2026-10-25, which the owner judged distinctive but old-looking.

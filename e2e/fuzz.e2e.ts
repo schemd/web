@@ -248,15 +248,23 @@ async function walk(page: Page, path: string, seed: number): Promise<void> {
 				}
 			}
 		} catch (error) {
-			/* An element that moved, closed, or is covered is not a bug; the walk
-			 * picks another. A crash is caught by the listeners, not here. */
-			if (
-				!(error instanceof Error) ||
-				!/Timeout|detached|not attached|intercepts|outside of the viewport|not an <input>|Target page|selectOption|not visible/i.test(
-					error.message
-				)
-			) {
-				throw error;
+			/* A language form or version switch can replace the document after
+			 * its initiating action resolves. Wait for that navigation before
+			 * inspecting its DOM; keep browser error listeners active throughout. */
+			if (error instanceof Error && error.message.includes('Execution context was destroyed')) {
+				trail.push('(document replaced during navigation; waiting for load)');
+				await page.waitForLoadState('load');
+			} else {
+				/* An element that moved, closed, or is covered is not a bug; the walk
+				 * picks another. A crash is caught by the listeners, not here. */
+				if (
+					!(error instanceof Error) ||
+					!/Timeout|detached|not attached|intercepts|outside of the viewport|not an <input>|Target page|selectOption|not visible/i.test(
+						error.message
+					)
+				) {
+					throw error;
+				}
 			}
 		}
 		await page.waitForTimeout(40);
