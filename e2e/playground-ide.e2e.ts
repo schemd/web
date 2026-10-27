@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { failOnClientErrors } from './support';
+import { encodeWorkspaceState } from '../src/lib/state-uri';
 
 test.beforeEach(async ({ page }) => {
 	failOnClientErrors(page);
@@ -170,6 +171,13 @@ test('opening a shared workspace does not overwrite an unrelated recovery draft'
 	const local = 'port:LOCAL "private recovery" at (80, 80) #blue';
 	await editor.fill(local);
 	await page.keyboard.press('Control+s');
+	const shared = 'port:SHARED "read-only arrival" at (120, 100) #cyan';
+	const sharedUrl = new URL(page.url());
+	sharedUrl.searchParams.set('code', encodeWorkspaceState(shared));
+	/* Leave the local editor before capturing its saved draft. Editing it to
+	 * generate a link queues an autosave that can race the storage assertion;
+	 * an arriving external share must be independent of that local session. */
+	await page.goto('/templates');
 
 	/*
 	 * Recovery is keyed per compiler version and per tab
@@ -185,16 +193,7 @@ test('opening a shared workspace does not overwrite an unrelated recovery draft'
 	expect(stored).not.toBeNull();
 	expect(stored).toContain('private recovery');
 
-	const shared = 'port:SHARED "read-only arrival" at (120, 100) #cyan';
-	await editor.fill(shared);
-	await expect(page).toHaveURL(/[?&]code=/);
-	const sharedUrl = page.url();
-	await page.evaluate(([key, value]) => localStorage.setItem(key!, value!), [
-		slot!,
-		stored!
-	] as const);
-
-	await page.goto(sharedUrl);
+	await page.goto(sharedUrl.href);
 	await expect(editor).toHaveValue(shared);
 	await expect(page.getByText('Shared document; save it yourself')).toBeVisible();
 	await page.waitForTimeout(700);
