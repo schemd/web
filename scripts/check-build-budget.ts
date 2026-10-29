@@ -234,7 +234,10 @@ const MAX_MODERN_MATH_FONTS = 320 * 1024;
 /* Lowered to 1,365 for the vellum redesign, measured 1,361.0 KiB. Atkinson
    Hyperlegible Next and Mono, both variable on weight, are 51.7 KB against the
    datasheet's 185.5 KB of Archivo and Commit Mono. */
-const MAX_CLIENT_OUTPUT = 1_365 * 1024;
+/* Lowered to 1,355 for the vellum brand set, measured 1,351.2 KiB. The icons
+   are flat drawings now and shrink from 68.0 KB to 20.2 KB; the social card,
+   a real compiled figure, grows from 62.9 KB to 97.3 KB. */
+const MAX_CLIENT_OUTPUT = 1_355 * 1024;
 /*
  * Eleven laboratories, each downloaded only when it is opened. Two of them are
  * manifests rather than components, so the shell's lazy registry spans both
