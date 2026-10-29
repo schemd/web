@@ -83,6 +83,10 @@ Content is left aligned inside its sheet. The page sheet is 1,240 px at most wit
 4. **Motion answers actions.** Sheets slide when opened, the drawing redraws when the source changes. No scroll-triggered entrances.
 5. **Words name what a user does.** "Open the playground", "Copy SVG". Errors say what to change.
 
+### Mark
+
+The mark is one net routed as a lowercase s, with a terminal at each end and its middle run yellow-lined: the letter, a wire and the checker's highlighter in one drawing. It sits on a sheet-coloured tile with the sheet radius. Two other concepts were drawn and set aside, a junction on a stack of two sheets and a bare junction circled in highlighter, because both read as the letter T at 16 px. The files, colours and rules are in `src/lib/assets/brand/README.md`; the site draws the mark with its own tokens in `src/lib/components/Mark.svelte`.
+
 ## Review against the generic defaults
 
 Checked against the frontend-design skill's list:

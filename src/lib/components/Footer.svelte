@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Mark from '#lib/components/Mark.svelte';
 	import { useLanguage } from '#lib/i18n/index.ts';
 	const { t, href } = useLanguage();
 
@@ -69,7 +70,7 @@
 <footer class="end page">
 	<div class="columns">
 		<div class="about">
-			<p class="name">{t('schemd')}</p>
+			<p class="name"><Mark size={26} />{t('schemd')}</p>
 			<p>
 				{t(
 					'A text-to-schematic compiler with no dependencies. Every drawing on this site is compiled by the release it documents.'
@@ -124,6 +125,9 @@
 	}
 
 	.name {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
 		margin: 0 0 var(--space-2);
 		font-weight: 800;
 		font-size: var(--text-md);
