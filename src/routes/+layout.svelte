@@ -10,6 +10,7 @@
 	import LanguageSelect from '#lib/components/LanguageSelect.svelte';
 	import Telemetry from '#lib/components/Telemetry.svelte';
 	import Footer from '#lib/components/Footer.svelte';
+	import Mark from '#lib/components/Mark.svelte';
 	import {
 		BLUEPRINT_MODES,
 		BLUEPRINT_LABELS,
@@ -67,7 +68,9 @@
 <a class="skip-link" href="#main">{t('Skip to content')}</a>
 
 <header class="nav-sheet vellum">
-	<a class="wordmark" href={href('/')} aria-label={t('schemd home')}>{t('schemd')}</a>
+	<a class="wordmark" href={href('/')} aria-label={t('schemd home')}
+		><Mark size={28} />{t('schemd')}</a
+	>
 	<nav class="nav-links" aria-label={t('Primary')}>
 		{#each nav as item (item.href)}
 			<a href={href(item.href)} aria-current={pathname.startsWith(item.match) ? 'page' : undefined}>
@@ -191,6 +194,9 @@
 	}
 
 	.wordmark {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
 		font-weight: 800;
 		font-size: 1.375rem;
 		letter-spacing: -0.035em;
