@@ -1,41 +1,34 @@
 /*
- * The datasheet's two typefaces, self-hosted (the CSP allows fonts from 'self'
- * only) and cut to the Latin subset, which covers English and Spanish. Both
- * are SIL OFL 1.1; the licences sit beside the files.
+ * The vellum design's one family in two cuts, self-hosted (the CSP allows
+ * fonts from 'self' only) and cut to the Latin subset, which covers English
+ * and Spanish. Both are SIL OFL 1.1; the licences sit beside the files.
  *
- *   Archivo     — everything that is not source, used across its width axis:
- *                 extended for the wordmark, condensed for headings and
- *                 tables, normal for prose
- *   Commit Mono — source listings and the editor
+ *   Atkinson Hyperlegible Next — everything that is not source
+ *   Atkinson Hyperlegible Mono — source listings and the editor
  *
- * Archivo ships no italic here: it would double the font's weight for the
- * handful of italic words the site sets, and the browser slants the roman.
+ * Both are variable on weight (200 to 800). Neither ships an italic here: it
+ * would double the download for the few italic words the site sets, and the
+ * browser slants the roman.
  */
 
 @font-face {
-	font-family: 'Archivo Variable';
+	font-family: 'Atkinson Hyperlegible Next';
 	font-style: normal;
 	font-display: swap;
-	font-weight: 100 900;
-	font-stretch: 62% 125%;
-	src: url('./archivo-latin-wdth-normal.woff2') format('woff2-variations');
+	font-weight: 200 800;
+	src: url('./atkinson-hyperlegible-next-latin-wght-normal.woff2') format('woff2-variations');
 	unicode-range:
 		U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
 		U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-	font-family: 'Commit Mono';
+	font-family: 'Atkinson Hyperlegible Mono';
 	font-style: normal;
 	font-display: swap;
-	font-weight: 400;
-	src: url('./commit-mono-latin-400-normal.woff2') format('woff2');
-}
-
-@font-face {
-	font-family: 'Commit Mono';
-	font-style: normal;
-	font-display: swap;
-	font-weight: 700;
-	src: url('./commit-mono-latin-700-normal.woff2') format('woff2');
+	font-weight: 200 800;
+	src: url('./atkinson-hyperlegible-mono-latin-wght-normal.woff2') format('woff2-variations');
+	unicode-range:
+		U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+		U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }

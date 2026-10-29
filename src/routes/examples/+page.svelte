@@ -145,7 +145,6 @@
 	.open {
 		flex: none;
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink);

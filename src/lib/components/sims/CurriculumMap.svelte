@@ -179,7 +179,6 @@
 			padding: 0;
 			list-style: none;
 			font: var(--text-xs) / 1.4 var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
@@ -223,7 +222,9 @@
 	.map-stage {
 		position: relative;
 		padding: clamp(var(--space-2), 2vw, var(--space-5));
-		border: 1px solid var(--line-strong);
+		background: var(--wash);
+		border: 1px solid var(--edge);
+		border-radius: var(--radius-md);
 		overflow-x: auto;
 		overflow-y: hidden;
 		overscroll-behavior-inline: contain;
@@ -323,7 +324,6 @@
 
 		& .state {
 			font: var(--text-xs) / 1.4 var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			color: var(--accent);
 		}

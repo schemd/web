@@ -646,7 +646,6 @@
 
 	.step-count {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-lg);
 		color: var(--ink);
@@ -658,7 +657,6 @@
 		border: 1px solid var(--line);
 		background: var(--bg-inset);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--ink-mute);
@@ -711,7 +709,6 @@
 		inline-size: 1.6rem;
 		block-size: 1.6rem;
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--bg);
@@ -746,7 +743,6 @@
 	.step-state,
 	.diagnosis-state {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-faint);

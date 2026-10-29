@@ -66,8 +66,9 @@
 	const COLLAPSE_THRESHOLD = 80;
 
 	const gridTemplate = $derived.by(() => {
-		const leftCol = left ? (leftOpen ? `${leftWidth}px 1px` : '0px 1px') : '';
-		const rightCol = right ? (rightOpen ? `1px ${rightWidth}px` : '1px 0px') : '';
+		/* Each pane is a sheet; the handles are the strips of table between them. */
+		const leftCol = left ? (leftOpen ? `${leftWidth}px 12px` : '0px 12px') : '';
+		const rightCol = right ? (rightOpen ? `12px ${rightWidth}px` : '12px 0px') : '';
 		return `${leftCol} minmax(0, 1fr) ${rightCol}`.trim();
 	});
 
@@ -200,9 +201,12 @@
 </footer>
 
 <style>
+	/* The panes lie on the table as three sheets, with the status strip as a
+	   fourth along the bottom. */
 	.workspace {
 		display: grid;
-		block-size: calc(100vh - var(--header-h) - var(--statusbar-h));
+		block-size: calc(100vh - var(--header-h) - var(--statusbar-h) - 24px);
+		padding-inline: var(--space-3);
 		overflow: hidden;
 
 		&.dragging {
@@ -217,11 +221,13 @@
 		display: grid;
 		grid-template-rows: minmax(0, 1fr);
 		background: var(--bg);
+		border: 1px solid var(--edge);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--shadow-sheet);
 	}
 
 	.pane-left,
 	.pane-right {
-		background: var(--bg-raised);
 		transition: opacity var(--dur-fast) var(--ease-precise);
 
 		&[data-open='false'] {
@@ -246,14 +252,16 @@
 		cursor: col-resize;
 		touch-action: none;
 
-		/* A 24 px control overlays the 1 px structural grid track. */
+		/* A 24 px control over the 12 px strip of table, with a grip in the
+		   middle that darkens when it is used. */
 		&::before {
 			content: '';
 			position: absolute;
-			inset-block: 0;
-			inset-inline-start: calc(50% - 0.5px);
-			inline-size: 1px;
-			background: var(--line);
+			inset-block: calc(50% - 20px);
+			inset-inline-start: calc(50% - 2px);
+			inline-size: 4px;
+			border-radius: 2px;
+			background: var(--line-strong);
 		}
 
 		&::after {
@@ -274,21 +282,26 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-4);
+		inline-size: calc(100% - 2 * var(--space-3));
 		block-size: var(--statusbar-h);
-		padding-inline: var(--space-4);
+		margin: var(--space-3) auto;
+		padding-inline: var(--space-3) var(--space-4);
 		background: var(--bg);
-		border-block-start: 2px solid var(--ink);
-		font-stretch: var(--width-table);
+		border: 1px solid var(--edge);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--shadow-sheet);
 		font-size: var(--text-sm);
 
 		& > button {
+			padding: 0.2rem 0.6rem;
+			border-radius: 6px;
 			font-weight: 600;
 			color: var(--ink-mute);
-			border-block-end: 2px solid transparent;
 
 			&[aria-pressed='true'] {
 				color: var(--ink);
-				border-block-end-color: var(--ink);
+				background: var(--wash);
+				box-shadow: inset 0 0 0 1px var(--line);
 			}
 
 			&:hover {
@@ -329,9 +342,12 @@
 			text-overflow: ellipsis;
 		}
 
-		& [data-tone='accent'] dd,
-		& [data-tone='danger'] dd {
+		& [data-tone='accent'] dd {
 			color: var(--accent);
+		}
+
+		& [data-tone='danger'] dd {
+			color: var(--danger);
 		}
 
 		& [data-tone='ok'] dd {
@@ -365,6 +381,7 @@
 		.workspace {
 			display: flex;
 			flex-direction: column;
+			gap: var(--space-3);
 			block-size: auto;
 			overflow: visible;
 		}

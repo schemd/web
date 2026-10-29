@@ -20,6 +20,8 @@ Todas las familias que tienen dirección utilizan `orientation=right` como valor
 | `meter`                 | `voltmeter`, `ammeter`                                                                                             | `in`, `out`                                                                                    |
 | `load`                  | `lamp`, `motor`, `speaker`, `buzzer`                                                                               | `in`, `out`                                                                                    |
 
+En **1.3.1 y posteriores**, la placa larga de una batería marca `positive`. Las fuentes de tensión (`voltage-dc`, `vcvs`, `ccvs`) sitúan `+` en `positive` y `−` en `negative`; las flechas de las fuentes de corriente (`current-dc`, `vccs`, `cccs`) apuntan desde `positive` hacia `negative`, según la convención de SPICE para la corriente que atraviesa una fuente. Los alias son `in = negative` y `out = positive`. Los dibujos se corrigen en todas las orientaciones; las coordenadas de los terminales y las conexiones no cambian. Las [notas del parche](/docs/1.3/overview#patch-1-3-1) explican cómo actualizar los SVG guardados.
+
 ```schemd bounds="1040x430" title="Relay fan drive"
 connector:J7 "12 V" at (90, 150) #slate
 protection:FU7 "fuse" at (270, 150) #amber [type=fuse]

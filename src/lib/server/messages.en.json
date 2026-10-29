@@ -51,7 +51,9 @@
 	"{0} -> X2_{1}.in2 #slate [ortho]": ["simulations"],
 	"{0} — schemd v{1}": ["docs"],
 	"{0} —[{1}]→ blocked": ["simulations"],
-	"{0} :is({1}) .schematic-trace{stroke-width:2.6}": ["home"],
+	"{0} :is({1}) .schematic-trace{stroke-width:2.6;filter:drop-shadow(0 0 2px var(--mark)) drop-shadow(0 0 3px var(--mark))}": [
+		"home"
+	],
 	"{0} · schemd simulation lab": ["simulations"],
 	"{0} · schemd v{1} docs": ["docs"],
 	"{0} ({1}) added": ["global"],
@@ -157,11 +159,10 @@
 	"{0}^{m_{{1}}}quad {2}": ["simulations"],
 	"{0}=operatorname{logic}!left({1} ight);left({2},mathrm{V} ight)": ["simulations"],
 	"{0}at ({1}, {2}) {3}": ["global"],
-	"{0}px 1px": ["global"],
+	"{0}px 12px": ["global"],
 	"{0}quad f_c={1}": ["simulations"],
 	"{0}quad X_{q_{{1}}}": ["simulations"],
 	"⟨q₀ ⊕ q₁⟩ = 0": ["simulations"],
-	"@schemd/core on npm (opens in a new tab)": ["global"],
 	"/ day": ["downloads"],
 	"/skɛmd/": ["global"],
 	"\\delta : S \\times \\Sigma \\rightarrow S \\;\\cdot\\; (s, e) \\mapsto s_{\\text{next}} \\text{ if guard}(e)": [
@@ -197,7 +198,7 @@
 	"<figure class=\"doc-example\" data-example=\"{0}\">": ["global"],
 	"<figure class=\"schematic-frame\" role=\"group\" aria-label=\"{0}\"": ["global"],
 	"<figure class=\"schematic-frame\">": ["global"],
-	"<h2 id=\"{0}\"><span class=\"doc-num\">{1}</span>{2}</h2>": ["global"],
+	"<h2 id=\"{0}\">{1}</h2>": ["global"],
 	"<iframe src=\"{0}\" title=\"{1}\" width=\"{2}\" height=\"{3}\" loading=\"lazy\" style=\"border:0;max-inline-size:100%\"></iframe>": [
 		"playground"
 	],
@@ -316,7 +317,7 @@
 	"$Z_L: 5\\ \\Omega$–$5\\ \\mathrm{k\\Omega}$": ["simulations"],
 	"0.00 s": ["simulations"],
 	"0.000 + 0.000i": ["simulations"],
-	"0px 1px": ["global"],
+	"0px 12px": ["global"],
 	"0x{0} {1}": ["simulations"],
 	"1-bit quantizer, clocked": ["simulations"],
 	"1.00 kHz": ["simulations"],
@@ -333,9 +334,9 @@
 	"100 kHz": ["simulations"],
 	"100.00 nF": ["simulations"],
 	"12 volts to 5 volts": ["simulations"],
+	"12px {0}px": ["global"],
+	"12px 0px": ["global"],
 	"16× XOR + 16× AND": ["simulations"],
-	"1px {0}px": ["global"],
-	"1px 0px": ["global"],
 	"1st/2nd-order ΔΣ modulator + FFT": ["simulations"],
 	"2 ancilla syndrome bits": ["simulations"],
 	"2× Hadamard on the control": ["simulations"],
@@ -706,7 +707,7 @@
 	"Bridge C": ["simulations"],
 	"Bridge R": ["simulations"],
 	"Bridges and dots": ["global"],
-	"Browse templates": ["home", "playground"],
+	"Browse templates": ["playground"],
 	"Buck converter": ["global"],
 	"Buck converter. Drag the value tags on the source, controller, switch, inductor, capacitor, and load; click a wire to clip a probe on.": [
 		"simulations"
@@ -1048,6 +1049,7 @@
 		"components"
 	],
 	"Day": ["global"],
+	"Day: dark ink on light vellum": ["global"],
 	"days": ["downloads"],
 	"DCM": ["simulations"],
 	"debt per sample": ["simulations"],
@@ -1337,6 +1339,7 @@
 		"simulations"
 	],
 	"Explorer": ["global"],
+	"Export": ["playground"],
 	"ext{CHSH witness}quad ext{local realism}le 2": ["simulations"],
 	"ext{framing }{0}quad ext{parity }{1}": ["simulations"],
 	"ext{initial pseudostate}": ["simulations"],
@@ -1387,8 +1390,6 @@
 	"fidelity unavailable": ["simulations"],
 	"field names one of the": ["simulations"],
 	"Fifty-fifty, because the control was in superposition.": ["simulations"],
-	"Figure": ["components", "docs", "home"],
-	"Figure 1.": ["components", "home"],
 	"Files": ["changelog"],
 	"Filter capacitance": ["simulations"],
 	"filter cutoff {0}": ["simulations"],
@@ -1803,6 +1804,8 @@
 		"templates"
 	],
 	"Lifelines and messages for a documentation deployment.": ["templates"],
+	"Light table": ["global"],
+	"Light table: light ink on lit vellum": ["global"],
 	"Limits of the model": ["simulations"],
 	"line": ["conformance"],
 	"Line": ["inspector"],
@@ -2003,8 +2006,6 @@
 	"near end": ["simulations"],
 	"Near-short the load": ["simulations"],
 	"near/far probes": ["simulations"],
-	"Negative": ["global"],
-	"Negative: white ink on black": ["global"],
 	"Neighbouring labs": ["simulations"],
 	"net": ["diff"],
 	"Net": ["home"],
@@ -2015,6 +2016,7 @@
 	"net not found": ["global"],
 	"Netlist": ["home"],
 	"Nets": ["inspector"],
+	"Nets of the drawing, from": ["home"],
 	"nets, compiled in": ["home"],
 	"Next": ["components", "docs", "global", "simulations"],
 	"Next lab:": ["simulations"],
@@ -2075,7 +2077,6 @@
 	"Now the target is not an eigenstate. The Bloch vector shortens: purity falls below $1$, and the control has become entangled with the target instead of simply rotating.": [
 		"simulations"
 	],
-	"npm": ["global"],
 	"npm could not be reached, so release figures may be out of date.": ["global"],
 	"Npm dist metadata unavailable in this snapshot.": ["changelog"],
 	"npm i @schemd/core": ["home"],
@@ -2209,8 +2210,6 @@
 	"Pages that teach a rule must break it. These diagrams declare the diagnostics they expect, so they never masquerade as defects.": [
 		"conformance"
 	],
-	"Paper": ["global"],
-	"Paper: black ink on white": ["global"],
 	"parallel $K_p,\\ K_i/s,\\ K_d s$ paths": ["simulations"],
 	"parallel K_p, K_i/s, K_d·s paths": ["simulations"],
 	"Parity": ["simulations"],
@@ -2279,6 +2278,7 @@
 	"Pin": ["components"],
 	"pin 3": ["simulations"],
 	"pin 3 output:": ["simulations"],
+	"Pin functions": ["components"],
 	"Pin names depend on the selected variant. Each drawing labels its own pins.": ["components"],
 	"Pins": ["components", "playground"],
 	"Place": ["inspector"],
@@ -2400,7 +2400,6 @@
 	"Publication not confirmed": ["changelog"],
 	"Publication unconfirmed": ["changelog"],
 	"Publish date not in the seed": ["changelog"],
-	"Published": ["global"],
 	"pulse in flight…": ["simulations"],
 	"pulse width {0}": ["simulations"],
 	"pulse-width modulated, plus or minus one": ["simulations"],
@@ -2915,10 +2914,6 @@
 		"simulations"
 	],
 	"Tab": ["global", "playground"],
-	"Table": ["components"],
-	"Table 1. Pin functions": ["components"],
-	"Table 2. Nets of the figure, from": ["home"],
-	"Table 2. Options": ["components"],
 	"TACH": ["simulations"],
 	"tachometer feedback inverted": ["simulations"],
 	"Tachometer feedback inverted": ["simulations"],
@@ -2942,7 +2937,6 @@
 	"terminal not exported": ["global"],
 	"Terminals": ["home"],
 	"Text of {0} to {1} characters": ["components", "playground"],
-	"Text-to-schematic compiler": ["global"],
 	"text/xsl; charset=utf-8": ["sitemap.xsl"],
 	"That changed “{0}”. This step asks you to {1}.": ["global"],
 	"That describes two independent superpositions. The CNOT removes the cross outcomes by correlating the two rails.": [
@@ -3135,6 +3129,9 @@
 	"The result to explain": ["global"],
 	"The rotation angle is fixed. Once the target direction is passed, another reflection pair lowers its amplitude.": [
 		"simulations"
+	],
+	"The same language draws four kinds of diagram. Each figure shows one line of its source.": [
+		"home"
 	],
 	"The same rules run as a service, so a project can gate its own build without installing the compiler. Nothing is stored and no source leaves the request.": [
 		"conformance"
@@ -3361,7 +3358,6 @@
 	"Unsaved changes": ["playground"],
 	"USD": ["home"],
 	"Use loop gain and phase to predict oscillator startup or decay.": ["simulations"],
-	"UTC": ["global"],
 	"v": ["changelog"],
 	"V {0}": ["simulations"],
 	"V_{CC}={0},mathrm V": ["simulations"],

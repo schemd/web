@@ -1,4 +1,4 @@
-<!-- schemd-doc: id=overview; label=Quickstart; title=Start with schemd 1.3; summary=Compile multi-domain engineering diagrams into routed, deterministic, accessible SVG, and inspect the circuit behind them.; category=Get started; order=10 -->
+<!-- schemd-doc: id=overview; label=Quickstart; title=Start with schemd 1.3.1; summary=Compile multi-domain engineering diagrams into routed, deterministic, accessible SVG, and inspect the circuit behind them.; category=Get started; order=10 -->
 
 `schemd` is pronounced "skemd" (`/skɛmd/`). Version 1.3 states what every component kind accepts as data, in a new entry, `@schemd/core/schema`, and this site prints a [datasheet](/components) for each kind from it. It keeps optional labels from 1.2, so a junction or a test point can draw its designator alone, and everything 1.1 added: [`fit=wires`](/docs/1.3/fit) lines a CNOT's rails up with its qubits and an IC's pins up with the wires that feed them, and an alignment can place a [terminal](/docs/1.3/placement#terminals) level with another part. Underneath is the 1.0 compiler. Each net is routed as one tree, and wires meet at a [junction](/docs/1.3/nets) part. Text is measured from font advances, and every problem in a document is reported at once, with its [columns](/docs/1.3/diagnostics).
 
@@ -57,9 +57,9 @@ The two junctions, `NB` and `NF`, carry no labels, so each shows only its name. 
 
 <!-- /schemd-section -->
 
-<!-- schemd-section: id=migrate; eyebrow=02 / Migration; title=Move to 1.3 without redrawing anything; example-title=Two-pole RC ladder; example-summary=Two RC sections in series; the junctions and the ground carry no label. -->
+<!-- schemd-section: id=migrate; eyebrow=02 / Migration; title=Move to the 1.3 schema; example-title=Two-pole RC ladder; example-summary=Two RC sections in series; the junctions and the ground carry no label. -->
 
-1.3 adds no syntax and changes no drawing. Every 1.2 document compiles to the same bytes: the compiler's 270-document corpus is byte-identical to 1.2.0, and the compile path is exactly the size it was.
+1.3.0 added no syntax and changed no drawing. The 1.3.1 patch below corrects source polarity symbols. In 1.3.0, every 1.2 document compiled to the same bytes: the compiler's 270-document corpus was byte-identical to 1.2.0, and the compile path kept its size.
 
 What 1.3 adds is a description of the language for tools. `@schemd/core/schema` lists every component kind with its options, and each option with its type, the values or range it accepts and its default:
 
@@ -100,6 +100,20 @@ C2.out -> G1.in #slate [ortho]
 ```
 
 Both junctions and the ground are declared without labels. The values that matter, the two resistances and the two capacitances, are the only labels on the sheet.
+
+<!-- /schemd-section -->
+
+<!-- schemd-section: id=patch-1-3-1; title=1.3.1: read source polarity correctly -->
+
+Version **1.3.1** fixes drawings whose polarity marks disagreed with their named terminals. The grammar and the 1.3 schema are unchanged, so this patch shares the 1.3 documentation.
+
+- A battery's long plate now sits beside `positive`; its short plate sits beside `negative`. Earlier releases drew the plates the other way round.
+- `voltage-dc`, `vcvs` and `ccvs` now place `+` beside `positive` and `−` beside `negative`. The signs stay upright in every orientation.
+- `current-dc`, `vccs` and `cccs` now draw their arrow along the terminal axis, pointing from `positive` towards `negative`. This follows SPICE's positive current convention through a source.
+
+Ports, dependent-source control ports, bounds and routing have not moved. The aliases `in = negative` and `out = positive` are unchanged. No source edit or rewiring is needed; recompile stored SVGs with **1.3.1 or newer** to pick up the corrected symbols. Check the [source terminal conventions](/docs/1.3/component-reference#electrical) when interpreting older drawings.
+
+The migration notes above describe 1.3.0's schema addition; their byte-identical comparison applies to 1.3.0, before these drawing corrections.
 
 <!-- /schemd-section -->
 

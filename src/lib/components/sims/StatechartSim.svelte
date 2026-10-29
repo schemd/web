@@ -311,7 +311,6 @@
 
 	.guard {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--accent-2);
@@ -319,7 +318,6 @@
 
 	.deadlock {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-xs);
 		color: var(--danger);
@@ -346,7 +344,6 @@
 
 		& strong {
 			font-family: var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			font-size: var(--text-lg);
 			color: var(--accent-2);
@@ -372,7 +369,6 @@
 		align-items: center;
 		gap: var(--space-2);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-mute);
@@ -406,7 +402,6 @@
 			background: var(--bg-inset);
 			border: 1px solid var(--line);
 			font-family: var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			font-size: var(--text-2xs);
 			color: var(--ink-mute);

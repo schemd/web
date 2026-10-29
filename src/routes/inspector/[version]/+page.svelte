@@ -605,7 +605,6 @@
 		gap: var(--space-1) var(--space-4);
 		margin: var(--space-1) 0 0 3.5ch;
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 	}
@@ -639,7 +638,6 @@
 	}
 	.tiles dt {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-faint);
@@ -648,7 +646,6 @@
 	.tiles dd {
 		margin: 0;
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-lg);
 		font-variant-numeric: tabular-nums;
@@ -661,7 +658,6 @@
 	.grid th {
 		text-align: left;
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ink-faint);
@@ -682,7 +678,6 @@
 	.relation {
 		display: inline-block;
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		border: 1px solid var(--line-strong);
@@ -728,7 +723,6 @@
 	}
 	.rule-state {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: var(--text-2xs);
 		color: var(--ok);

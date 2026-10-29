@@ -9,7 +9,8 @@ test.beforeEach(async ({ page }) => {
 
 test('language changes preserve a template workspace and remember the preference', async ({
 	page,
-	context
+	context,
+	baseURL
 }) => {
 	await page.goto('/templates');
 	await page.getByRole('link', { name: 'Open template', exact: true }).first().click();
@@ -46,7 +47,7 @@ test('language changes preserve a template workspace and remember the preference
 	await expect(page.getByRole('combobox', { name: 'Idioma', exact: true })).toHaveValue('es');
 	await page.getByRole('combobox', { name: 'Idioma', exact: true }).selectOption('en');
 	await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-	await expect(page).toHaveURL('http://127.0.0.1:4173/');
+	await expect(page).toHaveURL(new URL('/', baseURL).href);
 });
 
 test('translated docs have their own metadata, historical notice and language-aware aliases', async ({
@@ -143,7 +144,7 @@ test('mobile Negative mode keeps language and sound controls visible and accessi
 	});
 });
 
-test('language changes reject external return targets', async ({ request }) => {
+test('language changes reject external return targets', async ({ request, baseURL }) => {
 	for (const target of [
 		'https://example.com',
 		'//example.com',
@@ -151,7 +152,7 @@ test('language changes reject external return targets', async ({ request }) => {
 		'/\\example.com'
 	]) {
 		const response = await request.post('/locale', {
-			headers: { origin: 'http://127.0.0.1:4173' },
+			headers: { origin: new URL(baseURL!).origin },
 			form: { language: 'en', return: target },
 			maxRedirects: 0
 		});
@@ -162,11 +163,11 @@ test('language changes reject external return targets', async ({ request }) => {
 	}
 });
 
-test('language selection remains usable without JavaScript', async ({ browser }) => {
+test('language selection remains usable without JavaScript', async ({ browser, baseURL }) => {
 	const context = await browser.newContext({ javaScriptEnabled: false });
 	const page = await context.newPage();
 	try {
-		await page.goto('http://127.0.0.1:4173/templates');
+		await page.goto(new URL('/templates', baseURL).href);
 		const language = page.getByRole('combobox', { name: 'Language', exact: true });
 		await language.selectOption('es');
 		await page.getByRole('button', { name: 'Apply language', exact: true }).click();

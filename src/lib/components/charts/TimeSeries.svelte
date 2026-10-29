@@ -245,7 +245,6 @@
 	.axis {
 		fill: var(--ink-faint);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: 11px;
 	}
@@ -253,7 +252,6 @@
 	.endpoint {
 		fill: var(--ink);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: 12px;
 	}
@@ -269,7 +267,6 @@
 
 		& strong {
 			font-family: var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			font-size: var(--text-base);
 			color: var(--ink);
@@ -312,7 +309,6 @@
 
 	td {
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		color: var(--ink);
 	}

@@ -411,7 +411,6 @@
 
 		& span {
 			font: var(--text-xs) / 1.4 var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
@@ -440,7 +439,6 @@
 
 		& figcaption {
 			font: var(--text-xs) / 1.4 var(--font-sans);
-			font-stretch: var(--width-table);
 			font-variant-numeric: tabular-nums;
 			color: var(--ink-mute);
 		}
@@ -478,7 +476,6 @@
 	.response-plot text {
 		fill: var(--ink-faint);
 		font-family: var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 		font-size: 7px;
 	}

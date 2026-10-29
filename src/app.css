@@ -1,41 +1,49 @@
 /* ============================================================
-   schemd — the datasheet
+   schemd — vellum
 
-   The site reads like the datasheet of a part: black ink on white paper,
-   one family set across its widths, ruled tables, numbered figures and
-   tables, and a red that means "link" or "changed in this revision" and
-   nothing else. DESIGN.md holds the plan and the reasons for it.
+   The site is a drafting table. Each page is a sheet of vellum lying on it,
+   matte and slightly translucent, with the sheet beneath showing faintly
+   through. A checker's highlighter marks what is current or traced; a blue
+   pencil marks links. DESIGN.md holds the plan and the reasons for it.
 
    Token names are older than this design. Components across the site read
    `--bg`, `--ink`, `--accent` and the rest, so the names stay and their
-   values change; a class that belonged to the previous design keeps working
-   and is restyled quietly here rather than deleted.
+   values change; classes from earlier designs keep working and are restyled
+   here rather than deleted.
    ============================================================ */
 
-/* ---------- Type and measure ---------- */
+/* ---------- Type, measure, depth ---------- */
 :root {
-	--font-sans: 'Archivo Variable', 'Archivo', 'Helvetica Neue', Arial, system-ui, sans-serif;
-	--font-mono: 'Commit Mono', 'SF Mono', 'Cascadia Code', ui-monospace, Menlo, Consolas, monospace;
-	/* Labels, tables and navigation: the same family, condensed. Never a
-	   monospace, never capitals. */
+	--font-sans:
+		'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI',
+		sans-serif;
+	--font-mono:
+		'Atkinson Hyperlegible Mono', ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas,
+		monospace;
+	/* Labels, tables and navigation use the text face, never the mono. */
 	--font-label: var(--font-sans);
 
-	/* Bringhurst's sequence: 13, 14, 17, 21, 26, 36, 48. */
+	/* Bringhurst's sequence: 14, 17, 21, 26, 36, 44. */
 	--text-2xs: 0.8125rem;
 	--text-xs: 0.8125rem;
 	--text-sm: 0.875rem;
 	--text-base: 1.0625rem;
 	--text-md: 1.3125rem;
 	--text-lg: 1.625rem;
-	--text-xl: clamp(2rem, 4vw, 2.25rem);
-	--text-2xl: clamp(2.25rem, 5vw, 3rem);
+	--text-xl: clamp(1.875rem, 4vw, 2.25rem);
+	--text-2xl: clamp(2.25rem, 5vw, 2.75rem);
+	--text-display: clamp(2.75rem, 6vw, 4.75rem);
 
-	--width-condensed: 75%;
-	--width-table: 87.5%;
-	--width-extended: 125%;
+	/* The datasheet set Archivo across its width axis. Atkinson has no width
+	   axis, so these resolve to the normal width wherever they are still read. */
+	--width-condensed: 100%;
+	--width-table: 100%;
+	--width-extended: 100%;
 
 	--tracking-wide: 0;
 	--tracking-ultra: 0;
+	--tracking-display: -0.025em;
+	--tracking-title: -0.02em;
 
 	--space-1: 0.25rem;
 	--space-2: 0.5rem;
@@ -49,17 +57,21 @@
 	--space-16: 4rem;
 
 	--page-max: 1200px;
+	--sheet-max: 1240px;
+	--sheet-pad: clamp(1.25rem, 4vw, 3rem);
+	/* How far the sheet beneath sticks out past the page sheet. */
+	--under-offset: 10px;
 	--measure: 70ch;
 
-	/* The header band plus its navigation row. */
-	--header-h: 104px;
-	--statusbar-h: 40px;
+	/* The floating navigation sheet and the table showing above and below it. */
+	--header-h: 80px;
+	--statusbar-h: 44px;
 
-	/* Controls keep a small radius so the page never reads as a broadsheet;
-	   rules and figures stay square. */
-	--radius-sm: 3px;
-	--radius-md: 3px;
-	--radius-lg: 4px;
+	/* Each level of depth has its own radius: a control, an inset, a sheet. */
+	--radius-sm: 8px;
+	--radius-md: 12px;
+	--radius-lg: 18px;
+	--radius-tag: 6px;
 
 	--sheet-pitch: 40px;
 	--tick-len: 0px;
@@ -67,59 +79,72 @@
 
 	--ease-precise: cubic-bezier(0.2, 0, 0, 1);
 	--ease-kinetic: cubic-bezier(0.16, 1, 0.3, 1);
+	--ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
 	--dur-fast: 120ms;
 	--dur-med: 200ms;
 	--dur-kinetic: 320ms;
+	--dur-sheet: 420ms;
 	--dur-trace: 700ms;
 	--trace-stagger: 160ms;
 }
 
-/* ---------- Paper: black ink on white (default) ---------- */
+/* ---------- Day: drafting ink on vellum (default) ---------- */
 :root,
 [data-blueprint='paper'] {
 	color-scheme: light;
-	--bg: #ffffff;
-	--bg-raised: #ffffff;
-	--bg-panel: #ffffff;
-	--bg-inset: #eef2f6;
-	--wash: #eef2f6;
-	--ink: #000000;
-	--ink-mute: #4a4f57;
-	--ink-faint: #5d636b;
-	--line: #c9ced5;
-	--line-strong: #8a9099;
-	--accent: #c4161c;
+	--table: #dce2e9;
+	/* The sheet is drawn in --vellum at 88 % over the table; --bg is the colour
+	   that produces, so an opaque surface inside a sheet matches it exactly. */
+	--vellum: #fafbfd;
+	--vellum-under: #eef2f6;
+	--bg: #f6f8fb;
+	--bg-raised: #f6f8fb;
+	--bg-panel: #f6f8fb;
+	--bg-inset: #eaeff4;
+	--wash: #eaeff4;
+	--ink: #14213d;
+	--ink-mute: #55606f;
+	--ink-faint: #5e6979;
+	--line: #cdd5df;
+	--line-strong: #9aa6b5;
+	--edge: rgb(20 33 61 / 0.1);
+	/* The checker's blue pencil: links and focus. */
+	--accent: #2348c8;
 	--accent-ink: #ffffff;
-	/* Links are red too: red means "go there" or "changed". */
-	--accent-2: #c4161c;
+	--accent-2: #2348c8;
+	/* The highlighter: current, traced, selected. Ink stays dark on it. */
+	--mark: #ffe45c;
+	--mark-ink: #14213d;
 	--warn: #8a5a00;
-	--danger: #c4161c;
+	--danger: #b42318;
 	--ok: #1f7a3d;
 	--grid-dot: transparent;
 	--sheet-line: transparent;
-	--selection: rgb(196 22 28 / 0.16);
+	--selection: var(--mark);
 	--glow: transparent;
 	--accent-grad: linear-gradient(90deg, var(--accent), var(--accent));
 	--accent-grad-v: linear-gradient(180deg, var(--accent), var(--accent));
 	--sheen: none;
 	--edge-hi: transparent;
+	--shadow-sheet: 0 1px 0 rgb(20 33 61 / 0.06), 0 12px 32px -12px rgb(20 33 61 / 0.22);
+	--shadow-overlay: 0 1px 0 rgb(20 33 61 / 0.06), 0 24px 64px -16px rgb(20 33 61 / 0.38);
 	--shadow-plate: none;
-	--shadow-lift: none;
+	--shadow-lift: var(--shadow-overlay);
 	--field-a: transparent;
 	--field-b: transparent;
-	/* The compiler's own drawing colours, printed: inks a datasheet could use. */
+	/* The compiler's own drawing colours, as inks that read on vellum. */
 	--schematic-surface: var(--wash);
-	--schematic-grid: #c9ced5;
-	--schematic-vector-fallback: #2b2f35;
+	--schematic-grid: #cdd5df;
+	--schematic-vector-fallback: #14213d;
 	--schematic-color-amber: #a24a07;
 	--schematic-color-blue: #1d5fa8;
 	--schematic-color-cyan: #0d6f7a;
 	--schematic-color-purple: #6a3fb5;
-	--schematic-color-slate: #4a4f57;
+	--schematic-color-slate: #4a5566;
 	--schematic-color-emerald: #1f7a3d;
 	--shiki: var(--shiki-paper);
-	/* Source listing palette: ink plus a few printing colours, never red. */
-	--tok-kind: #000000;
+	/* Source listing palette: navy ink plus the drawing inks. */
+	--tok-kind: #14213d;
 	--tok-id: #1d5fa8;
 	--tok-string: #1f7a3d;
 	--tok-number: #8a4b00;
@@ -132,42 +157,50 @@
 	--qubit-text: #4b2a8a;
 }
 
-/* ---------- Negative: white ink on black ---------- */
+/* ---------- Light table: the same sheets, lit from below ---------- */
 [data-blueprint='negative'] {
 	color-scheme: dark;
-	--bg: #000000;
-	--bg-raised: #000000;
-	--bg-panel: #000000;
-	--bg-inset: #14181d;
-	--wash: #14181d;
-	--ink: #ffffff;
-	--ink-mute: #b4bac2;
-	--ink-faint: #9aa1aa;
-	--line: #3a3f46;
-	--line-strong: #6b727c;
-	--accent: #ff5c61;
-	--accent-ink: #000000;
-	--accent-2: #ff5c61;
+	--table: #1a2230;
+	--vellum: #27313f;
+	--vellum-under: #212a37;
+	--bg: #252f3d;
+	--bg-raised: #252f3d;
+	--bg-panel: #252f3d;
+	--bg-inset: #1e2734;
+	--wash: #1e2734;
+	--ink: #e6ecf4;
+	--ink-mute: #a9b4c3;
+	--ink-faint: #9aa6b6;
+	--line: #3a4659;
+	--line-strong: #5f6c80;
+	--edge: rgb(230 236 244 / 0.1);
+	--accent: #8fb0ff;
+	--accent-ink: #14213d;
+	--accent-2: #8fb0ff;
+	--mark: #e8c93a;
+	--mark-ink: #14213d;
 	--warn: #e8c16a;
-	--danger: #ff5c61;
-	--ok: #78d08c;
-	--selection: rgb(255 92 97 / 0.28);
-	--schematic-grid: #3a3f46;
-	--schematic-vector-fallback: #d6dbe1;
+	--danger: #ff8a80;
+	--ok: #7fd49a;
+	--selection: var(--mark);
+	--shadow-sheet: 0 1px 0 rgb(0 0 0 / 0.2), 0 12px 32px -12px rgb(0 0 0 / 0.55);
+	--shadow-overlay: 0 1px 0 rgb(0 0 0 / 0.2), 0 24px 64px -16px rgb(0 0 0 / 0.7);
+	--schematic-grid: #3a4659;
+	--schematic-vector-fallback: #e6ecf4;
 	--schematic-color-amber: #f0a04b;
 	--schematic-color-blue: #6fb3f2;
 	--schematic-color-cyan: #5ccfd8;
 	--schematic-color-purple: #b9a3f0;
-	--schematic-color-slate: #b4bac2;
-	--schematic-color-emerald: #78d08c;
+	--schematic-color-slate: #b4bdc9;
+	--schematic-color-emerald: #7fd49a;
 	--shiki: var(--shiki-negative);
 	--live: #62f6cf;
 	--live-text: #bfffee;
 	--qubit: #a997ff;
 	--qubit-text: #c5baff;
-	--tok-kind: #ffffff;
+	--tok-kind: #e6ecf4;
 	--tok-id: #6fb3f2;
-	--tok-string: #78d08c;
+	--tok-string: #7fd49a;
 	--tok-number: #f0a04b;
 	--tok-color: #b9a3f0;
 	--tok-option: #5ccfd8;
@@ -185,6 +218,7 @@ html {
 	max-inline-size: 100%;
 	overflow-x: clip;
 	scrollbar-gutter: stable;
+	background: var(--table);
 }
 
 body {
@@ -192,12 +226,11 @@ body {
 	min-height: 100%;
 	max-inline-size: 100%;
 	overflow-x: clip;
-	background: var(--bg);
+	background: var(--table);
 	color: var(--ink);
 	font-family: var(--font-sans);
 	font-size: var(--text-base);
-	font-stretch: 100%;
-	line-height: 1.55;
+	line-height: 1.6;
 	font-kerning: normal;
 	-webkit-font-smoothing: antialiased;
 }
@@ -227,7 +260,8 @@ textarea {
 }
 
 ::selection {
-	background: var(--selection);
+	background: var(--mark);
+	color: var(--mark-ink);
 }
 
 :focus-visible {
@@ -255,7 +289,7 @@ kbd,
 pre,
 samp {
 	font-family: var(--font-mono);
-	font-size: 0.88em;
+	font-size: 0.9em;
 }
 
 button {
@@ -267,21 +301,21 @@ button {
 	padding: 0;
 }
 
-/* Headings are the condensed cut: a datasheet's section titles. */
 h1,
 h2,
 h3,
 h4 {
-	font-stretch: var(--width-condensed);
 	font-weight: 700;
-	line-height: 1.1;
-	letter-spacing: 0;
+	line-height: 1.15;
+	letter-spacing: -0.01em;
 	margin: 0;
 }
 
 h1 {
 	font-size: var(--text-2xl);
-	line-height: 1.05;
+	font-weight: 750;
+	line-height: 1.1;
+	letter-spacing: var(--tracking-title);
 }
 
 /* Tabular figures wherever numbers sit in columns. */
@@ -290,24 +324,65 @@ table,
 	font-variant-numeric: tabular-nums;
 }
 
+/* ---------- The sheet ----------
+   Level 1 of the depth system. A page sheet lies on the table with a second
+   sheet beneath it, offset down and to the right; the top sheet is vellum,
+   so the edge of the one beneath shows faintly through it. */
+.vellum {
+	position: relative;
+	background: color-mix(in srgb, var(--vellum) 88%, transparent);
+	-webkit-backdrop-filter: blur(1.5px);
+	backdrop-filter: blur(1.5px);
+	border: 1px solid var(--edge);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-sheet);
+}
+
+.sheet-stack {
+	position: relative;
+	isolation: isolate;
+	inline-size: min(100% - 2 * var(--space-4) - var(--under-offset), var(--sheet-max));
+	margin: var(--space-4) auto var(--space-12);
+
+	&::before {
+		content: '';
+		position: absolute;
+		inset: var(--under-offset) calc(-1 * var(--under-offset)) calc(-1 * var(--under-offset))
+			var(--under-offset);
+		z-index: -1;
+		background: var(--vellum-under);
+		border: 1px solid var(--edge);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--shadow-sheet);
+	}
+
+	& > .vellum {
+		padding-inline: var(--sheet-pad);
+	}
+}
+
 /* ---------- Page frame ---------- */
 .page {
-	inline-size: min(100% - 2 * var(--space-4), var(--page-max));
+	inline-size: min(100%, var(--page-max));
 	margin-inline: auto;
 }
 
-/* ---------- Figures and tables, numbered in page order ---------- */
+/* ---------- Figures and tables ----------
+   Level 2: an inset is a slightly darker vellum with a hairline edge and no
+   shadow of its own. */
 .figure {
 	margin: var(--space-6) 0;
 
 	& > .figure-body {
 		background: var(--wash);
+		border: 1px solid var(--edge);
+		border-radius: var(--radius-md);
 		padding: var(--space-4);
+		overflow: hidden;
 	}
 
 	& > figcaption {
 		margin-block-start: var(--space-2);
-		font-stretch: var(--width-table);
 		font-size: var(--text-sm);
 		color: var(--ink-mute);
 
@@ -320,7 +395,6 @@ table,
 
 .table-caption {
 	margin: var(--space-6) 0 var(--space-2);
-	font-stretch: var(--width-table);
 	font-size: var(--text-sm);
 	font-weight: 600;
 	color: var(--ink);
@@ -329,16 +403,20 @@ table,
 table.spec {
 	inline-size: 100%;
 	border-collapse: collapse;
-	font-stretch: var(--width-table);
 	font-size: var(--text-sm);
-	line-height: 1.4;
+	line-height: 1.45;
 
 	& th {
 		text-align: start;
-		font-weight: 700;
-		border-block-end: 2px solid var(--ink);
-		padding: var(--space-2) var(--space-3) var(--space-1) 0;
+		font-weight: 600;
+		color: var(--ink-mute);
+		border-block-end: 1px solid var(--line-strong);
+		padding: var(--space-2) var(--space-3) var(--space-2) 0;
 		vertical-align: bottom;
+	}
+
+	& tbody th {
+		color: var(--ink);
 	}
 
 	& td {
@@ -352,8 +430,8 @@ table.spec {
 	}
 }
 
-/* A datasheet's change bar: content that changed in the current revision
-   carries a red rule in the margin. Structural, never decorative. */
+/* Content changed in the current release carries a highlighter mark in the
+   margin, the way a checker marks a revised drawing. */
 .change-bar {
 	position: relative;
 
@@ -362,14 +440,15 @@ table.spec {
 		position: absolute;
 		inset-block: 0.15em;
 		inset-inline-start: calc(-1 * var(--space-4));
-		inline-size: 3px;
-		background: var(--accent);
+		inline-size: 4px;
+		border-radius: 2px;
+		background: var(--mark);
 	}
 }
 
-/* ---------- Classes from the previous design, restyled quietly ---------- */
+/* ---------- Classes from earlier designs, restyled quietly ---------- */
 .sheet-grid {
-	background: var(--bg-panel);
+	background: transparent;
 }
 
 section.sheet header.sheet-head {
@@ -384,17 +463,17 @@ section.sheet header.sheet-head {
 .zone {
 	display: inline-flex;
 	align-items: center;
-	padding: 0.1em 0.4em;
+	padding: 0.1em 0.45em;
 	border: 1px solid var(--line);
-	border-radius: var(--radius-sm);
-	font-stretch: var(--width-table);
+	border-radius: var(--radius-tag);
 	font-size: var(--text-2xs);
 	color: var(--ink-mute);
 	line-height: 1.3;
 
 	&.is-current {
-		border-color: var(--accent);
-		color: var(--accent);
+		border-color: transparent;
+		background: var(--mark);
+		color: var(--mark-ink);
 	}
 }
 
@@ -407,12 +486,13 @@ section.sheet header.sheet-head {
 	content: none;
 }
 
+/* A panel inside a sheet is an inset, never a sheet of its own. */
 .panel,
 .plate {
 	position: relative;
-	background: var(--bg-panel);
+	background: var(--bg);
 	border: 1px solid var(--line);
-	border-radius: 0;
+	border-radius: var(--radius-md);
 	box-shadow: none;
 }
 
@@ -435,10 +515,9 @@ section.sheet header.sheet-head {
 	background: var(--line);
 }
 
-/* A small label: condensed, sentence case, muted. */
+/* A small label: sentence case, muted, the text face. */
 .microlabel {
 	font-family: var(--font-label);
-	font-stretch: var(--width-table);
 	font-size: var(--text-2xs);
 	font-weight: 500;
 	letter-spacing: 0;
@@ -446,12 +525,9 @@ section.sheet header.sheet-head {
 	color: var(--ink-mute);
 }
 
-/* An eyebrow named the section above its heading; here it is a quiet
-   condensed line, and new pages do not use it. */
 .eyebrow {
 	display: block;
 	margin: 0 0 var(--space-2);
-	font-stretch: var(--width-table);
 	font-size: var(--text-sm);
 	font-weight: 500;
 	letter-spacing: 0;
@@ -461,7 +537,6 @@ section.sheet header.sheet-head {
 
 .readout {
 	font-variant-numeric: tabular-nums;
-	font-stretch: var(--width-table);
 	font-size: var(--text-sm);
 	font-weight: 600;
 	color: var(--ink);
@@ -469,9 +544,10 @@ section.sheet header.sheet-head {
 
 kbd {
 	display: inline-block;
-	padding: 0 0.35rem;
-	border: 1px solid var(--line-strong);
-	border-radius: var(--radius-sm);
+	padding: 0 0.4rem;
+	border: 1px solid var(--line);
+	border-block-end-width: 2px;
+	border-radius: 5px;
 	background: var(--bg);
 	font-family: var(--font-sans);
 	font-size: var(--text-2xs);
@@ -509,30 +585,31 @@ kbd {
 	align-items: center;
 	justify-content: center;
 	gap: 0.5em;
-	min-block-size: 40px;
-	padding: 0.4rem 1rem;
-	border: 1px solid var(--ink);
+	min-block-size: 42px;
+	padding: 0.45rem 1.1rem;
+	border: 1px solid var(--line-strong);
 	border-radius: var(--radius-sm);
 	background: var(--bg);
 	color: var(--ink);
-	font-stretch: var(--width-table);
 	font-size: var(--text-base);
 	font-weight: 600;
-	transition: background-color var(--dur-fast) var(--ease-precise);
+	transition:
+		background-color var(--dur-fast) var(--ease-precise),
+		border-color var(--dur-fast) var(--ease-precise);
 
 	&:hover {
-		background: var(--wash);
+		border-color: var(--ink);
 		text-decoration: none;
 	}
 
-	/* The primary action is solid ink; red stays for links and changes. */
+	/* The primary action is solid ink. */
 	&.btn-solid {
 		background: var(--ink);
 		border-color: var(--ink);
 		color: var(--bg);
 
 		&:hover {
-			background: color-mix(in srgb, var(--ink) 82%, var(--bg));
+			background: color-mix(in srgb, var(--ink) 86%, var(--bg));
 			color: var(--bg);
 		}
 	}
@@ -540,23 +617,20 @@ kbd {
 
 .seg {
 	display: inline-flex;
-	border: 1px solid var(--line-strong);
+	gap: 2px;
+	padding: 2px;
+	border: 1px solid var(--line);
 	border-radius: var(--radius-sm);
-	overflow: hidden;
+	background: var(--wash);
 
 	& > button {
-		padding: 0.25rem 0.65rem;
-		font-stretch: var(--width-table);
+		padding: 0.25rem 0.7rem;
+		border-radius: 6px;
 		font-size: var(--text-sm);
 		font-weight: 500;
 		letter-spacing: 0;
 		text-transform: none;
 		color: var(--ink-mute);
-		border-inline-end: 1px solid var(--line);
-
-		&:last-child {
-			border-inline-end: none;
-		}
 
 		&:hover {
 			color: var(--ink);
@@ -565,8 +639,9 @@ kbd {
 		&[aria-pressed='true'],
 		&[aria-checked='true'],
 		&[aria-selected='true'] {
-			background: var(--ink);
-			color: var(--bg);
+			background: var(--bg);
+			color: var(--ink);
+			box-shadow: 0 1px 2px rgb(20 33 61 / 0.12);
 		}
 	}
 }
@@ -575,8 +650,8 @@ kbd {
 .schemd-frame {
 	position: relative;
 	background: var(--schematic-surface);
-	border: 0;
-	border-radius: 0;
+	border: 1px solid var(--edge);
+	border-radius: var(--radius-md);
 	color: var(--ink-mute);
 	overflow: hidden;
 
@@ -595,7 +670,6 @@ kbd {
 	/* The compiler's own caption is the figure title; the page's numbered
 	   caption sits outside the frame, so this one stays out of sight. */
 	& figcaption {
-		font-stretch: var(--width-table);
 		font-size: var(--text-sm);
 		color: var(--ink-mute);
 		padding: var(--space-1) var(--space-3);
@@ -630,7 +704,7 @@ kbd {
 		opacity: 1;
 
 		& path {
-			stroke: var(--accent);
+			stroke: var(--live);
 			stroke-width: var(--schematic-interactive-stroke-width, 2.25);
 		}
 	}
@@ -672,8 +746,8 @@ kbd {
 }
 
 /* ---------- Motion ----------
-   One moment only: a drawing that has just been compiled draws its wires on.
-   Nothing moves on scroll. */
+   A drawing that has just been compiled draws its wires on, and a sheet
+   slides when the reader opens one. Nothing moves on scroll. */
 .trace-on {
 	& .schematic-trace,
 	& [data-wire-source] > path:first-of-type {
@@ -715,6 +789,17 @@ kbd {
 	}
 }
 
+@keyframes sheet-in {
+	from {
+		opacity: 0;
+		transform: translateY(14px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
 @keyframes pulse-glow {
 	0%,
 	100% {
@@ -735,12 +820,12 @@ pre.codeblock {
 	margin: 0;
 	padding: var(--space-4);
 	background: var(--wash);
-	border: 0;
-	border-radius: 0;
+	border: 1px solid var(--edge);
+	border-radius: var(--radius-md);
 	overflow: auto;
 	overscroll-behavior-inline: contain;
 	font-size: 0.875rem;
-	line-height: 1.6;
+	line-height: 1.65;
 	tab-size: 2;
 }
 
@@ -801,8 +886,6 @@ pre.codeblock span[style*='--shiki-'] {
 	& > h2 {
 		font-size: var(--text-lg);
 		margin-block: var(--space-12) var(--space-3);
-		padding-block-start: var(--space-3);
-		border-block-start: 2px solid var(--ink);
 		scroll-margin-block-start: calc(var(--header-h) + var(--space-6));
 	}
 
@@ -829,7 +912,8 @@ pre.codeblock span[style*='--shiki-'] {
 
 	& code:not(pre code) {
 		background: var(--wash);
-		padding: 0.05em 0.3em;
+		border-radius: 5px;
+		padding: 0.05em 0.35em;
 		font-size: 0.86em;
 		color: var(--ink);
 	}
@@ -841,15 +925,15 @@ pre.codeblock span[style*='--shiki-'] {
 	& table {
 		border-collapse: collapse;
 		inline-size: 100%;
-		font-stretch: var(--width-table);
 		font-size: var(--text-sm);
-		line-height: 1.4;
+		line-height: 1.45;
 		margin-block: var(--space-4);
 
 		& th {
 			text-align: start;
-			font-weight: 700;
-			border-block-end: 2px solid var(--ink);
+			font-weight: 600;
+			color: var(--ink-mute);
+			border-block-end: 1px solid var(--line-strong);
 			padding: var(--space-2) var(--space-3) var(--space-1) 0;
 			vertical-align: bottom;
 		}
@@ -867,14 +951,15 @@ pre.codeblock span[style*='--shiki-'] {
 	}
 
 	& .admonition {
-		border-inline-start: 3px solid var(--ink);
-		padding: var(--space-2) var(--space-4);
+		border: 1px solid var(--edge);
+		border-inline-start: 4px solid var(--accent);
+		border-radius: var(--radius-md);
+		padding: var(--space-3) var(--space-4);
 		margin-block: var(--space-4);
 		background: var(--wash);
 
 		& .title {
 			display: block;
-			font-stretch: var(--width-table);
 			font-weight: 700;
 			margin-block-end: var(--space-1);
 		}
@@ -941,12 +1026,14 @@ pre.codeblock span[style*='--shiki-'] {
 
 @media (max-width: 760px) {
 	:root {
-		--header-h: 148px;
+		--header-h: 120px;
+		--under-offset: 6px;
 	}
 }
 
-/* Inline links remain identifiable against muted text in both print modes. */
-p a:not(.btn) {
+/* A link inside a sentence or a table cell is underlined, so it never
+   depends on its colour alone. */
+:is(p, td) a:not(.btn) {
 	text-decoration: underline;
 	text-underline-offset: 0.16em;
 }

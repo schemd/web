@@ -66,7 +66,6 @@
 		background: var(--bg-inset);
 		color: var(--ink);
 		font: var(--text-sm) / 1.3 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 	}
 
@@ -79,7 +78,6 @@
 		border: 2px solid var(--clip);
 		color: var(--clip);
 		font: 600 0.625rem / 1 var(--font-sans);
-		font-stretch: var(--width-table);
 		font-variant-numeric: tabular-nums;
 	}
 

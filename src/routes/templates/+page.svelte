@@ -22,9 +22,9 @@
 	<nav aria-label={t('Template families')} class="family-nav">
 		{#each families as family}<a href={`#${family}`}>{t(labels[family])}</a>{/each}
 	</nav>
-	{#each families as family, familyIndex}
+	{#each families as family (family)}
 		<section id={family} aria-labelledby={`${family}-title`}>
-			<h2 id={`${family}-title`}><span class="num">{familyIndex + 1}</span> {t(labels[family])}</h2>
+			<h2 id={`${family}-title`}>{t(labels[family])}</h2>
 			<div class="template-grid">
 				{#each data.templates.filter((item) => item.family === family) as template}
 					<article class="template">
@@ -32,7 +32,7 @@
 						<div class="details">
 							<h3>{t(template.title)}</h3>
 							<p>{t(template.description)}</p>
-							<a class="btn btn-solid" href={href(template.href)}>{t('Open template')}</a>
+							<a class="btn" href={href(template.href)}>{t('Open template')}</a>
 						</div>
 					</article>
 				{/each}
@@ -57,16 +57,17 @@
 		padding-block: var(--space-8);
 	}
 	h2 {
-		border-block-end: 2px solid var(--ink);
-		padding-block-end: var(--space-3);
+		font-size: var(--text-lg);
+		margin-block-end: var(--space-4);
 	}
 	.template-grid {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: var(--space-6);
 	}
+	/* A template is its drawing on an inset, with the words under it on the
+	   sheet itself; no box round the pair, so the grid never reads as cards. */
 	.template {
-		border: 1px solid var(--line);
 		min-inline-size: 0;
 	}
 	.drawing {
@@ -76,7 +77,8 @@
 		block-size: 240px;
 		padding: var(--space-4);
 		background: var(--wash);
-		border-block-end: 1px solid var(--line);
+		border: 1px solid var(--edge);
+		border-radius: var(--radius-md);
 	}
 	.drawing :global(svg) {
 		inline-size: 100%;
@@ -84,7 +86,7 @@
 		max-block-size: 19rem;
 	}
 	.details {
-		padding: var(--space-5);
+		padding-block: var(--space-4) 0;
 	}
 	.details h3 {
 		margin-block: 0 var(--space-2);
