@@ -25,6 +25,23 @@ for (const locale of ['en', 'es']) {
 		await expect(page.locator('#electrical')).toBeVisible();
 		await expect(page.locator('.doc-article')).toContainText('SPICE');
 	});
+
+	test(`1.4.0 ${locale} docs explain measured sheets and draft placement on the canonical minor line`, async ({
+		page,
+		request
+	}) => {
+		failOnClientErrors(page);
+		const prefix = locale === 'es' ? '/es' : '';
+		const alias = await request.get(`${prefix}/docs/1.4.0/overview`, { maxRedirects: 0 });
+		expect(alias.status()).toBe(308);
+		expect(alias.headers()['location']).toBe(`${prefix}/docs/1.4/overview`);
+		await page.goto(`${prefix}/docs/1.4.0/overview`);
+		await expect(page).toHaveURL(new RegExp(`${prefix}/docs/1\\.4/overview$`));
+		await expect(page.locator('h1')).toContainText('1.4');
+		await expect(
+			page.locator('select[aria-label]').filter({ has: page.locator('option[value="1.4"]') })
+		).toHaveValue('1.4');
+	});
 }
 
 test('the source sheet leaves the complete hero drawing visible at desktop widths', async ({
