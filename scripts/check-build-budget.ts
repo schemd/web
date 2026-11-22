@@ -159,7 +159,12 @@ const MAX_COMPILER_JS_GZIP = 52 * 1024;
  * compacted and catalogs are scoped by locale and section, reducing the first
  * localization build from 224.8 to 218.2 KiB. The compiler stays in its worker
  * under its separate, unchanged 50 KiB ceiling. */
-const MAX_DOCUMENT_JS_GZIP = 220 * 1024;
+/* Raised from 220 to 226 KiB for the vellum 1.4 studio upgrades, measured
+ * 222.6 KiB (+5.7 KiB across the live home workbench + vellum layers, living
+ * docs notebook rail, visual component stencil atlas + preview drawer,
+ * superimposed release diff curtain/onion-skin, and playground auto-sheet +
+ * draft-to-pin controls). The compiler remains strictly in its lazy worker. */
+const MAX_DOCUMENT_JS_GZIP = 226 * 1024;
 /* Exactly the sum of the two ceilings above, as the compiler note says. */
 const MAX_ALL_JS_GZIP = MAX_DOCUMENT_JS_GZIP + MAX_COMPILER_JS_GZIP;
 /*
@@ -242,10 +247,11 @@ const MAX_MODERN_MATH_FONTS = 320 * 1024;
 /* Lowered to 1,355 for the vellum brand set, measured 1,351.2 KiB. The icons
    are flat drawings now and shrink from 68.0 KB to 20.2 KB; the social card,
    a real compiled figure, grows from 62.9 KB to 97.3 KB. */
-/* Lowered to 1,350 for `@schemd/core` 1.4.0 (down from 1,355 on 1.3.1, even
-   with measured sheets and draft placement added): the minified compiler
-   worker shrinks raw client output while preserving byte-identical SVG. */
-const MAX_CLIENT_OUTPUT = 1_350 * 1024;
+/* Raised from 1,350 to 1,378 KiB for the vellum 1.4 studio upgrades, measured
+   1,373.4 KiB (+27.5 KiB raw JS + scoped CSS across home, docs, components,
+   diff, and playground; compiler worker stays under its separate 52 KiB gz
+   budget). */
+const MAX_CLIENT_OUTPUT = 1_378 * 1024;
 /*
  * Eleven laboratories, each downloaded only when it is opened. Two of them are
  * manifests rather than components, so the shell's lazy registry spans both

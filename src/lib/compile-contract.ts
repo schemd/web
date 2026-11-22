@@ -73,6 +73,8 @@ export interface CompileRequest {
 	readonly source: string;
 	readonly width: number;
 	readonly height: number;
+	/** Measure the sheet from the drawing (`bounds="auto"`) instead of using width × height. */
+	readonly autoBounds?: boolean;
 	readonly title: string;
 	readonly mode: SchemdOutputMode;
 }
@@ -86,8 +88,14 @@ export interface CompileSuccess {
 		readonly connections: number;
 		readonly svgBytes: number;
 	};
+	readonly sheet?: {
+		readonly x: number;
+		readonly y: number;
+		readonly width: number;
+		readonly height: number;
+	};
 	readonly sourceMap: SchematicSourceMap;
-	/** What each relative declaration resolved to; empty without relations. */
+	/** What each relative or drafted declaration resolved to; empty when all explicit. */
 	readonly placements: SchematicCompilation['placements'];
 	/** Each part's canonical terminals, by ID, so the editor can offer real ports. */
 	readonly ports: Readonly<Record<string, readonly string[]>>;
@@ -128,10 +136,11 @@ export function isCompileOutputMode(value: unknown): value is SchemdOutputMode {
  */
 export function normalizeCompileRequest(body: unknown): CompileRequest | undefined {
 	if (!isRecord(body)) return undefined;
-	const { source, width, height, title, mode } = body;
+	const { source, width, height, autoBounds, title, mode } = body;
 	if (typeof source !== 'string' || source.length > COMPILE_LIMITS.maxSourceCharacters) {
 		return undefined;
 	}
+	if (autoBounds !== undefined && typeof autoBounds !== 'boolean') return undefined;
 	if (typeof width !== 'number' || typeof height !== 'number') return undefined;
 	if (!Number.isFinite(width) || !Number.isFinite(height)) return undefined;
 	if (width < COMPILE_LIMITS.minDimension || width > COMPILE_LIMITS.maxDimension) return undefined;
@@ -146,6 +155,7 @@ export function normalizeCompileRequest(body: unknown): CompileRequest | undefin
 		source,
 		width: Math.trunc(width),
 		height: Math.trunc(height),
+		...(autoBounds ? { autoBounds: true } : {}),
 		title: title.replace(/"/g, '').trim() || DEFAULT_COMPILE_TITLE,
 		mode
 	};

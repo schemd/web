@@ -173,8 +173,12 @@ export interface ResolvedPlacement {
 	readonly resolved: { readonly x: number; readonly y: number };
 }
 
+/** `kind:ID` with optional `"label"` — the prefix of a drafted declaration without a position clause. */
+const DRAFTED_HEAD =
+	/^(\s*[A-Za-z][A-Za-z0-9_-]*:[A-Za-z][A-Za-z0-9_-]*(?:\s+"[^"]*")?)(\s*(?:#|rgb\(|hsl\(|\[|\/\/|$).*)$/;
+
 /**
- * Rewrite every relative declaration as the coordinates it resolved to.
+ * Rewrite every relative or drafted declaration as the coordinates it resolved to.
  *
  * The inverse — lifting coordinates back into relations — is deliberately not
  * offered. It would have to guess which component an author meant to anchor
@@ -184,7 +188,7 @@ export interface ResolvedPlacement {
  * @param source - The whole document.
  * @param placements - `compilation.placements`, which is empty when the
  *   document already used only coordinates.
- * @returns The document with every relation replaced by `at (x, y)`.
+ * @returns The document with every relation or drafted declaration given `at (x, y)`.
  */
 export function freezeToAbsolute(source: string, placements: readonly ResolvedPlacement[]): string {
 	if (placements.length === 0) return source;
@@ -193,10 +197,16 @@ export function freezeToAbsolute(source: string, placements: readonly ResolvedPl
 		const index = placement.line - 1;
 		const original = lines[index];
 		if (original === undefined) continue;
+		const coords = `at (${number(placement.resolved.x)}, ${number(placement.resolved.y)})`;
 		const parts = splitRelative(original);
-		if (parts === undefined) continue;
-		lines[index] =
-			`${parts.head}at (${number(placement.resolved.x)}, ${number(placement.resolved.y)}) ${parts.tail}`;
+		if (parts !== undefined) {
+			lines[index] = `${parts.head}${coords} ${parts.tail}`;
+			continue;
+		}
+		if (ABSOLUTE.test(original)) continue;
+		const drafted = original.match(DRAFTED_HEAD);
+		if (drafted === null) continue;
+		lines[index] = `${drafted[1]} ${coords}${drafted[2]}`;
 	}
 	return lines.join('\n');
 }

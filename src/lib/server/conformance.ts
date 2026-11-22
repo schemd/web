@@ -104,8 +104,6 @@ export function loadConformance(): ConformanceReport {
 			)
 		);
 		for (const { spec, source, offset, ordinal } of fencedDiagrams(raw)) {
-			const fence = parseSchematicFence(spec);
-			if (!fence) continue;
 			const index = ordinal;
 			const preamble = raw.slice(0, offset);
 			const fenceExpected = new Set([
@@ -115,6 +113,8 @@ export function loadConformance(): ConformanceReport {
 					.map((code) => code.trim()) ?? [])
 			]);
 			try {
+				const fence = parseSchematicFence(spec);
+				if (!fence) continue;
 				const { diagnostics } = inspectSchematic(parseSchematic(source, fence));
 				const expected = diagnostics.filter((entry) => fenceExpected.has(entry.code));
 				const unexpected = diagnostics.filter((entry) => !fenceExpected.has(entry.code));

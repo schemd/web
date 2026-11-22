@@ -100,6 +100,9 @@ export interface ComponentSummary {
 	readonly options: number;
 	readonly variants: number;
 	readonly pins: number;
+	readonly pinNames: readonly string[];
+	readonly snippet: string;
+	readonly svg: string;
 }
 
 /** A designator a reader would expect: R1 for a resistor, U1 for most blocks. */
@@ -305,21 +308,33 @@ export function componentSheet(kind: string): ComponentSheet | undefined {
 	return sheet;
 }
 
-/** Every kind, in the compiler's order, with the counts the index prints. */
+let indexCache: readonly ComponentSummary[] | undefined;
+
+/** Every kind, in the compiler's order, with counts and miniature stencil glyphs. */
 export function componentIndex(): readonly ComponentSummary[] {
-	return COMPONENT_KINDS.map((kind) => {
+	indexCache ??= COMPONENT_KINDS.map((kind) => {
 		const schema = SCHEMATIC_COMPONENT_SCHEMAS[kind];
 		const variant = schema.options.find(
 			(option) => option.type === 'enum' && (option.name === 'type' || option.name === 'style')
+		);
+		const opts = baseOptions(schema);
+		const pinNames = describeComponentPorts(kind, opts);
+		const snippet = declaration(kind, FAMILY_COLOR[schema.family], opts, { x: 0, y: 0 }).replace(
+			' at (0, 0)',
+			''
 		);
 		return {
 			kind,
 			family: schema.family,
 			options: schema.options.length,
 			variants: variant?.type === 'enum' ? variant.values.length : 0,
-			pins: describeComponentPorts(kind, baseOptions(schema)).length
+			pins: pinNames.length,
+			pinNames,
+			snippet,
+			svg: specimen(schema, {}, `atlas-${kind}`, { scale: 0.9, pinLabels: false }).svg
 		};
 	});
+	return indexCache;
 }
 
 export interface ComponentReferenceEntry {

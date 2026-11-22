@@ -151,7 +151,9 @@ export interface HeroNet {
 export interface LandingFigures {
 	readonly hero: {
 		readonly title: string;
+		readonly source: string;
 		readonly svg: string;
+		readonly sheet: { readonly width: number; readonly height: number };
 		readonly lines: readonly HeroLine[];
 		readonly nets: readonly HeroNet[];
 		readonly issues: number;
@@ -166,6 +168,7 @@ export interface LandingFigures {
 		readonly family: string;
 		readonly title: string;
 		readonly line: string;
+		readonly source: string;
 		readonly svg: string;
 	}[];
 	readonly figures: Readonly<Record<string, string>>;
@@ -203,11 +206,13 @@ export function landingFigures(): LandingFigures {
 	cache = {
 		hero: {
 			title: HERO_SPEC.title,
+			source: HERO_SPEC.source,
 			/* Cropped to the drawn area for display; the fence keeps its margins. */
 			svg: result.svg.replace(
 				/viewBox="0 0 840 600" width="840" height="600"/,
 				'viewBox="40 92 800 500"'
 			),
+			sheet: { width: result.sheet.width, height: result.sheet.height },
 			lines: HERO_SPEC.source
 				.split('\n')
 				.map((line, index) => ({ n: index + 1, html: highlightLineHtml(line) })),
@@ -227,6 +232,7 @@ export function landingFigures(): LandingFigures {
 			family: spec.family,
 			title: spec.title,
 			line: spec.line,
+			source: spec.source,
 			svg: compile(spec, 'default').svg
 		})),
 		figures: Object.fromEntries(FIGURE_SPECS.map((spec) => [spec.id, compile(spec, 'default').svg]))
