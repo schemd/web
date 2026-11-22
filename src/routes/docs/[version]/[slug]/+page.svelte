@@ -3,10 +3,12 @@
 	const { t, href, locale } = useLanguage();
 
 	import type { PageProps } from './$types';
+	import { browser } from '$app/env';
 	import Seo from '#lib/components/Seo.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { page } from '$app/state';
 	import Pronounce from '#lib/components/Pronounce.svelte';
+	import { compileInBrowser, prefetchCompiler } from '#lib/compile-client.ts';
 	import { encodeWorkspaceState } from '#lib/state-uri.ts';
 	import { ui, setDocsNavCollapsed } from '#lib/ui.svelte.ts';
 	import 'katex/dist/katex.min.css';
@@ -35,6 +37,76 @@
 	});
 
 	const activeExample = $derived(exampleForSection.get(activeSectionId) ?? data.doc.examples[0]);
+
+	/* ---------- Living notebook rail: inline live edit, geometry overlay, copy SVG ---------- */
+	let railEditing = $state(false);
+	let railGeometry = $state(false);
+	let railSource = $state('');
+	let railSvg = $state<string | undefined>();
+	let railError = $state<string | undefined>();
+	let railMs = $state<number | undefined>();
+	let railCopied = $state(false);
+	let railGeneration = 0;
+
+	$effect(() => {
+		const example = activeExample;
+		railEditing = false;
+		railSource = example?.source ?? '';
+		railSvg = undefined;
+		railError = undefined;
+		railMs = undefined;
+	});
+
+	$effect(() => {
+		if (!browser || !railEditing || !activeExample) return;
+		const source = railSource;
+		const title = activeExample.title;
+		const generation = ++railGeneration;
+		const controller = new AbortController();
+		const timer = setTimeout(async () => {
+			const outcome = await compileInBrowser(
+				{ source, width: 840, height: 520, autoBounds: true, title, mode: 'embedded-css' },
+				controller.signal
+			);
+			if (generation !== railGeneration || controller.signal.aborted) return;
+			if (!outcome) return;
+			if (outcome.ok) {
+				railError = undefined;
+				railSvg = outcome.svg;
+				railMs = outcome.ms;
+			} else {
+				railError =
+					outcome.line === undefined ? outcome.message : `Line ${outcome.line}: ${outcome.message}`;
+			}
+		}, 24);
+		return () => {
+			clearTimeout(timer);
+			controller.abort();
+		};
+	});
+
+	function toggleRailEdit(): void {
+		if (!railEditing && browser) prefetchCompiler();
+		railEditing = !railEditing;
+		if (!railEditing && activeExample) {
+			railSource = activeExample.source;
+			railSvg = undefined;
+			railError = undefined;
+			railMs = undefined;
+		}
+	}
+
+	async function copyRailSvg(): Promise<void> {
+		const markup = railSvg ?? activeExample?.svg;
+		if (!markup) return;
+		try {
+			await navigator.clipboard.writeText(markup);
+			railCopied = true;
+			setTimeout(() => (railCopied = false), 1500);
+		} catch {
+			/* Clipboard unavailable. */
+		}
+	}
 
 	$effect(() => {
 		/* Re-arm the observer whenever the rendered document changes. */
@@ -224,28 +296,57 @@
 		{#if activeExample}
 			{#key activeExample.id}
 				<div class="rail-body">
+					<div class="rail-tools" role="group" aria-label={t('Example controls')}>
+						<button type="button" aria-pressed={railEditing} onclick={toggleRailEdit}>
+							{railEditing ? t('Done editing') : t('Edit here')}
+						</button>
+						<button
+							type="button"
+							aria-pressed={railGeometry}
+							onclick={() => (railGeometry = !railGeometry)}
+						>
+							{t('Geometry')}
+						</button>
+						<button type="button" onclick={copyRailSvg}>
+							{railCopied ? t('Copied') : t('Copy SVG')}
+						</button>
+					</div>
 					<figure class="rail-figure">
-						<div class="schemd-frame trace-on">
+						<div class="schemd-frame trace-on" class:rail-geometry={railGeometry}>
 							<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
-							{@html activeExample.svg}
+							{@html railSvg ?? activeExample.svg}
 						</div>
 						<figcaption class="rail-caption">
 							{t(activeExample.title)}
+							{#if railEditing && railMs !== undefined}
+								· <span class="tabular">{t(railMs)} {t('ms')}</span>
+							{/if}
 						</figcaption>
 					</figure>
-					<!-- Keyboard focus exposes overflowing source to Safari users. -->
-					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-					<pre
-						class="codeblock rail-src"
-						tabindex="0"
-						role="region"
-						aria-label={t('Scrollable active example source')}><code
-							><!-- eslint-disable-next-line svelte/no-at-html-tags -- tokenizer output -->{@html activeExample.sourceHtml}</code
-						></pre>
+					{#if railEditing}
+						<textarea
+							class="rail-editor"
+							bind:value={railSource}
+							spellcheck="false"
+							aria-label={t('Edit active example source')}></textarea>
+						{#if railError}
+							<p class="rail-error" role="alert">{railError}</p>
+						{/if}
+					{:else}
+						<!-- Keyboard focus exposes overflowing source to Safari users. -->
+						<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+						<pre
+							class="codeblock rail-src"
+							tabindex="0"
+							role="region"
+							aria-label={t('Scrollable active example source')}><code
+								><!-- eslint-disable-next-line svelte/no-at-html-tags -- tokenizer output -->{@html activeExample.sourceHtml}</code
+							></pre>
+					{/if}
 					<a
 						class="btn rail-open"
 						href={href(
-							`/playground/${data.version}?code=${encodeWorkspaceState(activeExample.source)}`
+							`/playground/${data.version}?code=${encodeWorkspaceState(railEditing ? railSource : activeExample.source)}`
 						)}
 					>
 						{t('Open in playground')}
@@ -490,6 +591,69 @@
 	.rail-src {
 		max-block-size: 40vh;
 		font-size: 0.8125rem;
+	}
+
+	.rail-tools {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+		margin-block-end: var(--space-2);
+
+		& button {
+			padding: 0.2rem 0.55rem;
+			border: 1px solid var(--line);
+			border-radius: 6px;
+			font-size: 0.75rem;
+			font-weight: 600;
+			color: var(--ink-mute);
+			background: var(--wash);
+
+			&:hover {
+				color: var(--ink);
+			}
+
+			&[aria-pressed='true'] {
+				background: var(--mark);
+				color: var(--mark-ink);
+				border-color: var(--mark);
+			}
+		}
+	}
+
+	.rail-geometry {
+		background-image:
+			linear-gradient(
+				to right,
+				color-mix(in srgb, var(--line) 45%, transparent) 1px,
+				transparent 1px
+			),
+			linear-gradient(
+				to bottom,
+				color-mix(in srgb, var(--line) 45%, transparent) 1px,
+				transparent 1px
+			);
+		background-size: 20px 20px;
+	}
+
+	.rail-editor {
+		inline-size: 100%;
+		min-block-size: 160px;
+		margin-block-end: var(--space-3);
+		padding: var(--space-3);
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		background: var(--wash);
+		color: var(--ink);
+		font-family: var(--font-mono);
+		font-size: 0.78rem;
+		line-height: 1.5;
+		resize: vertical;
+	}
+
+	.rail-error {
+		margin: calc(-1 * var(--space-2)) 0 var(--space-3);
+		font-size: var(--text-sm);
+		color: var(--danger);
 	}
 
 	.rail-open {

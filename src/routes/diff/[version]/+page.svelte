@@ -32,17 +32,27 @@
 	let beforeError = $state<string | undefined>();
 	let afterError = $state<string | undefined>();
 	let delta = $state<DiagramDelta | undefined>();
+	let compareView = $state<'side' | 'curtain' | 'onion'>('side');
+	let curtain = $state(50);
+	let onionOpacity = $state(50);
+	let autoBounds = $state(false);
 	let generation = 0;
 
 	const BOUNDS = { width: 820, height: 460 };
 
 	/** Compile one revision and return its netlist, or record the diagnostic. */
-	async function compile(source: string, side: 'before' | 'after', signal: AbortSignal) {
+	async function compile(
+		source: string,
+		side: 'before' | 'after',
+		useAutoBounds: boolean,
+		signal: AbortSignal
+	) {
 		const result = await inspectInBrowser(
 			{
 				source,
 				width: BOUNDS.width,
 				height: BOUNDS.height,
+				...(useAutoBounds ? { autoBounds: true } : {}),
 				title: side === 'before' ? 'Before' : 'After',
 				mode: 'embedded-css'
 			},
@@ -66,13 +76,13 @@
 	}
 
 	$effect(() => {
-		const sources = { before, after };
+		const sources = { before, after, autoBounds };
 		const mine = ++generation;
 		const controller = new AbortController();
 		const timer = setTimeout(async () => {
 			const [left, right] = await Promise.all([
-				compile(sources.before, 'before', controller.signal),
-				compile(sources.after, 'after', controller.signal)
+				compile(sources.before, 'before', sources.autoBounds, controller.signal),
+				compile(sources.after, 'after', sources.autoBounds, controller.signal)
 			]);
 			if (mine !== generation) return;
 			delta = left && right ? diffNetlists(left, right) : undefined;
@@ -138,24 +148,88 @@
 		{/each}
 	</section>
 
-	<!--
-		Side by side only. A difference-blended overlay was tried and dropped: two
-		dark-themed SVGs cancel to a black rectangle, which reads as "broken"
-		rather than "unchanged". The delta below is the reviewable artifact.
-	-->
 	<section class="stage" aria-label={t('Compiled revisions')}>
-		<div class="frames">
-			<figure>
-				<figcaption>{t('Before')}</figcaption>
-				<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
-				{@html beforeSvg}
-			</figure>
-			<figure class="after">
-				<figcaption>{t('After')}</figcaption>
-				<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
-				{@html afterSvg}
-			</figure>
+		<div class="stage-bar">
+			<div class="stage-modes" role="tablist" aria-label={t('Comparison view')}>
+				<button
+					type="button"
+					role="tab"
+					aria-selected={compareView === 'side'}
+					onclick={() => (compareView = 'side')}>{t('Side by side')}</button
+				>
+				<button
+					type="button"
+					role="tab"
+					aria-selected={compareView === 'curtain'}
+					onclick={() => (compareView = 'curtain')}>{t('Curtain')}</button
+				>
+				<button
+					type="button"
+					role="tab"
+					aria-selected={compareView === 'onion'}
+					onclick={() => (compareView = 'onion')}>{t('Onion skin')}</button
+				>
+			</div>
+			<div class="stage-right">
+				{#if compareView === 'curtain'}
+					<label class="scrub">
+						<span>{t('Split')}</span>
+						<input type="range" min="0" max="100" bind:value={curtain} />
+					</label>
+				{:else if compareView === 'onion'}
+					<label class="scrub">
+						<span>{t('After opacity')}</span>
+						<input type="range" min="0" max="100" bind:value={onionOpacity} />
+					</label>
+				{/if}
+				<button
+					type="button"
+					class="auto-btn"
+					aria-pressed={autoBounds}
+					onclick={() => (autoBounds = !autoBounds)}
+				>
+					{t('Auto sheet')}
+				</button>
+			</div>
 		</div>
+
+		{#if compareView === 'side'}
+			<div class="frames">
+				<figure>
+					<figcaption>{t('Before')}</figcaption>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
+					{@html beforeSvg}
+				</figure>
+				<figure class="after">
+					<figcaption>{t('After')}</figcaption>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
+					{@html afterSvg}
+				</figure>
+			</div>
+		{:else if compareView === 'curtain'}
+			<div class="superimposed" style:--curtain={`${curtain}%`}>
+				<div class="layer-base">
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
+					{@html beforeSvg}
+				</div>
+				<div class="layer-top curtain-clip">
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
+					{@html afterSvg}
+				</div>
+				<div class="curtain-rule" aria-hidden="true"></div>
+			</div>
+		{:else}
+			<div class="superimposed">
+				<div class="layer-base onion-base">
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
+					{@html beforeSvg}
+				</div>
+				<div class="layer-top" style:opacity={onionOpacity / 100}>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
+					{@html afterSvg}
+				</div>
+			</div>
+		{/if}
 	</section>
 
 	<section class="delta" aria-label={t('Semantic delta')} aria-live="polite">
@@ -242,6 +316,95 @@
 		color: var(--danger);
 		font: 500 0.8rem/1.4 var(--font-sans);
 		font-variant-numeric: tabular-nums;
+	}
+	.stage-bar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+		margin-block-end: var(--space-3);
+	}
+	.stage-modes {
+		display: flex;
+		gap: var(--space-1);
+
+		& button {
+			padding: 0.25rem 0.65rem;
+			border-radius: 6px;
+			font-size: var(--text-sm);
+			font-weight: 600;
+			color: var(--ink-mute);
+
+			&[aria-selected='true'] {
+				color: var(--ink);
+				background: var(--wash);
+				box-shadow: inset 0 0 0 1px var(--line);
+			}
+		}
+	}
+	.stage-right {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-3);
+	}
+	.scrub {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		font-size: var(--text-sm);
+		color: var(--ink-mute);
+	}
+	.auto-btn {
+		padding: 0.25rem 0.65rem;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		font-size: var(--text-sm);
+		font-weight: 600;
+		color: var(--ink-mute);
+		background: var(--wash);
+
+		&[aria-pressed='true'] {
+			background: var(--mark);
+			color: var(--mark-ink);
+			border-color: var(--mark);
+		}
+	}
+	.superimposed {
+		position: relative;
+		padding: var(--space-3);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-md);
+		background: var(--bg-raised);
+		overflow: hidden;
+	}
+	.layer-base,
+	.layer-top {
+		& :global(svg) {
+			display: block;
+			inline-size: 100%;
+			block-size: auto;
+		}
+	}
+	.layer-top {
+		position: absolute;
+		inset: var(--space-3);
+		background: var(--bg-raised);
+	}
+	.curtain-clip {
+		clip-path: inset(0 0 0 var(--curtain, 50%));
+	}
+	.curtain-rule {
+		position: absolute;
+		inset-block: 0;
+		inset-inline-start: var(--curtain, 50%);
+		inline-size: 2px;
+		background: var(--accent);
+		pointer-events: none;
+	}
+	.onion-base {
+		opacity: 0.45;
 	}
 	.frames {
 		display: grid;

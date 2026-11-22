@@ -20,8 +20,6 @@ export interface GalleryItem {
 	readonly height: number;
 }
 
-const BOUNDS = /bounds="(\d+)x(\d+)"/;
-
 /** Always build the gallery from the latest documented corpus. */
 const docSources = latestRawSources();
 
@@ -45,7 +43,6 @@ export function loadGallery(): readonly GalleryItem[] {
 			const id = `${slug}-${ordinal}`;
 			try {
 				const compiled = compileSchematic(source, { ...fence, mode: 'default', idPrefix: id });
-				const bounds = BOUNDS.exec(spec);
 				items.push({
 					id,
 					title: fence.title,
@@ -53,8 +50,8 @@ export function loadGallery(): readonly GalleryItem[] {
 					source,
 					svg: describedDiagram(compiled),
 					code: encodeWorkspaceState(source),
-					width: Number(bounds?.[1] ?? 640),
-					height: Number(bounds?.[2] ?? 320)
+					width: compiled.sheet.width,
+					height: compiled.sheet.height
 				});
 			} catch {
 				/* A doc fence that fails to compile is caught by the docs build; skip here. */

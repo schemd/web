@@ -3,20 +3,143 @@
 	const { t, href } = useLanguage();
 
 	import type { PageProps } from './$types';
+	import { browser } from '$app/env';
 	import Seo from '#lib/components/Seo.svelte';
 	import Pronounce from '#lib/components/Pronounce.svelte';
+	import { compileInBrowser, prefetchCompiler } from '#lib/compile-client.ts';
+	import { encodeWorkspaceState } from '#lib/state-uri.ts';
 	import { trackInteraction } from '#lib/telemetry.ts';
 
 	let { data }: PageProps = $props();
 
-	/* ---------- Figure 1: one circuit, three views ---------- */
-	type View = 'split' | 'netlist' | 'svg';
+	/* ---------- Figure 1: one circuit, four views (including live 1.4 drafting) ---------- */
+	type View = 'split' | 'live' | 'netlist' | 'svg';
 	const VIEWS: readonly { id: View; label: string }[] = [
 		{ id: 'split', label: 'Source + drawing' },
+		{ id: 'live', label: 'Edit live' },
 		{ id: 'netlist', label: 'Netlist' },
 		{ id: 'svg', label: 'SVG out' }
 	];
 	let view = $state<View>('split');
+
+	type Layer = 'drawing' | 'geometry' | 'nets';
+	const LAYERS: readonly { id: Layer; label: string }[] = [
+		{ id: 'drawing', label: 'Drawing' },
+		{ id: 'geometry', label: 'Geometry' },
+		{ id: 'nets', label: 'Nets' }
+	];
+	let layer = $state<Layer>('drawing');
+
+	const DRAFTED_RC = `source:VS "5 V" #slate [type=voltage-dc]
+resistor:RS "10 k\\Omega" #amber
+capacitor:CS "100 nF" #cyan [orientation=down]
+ground:GS #slate
+
+VS.positive -> RS.in #blue [ortho]
+RS.out -> CS.in #cyan [ortho]
+CS.out -> GS.in #slate [ortho]
+VS.negative -> GS.in #slate [ortho]`;
+
+	const PRESETS = $derived([
+		{ id: 'analog', label: 'Analog', title: 'Drafted RC filter', source: DRAFTED_RC },
+		...data.families.map((family) => ({
+			id: family.id,
+			label: family.family,
+			title: family.title,
+			source: family.source
+		}))
+	]);
+
+	let livePreset = $state('analog');
+	let liveSource = $state(DRAFTED_RC);
+	let liveTitle = $state('Drafted RC filter');
+	let liveSvg = $state('');
+	let liveError = $state<string | undefined>();
+	let liveStats = $state<
+		| {
+				readonly ms: number;
+				readonly components: number;
+				readonly connections: number;
+				readonly width: number;
+				readonly height: number;
+		  }
+		| undefined
+	>();
+	let liveGeneration = 0;
+
+	function selectPreset(preset: { id: string; title: string; source: string }): void {
+		livePreset = preset.id;
+		liveTitle = preset.title;
+		liveSource = preset.source;
+	}
+
+	function openLiveEditor(): void {
+		if (browser) prefetchCompiler();
+		view = 'live';
+	}
+
+	$effect(() => {
+		if (!browser || view !== 'live') return;
+		const source = liveSource;
+		const title = liveTitle;
+		const generation = ++liveGeneration;
+		const controller = new AbortController();
+		const timer = setTimeout(async () => {
+			const outcome = await compileInBrowser(
+				{ source, width: 840, height: 600, autoBounds: true, title, mode: 'full' },
+				controller.signal
+			);
+			if (generation !== liveGeneration || controller.signal.aborted) return;
+			if (!outcome) {
+				liveError = 'Compiler unavailable.';
+				return;
+			}
+			if (outcome.ok) {
+				liveError = undefined;
+				liveSvg = outcome.svg;
+				liveStats = {
+					ms: outcome.ms,
+					components: outcome.metrics.components,
+					connections: outcome.metrics.connections,
+					width: outcome.sheet?.width ?? 840,
+					height: outcome.sheet?.height ?? 600
+				};
+			} else {
+				liveError =
+					outcome.line === undefined ? outcome.message : `Line ${outcome.line}: ${outcome.message}`;
+			}
+		}, 24);
+		return () => {
+			clearTimeout(timer);
+			controller.abort();
+		};
+	});
+
+	/* Bidirectional SVG-to-source tracing: hovering or clicking a part/wire highlights its line. */
+	function sourceLineFromEvent(event: Event): number | undefined {
+		const target = event.target instanceof Element ? event.target : null;
+		const hit = target?.closest('[data-source-line]');
+		const raw = hit?.getAttribute('data-source-line');
+		if (!raw) return undefined;
+		const parsed = Number(raw);
+		return Number.isInteger(parsed) ? parsed : undefined;
+	}
+
+	function onDrawingHover(event: PointerEvent): void {
+		const line = sourceLineFromEvent(event);
+		if (line !== undefined) {
+			focusNet = undefined;
+			focusLine = line;
+		}
+	}
+
+	function onDrawingClick(event: MouseEvent): void {
+		const line = sourceLineFromEvent(event);
+		if (line !== undefined) {
+			focusNet = undefined;
+			focusLine = focusLine === line ? undefined : line;
+		}
+	}
 
 	/*
 	 * Linking a line to its copper uses the compiler's own source map: every
@@ -163,23 +286,54 @@
 	</header>
 
 	<figure class="traced" aria-label={t('One circuit, three views')}>
-		<div class="views" role="tablist" aria-label={t('Compiler views')}>
-			{#each VIEWS as option (option.id)}
-				<button
-					type="button"
-					role="tab"
-					aria-selected={view === option.id}
-					onclick={() => (view = option.id)}>{t(option.label)}</button
-				>
-			{/each}
+		<div class="traced-bar">
+			<div class="views" role="tablist" aria-label={t('Compiler views')}>
+				{#each VIEWS as option (option.id)}
+					<button
+						type="button"
+						role="tab"
+						aria-selected={view === option.id}
+						onclick={() => (option.id === 'live' ? openLiveEditor() : (view = option.id))}
+						>{t(option.label)}</button
+					>
+				{/each}
+			</div>
+			{#if view === 'split' || view === 'live'}
+				<div class="layers" role="group" aria-label={t('Vellum layers')}>
+					{#each LAYERS as opt (opt.id)}
+						{#if opt.id !== 'nets' || view === 'split'}
+							<button type="button" aria-pressed={layer === opt.id} onclick={() => (layer = opt.id)}
+								>{t(opt.label)}</button
+							>
+						{/if}
+					{/each}
+				</div>
+			{/if}
 		</div>
 
 		{#if view === 'split'}
 			<!-- The source is a sheet of vellum laid over its own drawing. -->
 			<div class="overlay">
-				<div class="drawing" data-hero-drawing data-schematic-host>
+				<div
+					class="drawing"
+					class:layer-geometry={layer === 'geometry'}
+					role="region"
+					aria-label={t('Compiled schematic preview')}
+					data-hero-drawing
+					data-schematic-host
+					onpointerover={onDrawingHover}
+					onpointerleave={() => (focusLine = undefined)}
+					onpointerdown={onDrawingClick}
+				>
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
 					{@html data.hero.svg}
+					{#if layer === 'geometry'}
+						<span class="sheet-badge tabular">
+							{t('Sheet')}: {t(data.hero.sheet.width)}×{t(data.hero.sheet.height)} · {t(
+								'24 u margin'
+							)}
+						</span>
+					{/if}
 				</div>
 				<ol
 					class="source"
@@ -191,7 +345,7 @@
 							<button
 								type="button"
 								class="ln"
-								class:on={focusLine === line.n}
+								class:on={focusLines?.includes(line.n) ?? false}
 								onmouseenter={() => ((focusNet = undefined), (focusLine = line.n))}
 								onfocus={() => ((focusNet = undefined), (focusLine = line.n))}
 								onblur={() => (focusLine = undefined)}
@@ -204,6 +358,65 @@
 						</li>
 					{/each}
 				</ol>
+			</div>
+			{#if layer === 'nets'}
+				<div class="net-strip" role="group" aria-label={t('Highlight a net on the drawing')}>
+					{#each data.hero.nets as net (net.id)}
+						<button
+							type="button"
+							class="net-pill"
+							aria-pressed={focusNet === net.id}
+							onclick={() => {
+								focusLine = undefined;
+								focusNet = focusNet === net.id ? undefined : net.id;
+							}}
+						>
+							{t(net.id)}
+						</button>
+					{/each}
+				</div>
+			{/if}
+		{:else if view === 'live'}
+			<div class="live-workbench">
+				<div class="live-sheet">
+					<div class="live-head">
+						<div class="presets" role="group" aria-label={t('Starter examples')}>
+							{#each PRESETS as preset (preset.id)}
+								<button
+									type="button"
+									aria-pressed={livePreset === preset.id}
+									onclick={() => selectPreset(preset)}>{t(preset.label)}</button
+								>
+							{/each}
+						</div>
+						<a
+							class="live-open"
+							href={href(`/playground/${data.latest}?code=${encodeWorkspaceState(liveSource)}`)}
+							>{t('Open in playground')}</a
+						>
+					</div>
+					<textarea
+						class="live-editor"
+						bind:value={liveSource}
+						spellcheck="false"
+						aria-label={t('Live schemd source')}></textarea>
+					{#if liveError}
+						<p class="live-error" role="alert">{liveError}</p>
+					{/if}
+				</div>
+				<div class="live-stage" class:layer-geometry={layer === 'geometry'} data-schematic-host>
+					{#if liveSvg}
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
+						{@html liveSvg}
+					{:else}
+						<p class="note">{t('Compiling in this tab…')}</p>
+					{/if}
+					{#if layer === 'geometry' && liveStats}
+						<span class="sheet-badge tabular">
+							{t('Auto sheet')}: {t(liveStats.width)}×{t(liveStats.height)} · {t('24 u margin')}
+						</span>
+					{/if}
+				</div>
 			</div>
 		{:else if view === 'netlist'}
 			<div class="inset netlist">
@@ -249,13 +462,21 @@
 				aria-label={t('The beginning of the compiled SVG')}>{data.hero.svgHead}</pre>
 		{/if}
 
-		<figcaption>
-			{t(data.hero.title)}: {t(data.hero.components)}
-			{t('parts on')}
-			{t(data.hero.nets.length)}
-			{t('nets, compiled in')}
-			{t(data.hero.ms)}
-			{t('ms. Hover a line to find its wire.')}
+		<figcaption class="tabular">
+			{#if view === 'live' && liveStats}
+				{t(liveTitle)}: {t(liveStats.components)}
+				{t('parts')} · {t(liveStats.connections)}
+				{t('wires')} · {t('auto')}
+				{t(liveStats.width)}×{t(liveStats.height)} · {t(liveStats.ms)}
+				{t('ms')}
+			{:else}
+				{t(data.hero.title)}: {t(data.hero.components)}
+				{t('parts on')}
+				{t(data.hero.nets.length)}
+				{t('nets, compiled in')}
+				{t(data.hero.ms)}
+				{t('ms. Hover a line to find its wire.')}
+			{/if}
 		</figcaption>
 	</figure>
 
@@ -430,10 +651,20 @@
 		margin: 0;
 	}
 
-	.views {
+	.traced-bar {
 		display: flex;
-		gap: var(--space-1);
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
 		margin-block-end: var(--space-3);
+	}
+
+	.views,
+	.layers {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
 
 		& button {
 			padding: 0.3rem 0.75rem;
@@ -447,11 +678,152 @@
 				background: var(--wash);
 			}
 
-			&[aria-selected='true'] {
+			&[aria-selected='true'],
+			&[aria-pressed='true'] {
 				color: var(--ink);
 				background: var(--wash);
 				box-shadow: inset 0 0 0 1px var(--line);
 			}
+		}
+	}
+
+	.drawing,
+	.live-stage {
+		position: relative;
+	}
+
+	.layer-geometry {
+		background-image:
+			linear-gradient(
+				to right,
+				color-mix(in srgb, var(--line) 45%, transparent) 1px,
+				transparent 1px
+			),
+			linear-gradient(
+				to bottom,
+				color-mix(in srgb, var(--line) 45%, transparent) 1px,
+				transparent 1px
+			);
+		background-size: 24px 24px;
+	}
+
+	.sheet-badge {
+		position: absolute;
+		inset-block-end: var(--space-3);
+		inset-inline-end: var(--space-3);
+		padding: 0.15rem 0.5rem;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		background: color-mix(in srgb, var(--bg) 92%, transparent);
+		font-size: 0.75rem;
+		color: var(--ink-mute);
+	}
+
+	.net-strip {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin-block-start: var(--space-3);
+	}
+
+	.net-pill {
+		padding: 0.2rem 0.65rem;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		font-size: var(--text-sm);
+		font-weight: 600;
+		color: var(--ink-mute);
+		background: var(--wash);
+
+		&[aria-pressed='true'] {
+			background: var(--mark);
+			color: var(--mark-ink);
+			border-color: var(--mark);
+		}
+	}
+
+	.live-workbench {
+		display: grid;
+		grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+		gap: var(--space-4);
+		min-block-size: 420px;
+	}
+
+	.live-sheet {
+		display: grid;
+		grid-template-rows: auto minmax(0, 1fr) auto;
+		gap: var(--space-2);
+		padding: var(--space-3);
+		background: var(--vellum);
+		border: 1px solid var(--edge);
+		border-radius: var(--radius-md);
+	}
+
+	.live-head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+	}
+
+	.presets {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+
+		& button {
+			padding: 0.2rem 0.55rem;
+			border-radius: 6px;
+			font-size: 0.8125rem;
+			font-weight: 600;
+			color: var(--ink-mute);
+
+			&[aria-pressed='true'] {
+				background: var(--mark);
+				color: var(--mark-ink);
+			}
+		}
+	}
+
+	.live-open {
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: var(--accent);
+	}
+
+	.live-editor {
+		inline-size: 100%;
+		min-block-size: 260px;
+		padding: var(--space-3);
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		background: var(--wash);
+		color: var(--ink);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		line-height: 1.55;
+		resize: vertical;
+	}
+
+	.live-error {
+		margin: 0;
+		font-size: var(--text-sm);
+		color: var(--danger);
+	}
+
+	.live-stage {
+		display: grid;
+		place-items: center;
+		padding: var(--space-6);
+		background: var(--wash);
+		border: 1px solid var(--edge);
+		border-radius: var(--radius-md);
+
+		& :global(svg) {
+			display: block;
+			max-inline-size: 100%;
+			block-size: auto;
 		}
 	}
 
@@ -704,7 +1076,8 @@
 		}
 
 		.triple,
-		.pair {
+		.pair,
+		.live-workbench {
 			grid-template-columns: minmax(0, 1fr);
 		}
 	}

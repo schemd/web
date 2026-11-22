@@ -53,7 +53,9 @@ async function execute(message: WorkerRequest): Promise<WorkerResponse> {
 	 * create a second parser boundary where a title containing a newline could
 	 * alter syntax instead of remaining inert data. */
 	const options = {
-		bounds: { width: normalized.width, height: normalized.height },
+		bounds: normalized.autoBounds
+			? ('auto' as const)
+			: { width: normalized.width, height: normalized.height },
 		title: normalized.title,
 		limits: HOST_COMPILER_LIMITS
 	};
@@ -82,6 +84,7 @@ async function execute(message: WorkerRequest): Promise<WorkerResponse> {
 				ok: true,
 				svg: compiled.svg,
 				metrics: { ...compiled.metrics },
+				sheet: { ...compiled.sheet },
 				sourceMap: compiled.sourceMap,
 				placements: compiled.placements,
 				ports: Object.fromEntries(

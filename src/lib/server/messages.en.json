@@ -29,10 +29,9 @@
 	". You may continue; this is guidance, not a lock.": ["global"],
 	"·": ["simulations"],
 	"· schemd": ["global"],
-	"'use strict'; const { parentPort, workerData } = require('node:worker_threads'); let api; (async () => { try { api = await import(workerData.coreModuleUrl); parentPort.postMessage({ kind: 'ready' }); } catch { parentPort.postMessage({ kind: 'bootstrap-failed' }); } })(); parentPort.on('message', ({ operation, request, limits }) => { try { const startedAt = performance.now(); const options = { bounds: { width: request.width, height: request.height }, title: request.title, limits }; if (operation === 'inspect') { const document = api.parseSchematic(request.source, options); const { netlist, diagnostics } = api.inspectSchematic(document); const errors = diagnostics.filter((entry) => entry.severity === 'error').length; const warnings = diagnostics.filter((entry) => entry.severity === 'warning').length; parentPort.postMessage({ kind: 'complete', outcome: { ok: true, diagnostics: diagnostics.slice(0, {0}), truncated: diagnostics.length > {1}, counts: { errors, warnings, notes: diagnostics.length - errors - warnings }, netlist: { components: netlist.nodes.length, nets: netlist.nets.length, connections: netlist.edges.length } } }); return; } const compiled = api.compileSchematic(request.source, { ...options, limits, mode: request.mode, idPrefix: 'play' }); parentPort.postMessage({ kind: 'complete', outcome: { ok: true, svg: compiled.svg, metrics: { ...compiled.metrics }, sourceMap: compiled.sourceMap, placements: compiled.placements, ports: Object.fromEntries(api.buildNetlist(compiled.document).nodes.map((node) => [node.id, node.ports])), ms: Math.round((performance.now() - startedAt) * 100) / 100 } }); } catch (failure) { if (failure instanceof api.SchematicSyntaxError) { parentPort.postMessage({ kind: 'complete', outcome: { ok: false, message: failure.message, line: failure.line } }); } else { parentPort.postMessage({ kind: 'failed' }); } } });": [
+	"'use strict'; const { parentPort, workerData } = require('node:worker_threads'); let api; (async () => { try { api = await import(workerData.coreModuleUrl); parentPort.postMessage({ kind: 'ready' }); } catch { parentPort.postMessage({ kind: 'bootstrap-failed' }); } })(); parentPort.on('message', ({ operation, request, limits }) => { try { const startedAt = performance.now(); const options = { bounds: request.autoBounds ? 'auto' : { width: request.width, height: request.height }, title: request.title, limits }; if (operation === 'inspect') { const document = api.parseSchematic(request.source, options); const { netlist, diagnostics } = api.inspectSchematic(document); const errors = diagnostics.filter((entry) => entry.severity === 'error').length; const warnings = diagnostics.filter((entry) => entry.severity === 'warning').length; parentPort.postMessage({ kind: 'complete', outcome: { ok: true, diagnostics: diagnostics.slice(0, {0}), truncated: diagnostics.length > {1}, counts: { errors, warnings, notes: diagnostics.length - errors - warnings }, netlist: { components: netlist.nodes.length, nets: netlist.nets.length, connections: netlist.edges.length } } }); return; } const compiled = api.compileSchematic(request.source, { ...options, limits, mode: request.mode, idPrefix: 'play' }); parentPort.postMessage({ kind: 'complete', outcome: { ok: true, svg: compiled.svg, metrics: { ...compiled.metrics }, sheet: { ...compiled.sheet }, sourceMap: compiled.sourceMap, placements: compiled.placements, ports: Object.fromEntries(api.buildNetlist(compiled.document).nodes.map((node) => [node.id, node.ports])), ms: Math.round((performance.now() - startedAt) * 100) / 100 } }); } catch (failure) { if (failure instanceof api.SchematicSyntaxError) { parentPort.postMessage({ kind: 'complete', outcome: { ok: false, message: failure.message, line: failure.line } }); } else { parentPort.postMessage({ kind: 'failed' }); } } });": [
 		"global"
 	],
-	"\" title=\"": ["playground"],
 	"\"after\" revision": ["diff"],
 	"\"before\" revision": ["diff"],
 	"({0}/{1} matching interactions)": ["global"],
@@ -68,11 +67,13 @@
 	"{0} changed from {1} to {2}": ["global"],
 	"{0} components and {1} connections.": ["templates"],
 	"{0} controls": ["simulations"],
+	"{0} derived positions": ["playground"],
 	"{0} drawing": ["simulations"],
 	"{0} effective bits": ["simulations"],
 	"{0} ends at {1} {2}": ["simulations"],
 	"{0} equals {1}": ["simulations"],
 	"{0} error{1}, {2} warning{3}": ["badge"],
+	"{0} geometry grid": ["playground"],
 	"{0} H {1}": ["simulations"],
 	"{0} input node, current value {1}. Activate either port to toggle.": ["simulations"],
 	"{0} instruments": ["simulations"],
@@ -158,7 +159,6 @@
 	"{0}% of the week": ["downloads"],
 	"{0}^{m_{{1}}}quad {2}": ["simulations"],
 	"{0}=operatorname{logic}!left({1} ight);left({2},mathrm{V} ight)": ["simulations"],
-	"{0}at ({1}, {2}) {3}": ["global"],
 	"{0}px 12px": ["global"],
 	"{0}quad f_c={1}": ["simulations"],
 	"{0}quad X_{q_{{1}}}": ["simulations"],
@@ -181,7 +181,6 @@
 	"\\tfrac{1}{\\sqrt2}(|0\\rangle + |1\\rangle)|1\\rangle \\xrightarrow{CP(\\varphi)} \\tfrac{1}{\\sqrt2}(|0\\rangle + e^{i\\varphi}|1\\rangle)|1\\rangle \\;\\cdot\\; P(1) = \\sin^2\\tfrac{\\varphi}{2}": [
 		"simulations"
 	],
-	"```schemd bounds=\"": ["playground"],
 	"`verifyNetlist` runs over every `schemd` fence in the documentation. The rules are the compiler's own, so what passes here is what passes in your build.": [
 		"conformance"
 	],
@@ -341,6 +340,7 @@
 	"2 ancilla syndrome bits": ["simulations"],
 	"2× Hadamard on the control": ["simulations"],
 	"2× qubit register line": ["simulations"],
+	"24 u margin": ["home"],
 	"24 volts to 12 volts": ["simulations"],
 	"3-qubit uniform superposition": ["simulations"],
 	"3-section L–C ladder (Z₀, t_d)": ["simulations"],
@@ -554,6 +554,7 @@
 	"After enough round trips the echoes die away and the line settles at the DC divider of Rs and the load.": [
 		"simulations"
 	],
+	"After opacity": ["diff"],
 	"After Tgreen, the active state advances to Yellow.": ["simulations"],
 	"After the Bell measurement and Bob’s $X^{m_2}Z^{m_1}$ correction, the output fidelity locks to $F = 1$. The state arrived, exactly, on two classical bits of help.": [
 		"simulations"
@@ -569,7 +570,7 @@
 	"Alice’s state $|\\psi\\rangle$ is parameterised on the Bloch angles. Stepped playback advances the register through entanglement, Bell measurement, and the classically controlled $X^{m_2}/Z^{m_1}$ corrections; hovering any gate reveals its action in Dirac notation.": [
 		"simulations"
 	],
-	"All": ["global", "simulations"],
+	"All": ["components", "global", "simulations"],
 	"All four bit strings with equal probability.": ["simulations"],
 	"All labs": ["simulations"],
 	"All nine result bits settle at the same instant.": ["simulations"],
@@ -597,7 +598,7 @@
 		"simulations"
 	],
 	"An oscillator that listens: it tunes itself until its phase stops slipping.": ["simulations"],
-	"Analog": ["simulations"],
+	"Analog": ["home", "simulations"],
 	"and": ["components"],
 	"and:N1_{0} \"A\" at ({1}, {2}) #amber": ["simulations"],
 	"and:N2_{0} \"A\" at ({1}, {2}) #amber": ["simulations"],
@@ -640,6 +641,7 @@
 		"simulations"
 	],
 	"At unity loop gain and zero phase, the selected sinusoid persists.": ["simulations"],
+	"Atlas": ["components"],
 	"Attenuate and phase-balance": ["simulations"],
 	"AUD": ["simulations"],
 	"audible carrier whine": ["simulations"],
@@ -653,6 +655,8 @@
 	"audio gain {0}": ["simulations"],
 	"audio to carrier ratio {0} decibels": ["simulations"],
 	"Author": ["global"],
+	"auto": ["home"],
+	"Auto sheet": ["diff", "home", "playground"],
 	"Auto-run active.": ["simulations"],
 	"Auto-run paused.": ["simulations"],
 	"Auto-run uses the causal stage delay configured in the timeline above.": ["simulations"],
@@ -842,6 +846,7 @@
 	],
 	"clocked shift register over GF(2)": ["simulations"],
 	"close": ["playground"],
+	"Close": ["components"],
 	"Close command palette": ["global"],
 	"Close find": ["global"],
 	"Close playground commands": ["playground"],
@@ -884,6 +889,7 @@
 	"Compare two revisions of a schemd diagram and read the semantic delta: the components, nets, and connections that changed.": [
 		"diff"
 	],
+	"Comparison view": ["diff"],
 	"Compilation complete. {0} components and {1} connections.": ["playground"],
 	"Compilation error{0}: {1}": ["playground"],
 	"Compilation exceeded the {0} ms server deadline.": ["api"],
@@ -901,7 +907,7 @@
 	"Compiled example for the active section": ["docs"],
 	"Compiled revisions": ["diff"],
 	"Compiled schematic and UML examples, each openable in the playground.": ["examples"],
-	"Compiled schematic preview": ["playground"],
+	"Compiled schematic preview": ["home", "playground"],
 	"Compiler and netlist": ["global"],
 	"Compiler at a glance": ["changelog"],
 	"Compiler diagnostics": ["playground"],
@@ -910,17 +916,20 @@
 	"Compiler metrics": ["changelog"],
 	"Compiler mode": ["playground"],
 	"Compiler release": ["inspector"],
-	"Compiler unavailable.": ["diff"],
+	"Compiler unavailable.": ["diff", "home"],
 	"Compiler views": ["home"],
 	"Compiler vocabulary, revision": ["coverage"],
 	"Compiler-style diagnostic": ["global"],
 	"Compiling": ["playground"],
+	"Compiling in this tab…": ["home"],
 	"Completed here": ["simulations"],
 	"Completed on this device": ["simulations"],
 	"component": ["diff"],
 	"Component": ["inspector"],
 	"Component API": ["global"],
+	"Component families": ["components"],
 	"Component kinds": ["home"],
+	"Component preview": ["components"],
 	"Components": ["components", "global", "inspector"],
 	"Components · schemd": ["components"],
 	"Compose a schemd simulation laboratory as a manifest: a compiled diagram, a whitelisted model, and declarative bindings from signals onto nodes and wires.": [
@@ -965,10 +974,10 @@
 	"controlled two-qubit operator": ["simulations"],
 	"controlled-phase CP(φ)": ["simulations"],
 	"Cookie": ["global"],
-	"Copied": ["home", "playground", "simulations"],
+	"Copied": ["components", "docs", "home", "playground", "simulations"],
 	"Copies a link that opens this document": ["playground"],
 	"Copies an iframe you can paste into a page": ["playground"],
-	"Copy": ["home"],
+	"Copy": ["components", "home"],
 	"Copy bounds, title, and source": ["playground"],
 	"Copy embed code": ["playground"],
 	"Copy fence": ["playground"],
@@ -979,6 +988,7 @@
 	"Copy share link": ["playground"],
 	"Copy shareable link": ["simulations"],
 	"Copy source": ["playground"],
+	"Copy SVG": ["docs"],
 	"COR": ["simulations"],
 	"Core": ["simulations"],
 	"Corpus / Design rules": ["conformance"],
@@ -1032,6 +1042,7 @@
 	],
 	"Current through RB raises the timing capacitor toward the upper threshold.": ["simulations"],
 	"Curriculum map": ["simulations"],
+	"Curtain": ["diff"],
 	"Cutoff": ["simulations"],
 	"cutoff frequency {0}": ["simulations"],
 	"CX |a,b⟩ = |a, b ⊕ a⟩": ["simulations"],
@@ -1133,6 +1144,7 @@
 	"discontinuous conduction": ["simulations"],
 	"discrete PID + first-order DC motor with saturation": ["simulations"],
 	"dismiss": ["global"],
+	"Display mode": ["components"],
 	"Distinguish an entangled Bell state from a classical mixture using outcomes and CHSH.": [
 		"simulations"
 	],
@@ -1177,11 +1189,14 @@
 	"Documented usages of each component family, across the docs corpus and the canonical catalog.": [
 		"coverage"
 	],
+	"Done editing": ["docs"],
 	"Download PNG": ["playground"],
 	"Download source": ["playground"],
 	"Download SVG": ["playground"],
 	"Downloads at a glance": ["downloads"],
 	"Downloads by release": ["downloads"],
+	"Drafted and relative placements": ["playground"],
+	"Drafted RC filter": ["home"],
 	"Drag $Z_L$ above and below $Z_0$. The near-end probe shows a second step at $2t_d$ whose sign follows $\\Gamma_L$: up for a high load, down for a low one.": [
 		"simulations"
 	],
@@ -1201,7 +1216,7 @@
 	"Drag φ on the controlled-phase gate and choose the target state. Step the timeline to follow the control; click a gate to read it.": [
 		"simulations"
 	],
-	"Drawing": ["playground"],
+	"Drawing": ["home", "playground"],
 	"Drawing sheet": ["playground"],
 	"drive": ["simulations"],
 	"Drive a PWM power stage across CCM, boundary, and discontinuous conduction.": ["simulations"],
@@ -1235,6 +1250,9 @@
 	"Each template opens as editable source in the playground.": ["templates"],
 	"Echo toward the source": ["simulations"],
 	"Edges": ["inspector"],
+	"Edit active example source": ["docs"],
+	"Edit here": ["docs"],
+	"Edit live": ["home"],
 	"EFAULT": ["global"],
 	"Eight full-adder cells built from XOR/AND/OR primitives. Changing an operand or carry input dispatches one synchronous logic pass; high nets glow as the carry ripples left to right.": [
 		"simulations"
@@ -1319,6 +1337,7 @@
 	"Exactly. The amplitudes of $|01\\rangle$ and $|10\\rangle$ are zero; sampling reveals perfect same-bit correlation.": [
 		"simulations"
 	],
+	"Example controls": ["docs"],
 	"Example gallery": ["examples"],
 	"Example gallery · schemd": ["examples"],
 	"Example schematics": ["examples"],
@@ -1392,9 +1411,11 @@
 	"Fifty-fifty, because the control was in superposition.": ["simulations"],
 	"Files": ["changelog"],
 	"Filter capacitance": ["simulations"],
+	"Filter component kinds": ["components"],
 	"filter cutoff {0}": ["simulations"],
 	"Filter inductance": ["simulations"],
 	"Filter into the load": ["simulations"],
+	"Filter kind or pin…": ["components"],
 	"Filter playground commands": ["playground"],
 	"Filter response: audio at {0}, carrier at {1}, cutoff {2}": ["simulations"],
 	"Filter simulations by complexity tier": ["simulations"],
@@ -1435,13 +1456,11 @@
 	"FOUT": ["simulations"],
 	"framing {0}, parity {1}": ["simulations"],
 	"framing error, stop bit read low": ["simulations"],
-	"Freeze relative placements to coordinates": ["playground"],
 	"frequency {0}": ["simulations"],
 	"frequency {0}, duty {1} percent": ["simulations"],
 	"Frequency response": ["simulations"],
 	"frequency-domain transfer function": ["simulations"],
 	"Frontier": ["simulations"],
-	"Froze {0} relative {1} to coordinates.": ["playground"],
 	"gain": ["simulations"],
 	"Gain": ["simulations"],
 	"gain {0}; mu {1}": ["simulations"],
@@ -1451,6 +1470,7 @@
 	"Gain-set resistor open (latch-up)": ["simulations"],
 	"gained {0}": ["global"],
 	"Generated from the compiler; nothing here is listed by hand.": ["coverage"],
+	"Geometry": ["docs", "home", "playground"],
 	"GitHub": ["global"],
 	"GND": ["simulations"],
 	"Go to error on line {0}": ["playground"],
@@ -1511,6 +1531,7 @@
 	"high-side MOSFET gate drive lost": ["simulations"],
 	"High-side switch active.": ["simulations"],
 	"High-side switch degraded: gate drive lost.": ["simulations"],
+	"Highlight a net on the drawing": ["home"],
 	"Hlvert q_0 angle=(lvert0 angle+(-1)^{{0}}lvert1 angle)/sqrt2": ["simulations"],
 	"Hlvert0 angle=(lvert0 angle+lvert1 angle)/sqrt2": ["simulations"],
 	"Hlvertpsi anglequad ext{rotates into the Bell basis}": ["simulations"],
@@ -1677,6 +1698,7 @@
 	"input, select, textarea": ["global"],
 	"input[type=\"range\"], select": ["global"],
 	"Insert": ["playground"],
+	"Insert {0}": ["playground"],
 	"Inspect compiler markup": ["playground"],
 	"Inspect the portable fenced source": ["playground"],
 	"Inspection failed unexpectedly.": ["global"],
@@ -1813,7 +1835,7 @@
 	"line {0}": ["global"],
 	"Line {0} does not state a position this can rewrite.": ["global"],
 	"Line {0} is not in the document.": ["global"],
-	"Line {0}: {1}": ["simulations"],
+	"Line {0}: {1}": ["docs", "home", "simulations"],
 	"Line characteristic impedance": ["simulations"],
 	"line level,": ["simulations"],
 	"Lines": ["home"],
@@ -1833,6 +1855,7 @@
 		"downloads"
 	],
 	"Live preview": ["simulations"],
+	"Live schemd source": ["home"],
 	"Live State Machine": ["simulations"],
 	"Live, checked": ["downloads"],
 	"Ln": ["global"],
@@ -1939,9 +1962,11 @@
 	"Measure one qubit and you instantly know the other — not because a signal raced across, but because they were never really two things.": [
 		"simulations"
 	],
+	"Measure sheet from the drawing (1.4 bounds=\"auto\")": ["playground"],
 	"Measure state": ["simulations"],
 	"Measure the control": ["simulations"],
 	"Measure the speed": ["simulations"],
+	"Measured": ["playground"],
 	"Measurement": ["simulations"],
 	"measurement bit one {0}": ["simulations"],
 	"measurement bit two {0}": ["simulations"],
@@ -1988,7 +2013,7 @@
 	],
 	"Move the carrier closer to the audio.": ["simulations"],
 	"move the carrier frequency and compare the cleanliness": ["simulations"],
-	"ms": ["changelog"],
+	"ms": ["changelog", "docs", "home"],
 	"ms. Hover a line to find its wire.": ["home"],
 	"multiplies |11⟩ by e^(i·{0}°)": ["simulations"],
 	"must be written.": ["components"],
@@ -2015,7 +2040,7 @@
 	"net {0} removed": ["global"],
 	"net not found": ["global"],
 	"Netlist": ["home"],
-	"Nets": ["inspector"],
+	"Nets": ["home", "inspector"],
 	"Nets of the drawing, from": ["home"],
 	"nets, compiled in": ["home"],
 	"Next": ["components", "docs", "global", "simulations"],
@@ -2045,6 +2070,7 @@
 	"No matches. Try “ports”.": ["global"],
 	"No matching command.": ["playground"],
 	"No per-release breakdown in this snapshot.": ["downloads"],
+	"no pins": ["playground"],
 	"No pins; this part is drawn but not wired.": ["playground"],
 	"No playground release named {0}.": ["playground"],
 	"No prerequisite": ["simulations"],
@@ -2119,6 +2145,7 @@
 		"simulations"
 	],
 	"one-third magnitude": ["simulations"],
+	"Onion skin": ["diff"],
 	"Only": ["components", "playground"],
 	"Only $00$ and $11$ ever appear, roughly half each — perfectly correlated outcomes from a state with no definite value beforehand.": [
 		"simulations"
@@ -2130,7 +2157,8 @@
 	"op-amp gain stage": ["simulations"],
 	"open": ["global"],
 	"Open": ["examples"],
-	"Open in playground": ["components", "docs"],
+	"Open datasheet": ["components"],
+	"Open in playground": ["components", "docs", "home"],
 	"Open in the playground": ["conformance"],
 	"Open template": ["templates"],
 	"Open the {0} primitive in the playground": ["coverage"],
@@ -2192,6 +2220,7 @@
 	"Output filter capacitor open": ["simulations"],
 	"output is {0} volts peak-to-peak": ["simulations"],
 	"output LED + limiter": ["simulations"],
+	"Overlay the drafting grid on the preview sheet": ["playground"],
 	"overline{y}; ext{ones}={0}%": ["simulations"],
 	"Oversampling ratio, 8 to 128": ["simulations"],
 	"Overshoot": ["simulations"],
@@ -2222,6 +2251,7 @@
 	"parity none/even/odd": ["simulations"],
 	"Parse": ["inspector"],
 	"Part reading": ["simulations"],
+	"parts": ["home"],
 	"Parts": ["playground", "simulations"],
 	"parts and": ["simulations"],
 	"parts on": ["home"],
@@ -2276,10 +2306,16 @@
 	"PID Motor Speed Control": ["simulations"],
 	"PID speed loop": ["simulations"],
 	"Pin": ["components"],
+	"Pin {0} to coordinates": ["playground"],
 	"pin 3": ["simulations"],
 	"pin 3 output:": ["simulations"],
+	"Pin all": ["playground"],
+	"Pin all drafted and relative placements": ["playground"],
 	"Pin functions": ["components"],
 	"Pin names depend on the selected variant. Each drawing labels its own pins.": ["components"],
+	"Pinned {0} {1} to coordinates.": ["playground"],
+	"Pinned {0} at ({1}, {2}).": ["playground"],
+	"pins": ["components"],
 	"Pins": ["components", "playground"],
 	"Place": ["inspector"],
 	"Place an LC cutoff between the audio band and the PWM carrier.": ["simulations"],
@@ -2358,6 +2394,7 @@
 	"prepared {0}": ["simulations"],
 	"Prerequisite:": ["global"],
 	"Preview": ["global", "playground"],
+	"Preview {0}": ["components"],
 	"Preview channel": ["playground"],
 	"Previous": ["components", "docs", "simulations"],
 	"Previous lab:": ["simulations"],
@@ -2559,7 +2596,7 @@
 	"revisions": ["diff"],
 	"Revisions": ["diff"],
 	"Revisit the lab": ["simulations"],
-	"Rewrite every relation as the position it resolved to": ["playground"],
+	"Rewrite every drafted or relative part as at (x, y)": ["playground"],
 	"RF": ["simulations"],
 	"RG": ["simulations"],
 	"rgb(128 128 128 / 0.2)": ["simulations"],
@@ -2720,7 +2757,7 @@
 	"Share": ["global"],
 	"shared clock": ["simulations"],
 	"Shared document; save it yourself": ["playground"],
-	"Sheet": ["playground"],
+	"Sheet": ["home", "playground"],
 	"shots": ["simulations"],
 	"Show": ["playground"],
 	"Show compiled example": ["docs"],
@@ -2732,6 +2769,7 @@
 	"shunt capacitor $C$": ["simulations"],
 	"shunt capacitor C": ["simulations"],
 	"Side": ["components"],
+	"Side by side": ["diff"],
 	"Sigma-delta converter": ["simulations"],
 	"Sigma-Delta Converter": ["simulations"],
 	"Sigma-delta modulator: summing node, integrator, clocked one-bit quantizer, feedback DAC, and decimator. Drag the tags on the input and the decimator; click a wire to probe it.": [
@@ -2793,6 +2831,9 @@
 	"source:VIN \"V_{in}\" at (100, 230) #blue [type=voltage-ac orientation=up] resistor:R1 \"10 k\\Omega\" at (240, 160) #amber junction:N1 \"V_{c}\" at (360, 160) #amber capacitor:C1 \"1 nF\" at (360, 260) #cyan [orientation=down] amplifier:U1 \"OPA192\" at (560, 173) #purple [type=opamp] junction:FB \"V_{fb}\" at (460, 290) #purple resistor:RF \"100 k\\Omega\" at (620, 290) #amber resistor:RG \"10 k\\Omega\" at (460, 360) #amber [orientation=down] junction:VOUT \"V_{out}\" at (740, 173) #emerald ground:G \"0 V\" at (360, 460) #slate ground:G2 \"0 V\" at (460, 510) #slate VIN.positive -> R1.in #blue [ortho] R1.out -> N1.node #amber [ortho] N1.node -> U1.positive #amber [ortho] N1.node -> C1.in #cyan [ortho] U1.negative -> FB.node #purple [ortho] FB.node -> RF.in #purple [ortho] RF.out -> VOUT.node #emerald [ortho] U1.out -> VOUT.node #emerald [ortho] FB.node -> RG.in #purple [ortho] RG.out -> G2.in #slate [ortho] C1.out -> G.in #slate [ortho] VIN.negative -> G.in #slate [ortho]": [
 		"global"
 	],
+	"source:VS \"5 V\" #slate [type=voltage-dc] resistor:RS \"10 k\\Omega\" #amber capacitor:CS \"100 nF\" #cyan [orientation=down] ground:GS #slate VS.positive -> RS.in #blue [ortho] RS.out -> CS.in #cyan [ortho] CS.out -> GS.in #slate [ortho] VS.negative -> GS.in #slate [ortho]": [
+		"home"
+	],
 	"source:VS \"9 V\" at (380, 90) #blue [type=voltage-dc orientation=down] resistor:RZ \"1 k\\Omega\" at (380, 240) #amber [orientation=down] junction:JZ at (380, 360) #cyan diode:DZ \"5.1 V\" at (380, 490) #rose [type=zener orientation=up] port:REF \"V_{ref}\" at (660, 360) #emerald ground:GZ at (380, 640) #slate VS.positive -> RZ.in #blue [ortho] RZ.out -> JZ.node #amber [ortho] JZ.node -> DZ.cathode #rose [ortho] JZ.node -> REF.in #emerald [ortho marker-end=arrow] DZ.anode -> GZ.in #slate [ortho]": [
 		"templates"
 	],
@@ -2802,6 +2843,7 @@
 	"Speed": ["global"],
 	"Speed setpoint": ["simulations"],
 	"SPK": ["simulations"],
+	"Split": ["diff"],
 	"Spread evenly across all frequencies, like plain quantization.": ["simulations"],
 	"Stabilize loop gain": ["simulations"],
 	"stabilizer parity + syndrome decoder": ["simulations"],
@@ -2810,6 +2852,7 @@
 	"Start with $|00\\rangle$, apply $H$ to the first qubit, then a CNOT, and you reach $|\\Phi^+\\rangle = \\frac{|00\\rangle + |11\\rangle}{\\sqrt 2}$. Notice what is missing: there is **no** $|01\\rangle$ and **no** $|10\\rangle$. The two qubits have no state of their own — only the *pair* has a state. A skeptic says \"they were secretly agreed in advance,\" like two gloves in sealed boxes. Quantum mechanics answers with the CHSH test: local hidden agreements can never push the correlation witness $S$ above $2$, yet this state reaches $S = 2\\sqrt 2 \\approx 2.83$. Watching $S$ climb past $2$ is watching local realism fail in front of you.": [
 		"simulations"
 	],
+	"Starter examples": ["home"],
 	"Starter schematic restored.": ["playground"],
 	"Starter templates": ["templates"],
 	"State": ["playground"],
@@ -2914,6 +2957,7 @@
 		"simulations"
 	],
 	"Tab": ["global", "playground"],
+	"Table": ["components"],
 	"TACH": ["simulations"],
 	"tachometer feedback inverted": ["simulations"],
 	"Tachometer feedback inverted": ["simulations"],
@@ -3357,6 +3401,8 @@
 	"Unreachable: canonical fence.": ["api"],
 	"Unsaved changes": ["playground"],
 	"USD": ["home"],
+	"Use auto sheet bounds": ["playground"],
+	"Use fixed sheet bounds": ["playground"],
 	"Use loop gain and phase to predict oscillator startup or decay.": ["simulations"],
 	"v": ["changelog"],
 	"V {0}": ["simulations"],
@@ -3388,6 +3434,7 @@
 	"VCO output": ["simulations"],
 	"VCO with feedback": ["simulations"],
 	"Vector": ["inspector"],
+	"Vellum layers": ["home"],
 	"Verification failed unexpectedly.": ["api"],
 	"Verification rate limit exceeded.": ["api"],
 	"Verified schematic": ["api"],
@@ -3449,6 +3496,7 @@
 	"Wien-bridge oscillator": ["simulations"],
 	"Wien-Bridge Oscillator": ["simulations"],
 	"Wien-oscillator animation": ["simulations"],
+	"wires": ["home"],
 	"Wires": ["playground"],
 	"Wires meet at the junction": ["global"],
 	"wires, modelled as": ["simulations"],

@@ -68,8 +68,13 @@ const COMPILER_WORKER = /\/workers\/compile-browser\.worker-[^/]+\.js$/;
  * 48.6 KiB here — the 1.8 KiB the compiler's own budgets recorded for
  * `fit=wires`, terminal alignment and their diagnostics (42.7 → 44.6 KiB
  * gzip tree-shaken). It stays in the lazy worker, off every document's path.
+ *
+ * Raised from 50 KiB to 52 for `@schemd/core` 1.4.0, which measured 50.4 KiB
+ * here — the ~1.8 KiB added by measured sheets (`bounds="auto"`) and draft
+ * placement for unplaced declarations (`draft.ts`), matching the compiler's own
+ * +2 KiB ceiling move (44 → 46 KiB tree-shaken, 47 → 49 KiB whole entry).
  */
-const MAX_COMPILER_JS_GZIP = 50 * 1024;
+const MAX_COMPILER_JS_GZIP = 52 * 1024;
 /*
  * Raised from 146/182 KiB in 0.4. The laboratory grew from five environments
  * to thirteen, and each one ships its own lazily loaded chunk plus its share
@@ -154,7 +159,12 @@ const MAX_COMPILER_JS_GZIP = 50 * 1024;
  * compacted and catalogs are scoped by locale and section, reducing the first
  * localization build from 224.8 to 218.2 KiB. The compiler stays in its worker
  * under its separate, unchanged 50 KiB ceiling. */
-const MAX_DOCUMENT_JS_GZIP = 220 * 1024;
+/* Raised from 220 to 226 KiB for the vellum 1.4 studio upgrades, measured
+ * 222.6 KiB (+5.7 KiB across the live home workbench + vellum layers, living
+ * docs notebook rail, visual component stencil atlas + preview drawer,
+ * superimposed release diff curtain/onion-skin, and playground auto-sheet +
+ * draft-to-pin controls). The compiler remains strictly in its lazy worker. */
+const MAX_DOCUMENT_JS_GZIP = 226 * 1024;
 /* Exactly the sum of the two ceilings above, as the compiler note says. */
 const MAX_ALL_JS_GZIP = MAX_DOCUMENT_JS_GZIP + MAX_COMPILER_JS_GZIP;
 /*
@@ -237,7 +247,11 @@ const MAX_MODERN_MATH_FONTS = 320 * 1024;
 /* Lowered to 1,355 for the vellum brand set, measured 1,351.2 KiB. The icons
    are flat drawings now and shrink from 68.0 KB to 20.2 KB; the social card,
    a real compiled figure, grows from 62.9 KB to 97.3 KB. */
-const MAX_CLIENT_OUTPUT = 1_355 * 1024;
+/* Raised from 1,350 to 1,378 KiB for the vellum 1.4 studio upgrades, measured
+   1,373.4 KiB (+27.5 KiB raw JS + scoped CSS across home, docs, components,
+   diff, and playground; compiler worker stays under its separate 52 KiB gz
+   budget). */
+const MAX_CLIENT_OUTPUT = 1_378 * 1024;
 /*
  * Eleven laboratories, each downloaded only when it is opened. Two of them are
  * manifests rather than components, so the shell's lazy registry spans both

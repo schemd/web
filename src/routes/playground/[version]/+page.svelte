@@ -167,12 +167,19 @@
 	 * match only fires on a *complete* fence, so ordinary typing is untouched.
 	 */
 	const FENCE_PATTERN =
-		/^```schemd\s+bounds="(\d+)x(\d+)"(?:\s+title="([^"]*)")?\s*\n([\s\S]*?)\n```\s*$/;
+		/^```schemd(?:\s+bounds="(?:(\d+)x(\d+)|auto)")?(?:\s+title="([^"]*)")?\s*\n([\s\S]*?)\n```\s*$/;
+	let autoBounds = $state(false);
+	let geometryOverlay = $state(false);
 	function absorbFence(candidate: string): boolean {
 		const match = FENCE_PATTERN.exec(candidate.trim());
 		if (!match) return false;
-		boundsWidth = Math.max(64, Math.min(4096, Number(match[1])));
-		boundsHeight = Math.max(64, Math.min(4096, Number(match[2])));
+		if (match[1] === undefined) {
+			autoBounds = true;
+		} else {
+			autoBounds = false;
+			boundsWidth = Math.max(64, Math.min(4096, Number(match[1])));
+			boundsHeight = Math.max(64, Math.min(4096, Number(match[2])));
+		}
 		if (match[3] !== undefined && match[3] !== '') {
 			title = match[3].slice(0, COMPILE_LIMITS.maxTitleCharacters);
 		}
@@ -192,6 +199,12 @@
 			components: number;
 			connections: number;
 			svgBytes: number;
+		};
+		sheet?: {
+			x: number;
+			y: number;
+			width: number;
+			height: number;
 		};
 		sourceMap?: SchematicSourceMap;
 		placements?: readonly { id: string; line: number; resolved: { x: number; y: number } }[];
@@ -253,6 +266,7 @@
 			source,
 			width: boundsWidth,
 			height: boundsHeight,
+			...(autoBounds ? { autoBounds: true } : {}),
 			title,
 			mode
 		};
@@ -288,10 +302,41 @@
 						connections: Number(raw['connections'] ?? 0),
 						svgBytes: Number(raw['svgBytes'] ?? 0)
 					};
+					const rawSheet = isRecord(record['sheet']) ? record['sheet'] : undefined;
+					const sheet =
+						rawSheet &&
+						typeof rawSheet['width'] === 'number' &&
+						typeof rawSheet['height'] === 'number'
+							? {
+									x: Number(rawSheet['x'] ?? 0),
+									y: Number(rawSheet['y'] ?? 0),
+									width: rawSheet['width'],
+									height: rawSheet['height']
+								}
+							: undefined;
+					const rawPlacements = Array.isArray(record['placements']) ? record['placements'] : [];
+					const placements = rawPlacements.flatMap((entry) =>
+						isRecord(entry) &&
+						typeof entry['id'] === 'string' &&
+						typeof entry['line'] === 'number' &&
+						isRecord(entry['resolved']) &&
+						typeof entry['resolved']['x'] === 'number' &&
+						typeof entry['resolved']['y'] === 'number'
+							? [
+									{
+										id: entry['id'],
+										line: entry['line'],
+										resolved: { x: entry['resolved']['x'], y: entry['resolved']['y'] }
+									}
+								]
+							: []
+					);
 					result = {
 						svg: String(record['svg'] ?? ''),
 						metrics,
+						sheet,
 						sourceMap: parseSourceMap(record['sourceMap']),
+						placements,
 						ms: Number(record['ms'] ?? 0)
 					};
 					if (isRecord(record['ports'])) {
@@ -619,7 +664,17 @@
 		drag = undefined;
 	}
 
-	/** Rewrite every relation as the coordinates it resolved to. */
+	/** Rewrite one drafted or relative declaration as its resolved coordinates. */
+	function pinPlacement(placement: {
+		readonly id: string;
+		readonly line: number;
+		readonly resolved: { readonly x: number; readonly y: number };
+	}): void {
+		source = freezeToAbsolute(source, [placement]);
+		dragNote = `Pinned ${placement.id} at (${placement.resolved.x}, ${placement.resolved.y}).`;
+	}
+
+	/** Rewrite every relation or drafted part as the coordinates it resolved to. */
 	function freezePlacements(): void {
 		const placements = result.placements ?? [];
 		if (placements.length === 0) {
@@ -627,7 +682,7 @@
 			return;
 		}
 		source = freezeToAbsolute(source, placements);
-		dragNote = `Froze ${placements.length} relative ${placements.length === 1 ? 'placement' : 'placements'} to coordinates.`;
+		dragNote = `Pinned ${placements.length} ${placements.length === 1 ? 'placement' : 'placements'} to coordinates.`;
 	}
 
 	/* ---------- Raw SVG formatting ---------- */
@@ -688,11 +743,9 @@
 	/* ---------- Fenced-markdown form (for pasting into a Markdown pipeline) ---------- */
 	/* Fence titles cannot escape quotes, so strip them exactly like the compile endpoint. */
 	const fenceMarkdown = $derived(
-		'```schemd bounds="' +
-			boundsWidth +
-			'x' +
-			boundsHeight +
-			'" title="' +
+		'```schemd' +
+			(autoBounds ? '' : ' bounds="' + boundsWidth + 'x' + boundsHeight + '"') +
+			' title="' +
 			(title.replace(/["\r\n]/g, '').trim() || 'Playground schematic') +
 			'"\n' +
 			source +
@@ -1007,11 +1060,33 @@
 				}
 			},
 			{
+				id: 'toggle-auto-bounds',
+				label: autoBounds ? 'Use fixed sheet bounds' : 'Use auto sheet bounds',
+				detail: 'Measure sheet from the drawing (1.4 bounds="auto")',
+				run: () => {
+					autoBounds = !autoBounds;
+				}
+			},
+			{
+				id: 'toggle-geometry',
+				label: `${geometryOverlay ? 'Hide' : 'Show'} geometry grid`,
+				detail: 'Overlay the drafting grid on the preview sheet',
+				run: () => {
+					geometryOverlay = !geometryOverlay;
+				}
+			},
+			{
 				id: 'freeze-placements',
-				label: 'Freeze relative placements to coordinates',
-				detail: 'Rewrite every relation as the position it resolved to',
+				label: 'Pin all drafted and relative placements',
+				detail: 'Rewrite every drafted or relative part as at (x, y)',
 				run: freezePlacements
 			},
+			...data.reference.map((entry) => ({
+				id: `insert-${entry.kind}`,
+				label: `Insert ${entry.kind}`,
+				detail: `${entry.family} · ${entry.pins.join(', ') || 'no pins'}`,
+				run: () => insertKind(entry.kind)
+			})),
 			{
 				id: 'toggle-preview',
 				label: `${rightOpen ? 'Hide' : 'Show'} preview`,
@@ -1199,7 +1274,17 @@
 			{/if}
 
 			<section class="sheet-settings" aria-label={t('Sheet')}>
-				<h2>{t('Sheet')}</h2>
+				<div class="sheet-head-row">
+					<h2>{t('Sheet')}</h2>
+					<button
+						type="button"
+						class="sheet-auto-btn"
+						aria-pressed={autoBounds}
+						onclick={() => (autoBounds = !autoBounds)}
+					>
+						{t('Auto sheet')}
+					</button>
+				</div>
 				<div class="fence-controls">
 					<label>
 						<span>{t('Width')}</span>
@@ -1209,6 +1294,7 @@
 							max="4096"
 							step="10"
 							inputmode="numeric"
+							disabled={autoBounds}
 							bind:value={boundsWidth}
 						/>
 					</label>
@@ -1220,9 +1306,15 @@
 							max="4096"
 							step="10"
 							inputmode="numeric"
+							disabled={autoBounds}
 							bind:value={boundsHeight}
 						/>
 					</label>
+					{#if autoBounds && result.sheet}
+						<p class="part-note sheet-measured tabular">
+							{t('Measured')}: {t(result.sheet.width)}×{t(result.sheet.height)}
+						</p>
+					{/if}
 					<label class="fence-title">
 						<span>{t('Title')}</span>
 						<input type="text" maxlength="512" bind:value={title} />
@@ -1362,6 +1454,16 @@
 						{t('Fence')}
 					</button>
 				</div>
+				{#if view === 'render'}
+					<button
+						type="button"
+						class="layer-toggle"
+						aria-pressed={geometryOverlay}
+						onclick={() => (geometryOverlay = !geometryOverlay)}
+					>
+						{t('Geometry')}
+					</button>
+				{/if}
 			</div>
 
 			{#if view === 'render'}
@@ -1371,6 +1473,7 @@
 							<div
 								bind:this={previewHost}
 								class="schemd-frame preview-stage trace-on"
+								class:preview-geometry={geometryOverlay}
 								class:stale={result.error !== undefined}
 								role="region"
 								aria-label={t('Compiled schematic preview')}
@@ -1387,6 +1490,28 @@
 						{/key}
 					</SheetFrame>
 				</div>
+				{#if (result.placements?.length ?? 0) > 0}
+					<div class="pin-bar" aria-label={t('Drafted and relative placements')}>
+						<span class="microlabel">
+							{t('{0} derived positions', [result.placements!.length])}
+						</span>
+						<div class="pin-chips">
+							{#each result.placements! as placement (placement.id + ':' + placement.line)}
+								<button
+									type="button"
+									class="pin-chip tabular"
+									onclick={() => pinPlacement(placement)}
+									title={t('Pin {0} to coordinates', [placement.id])}
+								>
+									<code>{placement.id}</code> ({placement.resolved.x}, {placement.resolved.y})
+								</button>
+							{/each}
+							<button type="button" class="pin-all" onclick={freezePlacements}>
+								{t('Pin all')}
+							</button>
+						</div>
+					</div>
+				{/if}
 				{#if dragNote}
 					<p class="drag-note" aria-live="polite">{t(dragNote)}</p>
 				{/if}
@@ -1941,6 +2066,83 @@
 		&[data-state='unavailable'] {
 			color: var(--danger);
 		}
+	}
+
+	.sheet-head-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+	}
+
+	.sheet-auto-btn,
+	.layer-toggle {
+		padding: 0.2rem 0.55rem;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--ink-mute);
+		background: var(--wash);
+
+		&[aria-pressed='true'] {
+			background: var(--mark);
+			color: var(--mark-ink);
+			border-color: var(--mark);
+		}
+	}
+
+	.sheet-measured {
+		grid-column: 1 / -1;
+		margin: 0;
+	}
+
+	.preview-geometry {
+		background-image:
+			linear-gradient(
+				to right,
+				color-mix(in srgb, var(--line) 42%, transparent) 1px,
+				transparent 1px
+			),
+			linear-gradient(
+				to bottom,
+				color-mix(in srgb, var(--line) 42%, transparent) 1px,
+				transparent 1px
+			);
+		background-size: 24px 24px;
+	}
+
+	.pin-bar {
+		display: grid;
+		gap: var(--space-2);
+		padding: var(--space-2) var(--space-3);
+		border-top: 1px solid var(--line);
+		background: var(--wash);
+	}
+
+	.pin-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+	}
+
+	.pin-chip,
+	.pin-all {
+		padding: 0.15rem 0.5rem;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		background: var(--bg);
+		color: var(--ink);
+		font-size: 0.75rem;
+
+		&:hover {
+			border-color: var(--accent);
+		}
+	}
+
+	.pin-all {
+		font-weight: 600;
+		color: var(--accent);
 	}
 
 	.workspace-notice {

@@ -288,4 +288,25 @@ R1.out -> C1.in #amber [ortho]`;
 			])
 		).toBe('port:A "A" at (90, 150) #blue');
 	});
+
+	test('pins 1.4 drafted declarations with and without labels to exact coordinates', () => {
+		const drafted = `source:VS "5 V" #slate [type=voltage-dc]
+resistor:RS "10 k\\Omega" #amber
+ground:GS #slate
+
+VS.positive -> RS.in #blue [ortho]
+RS.out -> GS.in #slate [ortho]
+VS.negative -> GS.in #slate [ortho]`;
+		const compilation = compileSchematic(drafted, {
+			bounds: 'auto',
+			title: 'Drafted',
+			mode: 'full'
+		});
+		const frozen = freezeToAbsolute(drafted, compilation.placements);
+		expect(frozen).toMatch(/source:VS "5 V" at \(\d+(?:\.\d+)?, \d+(?:\.\d+)?\) #slate/);
+		expect(frozen).toMatch(/ground:GS at \(\d+(?:\.\d+)?, \d+(?:\.\d+)?\) #slate/);
+		expect(compileSchematic(frozen, { bounds: 'auto', title: 'Drafted', mode: 'full' }).svg).toBe(
+			compilation.svg
+		);
+	});
 });

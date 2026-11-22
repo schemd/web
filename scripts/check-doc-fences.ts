@@ -18,7 +18,7 @@ const FENCE = /^```(schemd[^\n]*)\n([\s\S]*?)^```$/gm;
 const CODE_FENCE = /^(`{3,}|~{3,})[^\n]*\n[\s\S]*?^\1[\t ]*(?:\r?\n|$)/gm;
 /* Older lines intentionally fall back to English. These lines promise a
  * complete Spanish corpus, so deleting a directory must fail the gate too. */
-const SPANISH_LINES = ['1.2', '1.3'];
+const SPANISH_LINES = ['1.2', '1.3', '1.4'];
 
 const requested = process.argv.slice(2);
 const documentedLines = (await readdir(ROOT, { withFileTypes: true }))

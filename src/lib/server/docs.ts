@@ -79,7 +79,7 @@ const spanishSources = import.meta.glob<string>('/src/lib/content/schemd/es/*/*.
 	eager: true
 });
 const SPANISH_CORPORA = new Map<string, DocCorpus>();
-for (const version of ['1.2', '1.3']) {
+for (const version of ['1.2', '1.3', '1.4']) {
 	const sources = Object.fromEntries(
 		Object.entries(spanishSources).filter(([path]) => path.includes(`/es/${version}/`))
 	);

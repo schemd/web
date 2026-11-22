@@ -91,7 +91,7 @@ parentPort.on('message', ({ operation, request, limits }) => {
   try {
     const startedAt = performance.now();
     const options = {
-      bounds: { width: request.width, height: request.height },
+      bounds: request.autoBounds ? 'auto' : { width: request.width, height: request.height },
       title: request.title,
       limits
     };
@@ -128,6 +128,7 @@ parentPort.on('message', ({ operation, request, limits }) => {
         ok: true,
         svg: compiled.svg,
         metrics: { ...compiled.metrics },
+        sheet: { ...compiled.sheet },
         sourceMap: compiled.sourceMap,
         placements: compiled.placements,
         ports: Object.fromEntries(api.buildNetlist(compiled.document).nodes.map((node) => [node.id, node.ports])),
