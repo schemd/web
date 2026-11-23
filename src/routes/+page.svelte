@@ -179,12 +179,12 @@ VS.negative -> GS.in #slate [ortho]`;
 			.filter(Number.isInteger)
 			.map((line) => `[data-source-line="${line}"]`)
 			.join(',');
-		const host = '[data-hero-drawing]';
+		const host = ':is([data-hero-drawing],[data-hero-stack])';
 		const dim = lit === '' ? '' : `:not(${lit})`;
 		const bold =
 			lit === ''
 				? ''
-				: `${host} :is(${lit}) .schematic-trace{stroke-width:2.6;filter:drop-shadow(0 0 2px var(--mark)) drop-shadow(0 0 3px var(--mark))}`;
+				: `${host} :is(${lit}){filter:drop-shadow(0 0 3px var(--mark)) drop-shadow(0 0 6px var(--mark))}${host} :is(${lit}) .schematic-trace{stroke-width:2.8}${host} .callout-pill:is(${lit}) rect{fill:var(--mark);stroke:var(--ink)}${host} .callout-pill:is(${lit}) text{fill:var(--mark-ink)}`;
 		return `<style>${host} [data-source-line]${dim}{opacity:.14}${bold}</style>`;
 	});
 

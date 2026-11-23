@@ -2,7 +2,12 @@
 	import { onDestroy } from 'svelte';
 	import { browser } from '$app/env';
 	import { useLanguage } from '#lib/i18n/index.ts';
-	import { projectLayerSvg, pulseSvgWires } from '#lib/plotter-layers.ts';
+	import {
+		measurePlateOverlays,
+		projectLayerSvg,
+		pulseSvgWires,
+		type PlateOverlayGeometry
+	} from '#lib/plotter-layers.ts';
 
 	const { t } = useLanguage();
 
@@ -21,7 +26,7 @@
 		exploded?: boolean;
 		/** Show calibrated architectural drafting geometry grid. */
 		grid?: boolean;
-		/** Attach data-hero-drawing so bidirectional source tracing & tests bind directly. */
+		/** Attach data-hero-drawing / data-hero-stack so bidirectional source tracing binds in 2D & 3D. */
 		heroHost?: boolean;
 		/** Run the mechanical XY pen-plotter trace once on initial mount (unless reduced motion). */
 		autoPlot?: boolean;
@@ -48,6 +53,9 @@
 	let bedEl = $state<HTMLDivElement | undefined>();
 	let svgHost = $state<HTMLDivElement | undefined>();
 	let copperPlateHost = $state<HTMLDivElement | undefined>();
+	let symbolsPlateHost = $state<HTMLDivElement | undefined>();
+	let labelsPlateHost = $state<HTMLDivElement | undefined>();
+	let overlays = $state<PlateOverlayGeometry | undefined>();
 	let carriageActive = $state(false);
 	let railX = $state(50);
 	let railY = $state(50);
@@ -72,7 +80,12 @@
 		if (exploded) {
 			stackMounted = true;
 			explodeRaf = requestAnimationFrame(() => {
+				const canonicalSvg = svgHost?.querySelector('svg');
+				if (canonicalSvg instanceof SVGSVGElement) {
+					overlays = measurePlateOverlays(canonicalSvg);
+				}
 				stackExpanded = true;
+				applyStageAll(stage);
 				explodeRaf = undefined;
 			});
 		} else {
@@ -134,10 +147,8 @@
 				: `PEN DOWN · (${Math.round(x)}, ${Math.round(y)})`;
 	}
 
-	/** Apply continuous 4-stage compiler scrubbing (0..300) onto the real SVG elements. */
-	function applyStage(val: number): void {
-		if (!svgHost) return;
-		const svgEl = svgHost.querySelector('svg');
+	/** Apply continuous 4-stage compiler scrubbing (0..300) onto one SVG element. */
+	function applyStageToSvg(svgEl: SVGSVGElement | null | undefined, val: number): void {
 		if (!svgEl) return;
 
 		const parts = queryParts(svgEl);
@@ -181,15 +192,25 @@
 		}
 	}
 
-	/** Mechanically trace every real wire path with the XY carriage. */
-	export function plot(): void {
-		if (!browser || !svgHost) return;
-		cancelAnimations();
-		if (exploded) exploded = false;
-		stage = 300;
-		applyStage(300);
+	/** Keep both the canonical SVG and all mounted 3D optical plates synced with stage. */
+	function applyStageAll(val: number): void {
+		applyStageToSvg(svgHost?.querySelector('svg'), val);
+		if (stackMounted) {
+			applyStageToSvg(copperPlateHost?.querySelector('svg'), val);
+			applyStageToSvg(symbolsPlateHost?.querySelector('svg'), val);
+			applyStageToSvg(labelsPlateHost?.querySelector('svg'), val);
+		}
+	}
 
-		const svgEl = svgHost.querySelector('svg');
+	/** Mechanically trace every real wire path (2D with XY carriage, or live on 3D Plate 02). */
+	export function plot(): void {
+		if (!browser) return;
+		cancelAnimations();
+		stage = 300;
+		applyStageAll(300);
+
+		const targetHost = stackExpanded && copperPlateHost ? copperPlateHost : svgHost;
+		const svgEl = targetHost?.querySelector('svg');
 		if (!svgEl) return;
 		const wires = queryWires(svgEl);
 		if (wires.length === 0 || reducedMotion()) {
@@ -208,6 +229,7 @@
 
 		const duration = Math.min(1800, Math.max(950, total * 0.65));
 		const startedAt = performance.now();
+		const is3d = stackExpanded;
 
 		const tick = (now: number): void => {
 			const progress = Math.min(1, (now - startedAt) / duration);
@@ -227,7 +249,16 @@
 				rem -= len;
 			}
 
-			if (activePt) moveCarriageToSvgPoint(svgEl, activePt.x, activePt.y, activeLine);
+			if (activePt) {
+				if (is3d) {
+					hudText =
+						activeLine !== undefined
+							? `PLOTTING 3D · L${String(activeLine).padStart(2, '0')} · (${Math.round(activePt.x)}, ${Math.round(activePt.y)})`
+							: `PLOTTING 3D · (${Math.round(activePt.x)}, ${Math.round(activePt.y)})`;
+				} else {
+					moveCarriageToSvgPoint(svgEl, activePt.x, activePt.y, activeLine);
+				}
+			}
 			onfocusline?.(progress < 1 ? activeLine : undefined);
 
 			if (progress < 1) {
@@ -252,36 +283,44 @@
 		if (!browser) return;
 		cancelAnimations();
 		stage = 300;
-		applyStage(300);
+		applyStageAll(300);
 		flashing = false;
 		queueMicrotask(() => {
 			flashing = true;
-			setTimeout(() => (flashing = false), 380);
+			setTimeout(() => (flashing = false), 420);
 		});
 		hudText =
 			ms !== undefined ? `REAL COMPILE: ${ms} ms (INSTANT)` : 'REAL COMPILE: < 1 ms (INSTANT)';
 		pulse();
 	}
 
-	/** Propagate luminous signal packets along every real routed copper path (2D or floating 3D Plate 03). */
+	/** Propagate luminous signal packets along every real routed copper path (2D or floating 3D Plate 02). */
 	export function pulse(): void {
 		if (!browser || reducedMotion()) return;
 		if (cancelPulse) {
 			cancelPulse();
 			cancelPulse = undefined;
 		}
-		const targetHost = exploded && copperPlateHost ? copperPlateHost : svgHost;
+		const targetHost = stackExpanded && copperPlateHost ? copperPlateHost : svgHost;
 		const svgEl = targetHost?.querySelector('svg');
 		if (!svgEl) return;
 		cancelPulse = pulseSvgWires(svgEl);
 	}
 
-	/* Keep stage visual projection synchronized with scrubber or fresh SVG compiles. */
+	/* Keep stage projection & measured overlays synchronized with scrubber or fresh SVG compiles. */
 	$effect(() => {
 		const currentSvg = svg;
 		const currentStage = stage;
 		if (!browser || !currentSvg) return;
-		queueMicrotask(() => applyStage(currentStage));
+		queueMicrotask(() => {
+			if (stackMounted) {
+				const canonicalSvg = svgHost?.querySelector('svg');
+				if (canonicalSvg instanceof SVGSVGElement) {
+					overlays = measurePlateOverlays(canonicalSvg);
+				}
+			}
+			applyStageAll(currentStage);
+		});
 	});
 
 	/* Optional first-load mechanical plot trace (never runs under reduced motion). */
@@ -310,7 +349,11 @@
 
 	function onPointerDown(event: PointerEvent): void {
 		const target = event.target instanceof Element ? event.target : null;
-		if (target?.closest('.schematic-trace, .schematic-component, [data-node-id]')) {
+		if (
+			target?.closest(
+				'.schematic-trace, .schematic-wire, .schematic-component, [data-node-id], .callout-pill'
+			)
+		) {
 			pulse();
 		}
 	}
@@ -320,16 +363,23 @@
 	bind:this={bedEl}
 	class="plotter-bed"
 	class:compact
+	class:flashing
 	class:exploded={stackExpanded}
 	class:show-grid={grid || stage < 260 || stackExpanded}
 >
-	{#if flashing}
+	{#if flashing && !stackExpanded}
 		<div class="flash-veil" aria-hidden="true"></div>
 	{/if}
 
 	<!-- Isometric 3D Optical 4-Plate Acetate Rig -->
 	<div class="iso-scene" class:exploded={stackExpanded}>
-		<div class="iso-rig">
+		<div
+			class="iso-rig"
+			data-hero-stack={heroHost ? '' : undefined}
+			onpointerover={onPointerOver}
+			onpointerleave={() => onfocusline?.(undefined)}
+			onpointerdown={onPointerDown}
+		>
 			<!-- Canonical Live Compiled Schematic (in flow for zero CLS, interactive when flat) -->
 			<div
 				bind:this={svgHost}
@@ -339,24 +389,38 @@
 				aria-label={t('Compiled schematic preview')}
 				data-hero-drawing={heroHost ? '' : undefined}
 				data-schematic-host
-				onpointerover={onPointerOver}
-				onpointerleave={() => onfocusline?.(undefined)}
-				onpointerdown={onPointerDown}
 			>
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
 				{@html svg}
 			</div>
 
 			{#if stackMounted}
-				<!-- Plate 01 (-54px): Channel Lattice & Measured 24u Auto-Sheet Frame -->
+				<!-- Plate 01 (-62px): Channel Lattice, Measured 24u Sheet Frame & Component Footprints -->
 				<div class="acetate-plate plate-0 plotter-grid" aria-hidden="true">
 					<span class="plate-tag">{t('01 · Lattice & sheet')}</span>
-					<div class="margin-guide">
-						<span class="reg tl">┌</span>
-						<span class="reg tr">┐</span>
-						<span class="reg bl">└</span>
-						<span class="reg br">┘</span>
-					</div>
+					{#if overlays}
+						<svg class="overlay-svg" viewBox={overlays.viewBox} preserveAspectRatio="xMidYMid meet">
+							<rect
+								class="sheet-outline"
+								x={overlays.sheetBox.x}
+								y={overlays.sheetBox.y}
+								width={overlays.sheetBox.width}
+								height={overlays.sheetBox.height}
+								rx="6"
+							/>
+							{#each overlays.footprints as fp, i (i)}
+								<rect
+									class="footprint-box"
+									data-source-line={fp.line}
+									x={fp.x}
+									y={fp.y}
+									width={fp.width}
+									height={fp.height}
+									rx="4"
+								/>
+							{/each}
+						</svg>
+					{/if}
 					{#if sheetWidth && sheetHeight}
 						<span class="sheet-dim tabular">
 							{sheetWidth}×{sheetHeight} · 24u
@@ -364,7 +428,7 @@
 					{/if}
 				</div>
 
-				<!-- Plate 02 (-12px): Routed Orthogonal Copper & Junctions ONLY -->
+				<!-- Plate 02 (-14px): Routed Orthogonal Copper & Junctions ONLY -->
 				<div
 					bind:this={copperPlateHost}
 					class="acetate-plate plate-1 layer-copper"
@@ -377,8 +441,12 @@
 					</div>
 				</div>
 
-				<!-- Plate 03 (+34px): Component Symbols & Pins ONLY -->
-				<div class="acetate-plate plate-2 layer-symbols" aria-hidden="true">
+				<!-- Plate 03 (+36px): Component Symbols & Pins ONLY -->
+				<div
+					bind:this={symbolsPlateHost}
+					class="acetate-plate plate-2 layer-symbols"
+					aria-hidden="true"
+				>
 					<span class="plate-tag">{t('03 · Symbols & pins')}</span>
 					<div class="layer-svg">
 						<!-- eslint-disable-next-line svelte/no-at-html-tags -- prefixed clone of compiler output -->
@@ -386,13 +454,31 @@
 					</div>
 				</div>
 
-				<!-- Plate 04 (+78px): Labels, Math & Source Map Annotations ONLY -->
-				<div class="acetate-plate plate-3 layer-labels" aria-hidden="true">
+				<!-- Plate 04 (+86px): Labels, Math & Source-Map Callout Badges ONLY -->
+				<div
+					bind:this={labelsPlateHost}
+					class="acetate-plate plate-3 layer-labels"
+					aria-hidden="true"
+				>
 					<span class="plate-tag">{t('04 · Labels & source map')}</span>
 					<div class="layer-svg">
 						<!-- eslint-disable-next-line svelte/no-at-html-tags -- prefixed clone of compiler output -->
 						{@html labelsLayerSvg}
 					</div>
+					{#if overlays && overlays.callouts.length > 0}
+						<svg
+							class="overlay-svg callouts-svg"
+							viewBox={overlays.viewBox}
+							preserveAspectRatio="xMidYMid meet"
+						>
+							{#each overlays.callouts as c (c.line + ':' + c.x + ':' + c.y)}
+								<g class="callout-pill" data-source-line={c.line}>
+									<rect x={c.x} y={c.y - 10} width="28" height="14" rx="3" />
+									<text x={c.x + 14} y={c.y + 0.5} text-anchor="middle">{c.tag}</text>
+								</g>
+							{/each}
+						</svg>
+					{/if}
 				</div>
 			{/if}
 		</div>
@@ -490,7 +576,7 @@
 	}
 
 	.iso-scene {
-		perspective: 1400px;
+		perspective: 1500px;
 		transform-style: preserve-3d;
 		inline-size: 100%;
 	}
@@ -511,7 +597,7 @@
 		}
 
 		& .iso-rig {
-			transform: rotateX(54deg) rotateZ(-26deg) scale(0.82) translateY(-8px);
+			transform: rotateX(54deg) rotateZ(-26deg) scale(0.8) translateY(-10px);
 		}
 	}
 
@@ -575,112 +661,120 @@
 
 	.iso-scene.exploded .acetate-plate {
 		opacity: 1;
-		pointer-events: auto;
+		pointer-events: none;
 		border-color: color-mix(in srgb, var(--line-strong) 85%, transparent);
 		background: color-mix(in srgb, var(--bg-raised) 14%, transparent);
 		box-shadow:
 			inset 0 1px 0 color-mix(in srgb, var(--ink) 8%, transparent),
 			0 20px 34px -18px rgb(0 0 0 / 0.28);
+	}
 
-		&:hover {
-			border-color: var(--accent);
-			background: color-mix(in srgb, var(--bg-raised) 32%, transparent);
-		}
+	/* Real-speed flash pulse directly on the 3D optical plates */
+	.plotter-bed.flashing.exploded .acetate-plate {
+		border-color: var(--mark);
+		background: color-mix(in srgb, var(--mark) 22%, transparent);
+		box-shadow:
+			0 0 0 1px var(--mark),
+			0 22px 38px -14px color-mix(in srgb, var(--mark) 45%, transparent);
 	}
 
 	.iso-scene.exploded .plate-0 {
-		transform: translateZ(-54px);
+		transform: translateZ(-62px);
 		background: color-mix(in srgb, var(--bg-inset) 62%, transparent);
-
-		&:hover {
-			transform: translateZ(-44px);
-		}
 	}
 
 	.iso-scene.exploded .plate-1 {
-		transform: translateZ(-12px);
-
-		&:hover {
-			transform: translateZ(-2px);
-		}
+		transform: translateZ(-14px);
 	}
 
 	.iso-scene.exploded .plate-2 {
-		transform: translateZ(34px);
-
-		&:hover {
-			transform: translateZ(44px);
-		}
+		transform: translateZ(36px);
 	}
 
 	.iso-scene.exploded .plate-3 {
-		transform: translateZ(78px);
-
-		&:hover {
-			transform: translateZ(88px);
-		}
+		transform: translateZ(86px);
 	}
 
 	/* Compact depth scale for Docs sidebar */
 	.compact .iso-scene.exploded .plate-0 {
-		transform: translateZ(-34px);
+		transform: translateZ(-36px);
 	}
 	.compact .iso-scene.exploded .plate-1 {
-		transform: translateZ(-6px);
+		transform: translateZ(-8px);
 	}
 	.compact .iso-scene.exploded .plate-2 {
 		transform: translateZ(24px);
 	}
 	.compact .iso-scene.exploded .plate-3 {
-		transform: translateZ(54px);
+		transform: translateZ(56px);
 	}
 
-	/* Plate 01: 24u dashed auto-sheet margin guide & corner registration ticks */
-	.margin-guide {
+	/* Measured overlay SVG (Plate 01 footprints & Plate 04 source-map callouts) */
+	.overlay-svg {
 		position: absolute;
-		inset: 14px;
-		border: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
-		border-radius: 2px;
+		inset: 0;
+		inline-size: 100%;
+		block-size: 100%;
+		display: block;
+		overflow: visible;
 		pointer-events: none;
 	}
 
-	.reg {
-		position: absolute;
-		font-family: var(--font-mono);
-		font-size: 0.7rem;
-		line-height: 1;
-		color: var(--ink-mute);
+	.sheet-outline {
+		fill: color-mix(in srgb, var(--accent) 4%, transparent);
+		stroke: color-mix(in srgb, var(--accent) 62%, transparent);
+		stroke-width: 1.5;
+		stroke-dasharray: 6 4;
+		vector-effect: non-scaling-stroke;
+	}
 
-		&.tl {
-			inset-block-start: -3px;
-			inset-inline-start: -2px;
+	.footprint-box {
+		fill: color-mix(in srgb, var(--mark) 10%, transparent);
+		stroke: color-mix(in srgb, var(--mark) 72%, transparent);
+		stroke-width: 1.25;
+		stroke-dasharray: 3 3;
+		vector-effect: non-scaling-stroke;
+		transition:
+			opacity var(--dur-fast) var(--ease-precise),
+			filter var(--dur-fast) var(--ease-precise);
+	}
+
+	.callout-pill {
+		pointer-events: auto;
+		cursor: pointer;
+		transition:
+			opacity var(--dur-fast) var(--ease-precise),
+			filter var(--dur-fast) var(--ease-precise);
+
+		& rect {
+			fill: color-mix(in srgb, var(--bg-raised) 92%, transparent);
+			stroke: color-mix(in srgb, var(--accent) 70%, transparent);
+			stroke-width: 1;
+			vector-effect: non-scaling-stroke;
 		}
-		&.tr {
-			inset-block-start: -3px;
-			inset-inline-end: -2px;
-		}
-		&.bl {
-			inset-block-end: -3px;
-			inset-inline-start: -2px;
-		}
-		&.br {
-			inset-block-end: -3px;
-			inset-inline-end: -2px;
+
+		& text {
+			fill: var(--accent);
+			font-family: var(--font-mono);
+			font-size: 9px;
+			font-weight: 700;
+			stroke: none;
 		}
 	}
 
+	/* Plate edge tabs tucked along bottom-left edge so they never collide with symbols */
 	.plate-tag {
 		position: absolute;
-		inset-block-start: 0.45rem;
+		inset-block-end: 0.45rem;
 		inset-inline-start: 0.55rem;
 		z-index: 4;
 		padding: 0.1rem 0.42rem;
 		border: 1px solid var(--line-strong);
 		border-radius: var(--radius-tag);
-		background: color-mix(in srgb, var(--bg-raised) 92%, transparent);
+		background: color-mix(in srgb, var(--bg-raised) 94%, transparent);
 		color: var(--ink-mute);
 		font-family: var(--font-mono);
-		font-size: 0.68rem;
+		font-size: 0.66rem;
 		letter-spacing: 0.03em;
 		text-transform: uppercase;
 		pointer-events: none;
@@ -694,16 +788,16 @@
 
 	.sheet-dim {
 		position: absolute;
-		inset-block-end: 0.5rem;
-		inset-inline-end: 0.65rem;
+		inset-block-end: 0.45rem;
+		inset-inline-end: 0.6rem;
 		z-index: 4;
 		padding: 0.1rem 0.42rem;
 		border: 1px solid var(--line-strong);
 		border-radius: var(--radius-tag);
-		background: color-mix(in srgb, var(--bg-raised) 92%, transparent);
+		background: color-mix(in srgb, var(--bg-raised) 94%, transparent);
 		color: var(--ink);
 		font-family: var(--font-mono);
-		font-size: 0.68rem;
+		font-size: 0.66rem;
 		pointer-events: none;
 	}
 
@@ -735,6 +829,22 @@
 		& :global(.schematic-glow-layer),
 		& :global(.schematic-port-hotspot) {
 			display: none !important;
+		}
+
+		& :global([data-source-line]) {
+			pointer-events: auto;
+			cursor: pointer;
+			transition:
+				opacity var(--dur-fast) var(--ease-precise),
+				filter var(--dur-fast) var(--ease-precise);
+		}
+
+		& :global(.schematic-component),
+		& :global([data-node-id]) {
+			transition:
+				transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+				opacity 220ms ease,
+				filter var(--dur-fast) var(--ease-precise);
 		}
 	}
 
@@ -859,7 +969,9 @@
 		.iso-rig,
 		.acetate-plate,
 		.canonical-host :global(.schematic-component),
-		.canonical-host :global([data-node-id]) {
+		.canonical-host :global([data-node-id]),
+		.layer-svg :global(.schematic-component),
+		.layer-svg :global([data-node-id]) {
 			transition: none !important;
 		}
 	}

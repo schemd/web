@@ -247,12 +247,13 @@ const MAX_MODERN_MATH_FONTS = 320 * 1024;
 /* Lowered to 1,355 for the vellum brand set, measured 1,351.2 KiB. The icons
    are flat drawings now and shrink from 68.0 KB to 20.2 KB; the social card,
    a real compiled figure, grows from 62.9 KB to 97.3 KB. */
-/* Raised from 1,378 to 1,405 KiB for the Plotter Sheet redesign, measured
-   1,395.7 KiB (+22.3 KiB raw JS + scoped CSS for PlotterBed, home plotter
-   sheet workspace, calibrated top ruler, and playground/docs isometric stack
-   + pulse controls; compiler worker stays under its separate 52 KiB gz
+/* Raised from 1,378 to 1,416 KiB for the Plotter Sheet redesign, measured
+   1,408.6 KiB (+35.2 KiB raw JS + scoped CSS for PlotterBed's 4-plate optical
+   stack with measured footprints & source-map callouts, 3D pulse/flash/hover
+   interactivity, home plotter sheet workspace, calibrated top ruler, and
+   shared compact CodeEditor; compiler worker stays under its separate 52 KiB gz
    budget). */
-const MAX_CLIENT_OUTPUT = 1_405 * 1024;
+const MAX_CLIENT_OUTPUT = 1_416 * 1024;
 /*
  * Eleven laboratories, each downloaded only when it is opened. Two of them are
  * manifests rather than components, so the shell's lazy registry spans both
