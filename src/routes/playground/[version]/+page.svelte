@@ -13,7 +13,9 @@
 	import WorkspaceShell from '#lib/components/WorkspaceShell.svelte';
 	import SheetFrame from '#lib/components/SheetFrame.svelte';
 	import CodeEditor from '#lib/components/CodeEditor.svelte';
+	import PlotterBed from '#lib/components/PlotterBed.svelte';
 	import IdeCommandPalette from './IdeCommandPalette.svelte';
+	import { pulseSvgWires } from '#lib/plotter-layers.ts';
 	import { compileInBrowser, prefetchCompiler } from '#lib/compile-client.ts';
 	import { COMPILE_LIMITS } from '#lib/compile-contract.ts';
 	import { rasterExportScale } from '#lib/playground-export.ts';
@@ -170,6 +172,23 @@
 		/^```schemd(?:\s+bounds="(?:(\d+)x(\d+)|auto)")?(?:\s+title="([^"]*)")?\s*\n([\s\S]*?)\n```\s*$/;
 	let autoBounds = $state(false);
 	let geometryOverlay = $state(false);
+	let explodedPreview = $state(false);
+	let playgroundPlotter = $state<PlotterBed | undefined>();
+	let cancelFlatPulse: (() => void) | undefined;
+
+	/** Fire luminous signal pulses along every routed trace in the preview SVG. */
+	function pulsePreview(): void {
+		if (!browser) return;
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		if (explodedPreview) {
+			playgroundPlotter?.pulse();
+			return;
+		}
+		const svgEl = previewHost?.querySelector('svg');
+		if (!svgEl) return;
+		cancelFlatPulse?.();
+		cancelFlatPulse = pulseSvgWires(svgEl);
+	}
 	function absorbFence(candidate: string): boolean {
 		const match = FENCE_PATTERN.exec(candidate.trim());
 		if (!match) return false;
@@ -1455,40 +1474,65 @@
 					</button>
 				</div>
 				{#if view === 'render'}
-					<button
-						type="button"
-						class="layer-toggle"
-						aria-pressed={geometryOverlay}
-						onclick={() => (geometryOverlay = !geometryOverlay)}
-					>
-						{t('Geometry')}
-					</button>
+					<div class="plotter-actions" role="group" aria-label={t('Plotter controls')}>
+						<button
+							type="button"
+							class="layer-toggle"
+							aria-pressed={geometryOverlay}
+							onclick={() => (geometryOverlay = !geometryOverlay)}
+						>
+							{t('Geometry')}
+						</button>
+						<button
+							type="button"
+							class="layer-toggle"
+							aria-pressed={explodedPreview}
+							onclick={() => (explodedPreview = !explodedPreview)}
+						>
+							{t('Explode')}
+						</button>
+						<button type="button" class="layer-toggle pulse-action" onclick={pulsePreview}>
+							{t('Pulse')}
+						</button>
+					</div>
 				{/if}
 			</div>
 
 			{#if view === 'render'}
 				<div class="sheet-host">
-					<SheetFrame label={t('Drawing sheet')}>
-						{#key traceKey}
-							<div
-								bind:this={previewHost}
-								class="schemd-frame preview-stage trace-on"
-								class:preview-geometry={geometryOverlay}
-								class:stale={result.error !== undefined}
-								role="region"
-								aria-label={t('Compiled schematic preview')}
-								class:is-dragging={drag !== undefined}
-								onpointerover={onPreviewOver}
-								onpointerleave={onPreviewLeave}
-								onpointerdown={onPreviewPointerDown}
-								onpointermove={onPreviewPointerMove}
-								onpointerup={onPreviewPointerUp}
-								onpointercancel={onPreviewPointerUp}
-							>
-								{@html result.svg}
-							</div>
-						{/key}
-					</SheetFrame>
+					{#if explodedPreview}
+						<PlotterBed
+							bind:this={playgroundPlotter}
+							bind:exploded={explodedPreview}
+							grid={geometryOverlay}
+							svg={result.svg}
+							sheetWidth={result.sheet?.width ?? boundsWidth}
+							sheetHeight={result.sheet?.height ?? boundsHeight}
+							ms={result.ms}
+						/>
+					{:else}
+						<SheetFrame label={t('Drawing sheet')}>
+							{#key traceKey}
+								<div
+									bind:this={previewHost}
+									class="schemd-frame preview-stage trace-on"
+									class:preview-geometry={geometryOverlay}
+									class:stale={result.error !== undefined}
+									role="region"
+									aria-label={t('Compiled schematic preview')}
+									class:is-dragging={drag !== undefined}
+									onpointerover={onPreviewOver}
+									onpointerleave={onPreviewLeave}
+									onpointerdown={onPreviewPointerDown}
+									onpointermove={onPreviewPointerMove}
+									onpointerup={onPreviewPointerUp}
+									onpointercancel={onPreviewPointerUp}
+								>
+									{@html result.svg}
+								</div>
+							{/key}
+						</SheetFrame>
+					{/if}
 				</div>
 				{#if (result.placements?.length ?? 0) > 0}
 					<div class="pin-bar" aria-label={t('Drafted and relative placements')}>
@@ -2097,6 +2141,18 @@
 		margin: 0;
 	}
 
+	.plotter-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+	}
+
+	.pulse-action {
+		background: var(--ink);
+		border-color: var(--ink);
+		color: var(--bg);
+	}
+
 	.preview-geometry {
 		background-image:
 			linear-gradient(
@@ -2108,8 +2164,22 @@
 				to bottom,
 				color-mix(in srgb, var(--line) 42%, transparent) 1px,
 				transparent 1px
+			),
+			linear-gradient(
+				to right,
+				color-mix(in srgb, var(--line) 72%, transparent) 1px,
+				transparent 1px
+			),
+			linear-gradient(
+				to bottom,
+				color-mix(in srgb, var(--line) 72%, transparent) 1px,
+				transparent 1px
 			);
-		background-size: 24px 24px;
+		background-size:
+			20px 20px,
+			20px 20px,
+			100px 100px,
+			100px 100px;
 	}
 
 	.pin-bar {

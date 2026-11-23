@@ -111,10 +111,14 @@
 </footer>
 
 <style>
-	/* The footer lies on the table below the page sheet, not on a sheet. */
+	/* The footer is a ruled draftsman's end title block at the foot of the table. */
 	.end {
-		margin-block-start: var(--space-8);
-		padding-block: var(--space-6) var(--space-12);
+		inline-size: min(100% - 2 * var(--space-4), var(--sheet-max));
+		margin: var(--space-6) auto var(--space-12);
+		padding: var(--space-6) var(--sheet-pad);
+		border: 1px solid var(--line-strong);
+		border-radius: var(--radius-md);
+		background: color-mix(in srgb, var(--vellum) 92%, transparent);
 		font-size: var(--text-sm);
 	}
 

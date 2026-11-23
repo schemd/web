@@ -29,10 +29,17 @@
 		document.documentElement.lang = locale();
 	});
 	let clientReady = $state(false);
+	let cursorX = $state(0);
+	let cursorY = $state(0);
 	onMount(() => {
 		hydrateUiPreferences();
 		clientReady = true;
 	});
+
+	function trackSheetPointer(event: PointerEvent): void {
+		cursorX = Math.max(0, Math.round(event.clientX));
+		cursorY = Math.max(0, Math.round(event.clientY));
+	}
 
 	const version = $derived(page.params['version'] ?? data.latest);
 
@@ -65,78 +72,92 @@
 	}
 </script>
 
+<svelte:window onpointermove={trackSheetPointer} />
+
 <a class="skip-link" href="#main">{t('Skip to content')}</a>
 
-<header class="nav-sheet vellum">
-	<a class="wordmark" href={href('/')} aria-label={t('schemd home')}
-		><Mark size={28} />{t('schemd')}</a
-	>
-	<nav class="nav-links" aria-label={t('Primary')}>
-		{#each nav as item (item.href)}
-			<a href={href(item.href)} aria-current={pathname.startsWith(item.match) ? 'page' : undefined}>
-				{t(item.label)}
-			</a>
-		{/each}
-	</nav>
+<header class="ruler-bar">
+	<div class="ruler-inner">
+		<a class="wordmark" href={href('/')} aria-label={t('schemd home')}
+			><span class="reg-glyph" aria-hidden="true">⌖</span><Mark size={24} />{t('schemd')}</a
+		>
+		<span class="coord-chip tabular" aria-hidden="true">
+			({String(cursorX).padStart(3, '0')}, {String(cursorY).padStart(3, '0')})
+		</span>
+		<nav class="nav-links" aria-label={t('Primary')}>
+			{#each nav as item (item.href)}
+				<a
+					href={href(item.href)}
+					aria-current={pathname.startsWith(item.match) ? 'page' : undefined}
+				>
+					{t(item.label)}
+				</a>
+			{/each}
+		</nav>
 
-	<div class="nav-tools">
-		<button
-			type="button"
-			class="tool search"
-			disabled={!clientReady}
-			onclick={() => (ui.paletteOpen = true)}
-			aria-keyshortcuts="Meta+K Control+K"
-		>
-			<!-- Named by what it shows, so a voice command of "search" finds it. -->
-			<span>{t('Search')}</span>
-			<kbd>{t('⌘K')}</kbd>
-			<span class="visually-hidden">{t(', opens the command palette')}</span>
-		</button>
-		<button
-			type="button"
-			class="tool"
-			onclick={cycleBlueprint}
-			aria-label={t('Print mode: {0}. Activate to switch.', [t(BLUEPRINT_LABELS[ui.blueprint])])}
-		>
-			<span class="mode-swatch" data-mode={ui.blueprint} aria-hidden="true"></span>
-			<span class="tool-text">{t(BLUEPRINT_SHORT[ui.blueprint])}</span>
-		</button>
-		<button
-			type="button"
-			class="tool"
-			role="switch"
-			aria-checked={ui.audio}
-			onclick={() => {
-				setAudio(!ui.audio);
-				if (!ui.audio) return;
-				playTick(660);
-			}}
-			aria-label={t('Sound')}
-		>
-			<span>{ui.audio ? t('Sound on') : t('Sound off')}</span>
-		</button>
-		<LanguageSelect />
-		<VersionSelect
-			versions={data.versions}
-			latest={data.latest}
-			docLines={data.docLines}
-			docSlugs={data.docSlugs}
-		/>
-		<a
-			class="tool external"
-			href="https://github.com/schemd/core"
-			rel="noopener"
-			target="_blank"
-			aria-label={t('schemd on GitHub (opens in a new tab)')}>{t('GitHub')}</a
-		>
+		<div class="nav-tools">
+			<button
+				type="button"
+				class="tool search"
+				disabled={!clientReady}
+				onclick={() => (ui.paletteOpen = true)}
+				aria-keyshortcuts="Meta+K Control+K"
+			>
+				<!-- Named by what it shows, so a voice command of "search" finds it. -->
+				<span>{t('Search')}</span>
+				<kbd>{t('⌘K')}</kbd>
+				<span class="visually-hidden">{t(', opens the command palette')}</span>
+			</button>
+			<button
+				type="button"
+				class="tool"
+				onclick={cycleBlueprint}
+				aria-label={t('Print mode: {0}. Activate to switch.', [t(BLUEPRINT_LABELS[ui.blueprint])])}
+			>
+				<span class="mode-swatch" data-mode={ui.blueprint} aria-hidden="true"></span>
+				<span class="tool-text">{t(BLUEPRINT_SHORT[ui.blueprint])}</span>
+			</button>
+			<button
+				type="button"
+				class="tool"
+				role="switch"
+				aria-checked={ui.audio}
+				onclick={() => {
+					setAudio(!ui.audio);
+					if (!ui.audio) return;
+					playTick(660);
+				}}
+				aria-label={t('Sound')}
+			>
+				<span>{ui.audio ? t('Sound on') : t('Sound off')}</span>
+			</button>
+			<LanguageSelect />
+			<VersionSelect
+				versions={data.versions}
+				latest={data.latest}
+				docLines={data.docLines}
+				docSlugs={data.docSlugs}
+			/>
+			<a
+				class="tool external"
+				href="https://github.com/schemd/core"
+				rel="noopener"
+				target="_blank"
+				aria-label={t('schemd on GitHub (opens in a new tab)')}>{t('GitHub')}</a
+			>
+		</div>
 	</div>
 </header>
 
 <main id="main" class:has-footer={showFooter} class:on-table={!onSheet}>
 	{#if onSheet}
-		<!-- The page is a sheet of vellum with a second sheet beneath it. -->
+		<!-- The page is a calibrated plotter sheet with corner registration marks. -->
 		<div class="sheet-stack">
 			<div class="vellum page-sheet">
+				<div class="sheet-reg" aria-hidden="true">
+					<span>┌ 000 · ORIGIN</span>
+					<span class="tabular">REV {data.latest} ┐</span>
+				</div>
 				{@render children()}
 			</div>
 		</div>
@@ -173,24 +194,67 @@
 		}
 	}
 
-	/* The navigation is a sheet of its own that floats over the page as it
-	   scrolls, with a strip of table showing round it. */
-	.nav-sheet {
+	/* Calibrated top edge ruler: full-width drafting bar with subtle tick marks. */
+	.ruler-bar {
 		position: sticky;
-		inset-block-start: var(--space-3);
+		inset-block-start: 0;
 		z-index: 50;
+		border-block-end: 1px solid var(--line-strong);
+		background: color-mix(in srgb, var(--vellum) 94%, transparent);
+		-webkit-backdrop-filter: blur(8px);
+		backdrop-filter: blur(8px);
+
+		&::after {
+			content: '';
+			position: absolute;
+			inset-block-end: 0;
+			inset-inline: 0;
+			block-size: 4px;
+			pointer-events: none;
+			background-image: repeating-linear-gradient(
+				to right,
+				color-mix(in srgb, var(--line-strong) 55%, transparent) 0 1px,
+				transparent 1px 20px
+			);
+		}
+	}
+
+	.ruler-inner {
 		display: flex;
 		align-items: center;
-		gap: var(--space-4);
-		inline-size: min(100% - 2 * var(--space-4) - var(--under-offset), var(--sheet-max));
-		block-size: 56px;
-		margin: var(--space-3) auto 0;
-		padding-inline: var(--space-5) var(--space-3);
-		/* Pages scroll beneath this sheet, so it diffuses them more than a page
-		   sheet diffuses the sheet under it. */
-		background: color-mix(in srgb, var(--vellum) 90%, transparent);
-		-webkit-backdrop-filter: blur(12px);
-		backdrop-filter: blur(12px);
+		gap: var(--space-2);
+		inline-size: min(100% - 2 * var(--space-4), var(--sheet-max));
+		min-block-size: 54px;
+		margin-inline: auto;
+	}
+
+	.reg-glyph {
+		font-family: var(--font-mono);
+		color: var(--accent);
+		font-size: 1rem;
+		line-height: 1;
+	}
+
+	.coord-chip {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--ink-mute);
+		padding: 0.1rem 0.45rem;
+		border: 1px solid var(--line);
+		border-radius: var(--radius-sm);
+		background: var(--wash);
+		white-space: nowrap;
+	}
+
+	.sheet-reg {
+		display: flex;
+		justify-content: space-between;
+		padding-block: var(--space-3) 0;
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		letter-spacing: 0.04em;
+		color: var(--ink-faint);
+		user-select: none;
 	}
 
 	.wordmark {
@@ -217,9 +281,9 @@
 		scrollbar-width: none;
 
 		& a {
-			padding: 0.3rem 0.55rem;
-			border-radius: 6px;
-			font-size: 0.9375rem;
+			padding: 0.25rem 0.45rem;
+			border-radius: var(--radius-sm);
+			font-size: 0.875rem;
 			font-weight: 500;
 			color: var(--ink);
 			white-space: nowrap;
@@ -241,6 +305,7 @@
 	.nav-tools {
 		display: flex;
 		align-items: center;
+		flex-shrink: 0;
 		gap: var(--space-1);
 		margin-inline-start: auto;
 		font-size: var(--text-sm);
@@ -307,24 +372,22 @@
 	}
 
 	@media (max-width: 1180px) {
-		.nav-tools kbd {
+		.nav-tools kbd,
+		.coord-chip {
 			display: none;
 		}
 	}
 
-	/* On a phone the sheet holds two rows: the links, then the tools, each
+	/* On a phone the ruler holds two rows: the links, then the tools, each
 	   scrolling sideways so nothing is ever cut short. */
 	@media (max-width: 860px) {
-		.nav-sheet {
+		.ruler-inner {
 			display: grid;
 			grid-template-columns: auto minmax(0, 1fr);
-			grid-template-rows: 48px 48px;
+			grid-template-rows: 46px 46px;
 			column-gap: var(--space-3);
 			row-gap: 0;
-			block-size: auto;
-			padding-inline: var(--space-4) var(--space-2);
-			inset-block-start: var(--space-2);
-			margin-block-start: var(--space-2);
+			min-block-size: 0;
 		}
 
 		.nav-tools {

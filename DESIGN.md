@@ -1,4 +1,17 @@
-# Design: vellum
+# Design: The Plotter Sheet (v1.4)
+
+`schemd`'s site is a calibrated drafting sheet on a mechanical XY plotter bed. Fine 20 px and 100 px drafting hairlines ground the table; crisp architectural corners (`4px`/`6px`), corner registration crosshairs (`┌ 000 · ORIGIN` / `REV 1.4.0 ┐`), a full-width calibrated top edge ruler with live pointer coordinates, and a ruled draftsman's title block frame every surface.
+
+This evolves the earlier **Vellum** design onto an archival cotton-rag drafting paper (`#FBFAF7` / `#E9E6DF`, `#18181B` India ink, `#1D4ED8` drafting cobalt, `#F5C842` amber-gold trace highlight) paired with a matte graphite studio dark mode (`#14171D` / `#0D0F12`), Atkinson Hyperlegible Next + Mono typography, the shared `CodeEditor` IDE across every `schemd` authoring surface (Playground, Home `Edit live`, and Docs `Edit here`), and four physics-driven motion instruments (`PlotterBed.svelte` + `plotter-layers.ts`):
+
+1. **XY Pen-Plotter Carriage (`Plot` vs. real `0.11 ms` flash):** Orthogonal rails track real routed `.schematic-trace` paths via `getPointAtLength()`, highlighting each declaring source line as it draws.
+2. **4-Stage Compiler Vernier Scrubber (`1 · Source → 2 · Draft → 3 · Route → 4 · Ink`):** Scrubs live compiled SVGs from margin-stacked parts through BFS draft placement, Manhattan routing, and final typography.
+3. **Exploded 3D Isometric 4-Plate Acetate Stack (`Explode`):** Projects real compiled SVGs across four hover-interactive translucent optical plates along the Z-axis (`01 · Lattice & sheet`, `02 · Symbols & pins`, `03 · Routed copper`, `04 · Labels & source map`) on Home, Playground, and Docs.
+4. **Live Signal Propagation (`Pulse`):** Fires luminous signal packets along routed copper paths (both flat and on floating 3D Plate 03 when exploded) with junction ripple rings.
+
+---
+
+# Prior design notes: vellum
 
 schemd's site is a drafting table. Each page is a sheet of vellum lying on it: matte, slightly translucent, with the sheet underneath showing faintly through. Engineers have always worked this way: a tracing laid over a drawing, a checker's copy laid over the original. schemd does the same thing in software, since the text a person writes is traced into a drawing, so the metaphor carries real meaning rather than decoration.
 
