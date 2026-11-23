@@ -222,7 +222,7 @@
 	.ruler-inner {
 		display: flex;
 		align-items: center;
-		gap: var(--space-3);
+		gap: var(--space-2);
 		inline-size: min(100% - 2 * var(--space-4), var(--sheet-max));
 		min-block-size: 54px;
 		margin-inline: auto;
@@ -281,9 +281,9 @@
 		scrollbar-width: none;
 
 		& a {
-			padding: 0.3rem 0.55rem;
-			border-radius: 6px;
-			font-size: 0.9375rem;
+			padding: 0.25rem 0.45rem;
+			border-radius: var(--radius-sm);
+			font-size: 0.875rem;
 			font-weight: 500;
 			color: var(--ink);
 			white-space: nowrap;
@@ -305,6 +305,7 @@
 	.nav-tools {
 		display: flex;
 		align-items: center;
+		flex-shrink: 0;
 		gap: var(--space-1);
 		margin-inline-start: auto;
 		font-size: var(--text-sm);

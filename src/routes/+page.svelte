@@ -702,6 +702,8 @@ VS.negative -> GS.in #slate [ortho]`;
 
 	.margin-col {
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		min-inline-size: 0;
 		gap: var(--space-4);
 	}
 
@@ -722,6 +724,7 @@ VS.negative -> GS.in #slate [ortho]`;
 
 	/* Bare hairline-ruled source plate (no puffy card chrome) */
 	.source-plate {
+		min-inline-size: 0;
 		border-block: 1px solid var(--line-strong);
 		padding-block: var(--space-2);
 	}
@@ -877,6 +880,8 @@ VS.negative -> GS.in #slate [ortho]`;
 	/* Right Bed Column */
 	.bed-col {
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		min-inline-size: 0;
 		gap: var(--space-2);
 	}
 
@@ -885,21 +890,21 @@ VS.negative -> GS.in #slate [ortho]`;
 		flex-wrap: wrap;
 		align-items: center;
 		justify-content: space-between;
-		gap: var(--space-2);
+		gap: var(--space-1);
 	}
 
 	.views,
 	.motion-controls {
 		display: flex;
 		flex-wrap: wrap;
-		gap: var(--space-1);
+		gap: 0.25rem;
 
 		& button {
-			padding: 0.25rem 0.6rem;
+			padding: 0.22rem 0.5rem;
 			border: 1px solid var(--line);
 			border-radius: var(--radius-sm);
 			background: var(--bg);
-			font-size: 0.8rem;
+			font-size: 0.78rem;
 			font-weight: 600;
 			color: var(--ink-mute);
 

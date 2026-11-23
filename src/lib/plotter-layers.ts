@@ -4,8 +4,9 @@
  */
 
 /**
- * Create a self-contained, aria-hidden SVG clone for one optical acetate layer
- * with uniquely prefixed element IDs so the DOM never contains duplicate IDs.
+ * Create a self-contained, optically transparent, aria-hidden SVG clone for one
+ * acetate layer: strips opaque background rects/grids, duplicate style blocks,
+ * accessibility/focus attributes, and prefixes every ID/reference uniquely.
  */
 export function projectLayerSvg(rawSvg: string, suffix: string): string {
 	if (!rawSvg) return '';
@@ -13,8 +14,14 @@ export function projectLayerSvg(rawSvg: string, suffix: string): string {
 	return rawSvg
 		.replace(/<title\b[^>]*>[\s\S]*?<\/title>/gi, '')
 		.replace(/<desc\b[^>]*>[\s\S]*?<\/desc>/gi, '')
-		.replace(/\srole="img"/gi, '')
-		.replace(/\saria-labelledby="[^"]*"/gi, '')
+		.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
+		.replace(
+			/<rect\b[^>]*class="[^"]*\bschematic-(?:surface|grid)\b[^"]*"[^>]*\/?>(?:<\/rect>)?/gi,
+			''
+		)
+		.replace(/\srole="(?:img|group|button)"/gi, '')
+		.replace(/\stabindex="[^"]*"/gi, '')
+		.replace(/\saria-(?:labelledby|label)="[^"]*"/gi, '')
 		.replace(/\sid="([^"]+)"/g, (_, id: string) => ` id="${prefix}${id}"`)
 		.replace(/\bhref="#([^"]+)"/g, (_, id: string) => `href="#${prefix}${id}"`)
 		.replace(/url\(#([^)]+)\)/g, (_, id: string) => `url(#${prefix}${id})`);

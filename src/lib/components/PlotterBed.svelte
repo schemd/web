@@ -348,7 +348,7 @@
 			</div>
 
 			{#if stackMounted}
-				<!-- Plate 01 (-58px): Channel Lattice & Measured 24u Auto-Sheet Frame -->
+				<!-- Plate 01 (-54px): Channel Lattice & Measured 24u Auto-Sheet Frame -->
 				<div class="acetate-plate plate-0 plotter-grid" aria-hidden="true">
 					<span class="plate-tag">{t('01 · Lattice & sheet')}</span>
 					<div class="margin-guide">
@@ -364,29 +364,29 @@
 					{/if}
 				</div>
 
-				<!-- Plate 02 (-14px): Component Symbols & Pins ONLY -->
-				<div class="acetate-plate plate-1 layer-symbols" aria-hidden="true">
-					<span class="plate-tag">{t('02 · Symbols & pins')}</span>
-					<div class="layer-svg">
-						<!-- eslint-disable-next-line svelte/no-at-html-tags -- prefixed clone of compiler output -->
-						{@html symbolsLayerSvg}
-					</div>
-				</div>
-
-				<!-- Plate 03 (+36px): Routed Orthogonal Copper & Junctions ONLY -->
+				<!-- Plate 02 (-12px): Routed Orthogonal Copper & Junctions ONLY -->
 				<div
 					bind:this={copperPlateHost}
-					class="acetate-plate plate-2 layer-copper"
+					class="acetate-plate plate-1 layer-copper"
 					aria-hidden="true"
 				>
-					<span class="plate-tag">{t('03 · Routed copper')}</span>
+					<span class="plate-tag">{t('02 · Routed copper')}</span>
 					<div class="layer-svg">
 						<!-- eslint-disable-next-line svelte/no-at-html-tags -- prefixed clone of compiler output -->
 						{@html copperLayerSvg}
 					</div>
 				</div>
 
-				<!-- Plate 04 (+84px): Labels, Math & Source Map Annotations ONLY -->
+				<!-- Plate 03 (+34px): Component Symbols & Pins ONLY -->
+				<div class="acetate-plate plate-2 layer-symbols" aria-hidden="true">
+					<span class="plate-tag">{t('03 · Symbols & pins')}</span>
+					<div class="layer-svg">
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -- prefixed clone of compiler output -->
+						{@html symbolsLayerSvg}
+					</div>
+				</div>
+
+				<!-- Plate 04 (+78px): Labels, Math & Source Map Annotations ONLY -->
 				<div class="acetate-plate plate-3 layer-labels" aria-hidden="true">
 					<span class="plate-tag">{t('04 · Labels & source map')}</span>
 					<div class="layer-svg">
@@ -576,63 +576,63 @@
 	.iso-scene.exploded .acetate-plate {
 		opacity: 1;
 		pointer-events: auto;
-		border-color: color-mix(in srgb, var(--line-strong) 82%, transparent);
-		background: color-mix(in srgb, var(--bg-raised) 56%, transparent);
+		border-color: color-mix(in srgb, var(--line-strong) 85%, transparent);
+		background: color-mix(in srgb, var(--bg-raised) 14%, transparent);
 		box-shadow:
 			inset 0 1px 0 color-mix(in srgb, var(--ink) 8%, transparent),
-			0 22px 36px -18px rgb(0 0 0 / 0.34);
+			0 20px 34px -18px rgb(0 0 0 / 0.28);
 
 		&:hover {
 			border-color: var(--accent);
-			background: color-mix(in srgb, var(--bg-raised) 76%, transparent);
+			background: color-mix(in srgb, var(--bg-raised) 32%, transparent);
 		}
 	}
 
 	.iso-scene.exploded .plate-0 {
-		transform: translateZ(-58px);
-		background: color-mix(in srgb, var(--bg-inset) 78%, transparent);
+		transform: translateZ(-54px);
+		background: color-mix(in srgb, var(--bg-inset) 62%, transparent);
 
 		&:hover {
-			transform: translateZ(-48px);
+			transform: translateZ(-44px);
 		}
 	}
 
 	.iso-scene.exploded .plate-1 {
-		transform: translateZ(-14px);
+		transform: translateZ(-12px);
 
 		&:hover {
-			transform: translateZ(-4px);
+			transform: translateZ(-2px);
 		}
 	}
 
 	.iso-scene.exploded .plate-2 {
-		transform: translateZ(36px);
+		transform: translateZ(34px);
 
 		&:hover {
-			transform: translateZ(46px);
+			transform: translateZ(44px);
 		}
 	}
 
 	.iso-scene.exploded .plate-3 {
-		transform: translateZ(84px);
+		transform: translateZ(78px);
 
 		&:hover {
-			transform: translateZ(94px);
+			transform: translateZ(88px);
 		}
 	}
 
 	/* Compact depth scale for Docs sidebar */
 	.compact .iso-scene.exploded .plate-0 {
-		transform: translateZ(-36px);
+		transform: translateZ(-34px);
 	}
 	.compact .iso-scene.exploded .plate-1 {
-		transform: translateZ(-8px);
+		transform: translateZ(-6px);
 	}
 	.compact .iso-scene.exploded .plate-2 {
 		transform: translateZ(24px);
 	}
 	.compact .iso-scene.exploded .plate-3 {
-		transform: translateZ(56px);
+		transform: translateZ(54px);
 	}
 
 	/* Plate 01: 24u dashed auto-sheet margin guide & corner registration ticks */
@@ -707,18 +707,16 @@
 		pointer-events: none;
 	}
 
-	/* Synchronized SVG optical projections */
+	/* Synchronized SVG optical projections — aligned 1:1 with canonical-host */
 	.layer-svg {
 		position: absolute;
 		inset: 0;
-		display: flex;
-		align-items: center;
-		justify-content: center;
 		pointer-events: none;
 
 		& :global(figure) {
 			margin: 0;
 			inline-size: 100%;
+			block-size: 100%;
 		}
 
 		& :global(figcaption) {
@@ -728,16 +726,33 @@
 		& :global(svg) {
 			display: block;
 			inline-size: 100%;
-			block-size: auto;
+			block-size: 100%;
 			overflow: visible;
+		}
+
+		& :global(.schematic-surface),
+		& :global(.schematic-grid),
+		& :global(.schematic-glow-layer),
+		& :global(.schematic-port-hotspot) {
+			display: none !important;
 		}
 	}
 
-	/* Plate 02: Components & pins ONLY (hide routed wires, junction dots, labels, grids) */
+	/* Plate 02: Routed copper & junction dots ONLY (hide component symbols & text) */
+	.layer-copper {
+		& :global(.schematic-component),
+		& :global(.schematic-wire-label),
+		& :global(.schematic-annotation),
+		& :global(text) {
+			display: none !important;
+		}
+	}
+
+	/* Plate 03: Component symbols & pins ONLY (hide routed wires, junction dots, labels) */
 	.layer-symbols {
+		& :global(.schematic-wire),
 		& :global(.schematic-trace),
 		& :global(.schematic-node-fill),
-		& :global(.schematic-grid),
 		& :global(.schematic-wire-label),
 		& :global(.schematic-annotation),
 		& :global([data-connection-index]),
@@ -746,18 +761,7 @@
 		}
 	}
 
-	/* Plate 03: Routed copper & junction dots ONLY (hide component symbols & text) */
-	.layer-copper {
-		& :global(.schematic-component),
-		& :global(.schematic-grid),
-		& :global(.schematic-wire-label),
-		& :global(.schematic-annotation),
-		& :global(text) {
-			display: none !important;
-		}
-	}
-
-	/* Plate 04: Labels, designators & annotations ONLY (hide vector geometry, keep text & label boxes) */
+	/* Plate 04: Floating labels, math & source-map typography ONLY */
 	.layer-labels {
 		& :global(.schematic-vectors use),
 		& :global(.schematic-vectors path),
@@ -765,9 +769,16 @@
 		& :global(.schematic-vectors line),
 		& :global(.schematic-vectors polygon),
 		& :global(.schematic-vectors polyline),
-		& :global(.schematic-vectors rect:not(.schematic-label-bg)),
-		& :global(.schematic-grid) {
+		& :global(.schematic-vectors rect:not(.schematic-label-bg)) {
 			display: none !important;
+		}
+
+		& :global(text) {
+			fill: var(--ink) !important;
+			stroke: var(--bg);
+			stroke-width: 2.5px;
+			paint-order: stroke;
+			font-weight: 600;
 		}
 	}
 
