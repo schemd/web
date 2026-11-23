@@ -38,9 +38,10 @@
 
 	const activeExample = $derived(exampleForSection.get(activeSectionId) ?? data.doc.examples[0]);
 
-	/* ---------- Living notebook rail: inline live edit, geometry overlay, copy SVG ---------- */
+	/* ---------- Living notebook rail: inline live edit, geometry overlay, explode, copy SVG ---------- */
 	let railEditing = $state(false);
 	let railGeometry = $state(false);
+	let railExploded = $state(false);
 	let railSource = $state('');
 	let railSvg = $state<string | undefined>();
 	let railError = $state<string | undefined>();
@@ -307,12 +308,23 @@
 						>
 							{t('Geometry')}
 						</button>
+						<button
+							type="button"
+							aria-pressed={railExploded}
+							onclick={() => (railExploded = !railExploded)}
+						>
+							{t('Explode')}
+						</button>
 						<button type="button" onclick={copyRailSvg}>
 							{railCopied ? t('Copied') : t('Copy SVG')}
 						</button>
 					</div>
 					<figure class="rail-figure">
-						<div class="schemd-frame trace-on" class:rail-geometry={railGeometry}>
+						<div
+							class="schemd-frame trace-on"
+							class:rail-geometry={railGeometry}
+							class:rail-exploded={railExploded}
+						>
 							<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
 							{@html railSvg ?? activeExample.svg}
 						</div>
@@ -624,15 +636,40 @@
 		background-image:
 			linear-gradient(
 				to right,
-				color-mix(in srgb, var(--line) 45%, transparent) 1px,
+				color-mix(in srgb, var(--line) 42%, transparent) 1px,
 				transparent 1px
 			),
 			linear-gradient(
 				to bottom,
-				color-mix(in srgb, var(--line) 45%, transparent) 1px,
+				color-mix(in srgb, var(--line) 42%, transparent) 1px,
+				transparent 1px
+			),
+			linear-gradient(
+				to right,
+				color-mix(in srgb, var(--line) 70%, transparent) 1px,
+				transparent 1px
+			),
+			linear-gradient(
+				to bottom,
+				color-mix(in srgb, var(--line) 70%, transparent) 1px,
 				transparent 1px
 			);
-		background-size: 20px 20px;
+		background-size:
+			20px 20px,
+			20px 20px,
+			100px 100px,
+			100px 100px;
+	}
+
+	.rail-exploded {
+		perspective: 1000px;
+		overflow: visible;
+
+		& :global(svg) {
+			transform: rotateX(40deg) rotateZ(-16deg) scale(0.86);
+			transition: transform 580ms cubic-bezier(0.22, 1, 0.36, 1);
+			box-shadow: 0 18px 34px -16px color-mix(in srgb, var(--ink) 32%, transparent);
+		}
 	}
 
 	.rail-editor {

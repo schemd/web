@@ -170,6 +170,54 @@
 		/^```schemd(?:\s+bounds="(?:(\d+)x(\d+)|auto)")?(?:\s+title="([^"]*)")?\s*\n([\s\S]*?)\n```\s*$/;
 	let autoBounds = $state(false);
 	let geometryOverlay = $state(false);
+	let explodedPreview = $state(false);
+
+	/** Fire luminous signal pulses along every routed trace in the preview SVG. */
+	function pulsePreview(): void {
+		if (!browser || !previewHost) return;
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		const svgEl = previewHost.querySelector('svg');
+		if (!svgEl) return;
+		svgEl.querySelector('[data-plotter-pulse]')?.remove();
+		const wires = Array.from(svgEl.querySelectorAll<SVGPathElement>('path.schematic-trace'));
+		if (wires.length === 0) return;
+		const layer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+		layer.setAttribute('data-plotter-pulse', '');
+		layer.setAttribute('pointer-events', 'none');
+		svgEl.appendChild(layer);
+		const packets = wires.map((wire, index) => {
+			const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+			dot.setAttribute('r', '4');
+			dot.setAttribute('fill', 'var(--mark)');
+			dot.setAttribute('stroke', 'var(--ink)');
+			dot.setAttribute('stroke-width', '1.2');
+			dot.style.opacity = '0';
+			layer.appendChild(dot);
+			return { wire, len: wire.getTotalLength(), delay: (index % 4) * 85, dot };
+		});
+		const stepMs = 480;
+		const totalMs = Math.max(...packets.map((p) => p.delay), 0) + stepMs + 180;
+		const started = performance.now();
+		const tick = (now: number): void => {
+			const elapsed = now - started;
+			let alive = false;
+			for (const p of packets) {
+				const u = (elapsed - p.delay) / stepMs;
+				if (u >= 0 && u <= 1 && p.len > 0) {
+					const pt = p.wire.getPointAtLength(p.len * u);
+					p.dot.setAttribute('cx', pt.x.toFixed(1));
+					p.dot.setAttribute('cy', pt.y.toFixed(1));
+					p.dot.style.opacity = '1';
+					alive = true;
+				} else {
+					p.dot.style.opacity = '0';
+				}
+			}
+			if (elapsed < totalMs || alive) requestAnimationFrame(tick);
+			else layer.remove();
+		};
+		requestAnimationFrame(tick);
+	}
 	function absorbFence(candidate: string): boolean {
 		const match = FENCE_PATTERN.exec(candidate.trim());
 		if (!match) return false;
@@ -1455,14 +1503,27 @@
 					</button>
 				</div>
 				{#if view === 'render'}
-					<button
-						type="button"
-						class="layer-toggle"
-						aria-pressed={geometryOverlay}
-						onclick={() => (geometryOverlay = !geometryOverlay)}
-					>
-						{t('Geometry')}
-					</button>
+					<div class="plotter-actions" role="group" aria-label={t('Plotter controls')}>
+						<button
+							type="button"
+							class="layer-toggle"
+							aria-pressed={geometryOverlay}
+							onclick={() => (geometryOverlay = !geometryOverlay)}
+						>
+							{t('Geometry')}
+						</button>
+						<button
+							type="button"
+							class="layer-toggle"
+							aria-pressed={explodedPreview}
+							onclick={() => (explodedPreview = !explodedPreview)}
+						>
+							{t('Explode')}
+						</button>
+						<button type="button" class="layer-toggle pulse-action" onclick={pulsePreview}>
+							{t('Pulse')}
+						</button>
+					</div>
 				{/if}
 			</div>
 
@@ -1474,6 +1535,7 @@
 								bind:this={previewHost}
 								class="schemd-frame preview-stage trace-on"
 								class:preview-geometry={geometryOverlay}
+								class:preview-exploded={explodedPreview}
 								class:stale={result.error !== undefined}
 								role="region"
 								aria-label={t('Compiled schematic preview')}
@@ -2097,6 +2159,18 @@
 		margin: 0;
 	}
 
+	.plotter-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+	}
+
+	.pulse-action {
+		background: var(--ink);
+		border-color: var(--ink);
+		color: var(--bg);
+	}
+
 	.preview-geometry {
 		background-image:
 			linear-gradient(
@@ -2108,8 +2182,33 @@
 				to bottom,
 				color-mix(in srgb, var(--line) 42%, transparent) 1px,
 				transparent 1px
+			),
+			linear-gradient(
+				to right,
+				color-mix(in srgb, var(--line) 72%, transparent) 1px,
+				transparent 1px
+			),
+			linear-gradient(
+				to bottom,
+				color-mix(in srgb, var(--line) 72%, transparent) 1px,
+				transparent 1px
 			);
-		background-size: 24px 24px;
+		background-size:
+			20px 20px,
+			20px 20px,
+			100px 100px,
+			100px 100px;
+	}
+
+	.preview-exploded {
+		perspective: 1200px;
+		overflow: visible;
+
+		& :global(svg) {
+			transform: rotateX(42deg) rotateZ(-18deg) scale(0.86);
+			transition: transform 620ms cubic-bezier(0.22, 1, 0.36, 1);
+			box-shadow: 0 20px 38px -18px color-mix(in srgb, var(--ink) 35%, transparent);
+		}
 	}
 
 	.pin-bar {
