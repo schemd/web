@@ -63,6 +63,32 @@
 	let flashing = $state(false);
 	let hasAutoPlotted = false;
 
+	const DEFAULT_TILT_X = 54;
+	const DEFAULT_SPIN_Z = -26;
+	let tiltX = $state(DEFAULT_TILT_X);
+	let spinZ = $state(DEFAULT_SPIN_Z);
+	let orbiting = $state(false);
+	let orbitDrag:
+		| {
+				pointerId: number;
+				startX: number;
+				startY: number;
+				baseTilt: number;
+				baseSpin: number;
+				moved: boolean;
+				hitInteractive: boolean;
+		  }
+		| undefined;
+
+	const isCustomOrbit = $derived(
+		Math.abs(tiltX - DEFAULT_TILT_X) > 0.5 || Math.abs(spinZ - DEFAULT_SPIN_Z) > 0.5
+	);
+
+	function resetOrbit(): void {
+		tiltX = DEFAULT_TILT_X;
+		spinZ = DEFAULT_SPIN_Z;
+	}
+
 	/**
 	 * Keep optical layer plates mounted once Explode is opened so collapse
 	 * animates smoothly back to z=0 before handing focus back to the live SVG.
@@ -341,19 +367,68 @@
 		if (explodeRaf !== undefined) cancelAnimationFrame(explodeRaf);
 	});
 
+	function isInteractiveHit(target: EventTarget | null): boolean {
+		const el = target instanceof Element ? target : null;
+		return Boolean(
+			el?.closest(
+				'.schematic-trace, .schematic-wire, .schematic-component, [data-node-id], .callout-pill'
+			)
+		);
+	}
+
 	function onPointerOver(event: PointerEvent): void {
+		if (orbiting) return;
 		const target = event.target instanceof Element ? event.target : null;
 		const raw = target?.closest('[data-source-line]')?.getAttribute('data-source-line');
 		onfocusline?.(raw ? Number(raw) : undefined);
 	}
 
-	function onPointerDown(event: PointerEvent): void {
+	function onBedPointerDown(event: PointerEvent): void {
+		if (event.button !== 0) return;
 		const target = event.target instanceof Element ? event.target : null;
-		if (
-			target?.closest(
-				'.schematic-trace, .schematic-wire, .schematic-component, [data-node-id], .callout-pill'
-			)
-		) {
+		if (target?.closest('button')) return;
+
+		if (!stackExpanded) {
+			if (isInteractiveHit(target)) pulse();
+			return;
+		}
+
+		orbitDrag = {
+			pointerId: event.pointerId,
+			startX: event.clientX,
+			startY: event.clientY,
+			baseTilt: tiltX,
+			baseSpin: spinZ,
+			moved: false,
+			hitInteractive: isInteractiveHit(target)
+		};
+		bedEl?.setPointerCapture?.(event.pointerId);
+	}
+
+	function onBedPointerMove(event: PointerEvent): void {
+		if (!orbitDrag || orbitDrag.pointerId !== event.pointerId) return;
+		const dx = event.clientX - orbitDrag.startX;
+		const dy = event.clientY - orbitDrag.startY;
+		if (!orbitDrag.moved && Math.hypot(dx, dy) >= 4) {
+			orbitDrag.moved = true;
+			orbiting = true;
+			onfocusline?.(undefined);
+		}
+		if (!orbitDrag.moved) return;
+		tiltX = Math.max(12, Math.min(78, orbitDrag.baseTilt - dy * 0.34));
+		spinZ = Math.max(-120, Math.min(120, orbitDrag.baseSpin - dx * 0.36));
+		hudText = `ORBIT ${Math.round(tiltX)}° / ${Math.round(spinZ)}°`;
+	}
+
+	function onBedPointerUp(event: PointerEvent): void {
+		if (!orbitDrag || orbitDrag.pointerId !== event.pointerId) return;
+		const drag = orbitDrag;
+		orbitDrag = undefined;
+		orbiting = false;
+		if (bedEl?.hasPointerCapture?.(event.pointerId)) {
+			bedEl.releasePointerCapture(event.pointerId);
+		}
+		if (!drag.moved && drag.hitInteractive) {
 			pulse();
 		}
 	}
@@ -364,8 +439,13 @@
 	class="plotter-bed"
 	class:compact
 	class:flashing
+	class:orbiting
 	class:exploded={stackExpanded}
 	class:show-grid={grid || stage < 260 || stackExpanded}
+	onpointerdown={onBedPointerDown}
+	onpointermove={onBedPointerMove}
+	onpointerup={onBedPointerUp}
+	onpointercancel={onBedPointerUp}
 >
 	{#if flashing && !stackExpanded}
 		<div class="flash-veil" aria-hidden="true"></div>
@@ -375,10 +455,11 @@
 	<div class="iso-scene" class:exploded={stackExpanded}>
 		<div
 			class="iso-rig"
+			style:--tilt-x={`${tiltX}deg`}
+			style:--spin-z={`${spinZ}deg`}
 			data-hero-stack={heroHost ? '' : undefined}
 			onpointerover={onPointerOver}
 			onpointerleave={() => onfocusline?.(undefined)}
-			onpointerdown={onPointerDown}
 		>
 			<!-- Canonical Live Compiled Schematic (in flow for zero CLS, interactive when flat) -->
 			<div
@@ -516,6 +597,19 @@
 			{/if}
 		</div>
 	{/if}
+
+	<!-- Bottom-right 3D orbit hint / reset button while Exploded -->
+	{#if stackExpanded}
+		<div class="orbit-hud tabular">
+			{#if isCustomOrbit}
+				<button type="button" class="orbit-reset" onclick={resetOrbit}>
+					{Math.round(tiltX)}° / {Math.round(spinZ)}° · {t('Reset angle')}
+				</button>
+			{:else}
+				<span class="orbit-hint">{t('Drag to tilt')}</span>
+			{/if}
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -591,13 +685,25 @@
 	.plotter-bed.exploded {
 		overflow: visible;
 		padding-block: var(--space-8);
+		cursor: grab;
+		user-select: none;
+		touch-action: none;
 
 		&.compact {
 			padding-block: var(--space-6);
 		}
 
+		&.orbiting {
+			cursor: grabbing;
+
+			& .iso-rig {
+				transition: none;
+			}
+		}
+
 		& .iso-rig {
-			transform: rotateX(54deg) rotateZ(-26deg) scale(0.8) translateY(-10px);
+			transform: rotateX(var(--tilt-x, 54deg)) rotateZ(var(--spin-z, -26deg)) scale(0.8)
+				translateY(-10px);
 		}
 	}
 
@@ -963,6 +1069,40 @@
 		font-family: var(--font-mono);
 		font-size: 0.72rem;
 		pointer-events: none;
+	}
+
+	.orbit-hud {
+		position: absolute;
+		inset-block-end: var(--space-2);
+		inset-inline-end: var(--space-3);
+		z-index: 10;
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+	}
+
+	.orbit-hint {
+		display: inline-block;
+		padding: 0.12rem 0.45rem;
+		border: 1px solid var(--line);
+		border-radius: var(--radius-tag);
+		background: color-mix(in srgb, var(--bg-raised) 90%, transparent);
+		color: var(--ink-mute);
+		pointer-events: none;
+	}
+
+	.orbit-reset {
+		padding: 0.14rem 0.5rem;
+		border: 1px solid var(--line-strong);
+		border-radius: var(--radius-tag);
+		background: color-mix(in srgb, var(--bg-raised) 94%, transparent);
+		color: var(--ink);
+		font: inherit;
+		cursor: pointer;
+
+		&:hover {
+			border-color: var(--accent);
+			color: var(--accent);
+		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {

@@ -50,7 +50,7 @@
 	"{0} -> X2_{1}.in2 #slate [ortho]": ["simulations"],
 	"{0} — schemd v{1}": ["docs"],
 	"{0} —[{1}]→ blocked": ["simulations"],
-	"{0} :is({1}) .schematic-trace{stroke-width:2.6;filter:drop-shadow(0 0 2px var(--mark)) drop-shadow(0 0 3px var(--mark))}": [
+	"{0} :is({1}){filter:drop-shadow(0 0 3px var(--mark)) drop-shadow(0 0 6px var(--mark))}{2} :is({3}) .schematic-trace{stroke-width:2.8}{4} .callout-pill:is({5}) rect{fill:var(--mark);stroke:var(--ink)}{6} .callout-pill:is({7}) text{fill:var(--mark-ink)}": [
 		"home"
 	],
 	"{0} · schemd simulation lab": ["simulations"],
@@ -816,6 +816,7 @@
 	"CHSH witness $S\\in[0,2\\sqrt{2}]$": ["simulations"],
 	"CHSH witness S ∈ [0, 2√2]": ["simulations"],
 	"CIN": ["simulations"],
+	"circle.schematic-node-fill, circle": ["global"],
 	"Class-D amplifier": ["simulations"],
 	"Class-D Amplifier You Can Hear": ["simulations"],
 	"Class-D amplifier: audio and triangle carrier into a PWM comparator, a half-bridge, an L C filter, and a speaker. Drag the value tags; click a wire to probe it.": [
@@ -1223,6 +1224,7 @@
 	"Drag the clock error. The sample ticks drift across the frame, the last bits go first, and eventually the stop bit is read low: a framing error.": [
 		"simulations"
 	],
+	"Drag to tilt": ["global"],
 	"Drag θ and φ on the input state. Hover a gate for its action; click one to read it.": [
 		"simulations"
 	],
@@ -2214,6 +2216,7 @@
 	"oracle phase flips state {0}": ["simulations"],
 	"Oracle U_f": ["simulations"],
 	"oracle U_f (phase flip)": ["simulations"],
+	"ORBIT {0}° / {1}°": ["global"],
 	"order $L\\in\\{1,2\\}$": ["simulations"],
 	"order 1 or 2": ["simulations"],
 	"OSCILLATING (limit cycle)": ["simulations"],
@@ -2356,7 +2359,9 @@
 	"PLOTTED · {0} ms CORE": ["global"],
 	"PLOTTED · PEN UP": ["global"],
 	"Plotter controls": ["home", "playground"],
-	"plotter-pulse-ring 560ms cubic-bezier(0.16, 1, 0.3, 1) forwards": ["global"],
+	"plotter-pulse-ring 620ms cubic-bezier(0.16, 1, 0.3, 1) forwards": ["global"],
+	"PLOTTING 3D · ({0}, {1})": ["global"],
+	"PLOTTING 3D · L{0} · ({1}, {2})": ["global"],
 	"PMOS high-side switch": ["simulations"],
 	"PNG export could not decode the generated SVG.": ["playground"],
 	"PNG export failed safely. Download SVG instead.": ["playground"],
@@ -2599,6 +2604,7 @@
 	"Reset": ["simulations"],
 	"Reset (seed noise)": ["simulations"],
 	"reset ⭯": ["simulations"],
+	"Reset angle": ["global"],
 	"Reset execution": ["simulations"],
 	"Reset state": ["simulations"],
 	"Reset to first step": ["simulations"],
@@ -3370,6 +3376,7 @@
 	"Transfer challenge: the fault is unknown": ["global"],
 	"transition band": ["simulations"],
 	"transition guard inverted (deadlock)": ["simulations"],
+	"translate({0} {1})": ["global"],
 	"translate({0}px, {1}px)": ["global"],
 	"Transmission line": ["global"],
 	"Transmission line drawn as an L C ladder between a step source and a load. Drag the tags on R_s, the line, and Z_L; click a line node to probe it.": [
