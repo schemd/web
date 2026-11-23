@@ -159,6 +159,7 @@
 	"{0}% of the week": ["downloads"],
 	"{0}^{m_{{1}}}quad {2}": ["simulations"],
 	"{0}=operatorname{logic}!left({1} ight);left({2},mathrm{V} ight)": ["simulations"],
+	"{0}px {1}px": ["global"],
 	"{0}px 12px": ["global"],
 	"{0}quad f_c={1}": ["simulations"],
 	"{0}quad X_{q_{{1}}}": ["simulations"],
@@ -3377,7 +3378,6 @@
 	"transition band": ["simulations"],
 	"transition guard inverted (deadlock)": ["simulations"],
 	"translate({0} {1})": ["global"],
-	"translate({0}px, {1}px)": ["global"],
 	"Transmission line": ["global"],
 	"Transmission line drawn as an L C ladder between a step source and a load. Drag the tags on R_s, the line, and Z_L; click a line node to probe it.": [
 		"simulations"
