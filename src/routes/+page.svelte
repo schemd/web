@@ -3,6 +3,7 @@
 	const { t, href } = useLanguage();
 
 	import type { PageProps } from './$types';
+	import type { Component } from 'svelte';
 	import { browser } from '$app/env';
 	import Seo from '#lib/components/Seo.svelte';
 	import Pronounce from '#lib/components/Pronounce.svelte';
@@ -10,6 +11,7 @@
 	import { compileInBrowser, prefetchCompiler } from '#lib/compile-client.ts';
 	import { encodeWorkspaceState } from '#lib/state-uri.ts';
 	import { trackInteraction } from '#lib/telemetry.ts';
+	import type CodeEditorType from '#lib/components/CodeEditor.svelte';
 
 	let { data }: PageProps = $props();
 
@@ -88,6 +90,8 @@ VS.negative -> GS.in #slate [ortho]`;
 	let liveTitle = $state('Drafted RC filter');
 	let liveSvg = $state('');
 	let liveError = $state<string | undefined>();
+	let liveErrorLine = $state<number | undefined>();
+	let LiveCodeEditor = $state<Component<Parameters<typeof CodeEditorType>[1]> | undefined>();
 	let liveStats = $state<
 		| {
 				readonly ms: number;
@@ -107,7 +111,14 @@ VS.negative -> GS.in #slate [ortho]`;
 	}
 
 	function openLiveEditor(): void {
-		if (browser) prefetchCompiler();
+		if (browser) {
+			prefetchCompiler();
+			if (!LiveCodeEditor) {
+				void import('#lib/components/CodeEditor.svelte').then((mod) => {
+					LiveCodeEditor = mod.default;
+				});
+			}
+		}
 		view = 'live';
 	}
 
@@ -125,10 +136,12 @@ VS.negative -> GS.in #slate [ortho]`;
 			if (generation !== liveGeneration || controller.signal.aborted) return;
 			if (!outcome) {
 				liveError = 'Compiler unavailable.';
+				liveErrorLine = undefined;
 				return;
 			}
 			if (outcome.ok) {
 				liveError = undefined;
+				liveErrorLine = undefined;
 				liveSvg = outcome.svg;
 				liveStats = {
 					ms: outcome.ms,
@@ -138,6 +151,7 @@ VS.negative -> GS.in #slate [ortho]`;
 					height: outcome.sheet?.height ?? 600
 				};
 			} else {
+				liveErrorLine = outcome.line === undefined ? undefined : outcome.line - 1;
 				liveError =
 					outcome.line === undefined ? outcome.message : `Line ${outcome.line}: ${outcome.message}`;
 			}
@@ -298,11 +312,18 @@ VS.negative -> GS.in #slate [ortho]`;
 							>{t('Open in playground')}</a
 						>
 					</div>
-					<textarea
-						class="live-editor"
-						bind:value={liveSource}
-						spellcheck="false"
-						aria-label={t('Live schemd source')}></textarea>
+					<div class="live-editor-host">
+						{#if LiveCodeEditor}
+							<LiveCodeEditor
+								bind:value={liveSource}
+								errorLine={liveErrorLine}
+								ariaLabel={t('Live schemd source')}
+								compact={true}
+							/>
+						{:else}
+							<p class="live-loading">{t('Loading editor…')}</p>
+						{/if}
+					</div>
 					{#if liveError}
 						<p class="live-error" role="alert">{liveError}</p>
 					{/if}
@@ -831,18 +852,20 @@ VS.negative -> GS.in #slate [ortho]`;
 		color: var(--accent);
 	}
 
-	.live-editor {
-		inline-size: 100%;
+	.live-editor-host {
+		block-size: 248px;
 		min-block-size: 220px;
+	}
+
+	.live-loading {
+		margin: 0;
 		padding: var(--space-3);
 		border: 1px solid var(--line-strong);
 		border-radius: var(--radius-sm);
 		background: var(--wash);
-		color: var(--ink);
+		color: var(--ink-mute);
 		font-family: var(--font-mono);
 		font-size: 0.8rem;
-		line-height: 1.55;
-		resize: vertical;
 	}
 
 	.live-error {

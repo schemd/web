@@ -2,12 +2,12 @@
 
 `schemd`'s site is a calibrated drafting sheet on a mechanical XY plotter bed. Fine 20 px and 100 px drafting hairlines ground the table; crisp architectural corners (`4px`/`6px`), corner registration crosshairs (`┌ 000 · ORIGIN` / `REV 1.4.0 ┐`), a full-width calibrated top edge ruler with live pointer coordinates, and a ruled draftsman's title block frame every surface.
 
-This evolves the earlier **Vellum** design (keeping its palette, Atkinson Hyperlegible Next + Mono typography, and single-meaning checker's yellow highlighter `#FFE45C`) while replacing rounded floating chrome with mechanical precision and four physics-driven motion instruments (`PlotterBed.svelte`):
+This evolves the earlier **Vellum** design onto an archival cotton-rag drafting paper (`#FBFAF7` / `#E9E6DF`, `#18181B` India ink, `#1D4ED8` drafting cobalt, `#F5C842` amber-gold trace highlight) paired with a matte graphite studio dark mode (`#14171D` / `#0D0F12`), Atkinson Hyperlegible Next + Mono typography, the shared `CodeEditor` IDE across every `schemd` authoring surface (Playground, Home `Edit live`, and Docs `Edit here`), and four physics-driven motion instruments (`PlotterBed.svelte` + `plotter-layers.ts`):
 
 1. **XY Pen-Plotter Carriage (`Plot` vs. real `0.11 ms` flash):** Orthogonal rails track real routed `.schematic-trace` paths via `getPointAtLength()`, highlighting each declaring source line as it draws.
 2. **4-Stage Compiler Vernier Scrubber (`1 · Source → 2 · Draft → 3 · Route → 4 · Ink`):** Scrubs live compiled SVGs from margin-stacked parts through BFS draft placement, Manhattan routing, and final typography.
-3. **Exploded 3D Isometric Acetate Stack (`Explode`):** Tilts the sheet into isometric perspective, separating lattice, copper/symbols, and measured bounds.
-4. **Live Signal Propagation (`Pulse`):** Fires luminous signal packets along routed copper paths with junction ripple rings.
+3. **Exploded 3D Isometric 4-Plate Acetate Stack (`Explode`):** Projects real compiled SVGs across four hover-interactive translucent optical plates along the Z-axis (`01 · Lattice & sheet`, `02 · Symbols & pins`, `03 · Routed copper`, `04 · Labels & source map`) on Home, Playground, and Docs.
+4. **Live Signal Propagation (`Pulse`):** Fires luminous signal packets along routed copper paths (both flat and on floating 3D Plate 03 when exploded) with junction ripple rings.
 
 ---
 

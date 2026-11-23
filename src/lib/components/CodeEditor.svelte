@@ -51,6 +51,7 @@
 		onready?: (api: CodeEditorApi | undefined) => void;
 		ariaLabel?: string;
 		maxLength?: number;
+		compact?: boolean;
 	}
 
 	let {
@@ -63,7 +64,8 @@
 		oncompile,
 		onready,
 		ariaLabel = 'schemd source editor',
-		maxLength
+		maxLength,
+		compact = false
 	}: Props = $props();
 
 	let textarea = $state<HTMLTextAreaElement | undefined>();
@@ -465,7 +467,7 @@
 	});
 </script>
 
-<div class="editor" data-error={errorLine !== undefined}>
+<div class="editor" class:compact data-error={errorLine !== undefined}>
 	<p id="editor-instructions" class="sr-only">
 		{t(
 			'Code editor. Tab indents; Shift+Tab outdents. Press Escape then Tab to move focus out of the editor. Control or Command slash toggles comments. Control or Command F opens find.'
@@ -682,6 +684,25 @@
 		line-height: 1.7;
 		--editor-pad-block: var(--space-3);
 		--editor-pad-inline: var(--space-3);
+
+		&.compact {
+			min-block-size: 14rem;
+			border: 1px solid var(--line-strong);
+			border-radius: var(--radius-sm);
+			font-size: 0.8rem;
+			line-height: 1.55;
+			--editor-pad-block: var(--space-2);
+			--editor-pad-inline: var(--space-2);
+
+			& .gutter {
+				min-inline-size: 2.3rem;
+			}
+
+			& .gutter-line {
+				block-size: 1.55em;
+				padding-inline: var(--space-1);
+			}
+		}
 	}
 
 	.sr-only {

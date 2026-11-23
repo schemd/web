@@ -87,36 +87,36 @@
 	--trace-stagger: 160ms;
 }
 
-/* ---------- Day: drafting ink on vellum (default) ---------- */
+/* ---------- Day: archival drafting paper & technical ink (default) ---------- */
 :root,
 [data-blueprint='paper'] {
 	color-scheme: light;
-	--table: #dce2e9;
-	/* The sheet is drawn in --vellum at 88 % over the table; --bg is the colour
-	   that produces, so an opaque surface inside a sheet matches it exactly. */
-	--vellum: #fafbfd;
-	--vellum-under: #eef2f6;
-	--bg: #f6f8fb;
-	--bg-raised: #f6f8fb;
-	--bg-panel: #f6f8fb;
-	--bg-inset: #eaeff4;
-	--wash: #eaeff4;
-	--ink: #14213d;
-	--ink-mute: #55606f;
-	--ink-faint: #5e6979;
-	--line: #cdd5df;
-	--line-strong: #9aa6b5;
-	--edge: rgb(20 33 61 / 0.1);
-	/* The checker's blue pencil: links and focus. */
-	--accent: #2348c8;
+	--table: #e9e6df;
+	/* The sheet is drawn in --vellum over the warm architectural board; --bg matches
+	   the rendered sheet surface so opaque controls inside it align seamlessly. */
+	--vellum: #fdfcfa;
+	--vellum-under: #f3f0e9;
+	--bg: #fbfaf7;
+	--bg-raised: #ffffff;
+	--bg-panel: #fbfaf7;
+	--bg-inset: #f2efe9;
+	--wash: #f2efe9;
+	--ink: #18181b;
+	--ink-mute: #52525b;
+	--ink-faint: #5c5c66;
+	--line: #d6d3cb;
+	--line-strong: #9f9b91;
+	--edge: rgb(24 24 27 / 0.1);
+	/* Drafting cobalt: links, active instruments, and XY carriage rails. */
+	--accent: #1d4ed8;
 	--accent-ink: #ffffff;
-	--accent-2: #2348c8;
-	/* The highlighter: current, traced, selected. Ink stays dark on it. */
-	--mark: #ffe45c;
-	--mark-ink: #14213d;
-	--warn: #8a5a00;
-	--danger: #b42318;
-	--ok: #1f7a3d;
+	--accent-2: #1d4ed8;
+	/* Warm draftsman's amber-gold: current, traced, selected. Ink stays dark on it. */
+	--mark: #f5c842;
+	--mark-ink: #18181b;
+	--warn: #92400e;
+	--danger: #b91c1c;
+	--ok: #166534;
 	--grid-dot: transparent;
 	--sheet-line: transparent;
 	--selection: var(--mark);
@@ -125,84 +125,84 @@
 	--accent-grad-v: linear-gradient(180deg, var(--accent), var(--accent));
 	--sheen: none;
 	--edge-hi: transparent;
-	--shadow-sheet: 0 1px 0 rgb(20 33 61 / 0.06), 0 12px 32px -12px rgb(20 33 61 / 0.22);
-	--shadow-overlay: 0 1px 0 rgb(20 33 61 / 0.06), 0 24px 64px -16px rgb(20 33 61 / 0.38);
+	--shadow-sheet: 0 1px 0 rgb(24 24 27 / 0.06), 0 12px 32px -12px rgb(24 24 27 / 0.18);
+	--shadow-overlay: 0 1px 0 rgb(24 24 27 / 0.06), 0 24px 64px -16px rgb(24 24 27 / 0.34);
 	--shadow-plate: none;
 	--shadow-lift: var(--shadow-overlay);
 	--field-a: transparent;
 	--field-b: transparent;
-	/* The compiler's own drawing colours, as inks that read on vellum. */
+	/* The compiler's own drawing colours, calibrated for archival paper. */
 	--schematic-surface: var(--wash);
-	--schematic-grid: #cdd5df;
-	--schematic-vector-fallback: #14213d;
-	--schematic-color-amber: #a24a07;
-	--schematic-color-blue: #1d5fa8;
-	--schematic-color-cyan: #0d6f7a;
-	--schematic-color-purple: #6a3fb5;
-	--schematic-color-slate: #4a5566;
-	--schematic-color-emerald: #1f7a3d;
+	--schematic-grid: #d6d3cb;
+	--schematic-vector-fallback: #18181b;
+	--schematic-color-amber: #b45309;
+	--schematic-color-blue: #1d4ed8;
+	--schematic-color-cyan: #0e7490;
+	--schematic-color-purple: #6d28d9;
+	--schematic-color-slate: #475569;
+	--schematic-color-emerald: #166534;
 	--shiki: var(--shiki-paper);
-	/* Source listing palette: navy ink plus the drawing inks. */
-	--tok-kind: #14213d;
-	--tok-id: #1d5fa8;
-	--tok-string: #1f7a3d;
-	--tok-number: #8a4b00;
-	--tok-color: #6a3fb5;
-	--tok-option: #0d6f7a;
+	/* Source listing palette: charcoal ink plus drafting inks. */
+	--tok-kind: #18181b;
+	--tok-id: #1d4ed8;
+	--tok-string: #166534;
+	--tok-number: #92400e;
+	--tok-color: #6d28d9;
+	--tok-option: #0e7490;
 	/* Live readouts in the labs: a high signal, and a qubit's state. */
-	--live: #0d6f7a;
-	--live-text: #0a5560;
-	--qubit: #6a3fb5;
-	--qubit-text: #4b2a8a;
+	--live: #0e7490;
+	--live-text: #0b5970;
+	--qubit: #6d28d9;
+	--qubit-text: #5521b5;
 }
 
-/* ---------- Light table: the same sheets, lit from below ---------- */
+/* ---------- Negative: matte graphite drafting table & luminous ink ---------- */
 [data-blueprint='negative'] {
 	color-scheme: dark;
-	--table: #1a2230;
-	--vellum: #27313f;
-	--vellum-under: #212a37;
-	--bg: #252f3d;
-	--bg-raised: #252f3d;
-	--bg-panel: #252f3d;
-	--bg-inset: #1e2734;
-	--wash: #1e2734;
-	--ink: #e6ecf4;
-	--ink-mute: #a9b4c3;
-	--ink-faint: #9aa6b6;
-	--line: #3a4659;
-	--line-strong: #5f6c80;
-	--edge: rgb(230 236 244 / 0.1);
-	--accent: #8fb0ff;
-	--accent-ink: #14213d;
-	--accent-2: #8fb0ff;
-	--mark: #e8c93a;
-	--mark-ink: #14213d;
-	--warn: #e8c16a;
-	--danger: #ff8a80;
-	--ok: #7fd49a;
+	--table: #0d0f12;
+	--vellum: #15181e;
+	--vellum-under: #111419;
+	--bg: #14171d;
+	--bg-raised: #1a1e26;
+	--bg-panel: #14171d;
+	--bg-inset: #0f1217;
+	--wash: #0f1217;
+	--ink: #f4f4f5;
+	--ink-mute: #a1a1aa;
+	--ink-faint: #9898a3;
+	--line: #272b35;
+	--line-strong: #464d5d;
+	--edge: rgb(244 244 245 / 0.1);
+	--accent: #60a5fa;
+	--accent-ink: #0d0f12;
+	--accent-2: #60a5fa;
+	--mark: #f5c842;
+	--mark-ink: #0d0f12;
+	--warn: #fbbf24;
+	--danger: #f87171;
+	--ok: #4ade80;
 	--selection: var(--mark);
-	--shadow-sheet: 0 1px 0 rgb(0 0 0 / 0.2), 0 12px 32px -12px rgb(0 0 0 / 0.55);
-	--shadow-overlay: 0 1px 0 rgb(0 0 0 / 0.2), 0 24px 64px -16px rgb(0 0 0 / 0.7);
-	--schematic-grid: #3a4659;
-	--schematic-vector-fallback: #e6ecf4;
-	--schematic-color-amber: #f0a04b;
-	--schematic-color-blue: #6fb3f2;
-	--schematic-color-cyan: #5ccfd8;
-	--schematic-color-purple: #b9a3f0;
-	--schematic-color-slate: #b4bdc9;
-	--schematic-color-emerald: #7fd49a;
+	--shadow-sheet: 0 1px 0 rgb(0 0 0 / 0.35), 0 14px 36px -12px rgb(0 0 0 / 0.65);
+	--shadow-overlay: 0 1px 0 rgb(0 0 0 / 0.35), 0 24px 64px -16px rgb(0 0 0 / 0.78);
+	--schematic-grid: #272b35;
+	--schematic-vector-fallback: #f4f4f5;
+	--schematic-color-amber: #fbbf24;
+	--schematic-color-blue: #60a5fa;
+	--schematic-color-cyan: #22d3ee;
+	--schematic-color-purple: #c084fc;
+	--schematic-color-slate: #94a3b8;
+	--schematic-color-emerald: #4ade80;
 	--shiki: var(--shiki-negative);
-	--live: #62f6cf;
-	--live-text: #bfffee;
-	--qubit: #a997ff;
-	--qubit-text: #c5baff;
-	--tok-kind: #e6ecf4;
-	--tok-id: #6fb3f2;
-	--tok-string: #7fd49a;
-	--tok-number: #f0a04b;
-	--tok-color: #b9a3f0;
-	--tok-option: #5ccfd8;
+	--live: #2dd4bf;
+	--live-text: #99f6e4;
+	--qubit: #a78bfa;
+	--qubit-text: #ddd6fe;
+	--tok-kind: #f4f4f5;
+	--tok-id: #60a5fa;
+	--tok-string: #4ade80;
+	--tok-number: #fbbf24;
+	--tok-color: #c084fc;
+	--tok-option: #22d3ee;
 }
 
 /* ---------- Base ---------- */

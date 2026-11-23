@@ -3,11 +3,14 @@
 	const { t, href, locale } = useLanguage();
 
 	import type { PageProps } from './$types';
+	import type { Component } from 'svelte';
 	import { browser } from '$app/env';
 	import Seo from '#lib/components/Seo.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { page } from '$app/state';
 	import Pronounce from '#lib/components/Pronounce.svelte';
+	import PlotterBed from '#lib/components/PlotterBed.svelte';
+	import type CodeEditorType from '#lib/components/CodeEditor.svelte';
 	import { compileInBrowser, prefetchCompiler } from '#lib/compile-client.ts';
 	import { encodeWorkspaceState } from '#lib/state-uri.ts';
 	import { ui, setDocsNavCollapsed } from '#lib/ui.svelte.ts';
@@ -38,13 +41,16 @@
 
 	const activeExample = $derived(exampleForSection.get(activeSectionId) ?? data.doc.examples[0]);
 
-	/* ---------- Living notebook rail: inline live edit, geometry overlay, explode, copy SVG ---------- */
+	/* ---------- Living notebook rail: inline IDE, geometry grid, 4-plate explode, pulse, copy SVG ---------- */
 	let railEditing = $state(false);
 	let railGeometry = $state(false);
 	let railExploded = $state(false);
+	let railPlotter = $state<PlotterBed | undefined>();
+	let RailCodeEditor = $state<Component<Parameters<typeof CodeEditorType>[1]> | undefined>();
 	let railSource = $state('');
 	let railSvg = $state<string | undefined>();
 	let railError = $state<string | undefined>();
+	let railErrorLine = $state<number | undefined>();
 	let railMs = $state<number | undefined>();
 	let railCopied = $state(false);
 	let railGeneration = 0;
@@ -52,9 +58,11 @@
 	$effect(() => {
 		const example = activeExample;
 		railEditing = false;
+		railExploded = false;
 		railSource = example?.source ?? '';
 		railSvg = undefined;
 		railError = undefined;
+		railErrorLine = undefined;
 		railMs = undefined;
 	});
 
@@ -73,9 +81,11 @@
 			if (!outcome) return;
 			if (outcome.ok) {
 				railError = undefined;
+				railErrorLine = undefined;
 				railSvg = outcome.svg;
 				railMs = outcome.ms;
 			} else {
+				railErrorLine = outcome.line === undefined ? undefined : outcome.line - 1;
 				railError =
 					outcome.line === undefined ? outcome.message : `Line ${outcome.line}: ${outcome.message}`;
 			}
@@ -87,12 +97,20 @@
 	});
 
 	function toggleRailEdit(): void {
-		if (!railEditing && browser) prefetchCompiler();
+		if (!railEditing && browser) {
+			prefetchCompiler();
+			if (!RailCodeEditor) {
+				void import('#lib/components/CodeEditor.svelte').then((mod) => {
+					RailCodeEditor = mod.default;
+				});
+			}
+		}
 		railEditing = !railEditing;
 		if (!railEditing && activeExample) {
 			railSource = activeExample.source;
 			railSvg = undefined;
 			railError = undefined;
+			railErrorLine = undefined;
 			railMs = undefined;
 		}
 	}
@@ -315,19 +333,22 @@
 						>
 							{t('Explode')}
 						</button>
+						<button type="button" onclick={() => railPlotter?.pulse()}>
+							{t('Pulse')}
+						</button>
 						<button type="button" onclick={copyRailSvg}>
 							{railCopied ? t('Copied') : t('Copy SVG')}
 						</button>
 					</div>
 					<figure class="rail-figure">
-						<div
-							class="schemd-frame trace-on"
-							class:rail-geometry={railGeometry}
-							class:rail-exploded={railExploded}
-						>
-							<!-- eslint-disable-next-line svelte/no-at-html-tags -- compiler output -->
-							{@html railSvg ?? activeExample.svg}
-						</div>
+						<PlotterBed
+							bind:this={railPlotter}
+							bind:exploded={railExploded}
+							grid={railGeometry}
+							compact={true}
+							svg={railSvg ?? activeExample.svg}
+							ms={railMs}
+						/>
 						<figcaption class="rail-caption">
 							{t(activeExample.title)}
 							{#if railEditing && railMs !== undefined}
@@ -336,11 +357,18 @@
 						</figcaption>
 					</figure>
 					{#if railEditing}
-						<textarea
-							class="rail-editor"
-							bind:value={railSource}
-							spellcheck="false"
-							aria-label={t('Edit active example source')}></textarea>
+						<div class="rail-editor-host">
+							{#if RailCodeEditor}
+								<RailCodeEditor
+									bind:value={railSource}
+									errorLine={railErrorLine}
+									ariaLabel={t('Edit active example source')}
+									compact={true}
+								/>
+							{:else}
+								<p class="rail-loading">{t('Loading editor…')}</p>
+							{/if}
+						</div>
 						{#if railError}
 							<p class="rail-error" role="alert">{railError}</p>
 						{/if}
@@ -632,59 +660,21 @@
 		}
 	}
 
-	.rail-geometry {
-		background-image:
-			linear-gradient(
-				to right,
-				color-mix(in srgb, var(--line) 42%, transparent) 1px,
-				transparent 1px
-			),
-			linear-gradient(
-				to bottom,
-				color-mix(in srgb, var(--line) 42%, transparent) 1px,
-				transparent 1px
-			),
-			linear-gradient(
-				to right,
-				color-mix(in srgb, var(--line) 70%, transparent) 1px,
-				transparent 1px
-			),
-			linear-gradient(
-				to bottom,
-				color-mix(in srgb, var(--line) 70%, transparent) 1px,
-				transparent 1px
-			);
-		background-size:
-			20px 20px,
-			20px 20px,
-			100px 100px,
-			100px 100px;
-	}
-
-	.rail-exploded {
-		perspective: 1000px;
-		overflow: visible;
-
-		& :global(svg) {
-			transform: rotateX(40deg) rotateZ(-16deg) scale(0.86);
-			transition: transform 580ms cubic-bezier(0.22, 1, 0.36, 1);
-			box-shadow: 0 18px 34px -16px color-mix(in srgb, var(--ink) 32%, transparent);
-		}
-	}
-
-	.rail-editor {
-		inline-size: 100%;
-		min-block-size: 160px;
+	.rail-editor-host {
+		block-size: 210px;
+		min-block-size: 180px;
 		margin-block-end: var(--space-3);
+	}
+
+	.rail-loading {
+		margin: 0;
 		padding: var(--space-3);
-		border: 1px solid var(--line);
-		border-radius: 8px;
+		border: 1px solid var(--line-strong);
+		border-radius: var(--radius-sm);
 		background: var(--wash);
-		color: var(--ink);
+		color: var(--ink-mute);
 		font-family: var(--font-mono);
 		font-size: 0.78rem;
-		line-height: 1.5;
-		resize: vertical;
 	}
 
 	.rail-error {
