@@ -8,6 +8,8 @@ export interface PlateFootprint {
 	readonly y: number;
 	readonly width: number;
 	readonly height: number;
+	readonly cx: number;
+	readonly cy: number;
 	readonly line?: number;
 }
 
@@ -92,24 +94,54 @@ export function measurePlateOverlays(svgEl: SVGSVGElement): PlateOverlayGeometry
 		return { tx: Number(m[1]) || 0, ty: Number(m[2]) || 0 };
 	};
 
+	const svgCtm = svgEl.getCTM();
+	const svgInv = svgCtm ? svgCtm.inverse() : null;
+
+	const transformBox = (
+		el: SVGGraphicsElement,
+		box: DOMRect
+	): { x: number; y: number; w: number; h: number } | undefined => {
+		const elCtm = el.getCTM();
+		if (!elCtm || !svgInv) return undefined;
+		const rel = svgInv.multiply(elCtm);
+		const corners = [
+			new DOMPoint(box.x, box.y).matrixTransform(rel),
+			new DOMPoint(box.x + box.width, box.y).matrixTransform(rel),
+			new DOMPoint(box.x, box.y + box.height).matrixTransform(rel),
+			new DOMPoint(box.x + box.width, box.y + box.height).matrixTransform(rel)
+		];
+		const xs = corners.map((p) => p.x);
+		const ys = corners.map((p) => p.y);
+		const x0 = Math.min(...xs);
+		const y0 = Math.min(...ys);
+		return { x: x0, y: y0, w: Math.max(...xs) - x0, h: Math.max(...ys) - y0 };
+	};
+
 	for (const comp of svgEl.querySelectorAll<SVGGElement>('.schematic-component')) {
 		const { tx, ty } = parseTranslate(comp.getAttribute('transform'));
 		const rawLine = comp.getAttribute('data-source-line');
 		const line = rawLine ? Number(rawLine) : undefined;
+		const symbolUse = comp.querySelector<SVGGraphicsElement>('.schematic-component-vector');
+		const target = symbolUse ?? comp;
 		let box: DOMRect | undefined;
 		try {
-			const symbolUse = comp.querySelector<SVGGraphicsElement>('.schematic-component-vector');
-			box = (symbolUse ?? comp).getBBox();
+			box = target.getBBox();
 		} catch {
 			box = undefined;
 		}
 		if (!box || box.width <= 0 || box.height <= 0) continue;
+		const mapped = transformBox(target, box) ?? {
+			x: tx + box.x,
+			y: ty + box.y,
+			w: box.width,
+			h: box.height
+		};
 		const pad = 6;
-		const fx = tx + box.x - pad;
-		const fy = ty + box.y - pad;
-		const fw = box.width + pad * 2;
-		const fh = box.height + pad * 2;
-		footprints.push({ x: fx, y: fy, width: fw, height: fh, line });
+		const fx = mapped.x - pad;
+		const fy = mapped.y - pad;
+		const fw = mapped.w + pad * 2;
+		const fh = mapped.h + pad * 2;
+		footprints.push({ x: fx, y: fy, width: fw, height: fh, cx: tx, cy: ty, line });
 		includeBounds(fx, fy, fw, fh);
 		if (line !== undefined && Number.isFinite(line)) {
 			callouts.push({

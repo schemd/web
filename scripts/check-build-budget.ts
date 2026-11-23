@@ -159,12 +159,13 @@ const MAX_COMPILER_JS_GZIP = 52 * 1024;
  * compacted and catalogs are scoped by locale and section, reducing the first
  * localization build from 224.8 to 218.2 KiB. The compiler stays in its worker
  * under its separate, unchanged 50 KiB ceiling. */
-/* Raised from 226 to 231 KiB for the Plotter Sheet redesign, measured 227.3 KiB
- * (+4.7 KiB gzip for PlotterBed's XY pen-plotter carriage, 4-stage compiler
- * scrubber, 3D exploded acetate stack, live signal pulse propagator, calibrated
- * ruler chrome, and Explode/Pulse controls in the playground and docs rail).
- * The compiler remains strictly in its lazy worker (50.4 KiB / 52.0 KiB). */
-const MAX_DOCUMENT_JS_GZIP = 231 * 1024;
+/* Raised from 226 to 234 KiB for the Plotter Sheet redesign, measured 231.0 KiB
+ * (+8.4 KiB gzip across PlotterBed's XY pen-plotter carriage, 4-stage compiler
+ * scrubber, 4-plate 3D optical Explode stack with CTM-transformed footprints,
+ * source-map callouts, drag-to-orbit slant controls, live signal pulse engine,
+ * calibrated ruler chrome, and shared compact CodeEditor wiring). The compiler
+ * remains strictly in its lazy worker (50.4 KiB / 52.0 KiB). */
+const MAX_DOCUMENT_JS_GZIP = 234 * 1024;
 /* Exactly the sum of the two ceilings above, as the compiler note says. */
 const MAX_ALL_JS_GZIP = MAX_DOCUMENT_JS_GZIP + MAX_COMPILER_JS_GZIP;
 /*

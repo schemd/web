@@ -181,17 +181,18 @@
 		const wires = queryWires(svgEl);
 		const texts = Array.from(svgEl.querySelectorAll<SVGTextElement>('text'));
 
-		/* Stage 0 -> 100: parts glide from the left drafting margin into drafted coordinates. */
+		/* Stage 0 -> 100: parts glide from the left drafting margin into drafted coordinates.
+		   Use the independent CSS `translate` property so SVG `transform="translate(x y)"` stays intact. */
 		const draftP = Math.max(0, Math.min(1, val / 100));
 		for (let i = 0; i < parts.length; i += 1) {
 			const part = parts[i]!;
 			if (draftP >= 0.995) {
-				part.style.transform = '';
+				part.style.translate = '';
 				part.style.opacity = '';
 			} else {
 				const dx = Math.round(-(1 - draftP) * (76 + (i % 4) * 26));
 				const dy = Math.round((1 - draftP) * ((i % 3) - 1) * 18);
-				part.style.transform = `translate(${dx}px, ${dy}px)`;
+				part.style.translate = `${dx}px ${dy}px`;
 				part.style.opacity = (0.28 + 0.72 * draftP).toFixed(2);
 			}
 		}
@@ -490,15 +491,20 @@
 								rx="6"
 							/>
 							{#each overlays.footprints as fp, i (i)}
-								<rect
-									class="footprint-box"
-									data-source-line={fp.line}
-									x={fp.x}
-									y={fp.y}
-									width={fp.width}
-									height={fp.height}
-									rx="4"
-								/>
+								<g class="footprint-item" data-source-line={fp.line}>
+									<rect
+										class="footprint-box"
+										x={fp.x}
+										y={fp.y}
+										width={fp.width}
+										height={fp.height}
+										rx="4"
+									/>
+									<path
+										class="anchor-cross"
+										d={`M ${fp.cx - 4} ${fp.cy} H ${fp.cx + 4} M ${fp.cx} ${fp.cy - 4} V ${fp.cy + 4}`}
+									/>
+								</g>
 							{/each}
 						</svg>
 					{/if}
@@ -735,7 +741,7 @@
 		& :global(.schematic-component),
 		& :global([data-node-id]) {
 			transition:
-				transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+				translate 420ms cubic-bezier(0.22, 1, 0.36, 1),
 				opacity 220ms ease;
 		}
 
@@ -785,34 +791,34 @@
 	}
 
 	.iso-scene.exploded .plate-0 {
-		transform: translateZ(-62px);
+		transform: translateZ(-36px);
 		background: color-mix(in srgb, var(--bg-inset) 62%, transparent);
 	}
 
 	.iso-scene.exploded .plate-1 {
-		transform: translateZ(-14px);
+		transform: translateZ(-10px);
 	}
 
 	.iso-scene.exploded .plate-2 {
-		transform: translateZ(36px);
+		transform: translateZ(14px);
 	}
 
 	.iso-scene.exploded .plate-3 {
-		transform: translateZ(86px);
+		transform: translateZ(42px);
 	}
 
 	/* Compact depth scale for Docs sidebar */
 	.compact .iso-scene.exploded .plate-0 {
-		transform: translateZ(-36px);
+		transform: translateZ(-24px);
 	}
 	.compact .iso-scene.exploded .plate-1 {
-		transform: translateZ(-8px);
+		transform: translateZ(-6px);
 	}
 	.compact .iso-scene.exploded .plate-2 {
-		transform: translateZ(24px);
+		transform: translateZ(10px);
 	}
 	.compact .iso-scene.exploded .plate-3 {
-		transform: translateZ(56px);
+		transform: translateZ(28px);
 	}
 
 	/* Measured overlay SVG (Plate 01 footprints & Plate 04 source-map callouts) */
@@ -834,15 +840,25 @@
 		vector-effect: non-scaling-stroke;
 	}
 
+	.footprint-item {
+		transition:
+			opacity var(--dur-fast) var(--ease-precise),
+			filter var(--dur-fast) var(--ease-precise);
+	}
+
 	.footprint-box {
 		fill: color-mix(in srgb, var(--mark) 10%, transparent);
 		stroke: color-mix(in srgb, var(--mark) 72%, transparent);
 		stroke-width: 1.25;
 		stroke-dasharray: 3 3;
 		vector-effect: non-scaling-stroke;
-		transition:
-			opacity var(--dur-fast) var(--ease-precise),
-			filter var(--dur-fast) var(--ease-precise);
+	}
+
+	.anchor-cross {
+		fill: none;
+		stroke: color-mix(in srgb, var(--accent) 68%, transparent);
+		stroke-width: 1.1;
+		vector-effect: non-scaling-stroke;
 	}
 
 	.callout-pill {
@@ -948,7 +964,7 @@
 		& :global(.schematic-component),
 		& :global([data-node-id]) {
 			transition:
-				transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+				translate 420ms cubic-bezier(0.22, 1, 0.36, 1),
 				opacity 220ms ease,
 				filter var(--dur-fast) var(--ease-precise);
 		}
